@@ -21,15 +21,19 @@ This script provides the following commands:
       - Combines pull and install; if --system is specified also runs system update commands.
   status     {identifier(s)|--all|--system}
       - Shows git status for each repository or, if --system is set, shows basic system update information.
-  config     {identifier(s)|--all}
+
+Additionally, there is a **config** command with the following subcommands:
+  config show   {identifier(s)|--all}
       - Displays the configuration for one or more repositories. If no identifier is given, shows the entire config.
-  add
+  config add
       - Starts an interactive dialog to add a new repository configuration entry.
-      
+  config edit
+      - Opens the configuration file in nano.
+
 Additional flags:
   --preview   Only show the changes without executing commands.
   --list      When used with preview or status, only list affected repositories (for status).
-  
+
 Identifiers:
   - If a repository’s name is unique then you can just use the repository name.
   - If multiple repositories share the same name then use the full identifier in the form "provider/account/repository".
@@ -59,7 +63,6 @@ import yaml
 
 # Define default paths
 CONFIG_PATH = "config.yaml"
-# Change BIN_DIR to a directory that is in your PATH (e.g., os.path.expanduser("~/.local/bin"))
 BIN_DIR = os.path.expanduser("~/.local/bin")
 
 def load_config(config_path):
@@ -69,7 +72,6 @@ def load_config(config_path):
         sys.exit(1)
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
-    # Expecting keys: "base" and "repos"
     if "base" not in config or "repos" not in config:
         print("Config file must contain 'base' and 'repos' keys.")
         sys.exit(1)
@@ -115,7 +117,6 @@ def resolve_repos(identifiers, all_repos):
             if ident == full_id:
                 matches.append(repo)
             elif ident == repo.get("repository"):
-                # Only add if it is unique among all_repos
                 if sum(1 for r in all_repos if r.get("repository") == ident) == 1:
                     matches.append(repo)
         if not matches:
@@ -135,10 +136,8 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
     """
     repo_identifier = get_repo_identifier(repo, all_repos)
     repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
-    # Determine the command to execute
     command = repo.get("command")
     if not command:
-        # Check for main.sh or main.py in the repository directory
         main_sh = os.path.join(repo_dir, "main.sh")
         main_py = os.path.join(repo_dir, "main.py")
         if os.path.exists(main_sh):
@@ -149,14 +148,12 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
             print(f"No command defined and no main.sh/main.py found in {repo_dir}. Skipping alias creation.")
             return
 
-    # ANSI escape for orange in many 256-color terminals (color code 208)
+    # ANSI escape codes for orange (color code 208) and reset
     ORANGE = r"\033[38;5;208m"
     RESET = r"\033[0m"
 
-    # Build the preamble based on the 'verified' field.
     verified = repo.get("verified")
     if verified:
-        # Checkout the verified commit and warn if not current.
         preamble = f"""\
 git checkout {verified} || echo -e "{ORANGE}Warning: Failed to checkout commit {verified}.{RESET}"
 CURRENT=$(git rev-parse HEAD)
@@ -165,10 +162,8 @@ if [ "$CURRENT" != "{verified}" ]; then
 fi
 """
     else:
-        # Warn that no verified commit is set.
         preamble = f'echo -e "{ORANGE}Warning: No verified commit set for this repository.{RESET}"'
     
-    # Create the bash wrapper content including the preamble.
     script_content = f"""#!/bin/bash
 cd "{repo_dir}"
 {preamble}
@@ -185,7 +180,7 @@ cd "{repo_dir}"
         print(f"Installed executable for {repo_identifier} at {alias_path}")
 
 def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
-    """Install one or more repositories by creating their executable wrappers and running setup."""
+    """Install repositories by creating executable wrappers and running setup."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -193,7 +188,6 @@ def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
             print(f"Repository directory '{repo_dir}' does not exist. Clone it first.")
             continue
         create_executable(repo, base_dir, bin_dir, all_repos, preview=preview)
-        # Execute setup command if defined
         setup_cmd = repo.get("setup")
         if setup_cmd:
             run_command(setup_cmd, cwd=repo_dir, preview=preview)
@@ -209,18 +203,14 @@ def pull_repos(selected_repos, base_dir, all_repos, preview=False):
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
 def clone_repos(selected_repos, base_dir, all_repos, preview=False):
-    """Clone repositories based on the config.
-       Uses replacement if defined; otherwise, constructs URL from provider/account/repository.
-    """
+    """Clone repositories based on the config."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
         if os.path.exists(repo_dir):
             print(f"Repository '{repo_identifier}' already exists at '{repo_dir}'.")
             continue
-        # Determine the repository to clone:
         target = repo.get("replacement") if repo.get("replacement") else f"{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}"
-        # Construct a clone URL (assuming https)
         clone_url = f"https://{target}.git"
         parent_dir = os.path.dirname(repo_dir)
         os.makedirs(parent_dir, exist_ok=True)
@@ -237,7 +227,7 @@ def push_repos(selected_repos, base_dir, all_repos, preview=False):
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
 def deinstall_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
-    """Remove the executable wrapper and run teardown command if defined."""
+    """Remove the executable wrapper and run teardown if defined."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         alias_path = os.path.join(bin_dir, repo_identifier)
@@ -249,14 +239,13 @@ def deinstall_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False)
                 print(f"Removed executable for {repo_identifier}.")
         else:
             print(f"No executable found for {repo_identifier} in {bin_dir}.")
-        # Execute teardown if defined
         teardown_cmd = repo.get("teardown")
         repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
         if teardown_cmd and os.path.exists(repo_dir):
             run_command(teardown_cmd, cwd=repo_dir, preview=preview)
 
 def delete_repos(selected_repos, base_dir, all_repos, preview=False):
-    """Delete the repository directory (rm -rv equivalent)."""
+    """Delete the repository directory."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -274,15 +263,11 @@ def update_repos(selected_repos, base_dir, bin_dir, all_repos, system_update=Fal
     pull_repos(selected_repos, base_dir, all_repos, preview=preview)
     install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=preview)
     if system_update:
-        # Example system update commands (for Arch-based systems)
         run_command("yay -S", preview=preview)
         run_command("sudo pacman -Syyu", preview=preview)
 
 def status_repos(selected_repos, base_dir, all_repos, list_only=False, system_status=False, preview=False):
-    """Show status information for repositories.
-       If list_only is True, only list affected repositories.
-       If system_status is True, show system update status.
-    """
+    """Show status information for repositories."""
     if system_status:
         print("System status:")
         run_command("yay -Qu", preview=preview)
@@ -299,7 +284,7 @@ def status_repos(selected_repos, base_dir, all_repos, list_only=False, system_st
                 print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
 def show_config(selected_repos, full_config=False):
-    """Display configuration for one or more repositories. If full_config is True, display entire config."""
+    """Display configuration for one or more repositories, or entire config."""
     if full_config:
         with open(CONFIG_PATH, 'r') as f:
             print(f.read())
@@ -325,7 +310,6 @@ def interactive_add(config):
     new_entry["setup"] = input("Setup command (optional): ").strip()
     new_entry["teardown"] = input("Teardown command (optional): ").strip()
 
-    # Confirm addition
     print("\nNew entry:")
     for key, value in new_entry.items():
         if value:
@@ -337,6 +321,10 @@ def interactive_add(config):
     else:
         print("Entry not added.")
 
+def edit_config():
+    """Open the configuration file in nano."""
+    run_command(f"nano {CONFIG_PATH}")
+
 if __name__ == "__main__":
     # Load configuration
     config = load_config(CONFIG_PATH)
@@ -346,97 +334,112 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Package Manager")
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
 
-    # Define common arguments for subcommands that support identifiers
     def add_identifier_arguments(subparser):
         subparser.add_argument("identifiers", nargs="*", help="Identifier(s) for repositories")
         subparser.add_argument("--all", action="store_true", help="Apply to all repositories in the config")
         subparser.add_argument("--preview", action="store_true", help="Preview changes without executing commands")
         subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
 
-    # install
+    # Top-level commands
     install_parser = subparsers.add_parser("install", help="Install repository/repositories")
     add_identifier_arguments(install_parser)
 
-    # pull
     pull_parser = subparsers.add_parser("pull", help="Pull updates for repository/repositories")
     add_identifier_arguments(pull_parser)
 
-    # clone
     clone_parser = subparsers.add_parser("clone", help="Clone repository/repositories")
     add_identifier_arguments(clone_parser)
 
-    # push
     push_parser = subparsers.add_parser("push", help="Push changes for repository/repositories")
     add_identifier_arguments(push_parser)
 
-    # deinstall
     deinstall_parser = subparsers.add_parser("deinstall", help="Deinstall repository/repositories")
     add_identifier_arguments(deinstall_parser)
 
-    # delete
     delete_parser = subparsers.add_parser("delete", help="Delete repository directory for repository/repositories")
     add_identifier_arguments(delete_parser)
 
-    # update
     update_parser = subparsers.add_parser("update", help="Update (pull + install) repository/repositories")
     add_identifier_arguments(update_parser)
     update_parser.add_argument("--system", action="store_true", help="Include system update commands")
 
-    # status
     status_parser = subparsers.add_parser("status", help="Show status for repository/repositories or system")
     add_identifier_arguments(status_parser)
     status_parser.add_argument("--system", action="store_true", help="Show system status")
 
-    # config: show configuration details
-    config_parser = subparsers.add_parser("config", help="Show configuration for repository/repositories or entire config")
-    add_identifier_arguments(config_parser)
+    # Config command with subcommands
+    config_parser = subparsers.add_parser("config", help="Manage configuration")
+    config_subparsers = config_parser.add_subparsers(dest="subcommand", help="Config subcommands", required=True)
 
-    # add: interactive add of a new repository entry
-    add_parser = subparsers.add_parser("add", help="Interactively add a new repository configuration entry")
+    config_show = config_subparsers.add_parser("show", help="Show configuration")
+    add_identifier_arguments(config_show)
+
+    config_add = config_subparsers.add_parser("add", help="Interactively add a new repository entry")
+    config_edit = config_subparsers.add_parser("edit", help="Edit configuration file with nano")
 
     args = parser.parse_args()
 
-    # Handle "config" command separately
-    if args.command == "config":
-        if args.all or (hasattr(args, "identifiers") and not args.identifiers):
-            # Show the entire configuration file
-            show_config([], full_config=True)
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
-            if selected:
-                show_config(selected, full_config=False)
-        sys.exit(0)
-
-    # Handle "add" command
-    if args.command == "add":
-        interactive_add(config)
-        sys.exit(0)
-
-    # For commands using identifiers, decide which repositories to operate on
-    if hasattr(args, "identifiers"):
+    # Dispatch top-level commands
+    if args.command == "install":
         if args.all or (not args.identifiers):
             selected = all_repos_list
         else:
             selected = resolve_repos(args.identifiers, all_repos_list)
-    else:
-        selected = []
-
-    # Dispatch commands
-    if args.command == "install":
         install_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
     elif args.command == "pull":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
         pull_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "clone":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
         clone_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "push":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
         push_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "deinstall":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
         deinstall_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
     elif args.command == "delete":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
         delete_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "update":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
         update_repos(selected, base_dir, BIN_DIR, all_repos_list, system_update=args.system, preview=args.preview)
     elif args.command == "status":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
         status_repos(selected, base_dir, all_repos_list, list_only=args.list, system_status=args.system, preview=args.preview)
+    elif args.command == "config":
+        # Dispatch config subcommands
+        if args.subcommand == "show":
+            if args.all or (not args.identifiers):
+                show_config([], full_config=True)
+            else:
+                selected = resolve_repos(args.identifiers, all_repos_list)
+                if selected:
+                    show_config(selected, full_config=False)
+        elif args.subcommand == "add":
+            interactive_add(config)
+        elif args.subcommand == "edit":
+            edit_config()
     else:
         parser.print_help()
