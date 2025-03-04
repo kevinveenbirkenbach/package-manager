@@ -284,7 +284,7 @@ def delete_repos(selected_repos, base_dir, all_repos, preview=False):
 
 def update_repos(selected_repos, base_dir, bin_dir, all_repos, system_update=False, preview=False, quiet=False):
     pull_repos(selected_repos, base_dir, all_repos, extra_args=[], preview=preview)
-    install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=preview, quier=quiet)
+    install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=preview, quiet=quiet)
     if system_update:
         run_command("yay -S", preview=preview)
         run_command("sudo pacman -Syyu", preview=preview)
