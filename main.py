@@ -6,12 +6,12 @@ This script provides the following commands:
   install    {identifier(s)|--all}
       - Creates an executable bash wrapper in the bin folder that calls the command for the repository.
       - Executes the repository’s "setup" command if specified.
-  pull       {identifier(s)|--all}
-      - Executes 'git pull' in the repository directory.
+  pull       {identifier(s)|--all} [<git-args>...]
+      - Executes 'git pull' in the repository directory with any extra arguments passed.
   clone      {identifier(s)|--all}
       - Clones the repository from a remote.
-  push       {identifier(s)|--all}
-      - Executes 'git push' in the repository directory.
+  push       {identifier(s)|--all} [<git-args>...]
+      - Executes 'git push' in the repository directory with any extra arguments passed.
   deinstall  {identifier(s)|--all}
       - Removes the executable alias.
       - Executes the repository’s "teardown" command if specified.
@@ -19,20 +19,22 @@ This script provides the following commands:
       - Deletes the repository directory.
   update     {identifier(s)|--all|--system}
       - Combines pull and install; if --system is specified also runs system update commands.
-  status     {identifier(s)|--all|--system}
-      - Shows git status for each repository or, if --system is set, shows basic system update information.
+  status     {identifier(s)|--all} [<git-args>...] [--system] [--list]
+      - Executes 'git status' in the repository directory with any extra arguments passed.
+      - With --system, shows system update information.
+      - With --list, only the identifiers are printed.
   diff       {identifier(s)|--all} [<git-args>...]
-      - Executes "git diff" with any extra arguments passed.
+      - Executes 'git diff' with any extra arguments passed.
   add        {identifier(s)|--all} [<git-args>...]
-      - Executes "git add" with any extra arguments passed.
+      - Executes 'git add' with any extra arguments passed.
   show       {identifier(s)|--all} [<git-args>...]
-      - Executes "git show" with any extra arguments passed.
+      - Executes 'git show' with any extra arguments passed.
   checkout   {identifier(s)|--all} [<git-args>...]
-      - Executes "git checkout" with any extra arguments passed.
+      - Executes 'git checkout' with any extra arguments passed.
 
-Additionally, there is a **config** command with the following subcommands:
+Additionally, there is a **config** command with subcommands:
   config show   {identifier(s)|--all}
-      - Displays the configuration for one or more repositories. If no identifier is given, shows the entire config.
+      - Displays configuration for one or more repositories (or the entire config if no identifier is given).
   config add
       - Starts an interactive dialog to add a new repository configuration entry.
   config edit
@@ -44,7 +46,7 @@ Additional flags:
 
 Identifiers:
   - If a repository’s name is unique then you can just use the repository name.
-  - If multiple repositories share the same name then use "provider/account/repository".
+  - Otherwise use "provider/account/repository".
 
 Configuration is read from a YAML file (default: config.yaml) with the following structure:
 
@@ -136,7 +138,7 @@ def resolve_repos(identifiers, all_repos):
 def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
     """Create an executable bash wrapper for the repository.
     
-    If 'verified' is set, the wrapper will checkout that commit and warn in orange if the commit does not match.
+    If 'verified' is set, the wrapper will checkout that commit and warn in orange if it does not match.
     If no verified commit is set, a warning in orange is printed.
     """
     repo_identifier = get_repo_identifier(repo, all_repos)
@@ -197,15 +199,34 @@ def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
         if setup_cmd:
             run_command(setup_cmd, cwd=repo_dir, preview=preview)
 
-def pull_repos(selected_repos, base_dir, all_repos, preview=False):
-    """Run 'git pull' in the repository directory."""
+# Common helper to execute a git command with extra arguments.
+def exec_git_command(selected_repos, base_dir, all_repos, git_cmd, extra_args, preview=False):
+    """Execute a given git command with extra arguments for each repository."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
         if os.path.exists(repo_dir):
-            run_command("git pull", cwd=repo_dir, preview=preview)
+            full_cmd = f"git {git_cmd} {' '.join(extra_args)}"
+            run_command(full_cmd, cwd=repo_dir, preview=preview)
         else:
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
+
+# Refactored functions for pull, push, and status.
+def pull_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
+    exec_git_command(selected_repos, base_dir, all_repos, "pull", extra_args, preview)
+
+def push_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
+    exec_git_command(selected_repos, base_dir, all_repos, "push", extra_args, preview)
+
+def status_repos(selected_repos, base_dir, all_repos, extra_args, list_only=False, system_status=False, preview=False):
+    if system_status:
+        print("System status:")
+        run_command("yay -Qu", preview=preview)
+    if list_only:
+        for repo in selected_repos:
+            print(get_repo_identifier(repo, all_repos))
+    else:
+        exec_git_command(selected_repos, base_dir, all_repos, "status", extra_args, preview)
 
 def clone_repos(selected_repos, base_dir, all_repos, preview=False):
     """Clone repositories based on the config."""
@@ -220,16 +241,6 @@ def clone_repos(selected_repos, base_dir, all_repos, preview=False):
         parent_dir = os.path.dirname(repo_dir)
         os.makedirs(parent_dir, exist_ok=True)
         run_command(f"git clone {clone_url} {repo_dir}", cwd=parent_dir, preview=preview)
-
-def push_repos(selected_repos, base_dir, all_repos, preview=False):
-    """Run 'git push' in the repository directory."""
-    for repo in selected_repos:
-        repo_identifier = get_repo_identifier(repo, all_repos)
-        repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
-        if os.path.exists(repo_dir):
-            run_command("git push", cwd=repo_dir, preview=preview)
-        else:
-            print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
 def deinstall_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
     """Remove the executable wrapper and run teardown if defined."""
@@ -265,41 +276,13 @@ def delete_repos(selected_repos, base_dir, all_repos, preview=False):
 
 def update_repos(selected_repos, base_dir, bin_dir, all_repos, system_update=False, preview=False):
     """Combine pull and install. If system_update is True, run system update commands."""
-    pull_repos(selected_repos, base_dir, all_repos, preview=preview)
-    install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=preview)
+    pull_repos(selected_repos, base_dir, all_repos, extra_args=[], preview=preview)
+    install_repos(selected_repos, base_dir, BIN_DIR, all_repos, preview=preview)
     if system_update:
         run_command("yay -S", preview=preview)
         run_command("sudo pacman -Syyu", preview=preview)
 
-def status_repos(selected_repos, base_dir, all_repos, list_only=False, system_status=False, preview=False):
-    """Show status information for repositories."""
-    if system_status:
-        print("System status:")
-        run_command("yay -Qu", preview=preview)
-    for repo in selected_repos:
-        repo_identifier = get_repo_identifier(repo, all_repos)
-        if list_only:
-            print(repo_identifier)
-        else:
-            repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
-            if os.path.exists(repo_dir):
-                print(f"Status for {repo_identifier}:")
-                run_command("git status", cwd=repo_dir, preview=preview)
-            else:
-                print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
-
-# New functions to execute additional git commands with extra arguments.
-def exec_git_command(selected_repos, base_dir, all_repos, git_cmd, extra_args, preview=False):
-    """Execute a given git command with extra arguments for each repository."""
-    for repo in selected_repos:
-        repo_identifier = get_repo_identifier(repo, all_repos)
-        repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
-        if os.path.exists(repo_dir):
-            full_cmd = f"git {git_cmd} {' '.join(extra_args)}"
-            run_command(full_cmd, cwd=repo_dir, preview=preview)
-        else:
-            print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
-
+# New functions for additional git commands.
 def diff_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
     exec_git_command(selected_repos, base_dir, all_repos, "diff", extra_args, preview)
 
@@ -368,6 +351,7 @@ if __name__ == "__main__":
         subparser.add_argument("--all", action="store_true", help="Apply to all repositories in the config")
         subparser.add_argument("--preview", action="store_true", help="Preview changes without executing commands")
         subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
+        subparser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for the git command")
 
     # Top-level commands
     install_parser = subparsers.add_parser("install", help="Install repository/repositories")
@@ -396,22 +380,17 @@ if __name__ == "__main__":
     add_identifier_arguments(status_parser)
     status_parser.add_argument("--system", action="store_true", help="Show system status")
 
-    # New git commands:
     diff_parser = subparsers.add_parser("diff", help="Execute 'git diff' for repository/repositories")
     add_identifier_arguments(diff_parser)
-    diff_parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for git diff")
 
-    add_parser = subparsers.add_parser("add", help="Execute 'git add' for repository/repositories")
-    add_identifier_arguments(add_parser)
-    add_parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for git add")
+    gitadd_parser = subparsers.add_parser("add", help="Execute 'git add' for repository/repositories")
+    add_identifier_arguments(gitadd_parser)
 
     show_parser = subparsers.add_parser("show", help="Execute 'git show' for repository/repositories")
     add_identifier_arguments(show_parser)
-    show_parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for git show")
 
     checkout_parser = subparsers.add_parser("checkout", help="Execute 'git checkout' for repository/repositories")
     add_identifier_arguments(checkout_parser)
-    checkout_parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for git checkout")
 
     # Config commands
     config_parser = subparsers.add_parser("config", help="Manage configuration")
@@ -427,77 +406,41 @@ if __name__ == "__main__":
 
     # Dispatch top-level commands
     if args.command == "install":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         install_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
     elif args.command == "pull":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
-        pull_repos(selected, base_dir, all_repos_list, preview=args.preview)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        pull_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "clone":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         clone_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "push":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
-        push_repos(selected, base_dir, all_repos_list, preview=args.preview)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        push_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "deinstall":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         deinstall_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
     elif args.command == "delete":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         delete_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "update":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         update_repos(selected, base_dir, BIN_DIR, all_repos_list, system_update=args.system, preview=args.preview)
     elif args.command == "status":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
-        status_repos(selected, base_dir, all_repos_list, list_only=args.list, system_status=args.system, preview=args.preview)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        status_repos(selected, base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "diff":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         diff_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "add":
-        # This top-level 'add' is the git add command.
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        # Top-level git add command.
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         gitadd_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "show":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         show_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "checkout":
-        if args.all or (not args.identifiers):
-            selected = all_repos_list
-        else:
-            selected = resolve_repos(args.identifiers, all_repos_list)
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         checkout_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "config":
         if args.subcommand == "show":
