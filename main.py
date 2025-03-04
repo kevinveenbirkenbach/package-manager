@@ -128,10 +128,10 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
     """Create an executable bash wrapper for the repository.
     
     If the 'verified' field is set in the configuration, the wrapper will attempt to
-    checkout that commit before executing the command and warn if the checkout did not
+    checkout that commit before executing the command and warn in orange if the checkout did not
     result in the expected commit.
     
-    If no verified commit is set, a warning is printed on every execution.
+    If no verified commit is set, a warning in orange is printed on every execution.
     """
     repo_identifier = get_repo_identifier(repo, all_repos)
     repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -149,20 +149,24 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
             print(f"No command defined and no main.sh/main.py found in {repo_dir}. Skipping alias creation.")
             return
 
+    # ANSI escape for orange in many 256-color terminals (color code 208)
+    ORANGE = r"\033[38;5;208m"
+    RESET = r"\033[0m"
+
     # Build the preamble based on the 'verified' field.
     verified = repo.get("verified")
     if verified:
         # Checkout the verified commit and warn if not current.
         preamble = f"""\
-git checkout {verified} || echo "Warning: Failed to checkout commit {verified}." >&2
+git checkout {verified} || echo -e "{ORANGE}Warning: Failed to checkout commit {verified}.{RESET}"
 CURRENT=$(git rev-parse HEAD)
 if [ "$CURRENT" != "{verified}" ]; then
-  echo "Warning: Current commit ($CURRENT) does not match verified commit ({verified})." >&2
+  echo -e "{ORANGE}Warning: Current commit ($CURRENT) does not match verified commit ({verified}).{RESET}"
 fi
 """
     else:
         # Warn that no verified commit is set.
-        preamble = 'echo "Warning: No verified commit set for this repository." >&2'
+        preamble = f'echo -e "{ORANGE}Warning: No verified commit set for this repository.{RESET}"'
     
     # Create the bash wrapper content including the preamble.
     script_content = f"""#!/bin/bash
