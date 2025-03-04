@@ -9,6 +9,7 @@ repos:
   setup: ''
   teardown: ''
   verified: ''
+  alias: 'pkgmgr'
 - account: kevinveenbirkenbach
   command: ''
   description: Helps you to manage tax and financial relevant data

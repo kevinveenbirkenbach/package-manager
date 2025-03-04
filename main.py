@@ -140,6 +140,8 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
     
     If 'verified' is set, the wrapper will checkout that commit and warn in orange if it does not match.
     If no verified commit is set, a warning in orange is printed.
+    
+    If an 'alias' field is provided in the configuration, a symlink with that alias is created in the bin directory.
     """
     repo_identifier = get_repo_identifier(repo, all_repos)
     repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -185,6 +187,18 @@ cd "{repo_dir}"
             f.write(script_content)
         os.chmod(alias_path, 0o755)
         print(f"Installed executable for {repo_identifier} at {alias_path}")
+
+        # Create alias if the 'alias' field is provided in the config.
+        alias_name = repo.get("alias")
+        if alias_name:
+            alias_link_path = os.path.join(bin_dir, alias_name)
+            try:
+                if os.path.exists(alias_link_path) or os.path.islink(alias_link_path):
+                    os.remove(alias_link_path)
+                os.symlink(alias_path, alias_link_path)
+                print(f"Created alias '{alias_name}' pointing to {repo_identifier}")
+            except Exception as e:
+                print(f"Error creating alias '{alias_name}': {e}")
 
 def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
     """Install repositories by creating executable wrappers and running setup."""
