@@ -16,15 +16,11 @@ repos:
   repository: package-manager
   alias: 'pkgmgr'
 - account: kevinveenbirkenbach
-  description: Helps you to manage tax and financial relevant data
+  description: Money Monitor is a comprehensive financial document organizer that scans bank statements and invoices to extract, filter, and export transaction data in multiple formats. Installable via Kevin's Package Manager as "momo", it simplifies financial logging and tax preparation.
   homepage: https://github.com/kevinveenbirkenbach/financial-helper
   provider: github.com
-  replacement: ''
   repository: financial-helper
-  setup: ''
-  teardown: ''
-  verified: ''
-  alias: 'fh'
+  alias: 'momo'
 - account: kevinveenbirkenbach
   alias: os
   provider: github.com
@@ -90,27 +86,30 @@ repos:
   homepage: https://github.com/kevinveenbirkenbach/swap-forge
   verified: 0af1e6ea425ecc46f4055a10cfa00dad7b1cc511
 - account: kevinveenbirkenbach
-  alias: spltscrt
+  alias: sisec
   provider: github.com
   repository: splitted-secret
-  description: Splits secrets into parts for secure storage.
+  description: Split Secret (sisec) is a command-line tool that securely splits a master secret among multiple users using secret sharing. Only a predefined quorum of users can combine their shares to decrypt the original secret. The tool supports robust encryption, decryption, and cleanup operations.
   homepage: https://github.com/kevinveenbirkenbach/splitted-secret
-  verified: 44b2db0cbc03101ef43aff73eef1ab6ed011b9f5
+  verified: 5e4fe2c01a8b024e5f455e555adfc99e9f131311
 - account: kevinveenbirkenbach
   alias: dirval
   provider: github.com
   repository: directory-validator
-  description: Validates directory structure and contents.
+  description: Directory Validator (dirval) is a Python CLI tool that creates a unique hash stamp for a directory and validates its contents, ensuring you can quickly detect any changes.
   homepage: https://github.com/kevinveenbirkenbach/directory-validator
-  verified: 73a29a092adaf4d513bc23357b7700d690d5a663
+  verified: 7db99608dd1ce4cf442cc4e3d37d2b61e6a6ec00
 - account: kevinveenbirkenbach
-  alias: lukskeymng
+  alias: lukyma
   provider: github.com
-  repository: luks-key-management
-  description: Manages LUKS keys for encrypted disks.
-  homepage: https://github.com/kevinveenbirkenbach/luks-key-management
+  repository: luks-key-manager
+  description: LUKS Key Manager(lukyma) is a Python-based utility that simplifies the management of LUKS encryption keys on Linux systems. It enables you to add new keys with a configurable memory cost and securely remove old ones, making it ideal for resource-constrained devices like the Raspberry Pi. 
+  homepage: https://github.com/kevinveenbirkenbach/luks-key-manager
+  verified: 18ef26f9878ff9c605b9f6af0a5bd96c8da4fc9d
 - account: kevinveenbirkenbach
-  alias: fcf
+  alias: 4dvt
   provider: github.com
-  repository: file-content-finder
-  verified: 449004978c800b33ac0d12be2ac74145c3fb5f63
+  repository: 4d-video-titel
+  homepage: https://github.com/kevinveenbirkenbach/4d-video-titel
+  description: 4D Video Titel is a CLI tool that extracts metadata from video files and automatically generates descriptive titles including local date, time, timezone, and GPS coordinates – perfect for organizing and enriching your video content!
+  verified: eb31cde28a940f01a3068142f93dfb2954c9adef
