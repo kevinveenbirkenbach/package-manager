@@ -363,6 +363,129 @@ def interactive_add(config):
     else:
         print("Entry not added.")
 
+import re
+import hashlib
+
+def generate_alias(repo, bin_dir, existing_aliases):
+    """
+    Generate an alias for a repository based on its repository name.
+    
+    Steps:
+      1. Remove vowels (a, e, i, o, u, case-insensitive) from the repository name.
+      2. Truncate to at most 12 characters.
+      3. If that alias conflicts (either already in existing_aliases or if a file exists in bin_dir),
+         then prefix with the first letter of provider and account.
+      4. If still conflicting, append a three-character hash (first 3 characters of md5 hex digest of repo name).
+    """
+    repo_name = repo.get("repository")
+    # Remove vowels from the repository name.
+    base_alias = re.sub("[aeiouAEIOU]", "", repo_name)
+    # Truncate to maximum 12 characters.
+    base_alias = base_alias[:12] if len(base_alias) > 12 else base_alias
+    candidate = base_alias.lower()
+
+    def conflict(alias):
+        alias_path = os.path.join(bin_dir, alias)
+        return alias in existing_aliases or os.path.exists(alias_path)
+
+    if not conflict(candidate):
+        return candidate
+
+    # Add provider/account prefix.
+    prefix = (repo.get("provider", "")[0] + repo.get("account", "")[0]).lower()
+    candidate2 = (prefix + candidate)[:12]
+    if not conflict(candidate2):
+        return candidate2
+
+    # Append a three-letter hash.
+    h = hashlib.md5(repo_name.encode("utf-8")).hexdigest()[:3]
+    candidate3 = (candidate2 + h)[:12]
+    while conflict(candidate3):
+        candidate3 += "x"
+        candidate3 = candidate3[:12]
+    return candidate3
+
+def config_init(user_config, defaults_config, bin_dir):
+    """
+    Scan the base directory (defaults_config["base"]) for repositories. The folder structure is assumed to be:
+    
+       {base}/{provider}/{account}/{repository}
+    
+    For each repository found, automatically determine:
+      - provider, account, repository (from the folder names)
+      - verified: the latest commit (via 'git log -1 --format=%H')
+      - alias: generated from the repository name (see generate_alias())
+    
+    Only new repositories (not already present in user_config["repos"]) are added.
+    """
+    base_dir = os.path.expanduser(defaults_config["base"])
+    if not os.path.isdir(base_dir):
+        print(f"Base directory '{base_dir}' does not exist.")
+        return
+
+    # Build a set of keys for repositories already in the user config.
+    existing_keys = set()
+    for entry in user_config.get("repos", []):
+        key = (entry.get("provider"), entry.get("account"), entry.get("repository"))
+        existing_keys.add(key)
+    
+    # Also track aliases already used.
+    existing_aliases = set(entry.get("alias") for entry in user_config.get("repos", []) if entry.get("alias"))
+
+    new_entries = []
+    # Iterate over providers.
+    for provider in os.listdir(base_dir):
+        provider_path = os.path.join(base_dir, provider)
+        if not os.path.isdir(provider_path):
+            continue
+        # Iterate over accounts.
+        for account in os.listdir(provider_path):
+            account_path = os.path.join(provider_path, account)
+            if not os.path.isdir(account_path):
+                continue
+            # Iterate over repositories.
+            for repo_name in os.listdir(account_path):
+                repo_path = os.path.join(account_path, repo_name)
+                if not os.path.isdir(repo_path):
+                    continue
+                key = (provider, account, repo_name)
+                if key in existing_keys:
+                    continue  # Skip already configured repos.
+                # Determine the latest commit (if it's a git repo).
+                try:
+                    result = subprocess.run(
+                        ["git", "log", "-1", "--format=%H"],
+                        cwd=repo_path,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                        check=True,
+                    )
+                    verified = result.stdout.strip()
+                except Exception as e:
+                    verified = ""
+                    print(f"Could not determine latest commit for {repo_name} ({provider}/{account}): {e}")
+
+                # Build the new entry.
+                entry = {
+                    "provider": provider,
+                    "account": account,
+                    "repository": repo_name,
+                    "verified": verified,
+                }
+                # Generate alias.
+                alias = generate_alias({"repository": repo_name, "provider": provider, "account": account}, bin_dir, existing_aliases)
+                entry["alias"] = alias
+                existing_aliases.add(alias)
+                new_entries.append(entry)
+                print(f"Adding new repo entry: {entry}")
+
+    if new_entries:
+        user_config.setdefault("repos", []).extend(new_entries)
+        save_user_config(user_config)
+    else:
+        print("No new repositories found.")
+
 def edit_config():
     """Open the user configuration file in nano."""
     run_command(f"nano {USER_CONFIG_PATH}")
@@ -430,6 +553,7 @@ if __name__ == "__main__":
 
     config_add = config_subparsers.add_parser("add", help="Interactively add a new repository entry")
     config_edit = config_subparsers.add_parser("edit", help="Edit configuration file with nano")
+    config_init_parser = config_subparsers.add_parser("init", help="Initialize user configuration by scanning the base directory")
 
     args = parser.parse_args()
 
@@ -482,5 +606,12 @@ if __name__ == "__main__":
             interactive_add(config)
         elif args.subcommand == "edit":
             edit_config()
+        elif args.subcommand == "init":
+            if os.path.exists(USER_CONFIG_PATH):
+                with open(USER_CONFIG_PATH, 'r') as f:
+                    user_config = yaml.safe_load(f) or {}
+            else:
+                user_config = {"repos": []}
+            config_init(user_config, config, BIN_DIR)
     else:
         parser.print_help()
