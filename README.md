@@ -56,7 +56,7 @@ Run the script with different commands. For example:
   ```
 - **List all configured packages:**
   ```bash
-  pkgmgr list
+  pkgmgr config show
   ```
 - **Manage configuration:**
   ```bash
