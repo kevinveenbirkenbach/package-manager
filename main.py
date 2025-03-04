@@ -371,17 +371,20 @@ def generate_alias(repo, bin_dir, existing_aliases):
     Generate an alias for a repository based on its repository name.
     
     Steps:
-      1. Remove vowels (a, e, i, o, u, case-insensitive) from the repository name.
-      2. Truncate to at most 12 characters.
-      3. If that alias conflicts (either already in existing_aliases or if a file exists in bin_dir),
+      1. Keep only consonants from the repository name (letters from BCDFGHJKLMNPQRSTVWXYZ, case-insensitive).
+      2. Collapse consecutive identical consonants into one.
+      3. Truncate to at most 12 characters.
+      4. If the alias conflicts (either already in existing_aliases or if a file exists in bin_dir),
          then prefix with the first letter of provider and account.
-      4. If still conflicting, append a three-character hash (first 3 characters of md5 hex digest of repo name).
+      5. If still conflicting, append a three-character hash (from md5 of repository name) until free.
     """
     repo_name = repo.get("repository")
-    # Remove vowels from the repository name.
-    base_alias = re.sub("[aeiouAEIOU]", "", repo_name)
-    # Truncate to maximum 12 characters.
-    base_alias = base_alias[:12] if len(base_alias) > 12 else base_alias
+    # Keep only consonants (remove vowels and non-letters)
+    consonants = re.sub(r"[^bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]", "", repo_name)
+    # Collapse consecutive identical consonants
+    collapsed = re.sub(r"(.)\1+", r"\1", consonants)
+    # Truncate to at most 12 characters (if longer, cut off)
+    base_alias = collapsed[:12] if len(collapsed) > 12 else collapsed
     candidate = base_alias.lower()
 
     def conflict(alias):
@@ -407,29 +410,36 @@ def generate_alias(repo, bin_dir, existing_aliases):
 
 def config_init(user_config, defaults_config, bin_dir):
     """
-    Scan the base directory (defaults_config["base"]) for repositories. The folder structure is assumed to be:
-    
-       {base}/{provider}/{account}/{repository}
+    Scan the base directory (defaults_config["base"]) for repositories.
+    The folder structure is assumed to be:
+      {base}/{provider}/{account}/{repository}
     
     For each repository found, automatically determine:
       - provider, account, repository (from the folder names)
       - verified: the latest commit (via 'git log -1 --format=%H')
-      - alias: generated from the repository name (see generate_alias())
+      - alias: generated from the repository name using generate_alias()
     
-    Only new repositories (not already present in user_config["repos"]) are added.
+    Repositories already defined in defaults_config["repos"] are skipped.
+    Only new repositories (not already present in user_config["repos"] and not in defaults_config) are added.
     """
     base_dir = os.path.expanduser(defaults_config["base"])
     if not os.path.isdir(base_dir):
         print(f"Base directory '{base_dir}' does not exist.")
         return
 
+    # Build a set of keys from defaults: (provider, account, repository)
+    default_keys = set()
+    for entry in defaults_config.get("repos", []):
+        key = (entry.get("provider"), entry.get("account"), entry.get("repository"))
+        default_keys.add(key)
+    
     # Build a set of keys for repositories already in the user config.
     existing_keys = set()
     for entry in user_config.get("repos", []):
         key = (entry.get("provider"), entry.get("account"), entry.get("repository"))
         existing_keys.add(key)
     
-    # Also track aliases already used.
+    # Also track aliases already used in user config.
     existing_aliases = set(entry.get("alias") for entry in user_config.get("repos", []) if entry.get("alias"))
 
     new_entries = []
@@ -449,9 +459,9 @@ def config_init(user_config, defaults_config, bin_dir):
                 if not os.path.isdir(repo_path):
                     continue
                 key = (provider, account, repo_name)
-                if key in existing_keys:
-                    continue  # Skip already configured repos.
-                # Determine the latest commit (if it's a git repo).
+                if key in default_keys or key in existing_keys:
+                    continue  # Skip if already defined in defaults or user config.
+                # Determine the latest commit if it's a git repository.
                 try:
                     result = subprocess.run(
                         ["git", "log", "-1", "--format=%H"],
@@ -485,7 +495,7 @@ def config_init(user_config, defaults_config, bin_dir):
         save_user_config(user_config)
     else:
         print("No new repositories found.")
-
+        
 def edit_config():
     """Open the user configuration file in nano."""
     run_command(f"nano {USER_CONFIG_PATH}")
