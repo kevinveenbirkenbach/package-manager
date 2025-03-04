@@ -312,7 +312,7 @@ def interactive_add(config):
 if __name__ == "__main__":
     # Load configuration
     config = load_config(CONFIG_PATH)
-    base_dir = config["base"]
+    base_dir = os.path.expanduser(config["base"])
     all_repos_list = config["repos"]
 
     parser = argparse.ArgumentParser(description="Package Manager")

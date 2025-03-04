@@ -1,4 +1,4 @@
-base: /home/kevinveenbirkenbach/Repositories/
+base: ~/Repositories/
 repos:
 - account: kevinveenbirkenbach
   command: ''
@@ -6,6 +6,15 @@ repos:
   provider: github.com
   replacement: ''
   repository: package-manager
+  setup: ''
+  teardown: ''
+  verified: ''
+- account: kevinveenbirkenbach
+  command: ''
+  description: Helps you to manage tax and financial relevant data
+  provider: github.com
+  replacement: ''
+  repository: financial-helper
   setup: ''
   teardown: ''
   verified: ''
