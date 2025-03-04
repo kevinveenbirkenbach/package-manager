@@ -1,9 +1,9 @@
-# Package Manager 🤖📦
+# Package Manager🤖📦
 
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub repo size](https://img.shields.io/github/repo-size/kevinveenbirkenbach/package-manager)](https://github.com/kevinveenbirkenbach/package-manager)
 
-Package Manager is a configurable Python tool designed to manage multiple repositories via Bash. It automates common Git operations such as clone, pull, push, status, and more. Additionally, it handles the creation of executable wrappers and alias links for your repositories.
+*Kevins's* Package Manager is a configurable Python tool designed to manage multiple repositories via Bash. It automates common Git operations such as clone, pull, push, status, and more. Additionally, it handles the creation of executable wrappers and alias links for your repositories.
 
 ## Features 🚀
 
