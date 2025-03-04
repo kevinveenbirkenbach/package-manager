@@ -26,7 +26,7 @@ repos:
   alias: dcs
   provider: github.com
   repository: directory-content-scanner
-  command: scan.py
+  command: python scan.py
   description: Scans directories to analyze and list file contents.
   homepage: https://github.com/kevinveenbirkenbach/directory-content-scanner
   verified: efcfc585d7a396ff7983196a621256a64728438b
@@ -34,7 +34,7 @@ repos:
   alias: bsr
   provider: github.com
   repository: bulk-string-replacer
-  command: replace_string.py
+  command: python replace_string.py
   description: Replaces strings in bulk across multiple files.
   homepage: https://github.com/kevinveenbirkenbach/bulk-string-replacer
   verified: c7bf51941b691eea3cb8536d0f4e18427ba916e8
