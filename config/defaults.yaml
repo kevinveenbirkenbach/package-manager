@@ -113,3 +113,47 @@ repos:
   homepage: https://github.com/kevinveenbirkenbach/4d-video-titel
   description: 4D Video Titel is a CLI tool that extracts metadata from video files and automatically generates descriptive titles including local date, time, timezone, and GPS coordinates – perfect for organizing and enriching your video content!
   verified: eb31cde28a940f01a3068142f93dfb2954c9adef
+- account: kevinveenbirkenbach
+  alias: btrfsauba
+  description: The btrfs-balance-automator automates Btrfs filesystem balancing with dynamic decrementing usage thresholds. It provides real-time status updates, enhancing system performance and storage optimization. This Python script is essential for system admins aiming to streamline Btrfs maintenance.
+  provider: github.com
+  repository: btrfs-auto-balancer
+  verified: 24acdf9643f946ea3513890b0ddc547c2426c0c4
+- account: kevinveenbirkenbach
+  alias: baudolo
+  homepage: https://github.com/kevinveenbirkenbach/backup-docker-to-local
+  description: Backup Docker Volumes to Local is a comprehensive solution that leverages rsync to create incremental backups of Docker volumes, providing seamless recovery for both file and database data. Ideal for ensuring the integrity and security of your container data.
+  provider: github.com
+  repository: backup-docker-to-local
+  verified: a355f34e6ebce608ce1bad5464d7c52cf8b80f8b
+- account: kevinveenbirkenbach
+  alias: clndoba
+  homepage: https://github.com/kevinveenbirkenbach/cleanup-failed-docker-backups
+  description: Backup Docker Volumes to Local is a comprehensive solution that leverages rsync to create incremental backups of Docker volumes, providing seamless recovery for both file and database data. Ideal for ensuring the integrity and security of your container data.
+  provider: github.com
+  repository: cleanup-failed-docker-backups
+  verified: 13b1b7d49394f9d82f8e53e3559ddbe1155e9dbb
+- alias: cedama
+  homepage: https://github.com/kevinveenbirkenbach/central-database-manager
+  description: Scripts to manage the Central Databases Postgres in CyMaIS
+  provider: github.com
+  repository: central-database-manager
+  verified: f350c135e63946f9840c1d205deb8f62fbb6fcf1
+- alias: dovore
+  homepage: https://github.com/kevinveenbirkenbach/docker-volume-renamer
+  description: A Bash script to create a new Docker volume, copy data from an existing volume to it, and remove the old volume.
+  provider: github.com
+  repository: docker-volume-renamer
+  verified: e702deb3347bc868134ce89273cd81b70af51899
+- alias: gigimi
+  homepage: https://github.com/kevinveenbirkenbach/github-to-gitea-mirror/
+  description: A tool designed to automate the process of mirroring repositories from GitHub to Gitea. By leveraging the APIs of both platforms, this script identifies repositories on GitHub that aren't mirrored on Gitea and seamlessly mirrors them. Ideal for developers aiming to maintain a backup or a consistent repo state across both platforms.
+  provider: github.com
+  repository: github-to-gitea-mirror
+  verified: a6037b955425c256c535ac55047867af5d991e37
+- alias: seedssh
+  homepage: https://github.com/kevinveenbirkenbach/seed-ssh-key
+  description: A tool designed to automate the process of mirroring repositories from GitHub to Gitea. By leveraging the APIs of both platforms, this script identifies repositories on GitHub that aren't mirrored on Gitea and seamlessly mirrors them. Ideal for developers aiming to maintain a backup or a consistent repo state across both platforms.
+  provider: github.com
+  repository: seed-ssh-key
+  verified: a6037b955425c256c535ac55047867af5d991e37
