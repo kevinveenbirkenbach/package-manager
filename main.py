@@ -63,7 +63,10 @@ def get_repo_identifier(repo, all_repos):
 def resolve_repos(identifiers, all_repos):
     """
     Given a list of identifier strings, return a list of repository configs.
-    The identifier can be either just the repository name (if unique) or full provider/account/repository.
+    The identifier can be:
+      - the full identifier "provider/account/repository"
+      - the repository name (if unique among all_repos)
+      - the alias (if defined)
     """
     selected = []
     for ident in identifiers:
@@ -72,7 +75,10 @@ def resolve_repos(identifiers, all_repos):
             full_id = f'{repo.get("provider")}/{repo.get("account")}/{repo.get("repository")}'
             if ident == full_id:
                 matches.append(repo)
+            elif ident == repo.get("alias"):
+                matches.append(repo)
             elif ident == repo.get("repository"):
+                # Only match if repository name is unique among all_repos.
                 if sum(1 for r in all_repos if r.get("repository") == ident) == 1:
                     matches.append(repo)
         if not matches:
@@ -462,6 +468,9 @@ if __name__ == "__main__":
 
     show_parser = subparsers.add_parser("show", help="Execute 'git show' for repository/repositories")
     add_identifier_arguments(show_parser)
+    
+    commit_parser = subparsers.add_parser("commit", help="Execute 'git commit' for repository/repositories")
+    add_identifier_arguments(commit_parser)
 
     checkout_parser = subparsers.add_parser("checkout", help="Execute 'git checkout' for repository/repositories")
     add_identifier_arguments(checkout_parser)
@@ -473,6 +482,12 @@ if __name__ == "__main__":
     config_add = config_subparsers.add_parser("add", help="Interactively add a new repository entry")
     config_edit = config_subparsers.add_parser("edit", help="Edit configuration file with nano")
     config_init_parser = config_subparsers.add_parser("init", help="Initialize user configuration by scanning the base directory")
+    config_delete = config_subparsers.add_parser("delete", help="Delete repository entry from user config")
+    add_identifier_arguments(config_delete)
+    config_ignore = config_subparsers.add_parser("ignore", help="Set ignore flag for repository entries in user config")
+    add_identifier_arguments(config_ignore)
+    config_ignore.add_argument("--set", choices=["true", "false"], required=True, help="Set ignore to true or false")
+
 
     args = parser.parse_args()
 
@@ -501,6 +516,10 @@ if __name__ == "__main__":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         selected = filter_ignored(selected)
         delete_repos(selected, base_dir, all_repos_list, preview=args.preview)
+    elif args.command == "commit":
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
+        exec_git_command(selected, base_dir, all_repos_list, "commit", args.extra_args, preview=args.preview)
     elif args.command == "update":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         selected = filter_ignored(selected)
@@ -544,5 +563,39 @@ if __name__ == "__main__":
             else:
                 user_config = {"repos": []}
             config_init(user_config, config_merged, BIN_DIR)
+        elif args.subcommand == "delete":
+            # Load user config from USER_CONFIG_PATH.
+            if os.path.exists(USER_CONFIG_PATH):
+                with open(USER_CONFIG_PATH, 'r') as f:
+                    user_config = yaml.safe_load(f) or {"repos": []}
+            else:
+                user_config = {"repos": []}
+            if args.all or not args.identifiers:
+                print("You must specify identifiers to delete.")
+            else:
+                to_delete = resolve_repos(args.identifiers, user_config.get("repos", []))
+                new_repos = [entry for entry in user_config.get("repos", []) if entry not in to_delete]
+                user_config["repos"] = new_repos
+                save_user_config(user_config)
+                print(f"Deleted {len(to_delete)} entries from user config.")
+        elif args.subcommand == "ignore":
+            # Load user config from USER_CONFIG_PATH.
+            if os.path.exists(USER_CONFIG_PATH):
+                with open(USER_CONFIG_PATH, 'r') as f:
+                    user_config = yaml.safe_load(f) or {"repos": []}
+            else:
+                user_config = {"repos": []}
+            if args.all or not args.identifiers:
+                print("You must specify identifiers to modify ignore flag.")
+            else:
+                to_modify = resolve_repos(args.identifiers, user_config.get("repos", []))
+                for entry in user_config["repos"]:
+                    key = (entry.get("provider"), entry.get("account"), entry.get("repository"))
+                    for mod in to_modify:
+                        mod_key = (mod.get("provider"), mod.get("account"), mod.get("repository"))
+                        if key == mod_key:
+                            entry["ignore"] = (args.set == "true")
+                            print(f"Set ignore for {key} to {entry['ignore']}")
+                save_user_config(user_config)
     else:
         parser.print_help()
