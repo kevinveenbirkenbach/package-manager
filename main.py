@@ -496,6 +496,9 @@ if __name__ == "__main__":
     config_ignore = config_subparsers.add_parser("ignore", help="Set ignore flag for repository entries in user config")
     add_identifier_arguments(config_ignore)
     config_ignore.add_argument("--set", choices=["true", "false"], required=True, help="Set ignore to true or false")
+    path_parser = subparsers.add_parser("path", help="Print the path(s) of repository/repositories")
+    add_identifier_arguments(path_parser)
+
     
 
     args = parser.parse_args()
@@ -553,6 +556,14 @@ if __name__ == "__main__":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         selected = filter_ignored(selected)
         checkout_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
+    elif args.command == "path":
+        selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
+        paths = [
+            os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
+            for repo in selected
+        ]
+        print(" ".join(paths))
     elif args.command == "config":
         if args.subcommand == "show":
             if args.all or (not args.identifiers):

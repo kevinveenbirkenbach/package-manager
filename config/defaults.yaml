@@ -21,67 +21,55 @@ repos:
   verified: ''
   alias: 'fh'
 - account: kevinveenbirkenbach
-  alias: drctrycntnts
+  alias: dcs
   provider: github.com
   repository: directory-content-scanner
+  command: scan.py
   verified: efcfc585d7a396ff7983196a621256a64728438b
 - account: kevinveenbirkenbach
-  alias: blkstrngrplc
+  alias: bsr
   provider: github.com
   repository: bulk-string-replacer
+  command:  replace_string.py
   verified: c7bf51941b691eea3cb8536d0f4e18427ba916e8
 - account: kevinveenbirkenbach
-  alias: mgrszrcl
+  alias: ircli
   provider: github.com
   repository: image-resizer-cli
   verified: ee279a127fd1f4a2b9c4a3a9de86b3a0ad8cf8ce
 - account: kevinveenbirkenbach
-  alias: mdsrtngtls
   provider: github.com
   repository: media-sorting-tools
   verified: 2cb735f45a15c3cadb8edc948d5f5f03e79fcb1a
 - account: kevinveenbirkenbach
-  alias: nsblncryptr
   provider: github.com
   repository: ansible-encryptor
   verified: 0053384aa0aa85dcef764a8b74c03a72537d0115
 - account: kevinveenbirkenbach
-  alias: fdrtdtcntrls
-  provider: github.com
-  repository: federated-to-central-social-network-bridge
-  verified: 1f6ace3fe84cb537436839a8a8164f1dc7b6e0c3
-- account: kevinveenbirkenbach
-  alias: lnxmgmngr
+  alias: lim
   provider: github.com
   repository: linux-image-manager
   verified: 13454c7e8722b344723dbe6a997102672edce105
 - account: kevinveenbirkenbach
-  alias: dckrvlmbckp
-  provider: github.com
-  repository: docker-volume-backup
-  verified: f847c8dd74c6c69067fd2a3591f7ec6fafefc9e0
-- account: kevinveenbirkenbach
-  alias: dplctflhndlr
+  alias: dfh
   provider: github.com
   repository: duplicate-file-handler
   verified: 89e15dd023aee82190bacaadc337c282b91f5357
 - account: kevinveenbirkenbach
-  alias: crtlnxswpfl
   provider: github.com
   repository: create-linux-swapfile
   verified: d68cc2c18ea10f6c494bbd6a425f51d99f30a601
 - account: kevinveenbirkenbach
-  alias: spltdscrt
+  alias: spltscrt
   provider: github.com
   repository: splitted-secret
   verified: 44b2db0cbc03101ef43aff73eef1ab6ed011b9f5
 - account: kevinveenbirkenbach
-  alias: drctryvldtr
+  alias: dirval
   provider: github.com
   repository: directory-validator
   verified: 73a29a092adaf4d513bc23357b7700d690d5a663
 - account: kevinveenbirkenbach
-  alias: lkskymngmnts
+  alias: lukskeymng
   provider: github.com
-  repository: luks-key-management-script
-  verified: 2f5fe1a73f5ce6d661679083bde6d56b19b867f1
+  repository: luks-key-management
