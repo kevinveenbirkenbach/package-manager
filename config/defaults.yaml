@@ -1,18 +1,21 @@
+# This config contains the default repositories curated by Kevin Veen-Birkenbach
+
 base: ~/Repositories/
 repos:
 - account: kevinveenbirkenbach
-  command: ''
-  description: Package Manager for the Kevin Veen-Birkenbach Scripting Universe
+  alias: arc
+  provider: github.com
+  repository: analysis-ready-code
+  description: Analysis-Ready Code (ARC) is a Python utility that recursively scans directories and transforms source code into a streamlined, analysis-ready format by removing comments, filtering files, and compressing content—perfect for AI and automated code analysis.
+  homepage: https://github.com/kevinveenbirkenbach/analysis-ready-code
+  verified: bef5f392d7e8a292fb9e4ee40809e434dd6142a9
+- account: kevinveenbirkenbach
+  description: A configurable Python package manager that automates repository tasks—including cloning, installation, updates, and status reporting—based on a YAML configuration file for streamlined software management which gives you access to the Kevin Veen-Birkenbach Code Universe.
   homepage: https://github.com/kevinveenbirkenbach/package-manager
   provider: github.com
-  replacement: ''
   repository: package-manager
-  setup: ''
-  teardown: ''
-  verified: ''
   alias: 'pkgmgr'
 - account: kevinveenbirkenbach
-  command: ''
   description: Helps you to manage tax and financial relevant data
   homepage: https://github.com/kevinveenbirkenbach/financial-helper
   provider: github.com
@@ -23,60 +26,69 @@ repos:
   verified: ''
   alias: 'fh'
 - account: kevinveenbirkenbach
-  alias: dcs
+  alias: os
   provider: github.com
-  repository: directory-content-scanner
-  command: python scan.py
-  description: Scans directories to analyze and list file contents.
-  homepage: https://github.com/kevinveenbirkenbach/directory-content-scanner
-  verified: efcfc585d7a396ff7983196a621256a64728438b
+  repository: omni-search
+  description: OmniSearch (OS) is a versatile file content search tool that scans directories for strings across multiple formats (PDFs, text, images, spreadsheets, etc.), offering robust filtering, error handling, and JSON output. Easily installable via Kevin's Package Manager under the alias os 🔍🚀.
+  homepage: https://github.com/kevinveenbirkenbach/omni-search
+  verified: 93875b27280191c317806056847809464d9f5282
 - account: kevinveenbirkenbach
   alias: bsr
   provider: github.com
   repository: bulk-string-replacer
   command: python replace_string.py
-  description: Replaces strings in bulk across multiple files.
+  description: Bulk String Replacer CLI (bsr) is a command-line tool for efficiently searching and replacing strings in file names, folder names, and file contents across directories. It's perfect for bulk updates and streamlining your workflow.
   homepage: https://github.com/kevinveenbirkenbach/bulk-string-replacer
-  verified: c7bf51941b691eea3cb8536d0f4e18427ba916e8
+  verified: ce964188786d4d2d6f046de6e070fed1443ccc73
 - account: kevinveenbirkenbach
-  alias: ircli
+  alias: imgrszr
   provider: github.com
   repository: image-resizer-cli
-  description: A command-line tool to resize images.
+  description: Image Resizer CLI (imgrszr) is a lightweight command-line tool that resizes images by percentage, maximum dimensions, or target file size. Easily installable via Kevin's Package Manager. It’s perfect for preparing large photos for upload and streamlining your image workflow. 🚀
   homepage: https://github.com/kevinveenbirkenbach/image-resizer-cli
-  verified: ee279a127fd1f4a2b9c4a3a9de86b3a0ad8cf8ce
+  verified: e8b48c08679a1fc73339514db55f42a6ba55b44e
 - account: kevinveenbirkenbach
   provider: github.com
-  repository: media-sorting-tools
-  description: Tools to sort and organize media files.
-  homepage: https://github.com/kevinveenbirkenbach/media-sorting-tools
-  verified: 2cb735f45a15c3cadb8edc948d5f5f03e79fcb1a
+  alias: chroso
+  repository: chrono-sorter
+  description: ChronoSorter (chroso) is a CLI tool that updates media file metadata and renames images based on their earliest timestamps. Easily installed via Kevin's Package Manager under the alias chroso, it helps organize your photos chronologically.
+  homepage: https://github.com/kevinveenbirkenbach/chrono-sorter
+  verified: 
 - account: kevinveenbirkenbach
+  provider: github.com
+  repository: media-sorter
+  alias: medso
+  description: MediaSorter (medso) is a command-line tool that automatically sorts media files by moving them between your Pictures and Videos directories based on file extensions, with support for preview and verbose modes.
+  homepage: https://github.com/kevinveenbirkenbach/media-sorter
+  verified: 502fba5198474caaf805fb6bc3a7bbe63e699d69
+- account: kevinveenbirkenbach
+  alias: ansenc
   provider: github.com
   repository: ansible-encryptor
-  description: Encrypts sensitive data for Ansible.
-  homepage: https://github.com/kevinveenbirkenbach/ansible-encryptor
-  verified: 0053384aa0aa85dcef764a8b74c03a72537d0115
+  description: Ansible Encrypter is a versatile Python script for secure file management using Ansible Vault. It allows encryption and decryption of files within a directory, supports temporary file access, and automatically updates .gitignore to secure sensitive data. Ideal for enhancing data security in Ansible-managed environments
+  homepage: https://github.com/kevinveenbirkenbach/ansible-encryptor/
+  verified: 2803ea3102cf3bc3d9caf670493b4270cf2d3293
 - account: kevinveenbirkenbach
   alias: lim
   provider: github.com
   repository: linux-image-manager
-  description: Manages Linux kernel images.
+  description: Linux Image Manager is a powerful suite of shell scripts for downloading, configuring, and managing Linux images—including encrypted storage, RAID1 setups, chroot environments, and backups.
   homepage: https://github.com/kevinveenbirkenbach/linux-image-manager
-  verified: 13454c7e8722b344723dbe6a997102672edce105
+  verified: 7f82c6fcb9e5e6e8a03713e6e21184761ca0c719
 - account: kevinveenbirkenbach
-  alias: dfh
+  alias: dufiha
   provider: github.com
   repository: duplicate-file-handler
-  description: Detects and handles duplicate files.
+  description: Duplicate File Handler is a CLI tool that detects duplicate files and lets you manage them by deleting or replacing with hard/symbolic links. Easily installable via Kevin's Package Manager under the alias dufiha, it supports file-type filtering and offers interactive, preview, or active modes.
   homepage: https://github.com/kevinveenbirkenbach/duplicate-file-handler
   verified: 89e15dd023aee82190bacaadc337c282b91f5357
 - account: kevinveenbirkenbach
   provider: github.com
-  repository: create-linux-swapfile
-  description: Creates and configures Linux swap files.
-  homepage: https://github.com/kevinveenbirkenbach/create-linux-swapfile
-  verified: d68cc2c18ea10f6c494bbd6a425f51d99f30a601
+  alias: swafo
+  repository: swap-forge
+  description: SwapForge (swafo) is a Bash script that automates the creation and management of Linux swapfiles. It easily creates a swapfile of a specified size, sets proper permissions, and updates /etc/fstab to ensure the swap is activated at boot, streamlining swap management for your Linux system.
+  homepage: https://github.com/kevinveenbirkenbach/swap-forge
+  verified: 0af1e6ea425ecc46f4055a10cfa00dad7b1cc511
 - account: kevinveenbirkenbach
   alias: spltscrt
   provider: github.com
