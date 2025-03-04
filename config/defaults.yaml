@@ -25,51 +25,62 @@ repos:
   provider: github.com
   repository: directory-content-scanner
   command: scan.py
+  description: Scans directories to analyze and list file contents.
   verified: efcfc585d7a396ff7983196a621256a64728438b
 - account: kevinveenbirkenbach
   alias: bsr
   provider: github.com
   repository: bulk-string-replacer
-  command:  replace_string.py
+  command: replace_string.py
+  description: Replaces strings in bulk across multiple files.
   verified: c7bf51941b691eea3cb8536d0f4e18427ba916e8
 - account: kevinveenbirkenbach
   alias: ircli
   provider: github.com
   repository: image-resizer-cli
+  description: A command-line tool to resize images.
   verified: ee279a127fd1f4a2b9c4a3a9de86b3a0ad8cf8ce
 - account: kevinveenbirkenbach
   provider: github.com
   repository: media-sorting-tools
+  description: Tools to sort and organize media files.
   verified: 2cb735f45a15c3cadb8edc948d5f5f03e79fcb1a
 - account: kevinveenbirkenbach
   provider: github.com
   repository: ansible-encryptor
+  description: Encrypts sensitive data for Ansible.
   verified: 0053384aa0aa85dcef764a8b74c03a72537d0115
 - account: kevinveenbirkenbach
   alias: lim
   provider: github.com
   repository: linux-image-manager
+  description: Manages Linux kernel images.
   verified: 13454c7e8722b344723dbe6a997102672edce105
 - account: kevinveenbirkenbach
   alias: dfh
   provider: github.com
   repository: duplicate-file-handler
+  description: Detects and handles duplicate files.
   verified: 89e15dd023aee82190bacaadc337c282b91f5357
 - account: kevinveenbirkenbach
   provider: github.com
   repository: create-linux-swapfile
+  description: Creates and configures Linux swap files.
   verified: d68cc2c18ea10f6c494bbd6a425f51d99f30a601
 - account: kevinveenbirkenbach
   alias: spltscrt
   provider: github.com
   repository: splitted-secret
+  description: Splits secrets into parts for secure storage.
   verified: 44b2db0cbc03101ef43aff73eef1ab6ed011b9f5
 - account: kevinveenbirkenbach
   alias: dirval
   provider: github.com
   repository: directory-validator
+  description: Validates directory structure and contents.
   verified: 73a29a092adaf4d513bc23357b7700d690d5a663
 - account: kevinveenbirkenbach
   alias: lukskeymng
   provider: github.com
   repository: luks-key-management
+  description: Manages LUKS keys for encrypted disks.
