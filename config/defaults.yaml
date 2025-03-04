@@ -19,3 +19,4 @@ repos:
   setup: ''
   teardown: ''
   verified: ''
+  alias: 'fh'

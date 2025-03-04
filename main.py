@@ -7,11 +7,11 @@ This script provides the following commands:
       - Creates an executable bash wrapper in the bin folder that calls the command for the repository.
       - Executes the repository’s "setup" command if specified.
   pull       {identifier(s)|--all} [<git-args>...]
-      - Executes 'git pull' in the repository directory with any extra arguments passed.
+      - Executes 'git pull' with any extra arguments passed.
   clone      {identifier(s)|--all}
       - Clones the repository from a remote.
   push       {identifier(s)|--all} [<git-args>...]
-      - Executes 'git push' in the repository directory with any extra arguments passed.
+      - Executes 'git push' with any extra arguments passed.
   deinstall  {identifier(s)|--all}
       - Removes the executable alias.
       - Executes the repository’s "teardown" command if specified.
@@ -20,9 +20,7 @@ This script provides the following commands:
   update     {identifier(s)|--all|--system}
       - Combines pull and install; if --system is specified also runs system update commands.
   status     {identifier(s)|--all} [<git-args>...] [--system] [--list]
-      - Executes 'git status' in the repository directory with any extra arguments passed.
-      - With --system, shows system update information.
-      - With --list, only the identifiers are printed.
+      - Executes 'git status' with any extra arguments passed.
   diff       {identifier(s)|--all} [<git-args>...]
       - Executes 'git diff' with any extra arguments passed.
   add        {identifier(s)|--all} [<git-args>...]
@@ -34,11 +32,11 @@ This script provides the following commands:
 
 Additionally, there is a **config** command with subcommands:
   config show   {identifier(s)|--all}
-      - Displays configuration for one or more repositories (or the entire config if no identifier is given).
+      - Displays the merged configuration (defaults plus user additions).
   config add
-      - Starts an interactive dialog to add a new repository configuration entry.
+      - Interactively adds a new repository entry to the user configuration.
   config edit
-      - Opens the configuration file (config.yaml) in nano.
+      - Opens the user configuration file (config/config.yaml) in nano.
 
 Additional flags:
   --preview   Only show the changes without executing commands.
@@ -48,19 +46,11 @@ Identifiers:
   - If a repository’s name is unique then you can just use the repository name.
   - Otherwise use "provider/account/repository".
 
-Configuration is read from a YAML file (default: config.yaml) with the following structure:
+Configuration is merged from two files:
+  - **config/defaults.yaml** (system defaults)
+  - **config/config.yaml** (user-specific configuration)
 
-base: "/path/to/repositories"
-repos:
-  - provider: "github.com"
-    account: "youraccount"
-    repository: "mytool"
-    verified: "commit-id"
-    command: "bash main.sh"         # optional; if not set, the script checks for main.sh/main.py in the repository
-    description: "My tool description"  # optional
-    replacement: ""                  # optional; alternative provider/account/repository string to use instead
-    setup: "echo Setting up..."      # optional setup command executed during install
-    teardown: "echo Tearing down..." # optional command executed during deinstall
+The user config supplements the default repositories and can override the base path.
 
 """
 
@@ -71,27 +61,46 @@ import shutil
 import sys
 import yaml
 
-# Define default paths
-CONFIG_PATH = "config.yaml"
+# Define configuration file paths.
+DEFAULT_CONFIG_PATH = os.path.join("config", "defaults.yaml")
+USER_CONFIG_PATH = os.path.join("config", "config.yaml")
 BIN_DIR = os.path.expanduser("~/.local/bin")
 
-def load_config(config_path):
-    """Load YAML configuration file."""
-    if not os.path.exists(config_path):
-        print(f"Configuration file '{config_path}' not found.")
+def load_config():
+    """Load configuration from defaults and merge in user config if present.
+    
+    If the user config defines a 'base', it overrides the default.
+    The user config's 'repos' are appended to the default repos.
+    """
+    if not os.path.exists(DEFAULT_CONFIG_PATH):
+        print(f"Default configuration file '{DEFAULT_CONFIG_PATH}' not found.")
         sys.exit(1)
-    with open(config_path, 'r') as f:
+    with open(DEFAULT_CONFIG_PATH, 'r') as f:
         config = yaml.safe_load(f)
+    # Verify defaults have required keys.
     if "base" not in config or "repos" not in config:
-        print("Config file must contain 'base' and 'repos' keys.")
+        print("Default config file must contain 'base' and 'repos' keys.")
         sys.exit(1)
+
+    # If user config exists, merge it.
+    if os.path.exists(USER_CONFIG_PATH):
+        with open(USER_CONFIG_PATH, 'r') as f:
+            user_config = yaml.safe_load(f)
+        if user_config:
+            # Override base if defined.
+            if "base" in user_config:
+                config["base"] = user_config["base"]
+            # Append any user-defined repos.
+            if "repos" in user_config:
+                config["repos"].extend(user_config["repos"])
     return config
 
-def save_config(config, config_path):
-    """Save the config dictionary back to the YAML file."""
-    with open(config_path, 'w') as f:
-        yaml.dump(config, f)
-    print(f"Configuration updated in {config_path}.")
+def save_user_config(user_config):
+    """Save the user configuration to USER_CONFIG_PATH."""
+    os.makedirs(os.path.dirname(USER_CONFIG_PATH), exist_ok=True)
+    with open(USER_CONFIG_PATH, 'w') as f:
+        yaml.dump(user_config, f)
+    print(f"User configuration updated in {USER_CONFIG_PATH}.")
 
 def run_command(command, cwd=None, preview=False):
     """Run a shell command in a given directory, or print it in preview mode."""
@@ -140,8 +149,7 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
     
     If 'verified' is set, the wrapper will checkout that commit and warn in orange if it does not match.
     If no verified commit is set, a warning in orange is printed.
-    
-    If an 'alias' field is provided in the configuration, a symlink with that alias is created in the bin directory.
+    If an 'alias' field is provided, a symlink is created in the bin directory with that name.
     """
     repo_identifier = get_repo_identifier(repo, all_repos)
     repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -157,7 +165,7 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
             print(f"No command defined and no main.sh/main.py found in {repo_dir}. Skipping alias creation.")
             return
 
-    # ANSI escape codes for orange (color code 208) and reset
+    # ANSI escape codes for orange (color code 208) and reset.
     ORANGE = r"\033[38;5;208m"
     RESET = r"\033[0m"
 
@@ -188,7 +196,7 @@ cd "{repo_dir}"
         os.chmod(alias_path, 0o755)
         print(f"Installed executable for {repo_identifier} at {alias_path}")
 
-        # Create alias if the 'alias' field is provided in the config.
+        # Create alias if provided in the config.
         alias_name = repo.get("alias")
         if alias_name:
             alias_link_path = os.path.join(bin_dir, alias_name)
@@ -199,7 +207,7 @@ cd "{repo_dir}"
                 print(f"Created alias '{alias_name}' pointing to {repo_identifier}")
             except Exception as e:
                 print(f"Error creating alias '{alias_name}': {e}")
-
+                
 def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
     """Install repositories by creating executable wrappers and running setup."""
     for repo in selected_repos:
@@ -225,7 +233,7 @@ def exec_git_command(selected_repos, base_dir, all_repos, git_cmd, extra_args, p
         else:
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
-# Refactored functions for pull, push, and status.
+# Refactored git command functions.
 def pull_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
     exec_git_command(selected_repos, base_dir, all_repos, "pull", extra_args, preview)
 
@@ -243,7 +251,6 @@ def status_repos(selected_repos, base_dir, all_repos, extra_args, list_only=Fals
         exec_git_command(selected_repos, base_dir, all_repos, "status", extra_args, preview)
 
 def clone_repos(selected_repos, base_dir, all_repos, preview=False):
-    """Clone repositories based on the config."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -257,7 +264,6 @@ def clone_repos(selected_repos, base_dir, all_repos, preview=False):
         run_command(f"git clone {clone_url} {repo_dir}", cwd=parent_dir, preview=preview)
 
 def deinstall_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
-    """Remove the executable wrapper and run teardown if defined."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         alias_path = os.path.join(bin_dir, repo_identifier)
@@ -275,7 +281,6 @@ def deinstall_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False)
             run_command(teardown_cmd, cwd=repo_dir, preview=preview)
 
 def delete_repos(selected_repos, base_dir, all_repos, preview=False):
-    """Delete the repository directory."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -289,14 +294,13 @@ def delete_repos(selected_repos, base_dir, all_repos, preview=False):
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
 def update_repos(selected_repos, base_dir, bin_dir, all_repos, system_update=False, preview=False):
-    """Combine pull and install. If system_update is True, run system update commands."""
     pull_repos(selected_repos, base_dir, all_repos, extra_args=[], preview=preview)
-    install_repos(selected_repos, base_dir, BIN_DIR, all_repos, preview=preview)
+    install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=preview)
     if system_update:
         run_command("yay -S", preview=preview)
         run_command("sudo pacman -Syyu", preview=preview)
 
-# New functions for additional git commands.
+# Additional git commands.
 def diff_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
     exec_git_command(selected_repos, base_dir, all_repos, "diff", extra_args, preview)
 
@@ -310,10 +314,11 @@ def checkout_repos(selected_repos, base_dir, all_repos, extra_args, preview=Fals
     exec_git_command(selected_repos, base_dir, all_repos, "checkout", extra_args, preview)
 
 def show_config(selected_repos, full_config=False):
-    """Display configuration for one or more repositories, or entire config."""
+    """Display configuration for one or more repositories, or entire merged config."""
     if full_config:
-        with open(CONFIG_PATH, 'r') as f:
-            print(f.read())
+        # Print the merged config.
+        merged = load_config()
+        print(yaml.dump(merged, default_flow_style=False))
     else:
         for repo in selected_repos:
             identifier = f'{repo.get("provider")}/{repo.get("account")}/{repo.get("repository")}'
@@ -323,7 +328,10 @@ def show_config(selected_repos, full_config=False):
             print("-" * 40)
 
 def interactive_add(config):
-    """Interactively prompt the user to add a new repository entry to the config."""
+    """Interactively prompt the user to add a new repository entry to the user config.
+    
+    The new entry is saved into the user config file (config/config.yaml).
+    """
     print("Adding a new repository configuration entry.")
     new_entry = {}
     new_entry["provider"] = input("Provider (e.g., github.com): ").strip()
@@ -335,25 +343,32 @@ def interactive_add(config):
     new_entry["replacement"] = input("Replacement (optional): ").strip()
     new_entry["setup"] = input("Setup command (optional): ").strip()
     new_entry["teardown"] = input("Teardown command (optional): ").strip()
+    new_entry["alias"] = input("Alias (optional): ").strip()
 
     print("\nNew entry:")
     for key, value in new_entry.items():
         if value:
             print(f"{key}: {value}")
-    confirm = input("Add this entry to config? (y/N): ").strip().lower()
+    confirm = input("Add this entry to user config? (y/N): ").strip().lower()
     if confirm == "y":
-        config["repos"].append(new_entry)
-        save_config(config, CONFIG_PATH)
+        # Load existing user config or initialize.
+        if os.path.exists(USER_CONFIG_PATH):
+            with open(USER_CONFIG_PATH, 'r') as f:
+                user_config = yaml.safe_load(f) or {}
+        else:
+            user_config = {}
+        user_config.setdefault("repos", [])
+        user_config["repos"].append(new_entry)
+        save_user_config(user_config)
     else:
         print("Entry not added.")
 
 def edit_config():
-    """Open the configuration file in nano."""
-    run_command(f"nano {CONFIG_PATH}")
+    """Open the user configuration file in nano."""
+    run_command(f"nano {USER_CONFIG_PATH}")
 
 if __name__ == "__main__":
-    # Load configuration
-    config = load_config(CONFIG_PATH)
+    config = load_config()
     base_dir = os.path.expanduser(config["base"])
     all_repos_list = config["repos"]
 
@@ -418,7 +433,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Dispatch top-level commands
     if args.command == "install":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         install_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
@@ -447,7 +461,7 @@ if __name__ == "__main__":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         diff_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "add":
-        # Top-level git add command.
+        # Top-level 'add' is used for git add.
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         gitadd_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "show":
