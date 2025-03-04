@@ -156,4 +156,16 @@ repos:
   description: A tool designed to automate the process of mirroring repositories from GitHub to Gitea. By leveraging the APIs of both platforms, this script identifies repositories on GitHub that aren't mirrored on Gitea and seamlessly mirrors them. Ideal for developers aiming to maintain a backup or a consistent repo state across both platforms.
   provider: github.com
   repository: seed-ssh-key
-  verified: a6037b955425c256c535ac55047867af5d991e37
+  verified: 0e605e23220a29d54e0867a37c57ca42bf63aec9
+- alias: anscrico
+  homepage: https://github.com/kevinveenbirkenbach/analyze-script-collection
+  description: A versatile set of Bash scripts for Linux system diagnostics. Easily check SSH key encryption, find duplicate files, inspect your kernel version, locate large files, and list installed Java versions—all designed to simplify system management and troubleshooting.
+  provider: github.com
+  repository: analyze-script-collection
+  verified: ab8c92ef1d65fb5082930f80cf1736141d94a149
+- alias: heicma
+  homepage: https://github.com/kevinveenbirkenbach/heic-management
+  description: "Bash scripts for handling HEIC images: converting to JPEG, deleting, and listing in a directory and subdirectories."
+  provider: github.com
+  repository: heic-management
+  verified: 3dd336b67f0f9d1f7ee4cd66724ca6c9bd091409
