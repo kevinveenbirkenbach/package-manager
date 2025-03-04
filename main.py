@@ -125,7 +125,14 @@ def resolve_repos(identifiers, all_repos):
     return selected
 
 def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
-    """Create an executable bash wrapper for the repository."""
+    """Create an executable bash wrapper for the repository.
+    
+    If the 'verified' field is set in the configuration, the wrapper will attempt to
+    checkout that commit before executing the command and warn if the checkout did not
+    result in the expected commit.
+    
+    If no verified commit is set, a warning is printed on every execution.
+    """
     repo_identifier = get_repo_identifier(repo, all_repos)
     repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
     # Determine the command to execute
@@ -141,9 +148,26 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
         else:
             print(f"No command defined and no main.sh/main.py found in {repo_dir}. Skipping alias creation.")
             return
-    # Create the bash wrapper content
+
+    # Build the preamble based on the 'verified' field.
+    verified = repo.get("verified")
+    if verified:
+        # Checkout the verified commit and warn if not current.
+        preamble = f"""\
+git checkout {verified} || echo "Warning: Failed to checkout commit {verified}." >&2
+CURRENT=$(git rev-parse HEAD)
+if [ "$CURRENT" != "{verified}" ]; then
+  echo "Warning: Current commit ($CURRENT) does not match verified commit ({verified})." >&2
+fi
+"""
+    else:
+        # Warn that no verified commit is set.
+        preamble = 'echo "Warning: No verified commit set for this repository." >&2'
+    
+    # Create the bash wrapper content including the preamble.
     script_content = f"""#!/bin/bash
 cd "{repo_dir}"
+{preamble}
 {command} "$@"
 """
     alias_path = os.path.join(bin_dir, repo_identifier)
