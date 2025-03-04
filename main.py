@@ -1,65 +1,11 @@
-#!/usr/bin/env python3
-"""
-Package Manager Script
-
-This script provides the following commands:
-  install    {identifier(s)|--all}
-      - Creates an executable bash wrapper in the bin folder that calls the command for the repository.
-      - Executes the repository’s "setup" command if specified.
-  pull       {identifier(s)|--all} [<git-args>...]
-      - Executes 'git pull' with any extra arguments passed.
-  clone      {identifier(s)|--all}
-      - Clones the repository from a remote.
-  push       {identifier(s)|--all} [<git-args>...]
-      - Executes 'git push' with any extra arguments passed.
-  deinstall  {identifier(s)|--all}
-      - Removes the executable alias.
-      - Executes the repository’s "teardown" command if specified.
-  delete     {identifier(s)|--all}
-      - Deletes the repository directory.
-  update     {identifier(s)|--all|--system}
-      - Combines pull and install; if --system is specified also runs system update commands.
-  status     {identifier(s)|--all} [<git-args>...] [--system] [--list]
-      - Executes 'git status' with any extra arguments passed.
-  diff       {identifier(s)|--all} [<git-args>...]
-      - Executes 'git diff' with any extra arguments passed.
-  add        {identifier(s)|--all} [<git-args>...]
-      - Executes 'git add' with any extra arguments passed.
-  show       {identifier(s)|--all} [<git-args>...]
-      - Executes 'git show' with any extra arguments passed.
-  checkout   {identifier(s)|--all} [<git-args>...]
-      - Executes 'git checkout' with any extra arguments passed.
-
-Additionally, there is a **config** command with subcommands:
-  config show   {identifier(s)|--all}
-      - Displays the merged configuration (defaults plus user additions).
-  config add
-      - Interactively adds a new repository entry to the user configuration.
-  config edit
-      - Opens the user configuration file (config/config.yaml) in nano.
-
-Additional flags:
-  --preview   Only show the changes without executing commands.
-  --list      When used with preview or status, only list affected repositories.
-
-Identifiers:
-  - If a repository’s name is unique then you can just use the repository name.
-  - Otherwise use "provider/account/repository".
-
-Configuration is merged from two files:
-  - **config/defaults.yaml** (system defaults)
-  - **config/config.yaml** (user-specific configuration)
-
-The user config supplements the default repositories and can override the base path.
-
-"""
-
-import argparse
+import re
+import hashlib
 import os
 import subprocess
 import shutil
 import sys
 import yaml
+import argparse 
 
 # Define configuration file paths.
 DEFAULT_CONFIG_PATH = os.path.join("config", "defaults.yaml")
@@ -67,30 +13,21 @@ USER_CONFIG_PATH = os.path.join("config", "config.yaml")
 BIN_DIR = os.path.expanduser("~/.local/bin")
 
 def load_config():
-    """Load configuration from defaults and merge in user config if present.
-    
-    If the user config defines a 'base', it overrides the default.
-    The user config's 'repos' are appended to the default repos.
-    """
+    """Load configuration from defaults and merge in user config if present."""
     if not os.path.exists(DEFAULT_CONFIG_PATH):
         print(f"Default configuration file '{DEFAULT_CONFIG_PATH}' not found.")
         sys.exit(1)
     with open(DEFAULT_CONFIG_PATH, 'r') as f:
         config = yaml.safe_load(f)
-    # Verify defaults have required keys.
     if "base" not in config or "repos" not in config:
         print("Default config file must contain 'base' and 'repos' keys.")
         sys.exit(1)
-
-    # If user config exists, merge it.
     if os.path.exists(USER_CONFIG_PATH):
         with open(USER_CONFIG_PATH, 'r') as f:
             user_config = yaml.safe_load(f)
         if user_config:
-            # Override base if defined.
             if "base" in user_config:
                 config["base"] = user_config["base"]
-            # Append any user-defined repos.
             if "repos" in user_config:
                 config["repos"].extend(user_config["repos"])
     return config
@@ -113,8 +50,8 @@ def run_command(command, cwd=None, preview=False):
 def get_repo_identifier(repo, all_repos):
     """
     Return a unique identifier for the repository.
-    If the repository name is unique among all_repos, return repository name.
-    Otherwise, return 'provider/account/repository'.
+    If the repository name is unique among all_repos, return repository name;
+    otherwise, return 'provider/account/repository'.
     """
     repo_name = repo.get("repository")
     count = sum(1 for r in all_repos if r.get("repository") == repo_name)
@@ -144,12 +81,55 @@ def resolve_repos(identifiers, all_repos):
             selected.extend(matches)
     return selected
 
+def filter_ignored(repos):
+    """Filter out repositories that have 'ignore' set to True."""
+    return [r for r in repos if not r.get("ignore", False)]
+
+def generate_alias(repo, bin_dir, existing_aliases):
+    """
+    Generate an alias for a repository based on its repository name.
+    
+    Steps:
+      1. Keep only consonants from the repository name (letters from BCDFGHJKLMNPQRSTVWXYZ).
+      2. Collapse consecutive identical consonants.
+      3. Truncate to at most 12 characters.
+      4. If that alias conflicts (already in existing_aliases or a file exists in bin_dir),
+         then prefix with the first letter of provider and account.
+      5. If still conflicting, append a three-character hash until the alias is unique.
+    """
+    repo_name = repo.get("repository")
+    # Keep only consonants.
+    consonants = re.sub(r"[^bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]", "", repo_name)
+    # Collapse consecutive identical consonants.
+    collapsed = re.sub(r"(.)\1+", r"\1", consonants)
+    base_alias = collapsed[:12] if len(collapsed) > 12 else collapsed
+    candidate = base_alias.lower()
+
+    def conflict(alias):
+        alias_path = os.path.join(bin_dir, alias)
+        return alias in existing_aliases or os.path.exists(alias_path)
+
+    if not conflict(candidate):
+        return candidate
+
+    prefix = (repo.get("provider", "")[0] + repo.get("account", "")[0]).lower()
+    candidate2 = (prefix + candidate)[:12]
+    if not conflict(candidate2):
+        return candidate2
+
+    h = hashlib.md5(repo_name.encode("utf-8")).hexdigest()[:3]
+    candidate3 = (candidate2 + h)[:12]
+    while conflict(candidate3):
+        candidate3 += "x"
+        candidate3 = candidate3[:12]
+    return candidate3
+
 def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
     """Create an executable bash wrapper for the repository.
     
     If 'verified' is set, the wrapper will checkout that commit and warn in orange if it does not match.
     If no verified commit is set, a warning in orange is printed.
-    If an 'alias' field is provided, a symlink is created in the bin directory with that name.
+    If an 'alias' field is provided, a symlink is created in bin_dir with that alias.
     """
     repo_identifier = get_repo_identifier(repo, all_repos)
     repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -165,7 +145,6 @@ def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
             print(f"No command defined and no main.sh/main.py found in {repo_dir}. Skipping alias creation.")
             return
 
-    # ANSI escape codes for orange (color code 208) and reset.
     ORANGE = r"\033[38;5;208m"
     RESET = r"\033[0m"
 
@@ -196,7 +175,6 @@ cd "{repo_dir}"
         os.chmod(alias_path, 0o755)
         print(f"Installed executable for {repo_identifier} at {alias_path}")
 
-        # Create alias if provided in the config.
         alias_name = repo.get("alias")
         if alias_name:
             alias_link_path = os.path.join(bin_dir, alias_name)
@@ -221,7 +199,6 @@ def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False):
         if setup_cmd:
             run_command(setup_cmd, cwd=repo_dir, preview=preview)
 
-# Common helper to execute a git command with extra arguments.
 def exec_git_command(selected_repos, base_dir, all_repos, git_cmd, extra_args, preview=False):
     """Execute a given git command with extra arguments for each repository."""
     for repo in selected_repos:
@@ -233,7 +210,6 @@ def exec_git_command(selected_repos, base_dir, all_repos, git_cmd, extra_args, p
         else:
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
-# Refactored git command functions.
 def pull_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
     exec_git_command(selected_repos, base_dir, all_repos, "pull", extra_args, preview)
 
@@ -300,7 +276,6 @@ def update_repos(selected_repos, base_dir, bin_dir, all_repos, system_update=Fal
         run_command("yay -S", preview=preview)
         run_command("sudo pacman -Syyu", preview=preview)
 
-# Additional git commands.
 def diff_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
     exec_git_command(selected_repos, base_dir, all_repos, "diff", extra_args, preview)
 
@@ -314,9 +289,8 @@ def checkout_repos(selected_repos, base_dir, all_repos, extra_args, preview=Fals
     exec_git_command(selected_repos, base_dir, all_repos, "checkout", extra_args, preview)
 
 def show_config(selected_repos, full_config=False):
-    """Display configuration for one or more repositories, or entire merged config."""
+    """Display configuration for one or more repositories, or the entire merged config."""
     if full_config:
-        # Print the merged config.
         merged = load_config()
         print(yaml.dump(merged, default_flow_style=False))
     else:
@@ -328,10 +302,7 @@ def show_config(selected_repos, full_config=False):
             print("-" * 40)
 
 def interactive_add(config):
-    """Interactively prompt the user to add a new repository entry to the user config.
-    
-    The new entry is saved into the user config file (config/config.yaml).
-    """
+    """Interactively prompt the user to add a new repository entry to the user config."""
     print("Adding a new repository configuration entry.")
     new_entry = {}
     new_entry["provider"] = input("Provider (e.g., github.com): ").strip()
@@ -344,6 +315,10 @@ def interactive_add(config):
     new_entry["setup"] = input("Setup command (optional): ").strip()
     new_entry["teardown"] = input("Teardown command (optional): ").strip()
     new_entry["alias"] = input("Alias (optional): ").strip()
+    # Allow the user to mark this entry as ignored.
+    ignore_val = input("Ignore this entry? (y/N): ").strip().lower()
+    if ignore_val == "y":
+        new_entry["ignore"] = True
 
     print("\nNew entry:")
     for key, value in new_entry.items():
@@ -351,117 +326,59 @@ def interactive_add(config):
             print(f"{key}: {value}")
     confirm = input("Add this entry to user config? (y/N): ").strip().lower()
     if confirm == "y":
-        # Load existing user config or initialize.
         if os.path.exists(USER_CONFIG_PATH):
             with open(USER_CONFIG_PATH, 'r') as f:
                 user_config = yaml.safe_load(f) or {}
         else:
-            user_config = {}
+            user_config = {"repos": []}
         user_config.setdefault("repos", [])
         user_config["repos"].append(new_entry)
         save_user_config(user_config)
     else:
         print("Entry not added.")
 
-import re
-import hashlib
-
-def generate_alias(repo, bin_dir, existing_aliases):
-    """
-    Generate an alias for a repository based on its repository name.
-    
-    Steps:
-      1. Keep only consonants from the repository name (letters from BCDFGHJKLMNPQRSTVWXYZ, case-insensitive).
-      2. Collapse consecutive identical consonants into one.
-      3. Truncate to at most 12 characters.
-      4. If the alias conflicts (either already in existing_aliases or if a file exists in bin_dir),
-         then prefix with the first letter of provider and account.
-      5. If still conflicting, append a three-character hash (from md5 of repository name) until free.
-    """
-    repo_name = repo.get("repository")
-    # Keep only consonants (remove vowels and non-letters)
-    consonants = re.sub(r"[^bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]", "", repo_name)
-    # Collapse consecutive identical consonants
-    collapsed = re.sub(r"(.)\1+", r"\1", consonants)
-    # Truncate to at most 12 characters (if longer, cut off)
-    base_alias = collapsed[:12] if len(collapsed) > 12 else collapsed
-    candidate = base_alias.lower()
-
-    def conflict(alias):
-        alias_path = os.path.join(bin_dir, alias)
-        return alias in existing_aliases or os.path.exists(alias_path)
-
-    if not conflict(candidate):
-        return candidate
-
-    # Add provider/account prefix.
-    prefix = (repo.get("provider", "")[0] + repo.get("account", "")[0]).lower()
-    candidate2 = (prefix + candidate)[:12]
-    if not conflict(candidate2):
-        return candidate2
-
-    # Append a three-letter hash.
-    h = hashlib.md5(repo_name.encode("utf-8")).hexdigest()[:3]
-    candidate3 = (candidate2 + h)[:12]
-    while conflict(candidate3):
-        candidate3 += "x"
-        candidate3 = candidate3[:12]
-    return candidate3
+def edit_config():
+    """Open the user configuration file in nano."""
+    run_command(f"nano {USER_CONFIG_PATH}")
 
 def config_init(user_config, defaults_config, bin_dir):
     """
     Scan the base directory (defaults_config["base"]) for repositories.
     The folder structure is assumed to be:
       {base}/{provider}/{account}/{repository}
-    
     For each repository found, automatically determine:
-      - provider, account, repository (from the folder names)
-      - verified: the latest commit (via 'git log -1 --format=%H')
-      - alias: generated from the repository name using generate_alias()
-    
-    Repositories already defined in defaults_config["repos"] are skipped.
-    Only new repositories (not already present in user_config["repos"] and not in defaults_config) are added.
+      - provider, account, repository from folder names.
+      - verified: the latest commit (via 'git log -1 --format=%H').
+      - alias: generated from the repository name using generate_alias().
+    Repositories already defined in defaults_config["repos"] or user_config["repos"] are skipped.
     """
     base_dir = os.path.expanduser(defaults_config["base"])
     if not os.path.isdir(base_dir):
         print(f"Base directory '{base_dir}' does not exist.")
         return
 
-    # Build a set of keys from defaults: (provider, account, repository)
-    default_keys = set()
-    for entry in defaults_config.get("repos", []):
-        key = (entry.get("provider"), entry.get("account"), entry.get("repository"))
-        default_keys.add(key)
-    
-    # Build a set of keys for repositories already in the user config.
-    existing_keys = set()
-    for entry in user_config.get("repos", []):
-        key = (entry.get("provider"), entry.get("account"), entry.get("repository"))
-        existing_keys.add(key)
-    
-    # Also track aliases already used in user config.
-    existing_aliases = set(entry.get("alias") for entry in user_config.get("repos", []) if entry.get("alias"))
+    default_keys = {(entry.get("provider"), entry.get("account"), entry.get("repository"))
+                    for entry in defaults_config.get("repos", [])}
+    existing_keys = {(entry.get("provider"), entry.get("account"), entry.get("repository"))
+                     for entry in user_config.get("repos", [])}
+    existing_aliases = {entry.get("alias") for entry in user_config.get("repos", []) if entry.get("alias")}
 
     new_entries = []
-    # Iterate over providers.
     for provider in os.listdir(base_dir):
         provider_path = os.path.join(base_dir, provider)
         if not os.path.isdir(provider_path):
             continue
-        # Iterate over accounts.
         for account in os.listdir(provider_path):
             account_path = os.path.join(provider_path, account)
             if not os.path.isdir(account_path):
                 continue
-            # Iterate over repositories.
             for repo_name in os.listdir(account_path):
                 repo_path = os.path.join(account_path, repo_name)
                 if not os.path.isdir(repo_path):
                     continue
                 key = (provider, account, repo_name)
                 if key in default_keys or key in existing_keys:
-                    continue  # Skip if already defined in defaults or user config.
-                # Determine the latest commit if it's a git repository.
+                    continue
                 try:
                     result = subprocess.run(
                         ["git", "log", "-1", "--format=%H"],
@@ -476,14 +393,13 @@ def config_init(user_config, defaults_config, bin_dir):
                     verified = ""
                     print(f"Could not determine latest commit for {repo_name} ({provider}/{account}): {e}")
 
-                # Build the new entry.
                 entry = {
                     "provider": provider,
                     "account": account,
                     "repository": repo_name,
                     "verified": verified,
+                    "ignore": True
                 }
-                # Generate alias.
                 alias = generate_alias({"repository": repo_name, "provider": provider, "account": account}, bin_dir, existing_aliases)
                 entry["alias"] = alias
                 existing_aliases.add(alias)
@@ -495,15 +411,12 @@ def config_init(user_config, defaults_config, bin_dir):
         save_user_config(user_config)
     else:
         print("No new repositories found.")
-        
-def edit_config():
-    """Open the user configuration file in nano."""
-    run_command(f"nano {USER_CONFIG_PATH}")
 
+# Main program.
 if __name__ == "__main__":
-    config = load_config()
-    base_dir = os.path.expanduser(config["base"])
-    all_repos_list = config["repos"]
+    config_merged = load_config()
+    base_dir = os.path.expanduser(config_merged["base"])
+    all_repos_list = config_merged["repos"]
 
     parser = argparse.ArgumentParser(description="Package Manager")
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
@@ -515,7 +428,6 @@ if __name__ == "__main__":
         subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
         subparser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for the git command")
 
-    # Top-level commands
     install_parser = subparsers.add_parser("install", help="Install repository/repositories")
     add_identifier_arguments(install_parser)
 
@@ -554,55 +466,64 @@ if __name__ == "__main__":
     checkout_parser = subparsers.add_parser("checkout", help="Execute 'git checkout' for repository/repositories")
     add_identifier_arguments(checkout_parser)
 
-    # Config commands
     config_parser = subparsers.add_parser("config", help="Manage configuration")
     config_subparsers = config_parser.add_subparsers(dest="subcommand", help="Config subcommands", required=True)
-
     config_show = config_subparsers.add_parser("show", help="Show configuration")
     add_identifier_arguments(config_show)
-
     config_add = config_subparsers.add_parser("add", help="Interactively add a new repository entry")
     config_edit = config_subparsers.add_parser("edit", help="Edit configuration file with nano")
     config_init_parser = config_subparsers.add_parser("init", help="Initialize user configuration by scanning the base directory")
 
     args = parser.parse_args()
 
+    # Dispatch commands.
     if args.command == "install":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         install_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
     elif args.command == "pull":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         pull_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "clone":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         clone_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "push":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         push_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "deinstall":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         deinstall_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
     elif args.command == "delete":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         delete_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "update":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         update_repos(selected, base_dir, BIN_DIR, all_repos_list, system_update=args.system, preview=args.preview)
     elif args.command == "status":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         status_repos(selected, base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "diff":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         diff_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "add":
-        # Top-level 'add' is used for git add.
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         gitadd_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "show":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         show_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "checkout":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
+        selected = filter_ignored(selected)
         checkout_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "config":
         if args.subcommand == "show":
@@ -613,7 +534,7 @@ if __name__ == "__main__":
                 if selected:
                     show_config(selected, full_config=False)
         elif args.subcommand == "add":
-            interactive_add(config)
+            interactive_add(config_merged)
         elif args.subcommand == "edit":
             edit_config()
         elif args.subcommand == "init":
@@ -622,6 +543,6 @@ if __name__ == "__main__":
                     user_config = yaml.safe_load(f) or {}
             else:
                 user_config = {"repos": []}
-            config_init(user_config, config, BIN_DIR)
+            config_init(user_config, config_merged, BIN_DIR)
     else:
         parser.print_help()
