@@ -9,11 +9,11 @@ This script provides the following commands:
   pull       {identifier(s)|--all}
       - Executes 'git pull' in the repository directory.
   clone      {identifier(s)|--all}
-      - Clones the repository from a remote (using provider/account/repository or an alternative if 'replacement' is defined).
+      - Clones the repository from a remote.
   push       {identifier(s)|--all}
       - Executes 'git push' in the repository directory.
   deinstall  {identifier(s)|--all}
-      - Deletes the executable command/alias.
+      - Removes the executable alias.
       - Executes the repository’s "teardown" command if specified.
   delete     {identifier(s)|--all}
       - Deletes the repository directory.
@@ -21,6 +21,14 @@ This script provides the following commands:
       - Combines pull and install; if --system is specified also runs system update commands.
   status     {identifier(s)|--all|--system}
       - Shows git status for each repository or, if --system is set, shows basic system update information.
+  diff       {identifier(s)|--all} [<git-args>...]
+      - Executes "git diff" with any extra arguments passed.
+  add        {identifier(s)|--all} [<git-args>...]
+      - Executes "git add" with any extra arguments passed.
+  show       {identifier(s)|--all} [<git-args>...]
+      - Executes "git show" with any extra arguments passed.
+  checkout   {identifier(s)|--all} [<git-args>...]
+      - Executes "git checkout" with any extra arguments passed.
 
 Additionally, there is a **config** command with the following subcommands:
   config show   {identifier(s)|--all}
@@ -28,17 +36,17 @@ Additionally, there is a **config** command with the following subcommands:
   config add
       - Starts an interactive dialog to add a new repository configuration entry.
   config edit
-      - Opens the configuration file in nano.
+      - Opens the configuration file (config.yaml) in nano.
 
 Additional flags:
   --preview   Only show the changes without executing commands.
-  --list      When used with preview or status, only list affected repositories (for status).
+  --list      When used with preview or status, only list affected repositories.
 
 Identifiers:
   - If a repository’s name is unique then you can just use the repository name.
-  - If multiple repositories share the same name then use the full identifier in the form "provider/account/repository".
+  - If multiple repositories share the same name then use "provider/account/repository".
 
-The configuration is read from a YAML file (default: config.yaml) with the following structure:
+Configuration is read from a YAML file (default: config.yaml) with the following structure:
 
 base: "/path/to/repositories"
 repos:
@@ -128,11 +136,8 @@ def resolve_repos(identifiers, all_repos):
 def create_executable(repo, base_dir, bin_dir, all_repos, preview=False):
     """Create an executable bash wrapper for the repository.
     
-    If the 'verified' field is set in the configuration, the wrapper will attempt to
-    checkout that commit before executing the command and warn in orange if the checkout did not
-    result in the expected commit.
-    
-    If no verified commit is set, a warning in orange is printed on every execution.
+    If 'verified' is set, the wrapper will checkout that commit and warn in orange if the commit does not match.
+    If no verified commit is set, a warning in orange is printed.
     """
     repo_identifier = get_repo_identifier(repo, all_repos)
     repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
@@ -283,6 +288,30 @@ def status_repos(selected_repos, base_dir, all_repos, list_only=False, system_st
             else:
                 print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
+# New functions to execute additional git commands with extra arguments.
+def exec_git_command(selected_repos, base_dir, all_repos, git_cmd, extra_args, preview=False):
+    """Execute a given git command with extra arguments for each repository."""
+    for repo in selected_repos:
+        repo_identifier = get_repo_identifier(repo, all_repos)
+        repo_dir = os.path.join(base_dir, repo.get("provider"), repo.get("account"), repo.get("repository"))
+        if os.path.exists(repo_dir):
+            full_cmd = f"git {git_cmd} {' '.join(extra_args)}"
+            run_command(full_cmd, cwd=repo_dir, preview=preview)
+        else:
+            print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
+
+def diff_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
+    exec_git_command(selected_repos, base_dir, all_repos, "diff", extra_args, preview)
+
+def gitadd_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
+    exec_git_command(selected_repos, base_dir, all_repos, "add", extra_args, preview)
+
+def show_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
+    exec_git_command(selected_repos, base_dir, all_repos, "show", extra_args, preview)
+
+def checkout_repos(selected_repos, base_dir, all_repos, extra_args, preview=False):
+    exec_git_command(selected_repos, base_dir, all_repos, "checkout", extra_args, preview)
+
 def show_config(selected_repos, full_config=False):
     """Display configuration for one or more repositories, or entire config."""
     if full_config:
@@ -367,7 +396,24 @@ if __name__ == "__main__":
     add_identifier_arguments(status_parser)
     status_parser.add_argument("--system", action="store_true", help="Show system status")
 
-    # Config command with subcommands
+    # New git commands:
+    diff_parser = subparsers.add_parser("diff", help="Execute 'git diff' for repository/repositories")
+    add_identifier_arguments(diff_parser)
+    diff_parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for git diff")
+
+    add_parser = subparsers.add_parser("add", help="Execute 'git add' for repository/repositories")
+    add_identifier_arguments(add_parser)
+    add_parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for git add")
+
+    show_parser = subparsers.add_parser("show", help="Execute 'git show' for repository/repositories")
+    add_identifier_arguments(show_parser)
+    show_parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for git show")
+
+    checkout_parser = subparsers.add_parser("checkout", help="Execute 'git checkout' for repository/repositories")
+    add_identifier_arguments(checkout_parser)
+    checkout_parser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for git checkout")
+
+    # Config commands
     config_parser = subparsers.add_parser("config", help="Manage configuration")
     config_subparsers = config_parser.add_subparsers(dest="subcommand", help="Config subcommands", required=True)
 
@@ -428,8 +474,32 @@ if __name__ == "__main__":
         else:
             selected = resolve_repos(args.identifiers, all_repos_list)
         status_repos(selected, base_dir, all_repos_list, list_only=args.list, system_status=args.system, preview=args.preview)
+    elif args.command == "diff":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
+        diff_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
+    elif args.command == "add":
+        # This top-level 'add' is the git add command.
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
+        gitadd_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
+    elif args.command == "show":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
+        show_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
+    elif args.command == "checkout":
+        if args.all or (not args.identifiers):
+            selected = all_repos_list
+        else:
+            selected = resolve_repos(args.identifiers, all_repos_list)
+        checkout_repos(selected, base_dir, all_repos_list, args.extra_args, preview=args.preview)
     elif args.command == "config":
-        # Dispatch config subcommands
         if args.subcommand == "show":
             if args.all or (not args.identifiers):
                 show_config([], full_config=True)
