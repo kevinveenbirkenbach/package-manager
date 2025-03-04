@@ -169,3 +169,36 @@ repos:
   provider: github.com
   repository: heic-management
   verified: 3dd336b67f0f9d1f7ee4cd66724ca6c9bd091409
+- account: kevinveenbirkenbach
+  alias: portfolio
+  provider: github.com
+  description: Portfolio CMS is a Flask-based content management system that lets you effortlessly showcase your projects and online presence. With customizable cards, dynamic navigation, and YAML-driven configuration, it's a flexible solution for building modern, responsive portfolio websites.
+  repository: portfolio
+  homepage: https://github.com/kevinveenbirkenbach/portfolio
+  verified: fe1c038d1aea062ce7ad1d7ff186463994fd7f85
+- account: kevinveenbirkenbach
+  alias: goexma
+  provider: github.com
+  homepage: https://github.com/kevinveenbirkenbach/cli-gnome-extension-manager
+  description: CLI GNOME Extension Manager (goexma) is a Bash script that lets you install, update, enable, and disable GNOME extensions directly from the command line—perfect for automation and power users.
+  repository: cli-gnome-extension-manager
+  verified: 834e6e95636a4875ca9d9c73c0521508e2192aed
+- account: kevinveenbirkenbach
+  alias: cymais
+  provider: github.com
+  description: CyMaIS streamlines Linux-based system setups and Docker image administration, perfect for servers and PCs. It offers extensive solutions for system initialization, admin tools, backups, monitoring, updates, driver management, security, and VPNs.
+  homepage: https://github.com/kevinveenbirkenbach/cymais
+  repository: cymais
+  verified: 2898cc60868403220dcb69e0588d2d9aeb55bb27
+- account: kevinveenbirkenbach
+  provider: github.com
+  repository: dynamic-miner
+  homepage: https://github.com/kevinveenbirkenbach/dynamic-miner
+  desciption: Automated Ethereum mining setup using Docker and a GPU/CPU monitoring script. Includes a Docker Compose file for an Ethereum miner container and a Bash script to start/stop mining based on system usage thresholds, ensuring efficient resource utilization. Perfect for idle-time mining.
+  verified: 27d85cf220f6c603487b61cb4518c5a5ad00b35d
+- account: kevinveenbirkenbach
+  provider: github.com
+  description: This repository provides automated bridges for transferring content from federated platforms (like Pixelfed, Mastodon, and PeerTube) to centralized social networks (such as Instagram, X (Twitter), Facebook, and YouTube). It enables seamless cross-posting to maximize content reach across decentralized and mainstream platforms.
+  repository: fediverse-to-oligopolies-bridge
+  homepage: https://github.com/kevinveenbirkenbach/fediverse-to-oligopolies-bridge
+  verified: 1f6ace3fe84cb537436839a8a8164f1dc7b6e0c3
