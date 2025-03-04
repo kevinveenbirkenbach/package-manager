@@ -130,7 +130,7 @@ def generate_alias(repo, bin_dir, existing_aliases):
         candidate3 = candidate3[:12]
     return candidate3
 
-def create_executable(repo, base_dir, bin_dir, all_repos, quiet=False, preview=False):
+def create_executable(repo, base_dir, bin_dir, all_repos, quiet=False, preview=False, no_verification=False):
     """
     Create an executable bash wrapper for the repository.
     
@@ -155,21 +155,24 @@ def create_executable(repo, base_dir, bin_dir, all_repos, quiet=False, preview=F
 
     ORANGE = r"\033[38;5;208m"
     RESET = r"\033[0m"
-
-    if verified := repo.get("verified"):
-        if not quiet:
-            preamble = f"""\
+    
+    if no_verification:
+        preamble = ""
+    else:
+        if verified := repo.get("verified"):
+            if not quiet:
+                preamble = f"""\
 git checkout {verified} || echo -e "{ORANGE}Warning: Failed to checkout commit {verified}.{RESET}"
 CURRENT=$(git rev-parse HEAD)
 if [ "$CURRENT" != "{verified}" ]; then
   echo -e "{ORANGE}Warning: Current commit ($CURRENT) does not match verified commit ({verified}).{RESET}"
 fi
 """
+            else:
+                preamble = ""
         else:
-            preamble = ""
-    else:
-        preamble = "" if quiet else f'echo -e "{ORANGE}Warning: No verified commit set for this repository.{RESET}"'
-
+            preamble = "" if quiet else f'echo -e "{ORANGE}Warning: No verified commit set for this repository.{RESET}"'
+   
     script_content = f"""#!/bin/bash
 cd "{repo_dir}"
 {preamble}
@@ -199,7 +202,7 @@ cd "{repo_dir}"
                 if not quiet:
                     print(f"Error creating alias '{alias_name}': {e}")
 
-def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False, quiet=False):
+def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False, quiet=False, no_verification=False):
     """Install repositories by creating executable wrappers and running setup."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
@@ -207,7 +210,7 @@ def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False, q
         if not os.path.exists(repo_dir):
             print(f"Repository directory '{repo_dir}' does not exist. Clone it first.")
             continue
-        create_executable(repo, base_dir, bin_dir, all_repos, quiet=quiet, preview=preview)
+        create_executable(repo, base_dir, bin_dir, all_repos, quiet=quiet, preview=preview, no_verification=no_verification)
         setup_cmd = repo.get("setup")
         if setup_cmd:
             run_command(setup_cmd, cwd=repo_dir, preview=preview)
@@ -282,7 +285,7 @@ def delete_repos(selected_repos, base_dir, all_repos, preview=False):
         else:
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
-def update_repos(selected_repos, base_dir, bin_dir, all_repos, system_update=False, preview=False, quiet=False):
+def update_repos(selected_repos, base_dir, bin_dir, all_repos, system_update=False, preview=False, quiet=False, no_verification=False):
     pull_repos(selected_repos, base_dir, all_repos, extra_args=[], preview=preview)
     install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=preview, quiet=quiet)
     if system_update:
@@ -444,6 +447,8 @@ if __name__ == "__main__":
     install_parser = subparsers.add_parser("install", help="Install repository/repositories")
     add_identifier_arguments(install_parser)
     install_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
+    install_parser.add_argument("--no-verification", action="store_true", help="Disable verification of repository commit")
+
 
     pull_parser = subparsers.add_parser("pull", help="Pull updates for repository/repositories")
     add_identifier_arguments(pull_parser)
@@ -464,6 +469,7 @@ if __name__ == "__main__":
     add_identifier_arguments(update_parser)
     update_parser.add_argument("--system", action="store_true", help="Include system update commands")
     update_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
+    update_parser.add_argument("--no-verification", action="store_true", help="Disable verification of repository commit")
 
     status_parser = subparsers.add_parser("status", help="Show status for repository/repositories or system")
     add_identifier_arguments(status_parser)
@@ -507,7 +513,7 @@ if __name__ == "__main__":
     if args.command == "install":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         selected = filter_ignored(selected)
-        install_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview, quiet=args.quiet)
+        install_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview, quiet=args.quiet, no_verification=args.no_verification)
     elif args.command == "pull":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         selected = filter_ignored(selected)
@@ -535,7 +541,7 @@ if __name__ == "__main__":
     elif args.command == "update":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         selected = filter_ignored(selected)
-        update_repos(selected, base_dir, BIN_DIR, all_repos_list, system_update=args.system, preview=args.preview, quiet=args.quiet)
+        update_repos(selected, base_dir, BIN_DIR, all_repos_list, system_update=args.system, preview=args.preview, quiet=args.quiet, no_verification=args.no_verification)
     elif args.command == "status":
         selected = all_repos_list if args.all or (not args.identifiers) else resolve_repos(args.identifiers, all_repos_list)
         selected = filter_ignored(selected)

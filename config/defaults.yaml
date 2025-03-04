@@ -97,3 +97,8 @@ repos:
   repository: luks-key-management
   description: Manages LUKS keys for encrypted disks.
   homepage: https://github.com/kevinveenbirkenbach/luks-key-management
+- account: kevinveenbirkenbach
+  alias: fcf
+  provider: github.com
+  repository: file-content-finder
+  verified: 449004978c800b33ac0d12be2ac74145c3fb5f63
