@@ -1,0 +1,11 @@
+base: /home/kevinveenbirkenbach/Repositories/
+repos:
+- account: kevinveenbirkenbach
+  command: ''
+  description: Package Manager for the Kevin Veen-Birkenbach Scripting Universe
+  provider: github.com
+  replacement: ''
+  repository: package-manager
+  setup: ''
+  teardown: ''
+  verified: ''
