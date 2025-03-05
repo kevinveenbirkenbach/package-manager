@@ -134,42 +134,49 @@ repos:
   repository: cleanup-failed-docker-backups
   verified: 13b1b7d49394f9d82f8e53e3559ddbe1155e9dbb
 - alias: cedama
+  account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/central-database-manager
   description: Scripts to manage the Central Databases Postgres in CyMaIS
   provider: github.com
   repository: central-database-manager
   verified: f350c135e63946f9840c1d205deb8f62fbb6fcf1
 - alias: dovore
+  account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/docker-volume-renamer
   description: A Bash script to create a new Docker volume, copy data from an existing volume to it, and remove the old volume.
   provider: github.com
   repository: docker-volume-renamer
   verified: e702deb3347bc868134ce89273cd81b70af51899
 - alias: gigimi
+  account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/github-to-gitea-mirror/
   description: A tool designed to automate the process of mirroring repositories from GitHub to Gitea. By leveraging the APIs of both platforms, this script identifies repositories on GitHub that aren't mirrored on Gitea and seamlessly mirrors them. Ideal for developers aiming to maintain a backup or a consistent repo state across both platforms.
   provider: github.com
   repository: github-to-gitea-mirror
   verified: a6037b955425c256c535ac55047867af5d991e37
 - alias: seedssh
+  account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/seed-ssh-key
   description: A tool designed to automate the process of mirroring repositories from GitHub to Gitea. By leveraging the APIs of both platforms, this script identifies repositories on GitHub that aren't mirrored on Gitea and seamlessly mirrors them. Ideal for developers aiming to maintain a backup or a consistent repo state across both platforms.
   provider: github.com
   repository: seed-ssh-key
   verified: 0e605e23220a29d54e0867a37c57ca42bf63aec9
 - alias: anscrico
+  account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/analyze-script-collection
   description: A versatile set of Bash scripts for Linux system diagnostics. Easily check SSH key encryption, find duplicate files, inspect your kernel version, locate large files, and list installed Java versions—all designed to simplify system management and troubleshooting.
   provider: github.com
   repository: analyze-script-collection
   verified: ab8c92ef1d65fb5082930f80cf1736141d94a149
 - alias: heicma
+  account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/heic-management
   description: "Bash scripts for handling HEIC images: converting to JPEG, deleting, and listing in a directory and subdirectories."
   provider: github.com
   repository: heic-management
   verified: 3dd336b67f0f9d1f7ee4cd66724ca6c9bd091409
 - account: kevinveenbirkenbach
+  account: kevinveenbirkenbach
   alias: portfolio
   provider: github.com
   description: Portfolio CMS is a Flask-based content management system that lets you effortlessly showcase your projects and online presence. With customizable cards, dynamic navigation, and YAML-driven configuration, it's a flexible solution for building modern, responsive portfolio websites.
