@@ -214,7 +214,7 @@ cd "{repo_dir}"
                 if not quiet:
                     print(f"Error creating alias '{alias_name}': {e}")
 
-def install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=False, quiet=False, no_verification=False):
+def install_repos(selected_repos, base_dir, bin_dir, all_repos:[], no_verification:bool, preview=False, quiet=False):
     """Install repositories by creating executable wrappers and running setup."""
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
@@ -305,9 +305,9 @@ def delete_repos(selected_repos, base_dir, all_repos, preview=False):
         else:
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
-def update_repos(selected_repos, base_dir, bin_dir, all_repos, system_update=False, preview=False, quiet=False, no_verification=False):
+def update_repos(selected_repos, base_dir, bin_dir, all_repos:[], no_verification:bool, system_update=False, preview=False, quiet=False):
     git_default_exec(selected_repos, base_dir, all_repos, extra_args=[],command="pull", preview=preview)
-    install_repos(selected_repos, base_dir, bin_dir, all_repos, preview=preview, quiet=quiet)
+    install_repos(selected_repos, base_dir, bin_dir, all_repos, no_verification, preview=preview, quiet=quiet)
     if system_update:
         run_command("yay -Syu", preview=preview)
         run_command("sudo pacman -Syyu", preview=preview)
@@ -506,7 +506,7 @@ if __name__ == "__main__":
     # Dispatch commands.
     if args.command == "install":
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
-        install_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview, quiet=args.quiet, no_verification=args.no_verification)
+        install_repos(selected, base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
     elif args.command in GIT_DEFAULT_COMMANDS:
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         if args.command == "clone":
@@ -522,7 +522,7 @@ if __name__ == "__main__":
         delete_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "update":
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
-        update_repos(selected, base_dir, BIN_DIR, all_repos_list, system_update=args.system, preview=args.preview, quiet=args.quiet, no_verification=args.no_verification)
+        update_repos(selected, base_dir, BIN_DIR, all_repos_list, args.no_verification, system_update=args.system, preview=args.preview, quiet=args.quiet)
     elif args.command == "status":
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         status_repos(selected, base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
