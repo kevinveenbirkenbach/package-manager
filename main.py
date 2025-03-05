@@ -647,7 +647,7 @@ For detailed help on each command, use:
     # Proxies the default git commands
     for git_command in GIT_DEFAULT_COMMANDS:
         add_identifier_arguments(
-            subparsers.add_parser(git_command, help=f"Proxies 'git {git_command}' to one repository/ all repositories")
+            subparsers.add_parser(git_command, help=f"Proxies 'git {git_command}' to one repository/repositories")
         )
 
     args = parser.parse_args()
