@@ -549,21 +549,24 @@ if __name__ == "__main__":
     base_dir = os.path.expanduser(config_merged["base"])
     all_repos_list = config_merged["repos"]
     description_text = """\
-Package Manager 🤖📦
+\033[1;32mPackage Manager 🤖📦\033[0m
 
+\033[1mOverview:\033[0m
 A configurable Python tool to manage multiple repositories via a unified command-line interface.
-Automate common Git operations like clone, pull, push, status, and more while creating executable wrappers and custom aliases.
-Manage repository configurations through YAML files (defaults and user-specific) to easily add, edit, delete, or ignore entries.
+Drafted by \033[1;34mKevin Veen-Birkenbach\033[0m (\033[4mhttps://www.veen.world/\033[0m), 
+this tool automates common Git operations (clone, pull, push, status, etc.) and creates executable wrappers
+and custom aliases to simplify your workflow.
 
-Features:
-  • Install and set up repositories with auto-detected commands.
-  • Execute Git commands with additional parameters.
-  • Open repositories in your file explorer or a new terminal tab.
-  • Display repository paths and detailed configuration info.
+\033[1mFeatures:\033[0m
+  • \033[1;33mAuto-install & Setup:\033[0m Automatically detect and set up repositories.
+  • \033[1;33mGit Command Integration:\033[0m Execute Git commands with extra parameters.
+  • \033[1;33mExplorer & Terminal Support:\033[0m Open repositories in your file manager or a new terminal tab.
+  • \033[1;33mComprehensive Configuration:\033[0m Manage settings via YAML files (default & user-specific).
 
 For detailed help on each command, use:
-    pkgmgr <command> --help                                     
+    \033[1m pkgmgr <command> --help\033[0m
 """
+
     parser = argparse.ArgumentParser(description=description_text,formatter_class=argparse.RawTextHelpFormatter)
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
     def add_identifier_arguments(subparser):
