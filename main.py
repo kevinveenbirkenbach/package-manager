@@ -669,7 +669,7 @@ For detailed help on each command, use:
             repo_dir = get_repo_dir(repositories_base_dir, repo)
             run_command(f"nautilus {repo_dir}")
     elif args.command == "code":
-        selected = get_selected_repos(args.all, all_repos_list, repositories_base_dir, args.identifiers)
+        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
         if not selected:
             print("No repositories selected.")
         else:
