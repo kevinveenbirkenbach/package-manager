@@ -1,7 +1,9 @@
 # This config contains the default repositories curated by Kevin Veen-Birkenbach
 
-base: ~/Repositories/
-repos:
+directories: 
+  repositories: ~/Repositories/
+  workspaces: ~/Workspaces/
+repositories:
 - account: kevinveenbirkenbach
   alias: arc
   provider: github.com
