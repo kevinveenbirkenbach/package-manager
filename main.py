@@ -673,17 +673,13 @@ For detailed help on each command, use:
         if not selected:
             print("No repositories selected.")
         else:
-            # Ermittele die Identifier aller ausgewählter Repositories.
             identifiers = [get_repo_identifier(repo, all_repos_list) for repo in selected]
             sorted_identifiers = sorted(identifiers)
-            # Erstelle den Workspace-Dateinamen, z. B.: repo1_repo2_repo3.code-workspace
             workspace_name = "_".join(sorted_identifiers) + ".code-workspace"
-            # Hole den Workspaces-Ordner aus der Config.
             workspaces_dir = os.path.expanduser(config_merged.get("directories").get("workspaces"))
             os.makedirs(workspaces_dir, exist_ok=True)
             workspace_file = os.path.join(workspaces_dir, workspace_name)
             
-            # Erstelle die Workspace-Konfiguration mit allen Repositories als Folder-Eintrag.
             folders = []
             for repo in selected:
                 repo_dir = os.path.expanduser(get_repo_dir(repositories_base_dir, repo))
@@ -693,9 +689,13 @@ For detailed help on each command, use:
                 "folders": folders,
                 "settings": {}
             }
-            with open(workspace_file, "w") as f:
-                json.dump(workspace_data, f, indent=4)
-            print(f"Created workspace file: {workspace_file}")
+            
+            if not os.path.exists(workspace_file):
+                with open(workspace_file, "w") as f:
+                    json.dump(workspace_data, f, indent=4)
+                print(f"Created workspace file: {workspace_file}")
+            else:
+                print(f"Using existing workspace file: {workspace_file}")
             run_command(f'code "{workspace_file}"')
 
 
