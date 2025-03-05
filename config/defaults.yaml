@@ -17,9 +17,9 @@ repos:
   alias: 'pkgmgr'
 - account: kevinveenbirkenbach
   description: Money Monitor is a comprehensive financial document organizer that scans bank statements and invoices to extract, filter, and export transaction data in multiple formats. Installable via Kevin's Package Manager as "momo", it simplifies financial logging and tax preparation.
-  homepage: https://github.com/kevinveenbirkenbach/financial-helper
+  homepage: https://github.com/kevinveenbirkenbach/money-monitor
   provider: github.com
-  repository: financial-helper
+  repository: money-monitor
   alias: 'momo'
 - account: kevinveenbirkenbach
   alias: os
