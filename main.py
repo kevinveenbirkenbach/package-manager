@@ -443,15 +443,98 @@ def get_selected_repos(show_all:bool,all_repos_list,identifiers=None):
     selected = all_repos_list if show_all or (not identifiers) else resolve_repos(identifiers, all_repos_list)
     return filter_ignored(selected)
 
+def list_repositories(all_repos, base_dir, bin_dir, search_filter="", status_filter=""):
+    """
+    List all repositories with their attributes and status information.
+    
+    Parameters:
+      all_repos (list): List of repository configurations.
+      base_dir (str): The base directory where repositories are located.
+      bin_dir (str): The directory where executable wrappers are stored.
+      search_filter (str): Filter for repository attributes (case insensitive).
+      status_filter (str): Filter for computed status info (case insensitive).
+      
+    For each repository, all attributes are printed and the computed status is always shown.
+    Repositories are filtered out if either the search_filter is not found in any attribute or
+    if the status_filter is not found in the computed status string.
+    """
+    search_filter = search_filter.lower() if search_filter else ""
+    status_filter = status_filter.lower() if status_filter else ""
+    
+    for repo in all_repos:
+        # Combine all attribute values into one string for filtering.
+        repo_text = " ".join(str(v) for v in repo.values()).lower()
+        if search_filter and search_filter not in repo_text:
+            continue
+
+        # Compute status information for the repository.
+        identifier = get_repo_identifier(repo, all_repos)
+        executable_path = os.path.join(bin_dir, identifier)
+        repo_dir = get_repo_dir(base_dir, repo)
+        status_list = []
+        
+        # Check if the executable exists (installed).
+        if os.path.exists(executable_path):
+            status_list.append("Installed")
+        else:
+            status_list.append("Not Installed")
+        # Check if the repository directory exists (cloned).
+        if os.path.exists(repo_dir):
+            status_list.append("Cloned")
+        else:
+            status_list.append("Clonable")
+        # Mark ignored repositories.
+        if repo.get("ignore", False):
+            status_list.append("Ignored")
+        else:
+            status_list.append("Active")
+        # Define installable as cloned but not installed.
+        if os.path.exists(repo_dir) and not os.path.exists(executable_path):
+            status_list.append("Installable")
+        
+        status_str = ", ".join(status_list)
+        # If a status_filter is provided, only display repos whose status contains the filter.
+        if status_filter and status_filter not in status_str.lower():
+            continue
+
+        # Display repository details.
+        print(f"Repository: {identifier}")
+        for key, value in repo.items():
+            formatted_value = str(value)
+            # Special formatting for "verified" attribute (yellow).
+            if key == "verified" and value:
+                formatted_value = f"\033[1;33m{value}\033[0m"
+            # Special formatting for "ignore" flag (red if True).
+            if key == "ignore" and value:
+                formatted_value = f"\033[1;31m{value}\033[0m"
+            print(f"  {key}: {formatted_value}")
+        print(f"  Status: {status_str}")
+        print("-" * 40)
+
+
 # Main program.
 if __name__ == "__main__":
     config_merged = load_config()
     base_dir = os.path.expanduser(config_merged["base"])
     all_repos_list = config_merged["repos"]
+    description_text = """\
+Package Manager 🤖📦
 
-    parser = argparse.ArgumentParser(description="Package Manager")
+A configurable Python tool to manage multiple repositories via a unified command-line interface.
+Automate common Git operations like clone, pull, push, status, and more while creating executable wrappers and custom aliases.
+Manage repository configurations through YAML files (defaults and user-specific) to easily add, edit, delete, or ignore entries.
+
+Features:
+  • Install and set up repositories with auto-detected commands.
+  • Execute Git commands with additional parameters.
+  • Open repositories in your file explorer or a new terminal tab.
+  • Display repository paths and detailed configuration info.
+
+For detailed help on each command, use:
+    pkgmgr <command> --help                                     
+"""
+    parser = argparse.ArgumentParser(description=description_text,formatter_class=argparse.RawTextHelpFormatter)
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
-
     def add_identifier_arguments(subparser):
         subparser.add_argument("identifiers", nargs="*", help="Identifier(s) for repositories")
         subparser.add_argument("--all", action="store_true", default=False, help="Apply to all repositories in the config")
@@ -500,6 +583,10 @@ if __name__ == "__main__":
     terminal_parser = subparsers.add_parser("terminal", help="Open repository in a new GNOME Terminal tab")
     add_identifier_arguments(terminal_parser)
     
+    list_parser = subparsers.add_parser("list", help="List all repositories with details and status")
+    list_parser.add_argument("--search", default="", help="Filter repositories that contain the given string")
+    list_parser.add_argument("--status", type=str, default="", help="Filter repositories by status (case insensitive)")
+    
     # Proxies the default git commands
     for git_command in GIT_DEFAULT_COMMANDS:
         add_identifier_arguments(
@@ -518,7 +605,8 @@ if __name__ == "__main__":
             clone_repos(selected, base_dir, all_repos_list, args.preview)
         else:
             git_default_exec(selected, base_dir, all_repos_list, args.extra_args, args.command, preview=args.preview)
-            
+    elif args.command == "list":
+        list_repositories(all_repos_list, base_dir, BIN_DIR, search_filter=args.search, status_filter=args.status)
     elif args.command == "deinstall":
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         deinstall_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
