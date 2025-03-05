@@ -313,7 +313,7 @@ def update_repos(selected_repos, base_dir, bin_dir, all_repos:[], no_verificatio
         run_command("sudo pacman -Syyu", preview=preview)
         
 def git_default_exec(selected_repos, base_dir, all_repos, extra_args, command:str, preview=False):
-    exec_git_command(selected_repos, base_dir, all_repos, "command", extra_args, preview)
+    exec_git_command(selected_repos, base_dir, all_repos, command, extra_args, preview)
 
 def show_config(selected_repos, full_config=False):
     """Display configuration for one or more repositories, or the entire merged config."""
@@ -439,8 +439,31 @@ def config_init(user_config, defaults_config, bin_dir):
     else:
         print("No new repositories found.")
         
-def get_selected_repos(show_all:bool,all_repos_list,identifiers=None):
-    selected = all_repos_list if show_all or (not identifiers) else resolve_repos(identifiers, all_repos_list)
+def get_selected_repos(show_all: bool, all_repos_list, base_dir, identifiers=None):
+    """
+    Select repositories based on provided identifiers or, if none are given,
+    use the repository that matches the current working directory (if any).
+    
+    If --all is specified, return all repositories.
+    Otherwise, if identifiers are provided, resolve them.
+    If no identifier is provided, try to match the current directory with a repo;
+    if no match is found, default to all repositories.
+    """
+    if show_all:
+        selected = all_repos_list
+    elif identifiers:
+        selected = resolve_repos(identifiers, all_repos_list)
+    else:
+        # No identifiers provided: check if the current directory belongs to one of the repos.
+        cwd = os.path.abspath(os.getcwd())
+        selected = []
+        for repo in all_repos_list:
+            repo_dir = os.path.abspath(get_repo_dir(base_dir, repo))
+            if cwd.startswith(repo_dir):
+                selected.append(repo)
+        if not selected:
+            # Fallback to all repos if current path is not inside any repo.
+            selected = all_repos_list
     return filter_ignored(selected)
 
 def list_repositories(all_repos, base_dir, bin_dir, search_filter="", status_filter=""):
@@ -631,10 +654,10 @@ For detailed help on each command, use:
 
     # Dispatch commands.
     if args.command == "install":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         install_repos(selected, base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
     elif args.command in GIT_DEFAULT_COMMANDS:
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         if args.command == "clone":
             clone_repos(selected, base_dir, all_repos_list, args.preview)
         else:
@@ -642,31 +665,31 @@ For detailed help on each command, use:
     elif args.command == "list":
         list_repositories(all_repos_list, base_dir, BIN_DIR, search_filter=args.search, status_filter=args.status)
     elif args.command == "deinstall":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         deinstall_repos(selected, base_dir, BIN_DIR, all_repos_list, preview=args.preview)
     elif args.command == "delete":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         delete_repos(selected, base_dir, all_repos_list, preview=args.preview)
     elif args.command == "update":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         update_repos(selected, base_dir, BIN_DIR, all_repos_list, args.no_verification, system_update=args.system, preview=args.preview, quiet=args.quiet)
     elif args.command == "status":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         status_repos(selected, base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "explor":
-        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
+        selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         for repo in selected:
             repo_dir = get_repo_dir(base_dir, repo)
             run_command(f"nautilus {repo_dir}")
 
     elif args.command == "terminal":
-        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
+        selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         for repo in selected:
             repo_dir = get_repo_dir(base_dir, repo)
             run_command(f'gnome-terminal --tab --working-directory="{repo_dir}"')
 
     elif args.command == "path":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = selected = get_selected_repos(args.all, all_repos_list, base_dir, args.identifiers)
         paths = [
             get_repo_dir(base_dir,repo)
             for repo in selected
