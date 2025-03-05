@@ -544,7 +544,7 @@ def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="
         print(f"  Status: {status_str}")
         # If the repository is installed, display a hint for more info.
         if os.path.exists(executable_path):
-            print(f"\nMore information and help: \033[1;4m{identifier} --help\033[0m\n")
+            print(f"\nMore information and help: \033[1;4mpkgmgr {identifier} --help\033[0m\n")
         print("-" * 40)
 # Main program.
 if __name__ == "__main__":
