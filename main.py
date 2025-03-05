@@ -494,6 +494,11 @@ if __name__ == "__main__":
     config_ignore.add_argument("--set", choices=["true", "false"], required=True, help="Set ignore to true or false")
     path_parser = subparsers.add_parser("path", help="Print the path(s) of repository/repositories")
     add_identifier_arguments(path_parser)
+    explor_parser = subparsers.add_parser("explor", help="Open repository in Nautilus file manager")
+    add_identifier_arguments(explor_parser)
+
+    terminal_parser = subparsers.add_parser("terminal", help="Open repository in a new GNOME Terminal tab")
+    add_identifier_arguments(terminal_parser)
     
     # Proxies the default git commands
     for git_command in GIT_DEFAULT_COMMANDS:
@@ -526,6 +531,18 @@ if __name__ == "__main__":
     elif args.command == "status":
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         status_repos(selected, base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
+    elif args.command == "explor":
+        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
+        for repo in selected:
+            repo_dir = get_repo_dir(base_dir, repo)
+            run_command(f"nautilus {repo_dir}")
+
+    elif args.command == "terminal":
+        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
+        for repo in selected:
+            repo_dir = get_repo_dir(base_dir, repo)
+            run_command(f'gnome-terminal --tab --working-directory="{repo_dir}"')
+
     elif args.command == "path":
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         paths = [
