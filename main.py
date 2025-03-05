@@ -55,12 +55,19 @@ def save_user_config(user_config):
     print(f"User configuration updated in {USER_CONFIG_PATH}.")
 
 def run_command(command, cwd=None, preview=False):
-    """Run a shell command in a given directory, or print it in preview mode."""
+    """Run a shell command in a given directory, or print it in preview mode.
+    
+    If the command fails, exit the program with the command's exit code.
+    """
+    current_dir = cwd or os.getcwd()
     if preview:
-        print(f"[Preview] In '{cwd or os.getcwd()}': {command}")
+        print(f"[Preview] In '{current_dir}': {command}")
     else:
-        print(f"Running in '{cwd or os.getcwd()}': {command}")
-        subprocess.run(command, cwd=cwd, shell=True, check=False)
+        print(f"Running in '{current_dir}': {command}")
+        result = subprocess.run(command, cwd=cwd, shell=True, check=False)
+        if result.returncode != 0:
+            print(f"Command failed with exit code {result.returncode}. Exiting.")
+            sys.exit(result.returncode)
 
 def get_repo_identifier(repo, all_repos):
     """
