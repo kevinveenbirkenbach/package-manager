@@ -265,18 +265,28 @@ def get_repo_dir(repositories_base_dir:str,repo:{})->str:
             print(f"Error: {e} \nThe base {base} seems not correct configured.\nPlease configure it correct.")
         sys.exit(1)
 
-def clone_repos(selected_repos, repositories_base_dir:str, all_repos, preview=False):
+def clone_repos(selected_repos, repositories_base_dir: str, all_repos, preview=False):
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
-        repo_dir = get_repo_dir(repositories_base_dir,repo)
+        repo_dir = get_repo_dir(repositories_base_dir, repo)
         if os.path.exists(repo_dir):
-            print(f"Repository '{repo_identifier}' already exists at '{repo_dir}'.")
+            print(f"[INFO] Repository '{repo_identifier}' already exists at '{repo_dir}'. Skipping clone.")
             continue
-        target = repo.get("replacement") if repo.get("replacement") else f"{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}"
-        clone_url = f"https://{target}.git"
+        
         parent_dir = os.path.dirname(repo_dir)
         os.makedirs(parent_dir, exist_ok=True)
-        run_command(f"git clone {clone_url} {repo_dir}", cwd=parent_dir, preview=preview)
+        
+        try:
+            target = repo.get("replacement") if repo.get("replacement") else f"{repo.get('provider')}:{repo.get('account')}/{repo.get('repository')}"
+            clone_url = f"git@{target}.git"
+            print(f"[INFO] Attempting to clone '{repo_identifier}' using SSH from {clone_url} into '{repo_dir}'.")
+            run_command(f"git clone {clone_url} {repo_dir}", cwd=parent_dir, preview=preview)
+        except Exception as exception1:
+            print(f"[WARNING] SSH clone failed for '{repo_identifier}' (error: {exception1}). Trying HTTPS...")
+            target = repo.get("replacement") if repo.get("replacement") else f"{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}"
+            clone_url = f"https://{target}.git"
+            print(f"[INFO] Attempting to clone '{repo_identifier}' using HTTPS from {clone_url} into '{repo_dir}'.")
+            run_command(f"git clone {clone_url} {repo_dir}", cwd=parent_dir, preview=preview)
 
 def deinstall_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, preview=False):
     for repo in selected_repos:
