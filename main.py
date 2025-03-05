@@ -553,12 +553,13 @@ if __name__ == "__main__":
     all_repos_list = config_merged["repositories"]
     description_text = """\
 \033[1;32mPackage Manager 🤖📦\033[0m
+\033[3mKevin's Package Manager ist drafted by and designed for:
+  \033[1;34mKevin Veen-Birkenbach
+  \033[0m\033[4mhttps://www.veen.world/\033[0m
 
 \033[1mOverview:\033[0m
 A configurable Python tool to manage multiple repositories via a unified command-line interface.
-Drafted by \033[1;34mKevin Veen-Birkenbach\033[0m (\033[4mhttps://www.veen.world/\033[0m), 
-this tool automates common Git operations (clone, pull, push, status, etc.) and creates executable wrappers
-and custom aliases to simplify your workflow.
+This tool automates common Git operations (clone, pull, push, status, etc.) and creates executable wrappers and custom aliases to simplify your workflow.
 
 \033[1mFeatures:\033[0m
   • \033[1;33mAuto-install & Setup:\033[0m Automatically detect and set up repositories.
