@@ -322,10 +322,6 @@ def deinstall_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, p
             run_command(teardown_cmd, cwd=repo_dir, preview=preview)
 
 def delete_repos(selected_repos, repositories_base_dir, all_repos, preview=False):
-    if not selected_repos:
-        print("Error: No repositories selected for deletion.")
-        return
-
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = get_repo_dir(repositories_base_dir, repo)
@@ -484,7 +480,11 @@ def get_selected_repos(show_all:bool,all_repos_list,identifiers=None):
         selected = all_repos_list 
     else:
         selected = resolve_repos(identifiers, all_repos_list)
-    return filter_ignored(selected)
+    filtered = filter_ignored(selected)
+    if not selected:
+        print("Error: No repositories had been selected.")
+        sys.exit(1)
+    return filtered
 
 def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="", status_filter=""):
     """
