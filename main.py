@@ -23,7 +23,8 @@ GIT_DEFAULT_COMMANDS = [
     "checkout",
     "clone",
     "reset",
-    "revert"
+    "revert",
+    "commit"
 ]
 
 def load_config():
