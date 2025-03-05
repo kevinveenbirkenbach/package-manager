@@ -322,15 +322,26 @@ def deinstall_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, p
             run_command(teardown_cmd, cwd=repo_dir, preview=preview)
 
 def delete_repos(selected_repos, repositories_base_dir, all_repos, preview=False):
+    if not selected_repos:
+        print("Error: No repositories selected for deletion.")
+        return
+
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
-        repo_dir = get_repo_dir(repositories_base_dir,repo)
+        repo_dir = get_repo_dir(repositories_base_dir, repo)
         if os.path.exists(repo_dir):
-            if preview:
-                print(f"[Preview] Would delete directory '{repo_dir}' for {repo_identifier}.")
+            confirm = input(f"Are you sure you want to delete directory '{repo_dir}' for {repo_identifier}? [y/N]: ").strip().lower()
+            if confirm == "y":
+                if preview:
+                    print(f"[Preview] Would delete directory '{repo_dir}' for {repo_identifier}.")
+                else:
+                    try:
+                        shutil.rmtree(repo_dir)
+                        print(f"Deleted repository directory '{repo_dir}' for {repo_identifier}.")
+                    except Exception as e:
+                        print(f"Error deleting '{repo_dir}' for {repo_identifier}: {e}")
             else:
-                shutil.rmtree(repo_dir)
-                print(f"Deleted repository directory '{repo_dir}' for {repo_identifier}.")
+                print(f"Skipped deletion of '{repo_dir}' for {repo_identifier}.")
         else:
             print(f"Repository directory '{repo_dir}' not found for {repo_identifier}.")
 
@@ -469,7 +480,10 @@ def config_init(user_config, defaults_config, bin_dir):
         print("No new repositories found.")
         
 def get_selected_repos(show_all:bool,all_repos_list,identifiers=None):
-    selected = all_repos_list if show_all or (not identifiers) else resolve_repos(identifiers, all_repos_list)
+    if show_all:
+        selected = all_repos_list 
+    else:
+        selected = resolve_repos(identifiers, all_repos_list)
     return filter_ignored(selected)
 
 def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="", status_filter=""):
@@ -604,7 +618,7 @@ For detailed help on each command, use:
         subparser.add_argument("--all", action="store_true", default=False, help="Apply to all repositories in the config")
         subparser.add_argument("--preview", action="store_true", help="Preview changes without executing commands")
         subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
-        subparser.add_argument("extra_args", nargs=argparse.REMAINDER, help="Extra arguments for the git command")
+        subparser.add_argument("-a", "--args", nargs=argparse.REMAINDER, dest="extra_args", help="Additional parameters to be forwarded e.g. to the git command",default=[])
 
     install_parser = subparsers.add_parser("install", help="Install repository/repositories")
     add_identifier_arguments(install_parser)
