@@ -76,7 +76,7 @@ For detailed help on each command, use:
             "--all", 
             action="store_true", 
             default=False, 
-            help="Apply the subcommand to all repositories in the config. Some commands ask for confirmation. If you want to give this confirmation for all repositories, pipe 'yes'. E.g: yes | pkgmgr {subcommand} --all"
+            help="Apply the subcommand to all repositories in the config. Some subcommands ask for confirmation. If you want to give this confirmation for all repositories, pipe 'yes'. E.g: yes | pkgmgr {subcommand} --all"
             )
         subparser.add_argument("--preview", action="store_true", help="Preview changes without executing commands")
         subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
