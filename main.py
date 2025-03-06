@@ -189,7 +189,7 @@ For detailed help on each command, use:
         status_repos(selected,repositories_base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "explore":
         for repository in selected:
-            run_command(f"nautilus {respository["directory"]}")
+            run_command(f"nautilus {repository["directory"]}")
     elif args.command == "code":
         if not selected:
             print("No repositories selected.")
@@ -203,7 +203,7 @@ For detailed help on each command, use:
             
             folders = []
             for repository in selected:
-                folders.append({"path": respository["directory"]})
+                folders.append({"path": repository["directory"]})
             
             workspace_data = {
                 "folders": folders,
@@ -218,10 +218,10 @@ For detailed help on each command, use:
             run_command(f'code "{workspace_file}"')
     elif args.command == "terminal":
         for repository in selected:
-            run_command(f'gnome-terminal --tab --working-directory="{respository["directory"]}"')
+            run_command(f'gnome-terminal --tab --working-directory="{repository["directory"]}"')
     elif args.command == "path":
         for repository in selected:
-            print(respository["directory"])
+            print(repository["directory"])
     elif args.command == "shell":
         if not args.shell_command:
             print("No shell command specified.")
@@ -229,8 +229,8 @@ For detailed help on each command, use:
         # Join the provided shell command parts into one string.
         command_to_run = " ".join(args.shell_command)
         for repository in selected:
-            print(f"Executing in '{respository["directory"]}': {command_to_run}")
-            run_command(command_to_run, cwd=respository["directory"], preview=args.preview)
+            print(f"Executing in '{repository["directory"]}': {command_to_run}")
+            run_command(command_to_run, cwd=repository["directory"], preview=args.preview)
     elif args.command == "config":
         if args.subcommand == "show":
             if args.all or (not args.identifiers):
