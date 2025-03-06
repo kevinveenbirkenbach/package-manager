@@ -8,6 +8,7 @@ def create_ink(repo, repositories_base_dir, bin_dir, all_repos, quiet=False, pre
     
     Instead of creating an executable wrapper, this function creates a symlink
     that points to the command file within the repository (e.g., main.sh or main.py).
+    It also ensures that the command file has executable permissions.
     """
     repo_identifier = get_repo_identifier(repo, all_repos)
     repo_dir = get_repo_dir(repositories_base_dir, repo)
@@ -24,6 +25,14 @@ def create_ink(repo, repositories_base_dir, bin_dir, all_repos, quiet=False, pre
             if not quiet:
                 print(f"No command defined and neither main.sh nor main.py found in {repo_dir}. Skipping link creation.")
             return
+
+    # Ensure the command file is executable.
+    if not preview:
+        try:
+            os.chmod(command, 0o755)
+        except Exception as e:
+            if not quiet:
+                print(f"Failed to set executable permissions for {command}: {e}")
 
     link_path = os.path.join(bin_dir, repo_identifier)
     if preview:
