@@ -90,7 +90,7 @@ For detailed help on each command, use:
             )
         subparser.add_argument("--preview", action="store_true", help="Preview changes without executing commands")
         subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
-        subparser.add_argument("-a", "--args", nargs=argparse.REMAINDER, dest="extra_args", help="Additional parameters to be forwarded e.g. to the git command",default=[])
+        subparser.add_argument("-a", "--args", nargs=argparse.REMAINDER, dest="extra_args", help="Additional parameters to be attached.",default=[])
 
     install_parser = subparsers.add_parser("install", help="Setup repository/repositories alias links to executables")
     add_identifier_arguments(install_parser)
@@ -140,6 +140,11 @@ For detailed help on each command, use:
     list_parser.add_argument("--search", default="", help="Filter repositories that contain the given string")
     list_parser.add_argument("--status", type=str, default="", help="Filter repositories by status (case insensitive)")
     
+    # Add the subcommand parser for "shell"
+    shell_parser = subparsers.add_parser("shell", help="Execute a shell command in each repository")
+    add_identifier_arguments(shell_parser)
+    shell_parser.add_argument("-c", "--command", nargs=argparse.REMAINDER, dest="shell_command", help="The shell command (and its arguments) to execute in each repository",default=[])
+
     git_command_parsers = {}
     # Proxies the default git commands
     for git_command in GIT_DEFAULT_COMMANDS:
@@ -231,6 +236,17 @@ For detailed help on each command, use:
             for repo in selected
         ]
         print(" ".join(paths))
+    elif args.command == "shell":
+        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
+        if not args.shell_command:
+            print("No shell command specified.")
+            exit(1)
+        # Join the provided shell command parts into one string.
+        command_to_run = " ".join(args.shell_command)
+        for repo in selected:
+            repo_dir = get_repo_dir(repositories_base_dir, repo)
+            print(f"Executing in '{repo_dir}': {command_to_run}")
+            run_command(command_to_run, cwd=repo_dir, preview=args.preview)
     elif args.command == "config":
         if args.subcommand == "show":
             if args.all or (not args.identifiers):

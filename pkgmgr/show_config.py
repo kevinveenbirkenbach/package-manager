@@ -1,4 +1,5 @@
 import yaml
+from .load_config import load_config
 
 def show_config(selected_repos, user_config_path, full_config=False):
     """Display configuration for one or more repositories, or the entire merged config."""

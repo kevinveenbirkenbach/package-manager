@@ -1,4 +1,6 @@
 import sys
+from .exec_git_command import exec_git_command
+from .run_command import run_command
 
 def status_repos(selected_repos, repositories_base_dir, all_repos, extra_args, list_only=False, system_status=False, preview=False):
     if system_status:
