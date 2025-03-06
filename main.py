@@ -140,16 +140,18 @@ For detailed help on each command, use:
     list_parser.add_argument("--search", default="", help="Filter repositories that contain the given string")
     list_parser.add_argument("--status", type=str, default="", help="Filter repositories by status (case insensitive)")
     
+    git_command_parsers = {}
     # Proxies the default git commands
     for git_command in GIT_DEFAULT_COMMANDS:
-        add_identifier_arguments(
-            subparsers.add_parser(
+        git_command_parsers[git_command] = subparsers.add_parser(
                 git_command,
                 help=f"Proxies 'git {git_command}' to one repository/repositories",
                 description=f"Executes 'git {git_command}' for the identified repos.\nTo recieve more help execute 'git {git_command} --help'",
                 formatter_class=argparse.RawTextHelpFormatter
                 )
-        )
+        add_identifier_arguments(git_command_parsers[git_command])
+        if git_command == "pull":
+            git_command_parsers[git_command].add_argument("--no-verification", action="store_true", default=False, help="Disable verification of repository commit")
 
     args = parser.parse_args()
 
