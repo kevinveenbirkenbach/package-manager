@@ -1,10 +1,14 @@
+#!/usr/bin/env python3
+
 import os
 import yaml
 import argparse
 import json
-
+import os
+# Ensure the current working directory is the script’s directory
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 # Define configuration file paths.
-USER_CONFIG_PATH = os.path.join("config", "config.yaml")
+USER_CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config", "config.yaml")
 BIN_DIR = os.path.expanduser("~/.local/bin")
 
 from pkgmgr.clone_repos import clone_repos

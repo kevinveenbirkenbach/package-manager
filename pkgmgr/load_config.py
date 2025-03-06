@@ -1,8 +1,7 @@
 import sys
 import yaml
 import os
-
-DEFAULT_CONFIG_PATH = os.path.join("config", "defaults.yaml")
+DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../","config", "defaults.yaml")
 
 def load_config(user_config_path):
     """Load configuration from defaults and merge in user config if present."""
