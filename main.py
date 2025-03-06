@@ -5,8 +5,7 @@ import yaml
 import argparse
 import json
 import os
-# Ensure the current working directory is the script’s directory
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
 # Define configuration file paths.
 USER_CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config", "config.yaml")
 BIN_DIR = os.path.expanduser("~/.local/bin")

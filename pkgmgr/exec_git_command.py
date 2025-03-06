@@ -1,4 +1,7 @@
 import os
+from pkgmgr.get_repo_identifier import get_repo_identifier
+from pkgmgr.get_repo_dir import get_repo_dir
+from pkgmgr.run_command import run_command
 
 def exec_git_command(selected_repos, repositories_base_dir, all_repos, git_cmd, extra_args, preview=False):
     """Execute a given git command with extra arguments for each repository."""
