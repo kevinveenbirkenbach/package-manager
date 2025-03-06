@@ -46,6 +46,13 @@ GIT_DEFAULT_COMMANDS = [
     "commit"
 ]
 
+class SortedSubParsersAction(argparse._SubParsersAction):
+    def add_parser(self, name, **kwargs):
+        parser = super().add_parser(name, **kwargs)
+        # Sort the list of subparsers each time one is added
+        self._choices_actions.sort(key=lambda a: a.dest)
+        return parser
+
 # Main program.
 if __name__ == "__main__":
     config_merged = load_config(USER_CONFIG_PATH)
@@ -72,7 +79,7 @@ For detailed help on each command, use:
 """
 
     parser = argparse.ArgumentParser(description=description_text,formatter_class=argparse.RawTextHelpFormatter)
-    subparsers = parser.add_subparsers(dest="command", help="Subcommands")
+    subparsers = parser.add_subparsers(dest="command", help="Subcommands", action=SortedSubParsersAction)
     def add_identifier_arguments(subparser):
         subparser.add_argument("identifiers", nargs="*", help="Identifier(s) for repositories")
         subparser.add_argument(
@@ -120,8 +127,8 @@ For detailed help on each command, use:
     config_ignore.add_argument("--set", choices=["true", "false"], required=True, help="Set ignore to true or false")
     path_parser = subparsers.add_parser("path", help="Print the path(s) of repository/repositories")
     add_identifier_arguments(path_parser)
-    explor_parser = subparsers.add_parser("explor", help="Open repository in Nautilus file manager")
-    add_identifier_arguments(explor_parser)
+    explore_parser = subparsers.add_parser("explore", help="Open repository in Nautilus file manager")
+    add_identifier_arguments(explore_parser)
 
     terminal_parser = subparsers.add_parser("terminal", help="Open repository in a new GNOME Terminal tab")
     add_identifier_arguments(terminal_parser)
@@ -173,7 +180,7 @@ For detailed help on each command, use:
     elif args.command == "status":
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         status_repos(selected,repositories_base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
-    elif args.command == "explor":
+    elif args.command == "explore":
         selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
         for repo in selected:
             repo_dir = get_repo_dir(repositories_base_dir, repo)
