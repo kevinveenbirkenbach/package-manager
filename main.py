@@ -164,7 +164,7 @@ For detailed help on each command, use:
     args = parser.parse_args()
 
     # All 
-    if args.command and args.command != "config":
+    if args.command and not args.command in ["config","list"]:
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
     # Dispatch commands.
     if args.command == "install":
