@@ -9,7 +9,7 @@ BIN_DIR = os.path.expanduser("~/.local/bin")
 
 from pkgmgr.clone_repos import clone_repos
 from pkgmgr.config_init import config_init
-from pkgmgr.create_executable import create_executable
+from pkgmgr.create_ink import create_ink
 from pkgmgr.deinstall_repos import deinstall_repos
 from pkgmgr.delete_repos import delete_repos
 from pkgmgr.exec_git_command import exec_git_command
@@ -72,20 +72,25 @@ For detailed help on each command, use:
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
     def add_identifier_arguments(subparser):
         subparser.add_argument("identifiers", nargs="*", help="Identifier(s) for repositories")
-        subparser.add_argument("--all", action="store_true", default=False, help="Apply to all repositories in the config")
+        subparser.add_argument(
+            "--all", 
+            action="store_true", 
+            default=False, 
+            help="Apply the subcommand to all repositories in the config. Some commands ask for confirmation. If you want to give this confirmation for all repositories, pipe 'yes'. E.g: yes | pkgmgr {subcommand} --all"
+            )
         subparser.add_argument("--preview", action="store_true", help="Preview changes without executing commands")
         subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
         subparser.add_argument("-a", "--args", nargs=argparse.REMAINDER, dest="extra_args", help="Additional parameters to be forwarded e.g. to the git command",default=[])
 
-    install_parser = subparsers.add_parser("install", help="Install repository/repositories")
+    install_parser = subparsers.add_parser("install", help="Setup repository/repositories alias links to executables")
     add_identifier_arguments(install_parser)
     install_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
     install_parser.add_argument("--no-verification", default=False, action="store_true", help="Disable verification of repository commit")
 
-    deinstall_parser = subparsers.add_parser("deinstall", help="Deinstall repository/repositories")
+    deinstall_parser = subparsers.add_parser("deinstall", help="Remove alias links to repository/repositories")
     add_identifier_arguments(deinstall_parser)
 
-    delete_parser = subparsers.add_parser("delete", help="Delete repository directory for repository/repositories")
+    delete_parser = subparsers.add_parser("delete", help="Delete repository/repositories alias links to executables")
     add_identifier_arguments(delete_parser)
 
     update_parser = subparsers.add_parser("update", help="Update (pull + install) repository/repositories")
@@ -143,11 +148,14 @@ For detailed help on each command, use:
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         install_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
     elif args.command in GIT_DEFAULT_COMMANDS:
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
         if args.command == "clone":
             clone_repos(selected, repositories_base_dir, all_repos_list, args.preview)
+        elif args.command == "pull":
+            from pkgmgr.pull_with_verification import pull_with_verification
+            pull_with_verification(selected, repositories_base_dir, all_repos_list, args.extra_args, no_verification=args.no_verification, preview=args.preview)
         else:
-            exec_git_command(selected, repositories_base_dir, all_repos_list, args.command, args.extra_args, preview)
+            exec_git_command(selected, repositories_base_dir, all_repos_list, args.command, args.extra_args, args.preview)
     elif args.command == "list":
         list_repositories(all_repos_list, repositories_base_dir, BIN_DIR, search_filter=args.search, status_filter=args.status)
     elif args.command == "deinstall":
