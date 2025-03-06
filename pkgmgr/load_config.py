@@ -1,6 +1,7 @@
 import sys
 import yaml
 import os
+from .get_repo_dir import get_repo_dir
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../","config", "defaults.yaml")
 
 def load_config(user_config_path):
@@ -21,4 +22,9 @@ def load_config(user_config_path):
                 config["directories"] = user_config["directories"]
             if "repositories" in user_config:
                 config["repositories"].extend(user_config["repositories"])
+    for repository in config["repositories"]:
+        # You can overwritte the directory path in the config
+        if "directory" not in repository:
+            directory = get_repo_dir(config["directories"]["repositories"], repository)
+            repository["directory"] = os.path.expanduser(directory)
     return config

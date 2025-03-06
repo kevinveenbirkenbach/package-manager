@@ -18,7 +18,6 @@ from pkgmgr.delete_repos import delete_repos
 from pkgmgr.exec_git_command import exec_git_command
 from pkgmgr.filter_ignored import filter_ignored
 from pkgmgr.generate_alias import generate_alias
-from pkgmgr.get_repo_dir import get_repo_dir
 from pkgmgr.get_repo_identifier import get_repo_identifier
 from pkgmgr.get_selected_repos import get_selected_repos
 from pkgmgr.install_repos import install_repos
@@ -81,7 +80,11 @@ For detailed help on each command, use:
     parser = argparse.ArgumentParser(description=description_text,formatter_class=argparse.RawTextHelpFormatter)
     subparsers = parser.add_subparsers(dest="command", help="Subcommands", action=SortedSubParsersAction)
     def add_identifier_arguments(subparser):
-        subparser.add_argument("identifiers", nargs="*", help="Identifier(s) for repositories")
+        subparser.add_argument(
+            "identifiers",
+            nargs="*",
+            help="Identifier(s) for repositories. Default: Repository of current folder.",
+            )
         subparser.add_argument(
             "--all", 
             action="store_true", 
@@ -160,12 +163,13 @@ For detailed help on each command, use:
 
     args = parser.parse_args()
 
+    # All 
+    if args.command and args.command != "config":
+        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
     # Dispatch commands.
     if args.command == "install":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         install_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
     elif args.command in GIT_DEFAULT_COMMANDS:
-        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
         if args.command == "clone":
             clone_repos(selected, repositories_base_dir, all_repos_list, args.preview)
         elif args.command == "pull":
@@ -176,24 +180,17 @@ For detailed help on each command, use:
     elif args.command == "list":
         list_repositories(all_repos_list, repositories_base_dir, BIN_DIR, search_filter=args.search, status_filter=args.status)
     elif args.command == "deinstall":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         deinstall_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, preview=args.preview)
     elif args.command == "delete":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         delete_repos(selected,repositories_base_dir, all_repos_list, preview=args.preview)
     elif args.command == "update":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         update_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, system_update=args.system, preview=args.preview, quiet=args.quiet)
     elif args.command == "status":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
         status_repos(selected,repositories_base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "explore":
-        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
-        for repo in selected:
-            repo_dir = get_repo_dir(repositories_base_dir, repo)
-            run_command(f"nautilus {repo_dir}")
+        for repository in selected:
+            run_command(f"nautilus {respository["directory"]}")
     elif args.command == "code":
-        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
         if not selected:
             print("No repositories selected.")
         else:
@@ -205,15 +202,13 @@ For detailed help on each command, use:
             workspace_file = os.path.join(workspaces_dir, workspace_name)
             
             folders = []
-            for repo in selected:
-                repo_dir = os.path.expanduser(get_repo_dir(repositories_base_dir, repo))
-                folders.append({"path": repo_dir})
+            for repository in selected:
+                folders.append({"path": respository["directory"]})
             
             workspace_data = {
                 "folders": folders,
                 "settings": {}
             }
-            
             if not os.path.exists(workspace_file):
                 with open(workspace_file, "w") as f:
                     json.dump(workspace_data, f, indent=4)
@@ -221,32 +216,21 @@ For detailed help on each command, use:
             else:
                 print(f"Using existing workspace file: {workspace_file}")
             run_command(f'code "{workspace_file}"')
-
-
     elif args.command == "terminal":
-        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
-        for repo in selected:
-            repo_dir = get_repo_dir(repositories_base_dir, repo)
-            run_command(f'gnome-terminal --tab --working-directory="{repo_dir}"')
-
+        for repository in selected:
+            run_command(f'gnome-terminal --tab --working-directory="{respository["directory"]}"')
     elif args.command == "path":
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
-        paths = [
-            get_repo_dir(repositories_base_dir,repo)
-            for repo in selected
-        ]
-        print(" ".join(paths))
+        for repository in selected:
+            print(respository["directory"])
     elif args.command == "shell":
-        selected = get_selected_repos(args.all, all_repos_list, args.identifiers)
         if not args.shell_command:
             print("No shell command specified.")
             exit(1)
         # Join the provided shell command parts into one string.
         command_to_run = " ".join(args.shell_command)
-        for repo in selected:
-            repo_dir = get_repo_dir(repositories_base_dir, repo)
-            print(f"Executing in '{repo_dir}': {command_to_run}")
-            run_command(command_to_run, cwd=repo_dir, preview=args.preview)
+        for repository in selected:
+            print(f"Executing in '{respository["directory"]}': {command_to_run}")
+            run_command(command_to_run, cwd=respository["directory"], preview=args.preview)
     elif args.command == "config":
         if args.subcommand == "show":
             if args.all or (not args.identifiers):

@@ -1,6 +1,6 @@
 import os
 
-def resolve_repos(identifiers, all_repos):
+def resolve_repos(identifiers:[], all_repos:[]):
     """
     Given a list of identifier strings, return a list of repository configs.
     The identifier can be:
