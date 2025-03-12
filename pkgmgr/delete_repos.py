@@ -1,5 +1,7 @@
 import shutil
 import os
+from pkgmgr.get_repo_identifier import get_repo_identifier
+from pkgmgr.get_repo_dir import get_repo_dir
 
 def delete_repos(selected_repos, repositories_base_dir, all_repos, preview=False):
     for repo in selected_repos:
