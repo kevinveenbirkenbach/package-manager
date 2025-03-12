@@ -211,3 +211,12 @@ repositories:
   repository: fediverse-to-oligopolies-bridge
   homepage: https://github.com/kevinveenbirkenbach/fediverse-to-oligopolies-bridge
   verified: 1f6ace3fe84cb537436839a8a8164f1dc7b6e0c3
+- account: kevinveenbirkenbach
+  alias: bure
+  provider: github.com
+  repository: bulk-rename
+  description: >
+    Bulk Rename is a Python-based CLI tool that renames files in bulk by replacing specified substrings in file names.
+    It supports both recursive and non-recursive renaming with verbose output.
+  homepage: https://github.com/kevinveenbirkenbach/bulk-rename
+  verified: dc2ecefd3b7a64f5dcbd808fed5f53886a766315

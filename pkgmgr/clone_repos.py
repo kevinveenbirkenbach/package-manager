@@ -1,5 +1,7 @@
 import subprocess
 import os
+from pkgmgr.get_repo_dir import get_repo_dir
+from pkgmgr.get_repo_identifier import get_repo_identifier
 
 def clone_repos(selected_repos, repositories_base_dir: str, all_repos, preview=False):
     for repo in selected_repos:
