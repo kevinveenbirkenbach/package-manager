@@ -219,3 +219,13 @@ repositories:
     It supports both recursive and non-recursive renaming with verbose output.
   homepage: https://github.com/kevinveenbirkenbach/bulk-rename
   verified: f76b29720edf2df5760070e34eacae23beb9d3a7
+- account: kevinveenbirkenbach
+  alias: gitconfig
+  provider: github.com
+  repository: git-configurator
+  description: >
+    Git Configurator is a Python-based utility that simplifies the global Git configuration.
+    It offers both interactive prompts and command-line options to set merge strategies, user details,
+    and commit signing preferences.
+  homepage: https://github.com/kevinveenbirkenbach/git-configurator
+  verified: 8441c2c34a6916a0610bf52155f8e63c0dbe203b
