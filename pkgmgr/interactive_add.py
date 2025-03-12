@@ -8,7 +8,6 @@ def interactive_add(config,USER_CONFIG_PATH:str):
     new_entry["provider"] = input("Provider (e.g., github.com): ").strip()
     new_entry["account"] = input("Account (e.g., yourusername): ").strip()
     new_entry["repository"] = input("Repository name (e.g., mytool): ").strip()
-    new_entry["verified"] = input("Verified commit id: ").strip()
     new_entry["command"] = input("Command (optional, leave blank to auto-detect): ").strip()
     new_entry["description"] = input("Description (optional): ").strip()
     new_entry["replacement"] = input("Replacement (optional): ").strip()

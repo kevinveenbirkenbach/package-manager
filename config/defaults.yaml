@@ -295,3 +295,11 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+- account: kevinveenbirkenbach
+  alias: gihufu
+  ignore: true
+  provider: github.com
+  repository: github-funding
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E

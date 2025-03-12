@@ -59,7 +59,7 @@ def config_init(user_config, defaults_config, bin_dir,USER_CONFIG_PATH:str):
                     "provider": provider,
                     "account": account,
                     "repository": repo_name,
-                    "verified": verified,
+                    "verified": {"commit": verified},
                     "ignore": True
                 }
                 alias = generate_alias({"repository": repo_name, "provider": provider, "account": account}, bin_dir, existing_aliases)
