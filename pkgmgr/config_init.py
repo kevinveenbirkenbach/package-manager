@@ -1,5 +1,7 @@
 import subprocess
 import os
+from pkgmgr.generate_alias import generate_alias
+from pkgmgr.save_user_config import save_user_config
 
 def config_init(user_config, defaults_config, bin_dir,USER_CONFIG_PATH:str):
     """

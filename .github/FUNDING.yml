@@ -1,0 +1,12 @@
+github:
+  - "https://github.com/sponsors/kevinveenbirkenbach"
+
+patreon:
+  - "https://www.patreon.com/c/kevinveenbirkenbach"
+
+buymeacoffee:
+  - "https://buymeacoffee.com/kevinveenbirkenbach"
+
+custom:
+  - service: PayPal
+    url: "https://s.veen.world/paypaldonate"

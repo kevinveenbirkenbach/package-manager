@@ -17,7 +17,6 @@ from pkgmgr.deinstall_repos import deinstall_repos
 from pkgmgr.delete_repos import delete_repos
 from pkgmgr.exec_git_command import exec_git_command
 from pkgmgr.filter_ignored import filter_ignored
-from pkgmgr.generate_alias import generate_alias
 from pkgmgr.get_repo_identifier import get_repo_identifier
 from pkgmgr.get_selected_repos import get_selected_repos
 from pkgmgr.install_repos import install_repos
