@@ -1,9 +1,11 @@
 import os
 from pkgmgr.get_repo_identifier import get_repo_identifier
 from pkgmgr.get_repo_dir import get_repo_dir
+
 def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="", status_filter=""):
     """
-    List all repositories with their attributes and status information.
+    Lists all repositories with their attributes and status information.
+    The repositories are sorted in ascending order by their identifier.
 
     Parameters:
       all_repos (list): List of repository configurations.
@@ -20,7 +22,7 @@ def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="
     """
     search_filter = search_filter.lower() if search_filter else ""
     status_filter = status_filter.lower() if status_filter else ""
-    
+
     # Define status colors using colors not used for other attributes:
     # Avoid red (for ignore), blue (for homepage) and yellow (for verified).
     status_colors = {
@@ -32,8 +34,11 @@ def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="
         "Active": "\033[38;5;129m",      # Light Purple (extended)
         "Installable": "\033[38;5;82m"   # Light Green (extended)
     }
-    
-    for repo in all_repos:
+
+    # Sort all repositories by their identifier in ascending order.
+    sorted_repos = sorted(all_repos, key=lambda repo: get_repo_identifier(repo, all_repos))
+
+    for repo in sorted_repos:
         # Combine all attribute values into one string for filtering.
         repo_text = " ".join(str(v) for v in repo.values()).lower()
         if search_filter and search_filter not in repo_text:
@@ -44,7 +49,7 @@ def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="
         executable_path = os.path.join(bin_dir, identifier)
         repo_dir = get_repo_dir(repositories_base_dir, repo)
         status_list = []
-        
+
         # Check if the executable exists (Installed).
         if os.path.exists(executable_path):
             status_list.append("Installed")
@@ -63,11 +68,11 @@ def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="
         # Define installable as cloned but not installed.
         if os.path.exists(repo_dir) and not os.path.exists(executable_path):
             status_list.append("Installable")
-        
+
         # Build a colored status string.
         colored_statuses = [f"{status_colors.get(s, '')}{s}\033[0m" for s in status_list]
         status_str = ", ".join(colored_statuses)
-        
+
         # If a status_filter is provided, only display repos whose status contains the filter.
         if status_filter and status_filter not in status_str.lower():
             continue
@@ -83,10 +88,10 @@ def list_repositories(all_repos, repositories_base_dir, bin_dir, search_filter="
         # Loop through all attributes.
         for key, value in repo.items():
             formatted_value = str(value)
-            # Special formatting for "verified" attribute (yellow).
+            # Special formatting for the "verified" attribute (yellow).
             if key == "verified" and value:
                 formatted_value = f"\033[1;33m{value}\033[0m"
-            # Special formatting for "ignore" flag (red if True).
+            # Special formatting for the "ignore" flag (red if True).
             if key == "ignore" and value:
                 formatted_value = f"\033[1;31m{value}\033[0m"
             if key == "description":

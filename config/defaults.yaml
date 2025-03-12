@@ -34,10 +34,9 @@ repositories:
   alias: bsr
   provider: github.com
   repository: bulk-string-replacer
-  command: python replace_string.py
   description: Bulk String Replacer CLI (bsr) is a command-line tool for efficiently searching and replacing strings in file names, folder names, and file contents across directories. It's perfect for bulk updates and streamlining your workflow.
   homepage: https://github.com/kevinveenbirkenbach/bulk-string-replacer
-  verified: ce964188786d4d2d6f046de6e070fed1443ccc73
+  verified: daf45389383ef6b3d6569d63eb3e052ab811916d
 - account: kevinveenbirkenbach
   alias: imgrszr
   provider: github.com
@@ -219,4 +218,4 @@ repositories:
     Bulk Rename is a Python-based CLI tool that renames files in bulk by replacing specified substrings in file names.
     It supports both recursive and non-recursive renaming with verbose output.
   homepage: https://github.com/kevinveenbirkenbach/bulk-rename
-  verified: dc2ecefd3b7a64f5dcbd808fed5f53886a766315
+  verified: f76b29720edf2df5760070e34eacae23beb9d3a7
