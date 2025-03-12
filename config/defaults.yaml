@@ -13,6 +13,7 @@ repositories:
   verified: 
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   description: A configurable Python package manager that automates repository tasks—including cloning, installation, updates, and status reporting—based on a YAML configuration file for streamlined software management which gives you access to the Kevin Veen-Birkenbach Code Universe.
   homepage: https://github.com/kevinveenbirkenbach/package-manager
@@ -22,6 +23,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   description: Money Monitor is a comprehensive financial document organizer that scans bank statements and invoices to extract, filter, and export transaction data in multiple formats. Installable via Kevin's Package Manager as "momo", it simplifies financial logging and tax preparation.
   homepage: https://github.com/kevinveenbirkenbach/money-monitor
@@ -31,6 +33,7 @@ repositories:
   verified: 
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: os
   provider: github.com
@@ -40,6 +43,7 @@ repositories:
   verified: 
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: bsr
   provider: github.com
@@ -49,6 +53,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: imgrszr
   provider: github.com
@@ -58,6 +63,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   provider: github.com
   alias: chroso
@@ -67,6 +73,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   provider: github.com
   repository: media-sorter
@@ -76,6 +83,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: ansenc
   provider: github.com
@@ -85,6 +93,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: lim
   provider: github.com
@@ -94,6 +103,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: dufiha
   provider: github.com
@@ -103,6 +113,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   provider: github.com
   alias: swafo
@@ -112,6 +123,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: sisec
   provider: github.com
@@ -121,6 +133,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: dirval
   provider: github.com
@@ -130,6 +143,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: lukyma
   provider: github.com
@@ -139,6 +153,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: 4dvt
   provider: github.com
@@ -148,6 +163,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: btrfsauba
   description: The btrfs-balance-automator automates Btrfs filesystem balancing with dynamic decrementing usage thresholds. It provides real-time status updates, enhancing system performance and storage optimization. This Python script is essential for system admins aiming to streamline Btrfs maintenance.
@@ -156,6 +172,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: baudolo
   homepage: https://github.com/kevinveenbirkenbach/backup-docker-to-local
@@ -165,6 +182,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: clndoba
   homepage: https://github.com/kevinveenbirkenbach/cleanup-failed-docker-backups
@@ -174,6 +192,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - alias: cedama
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/central-database-manager
@@ -183,6 +202,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - alias: dovore
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/docker-volume-renamer
@@ -192,6 +212,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - alias: gigimi
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/github-to-gitea-mirror/
@@ -201,6 +222,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - alias: seedssh
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/seed-ssh-key
@@ -210,6 +232,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - alias: anscrico
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/analyze-script-collection
@@ -219,6 +242,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - alias: heicma
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/heic-management
@@ -228,6 +252,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   account: kevinveenbirkenbach
   alias: portfolio
@@ -238,6 +263,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: goexma
   provider: github.com
@@ -247,6 +273,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: cymais
   provider: github.com
@@ -256,6 +283,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   provider: github.com
   repository: dynamic-miner
@@ -264,6 +292,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   provider: github.com
   description: This repository provides automated bridges for transferring content from federated platforms (like Pixelfed, Mastodon, and PeerTube) to centralized social networks (such as Instagram, X (Twitter), Facebook, and YouTube). It enables seamless cross-posting to maximize content reach across decentralized and mainstream platforms.
@@ -272,6 +301,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: bure
   provider: github.com
@@ -283,6 +313,7 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: gitconfig
   provider: github.com
@@ -295,11 +326,14 @@ repositories:
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
 - account: kevinveenbirkenbach
   alias: gihufu
-  ignore: true
   provider: github.com
   repository: github-funding
+  description: A Python script that automatically creates .github folders and deploys a FUNDING.yml file into every repository, streamlining your repository funding setup.
+  homepage: https://github.com/kevinveenbirkenbach/github-funding
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
+      - B5690EEEBB952194
