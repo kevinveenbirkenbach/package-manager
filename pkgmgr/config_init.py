@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-def config_init(user_config, defaults_config, bin_dir):
+def config_init(user_config, defaults_config, bin_dir,USER_CONFIG_PATH:str):
     """
     Scan the base directory (defaults_config["base"]) for repositories.
     The folder structure is assumed to be:
@@ -68,6 +68,6 @@ def config_init(user_config, defaults_config, bin_dir):
 
     if new_entries:
         user_config.setdefault("repositories", []).extend(new_entries)
-        save_user_config(user_config)
+        save_user_config(user_config,USER_CONFIG_PATH)
     else:
         print("No new repositories found.")

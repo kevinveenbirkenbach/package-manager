@@ -1,7 +1,7 @@
 import yaml
 import os
 
-def interactive_add(config):
+def interactive_add(config,USER_CONFIG_PATH:str):
     """Interactively prompt the user to add a new repository entry to the user config."""
     print("Adding a new repository configuration entry.")
     new_entry = {}
@@ -33,6 +33,6 @@ def interactive_add(config):
             user_config = {"repositories": []}
         user_config.setdefault("repositories", [])
         user_config["repositories"].append(new_entry)
-        save_user_config(user_config)
+        save_user_config(user_config,USER_CONFIG_PATH)
     else:
         print("Entry not added.")

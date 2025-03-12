@@ -242,7 +242,7 @@ For detailed help on each command, use:
                 if selected:
                     show_config(selected, USER_CONFIG_PATH, full_config=False)
         elif args.subcommand == "add":
-            interactive_add(config_merged)
+            interactive_add(config_merged,USER_CONFIG_PATH)
         elif args.subcommand == "edit":
             """Open the user configuration file in nano."""
             run_command(f"nano {USER_CONFIG_PATH}")
@@ -252,7 +252,7 @@ For detailed help on each command, use:
                     user_config = yaml.safe_load(f) or {}
             else:
                 user_config = {"repositories": []}
-            config_init(user_config, config_merged, BIN_DIR)
+            config_init(user_config, config_merged, BIN_DIR, USER_CONFIG_PATH)
         elif args.subcommand == "delete":
             # Load user config from USER_CONFIG_PATH.
             if os.path.exists(USER_CONFIG_PATH):
@@ -266,7 +266,7 @@ For detailed help on each command, use:
                 to_delete = resolve_repos(args.identifiers, user_config.get("repositories", []))
                 new_repos = [entry for entry in user_config.get("repositories", []) if entry not in to_delete]
                 user_config["repositories"] = new_repos
-                save_user_config(user_config)
+                save_user_config(user_config,USER_CONFIG_PATH)
                 print(f"Deleted {len(to_delete)} entries from user config.")
         elif args.subcommand == "ignore":
             # Load user config from USER_CONFIG_PATH.
@@ -286,6 +286,6 @@ For detailed help on each command, use:
                         if key == mod_key:
                             entry["ignore"] = (args.set == "true")
                             print(f"Set ignore for {key} to {entry['ignore']}")
-                save_user_config(user_config)
+                save_user_config(user_config,USER_CONFIG_PATH)
     else:
         parser.print_help()
