@@ -1,12 +1,7 @@
-github:
-  - "https://github.com/sponsors/kevinveenbirkenbach"
+github: kevinveenbirkenbach
 
-patreon:
-  - "https://www.patreon.com/c/kevinveenbirkenbach"
+patreon: kevinveenbirkenbach
 
-buymeacoffee:
-  - "https://buymeacoffee.com/kevinveenbirkenbach"
+buy_me_a_coffee: kevinveenbirkenbach
 
-custom:
-  - service: PayPal
-    url: "https://s.veen.world/paypaldonate"
+custom: https://s.veen.world/paypaldonate
