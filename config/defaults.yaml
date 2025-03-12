@@ -10,172 +10,224 @@ repositories:
   repository: analysis-ready-code
   description: Analysis-Ready Code (ARC) is a Python utility that recursively scans directories and transforms source code into a streamlined, analysis-ready format by removing comments, filtering files, and compressing content—perfect for AI and automated code analysis.
   homepage: https://github.com/kevinveenbirkenbach/analysis-ready-code
-  verified: bef5f392d7e8a292fb9e4ee40809e434dd6142a9
+  verified: 
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   description: A configurable Python package manager that automates repository tasks—including cloning, installation, updates, and status reporting—based on a YAML configuration file for streamlined software management which gives you access to the Kevin Veen-Birkenbach Code Universe.
   homepage: https://github.com/kevinveenbirkenbach/package-manager
   provider: github.com
   repository: package-manager
   alias: 'pkgmgr'
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   description: Money Monitor is a comprehensive financial document organizer that scans bank statements and invoices to extract, filter, and export transaction data in multiple formats. Installable via Kevin's Package Manager as "momo", it simplifies financial logging and tax preparation.
   homepage: https://github.com/kevinveenbirkenbach/money-monitor
   provider: github.com
   repository: money-monitor
   alias: 'momo'
+  verified: 
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: os
   provider: github.com
   repository: omni-search
   description: OmniSearch (OS) is a versatile file content search tool that scans directories for strings across multiple formats (PDFs, text, images, spreadsheets, etc.), offering robust filtering, error handling, and JSON output. Easily installable via Kevin's Package Manager under the alias os 🔍🚀.
   homepage: https://github.com/kevinveenbirkenbach/omni-search
-  verified: 93875b27280191c317806056847809464d9f5282
+  verified: 
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: bsr
   provider: github.com
   repository: bulk-string-replacer
   description: Bulk String Replacer CLI (bsr) is a command-line tool for efficiently searching and replacing strings in file names, folder names, and file contents across directories. It's perfect for bulk updates and streamlining your workflow.
   homepage: https://github.com/kevinveenbirkenbach/bulk-string-replacer
-  verified: daf45389383ef6b3d6569d63eb3e052ab811916d
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: imgrszr
   provider: github.com
   repository: image-resizer-cli
   description: Image Resizer CLI (imgrszr) is a lightweight command-line tool that resizes images by percentage, maximum dimensions, or target file size. Easily installable via Kevin's Package Manager. It’s perfect for preparing large photos for upload and streamlining your image workflow. 🚀
   homepage: https://github.com/kevinveenbirkenbach/image-resizer-cli
-  verified: e8b48c08679a1fc73339514db55f42a6ba55b44e
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   provider: github.com
   alias: chroso
   repository: chrono-sorter
   description: ChronoSorter (chroso) is a CLI tool that updates media file metadata and renames images based on their earliest timestamps. Easily installed via Kevin's Package Manager under the alias chroso, it helps organize your photos chronologically.
   homepage: https://github.com/kevinveenbirkenbach/chrono-sorter
-  verified: 
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   provider: github.com
   repository: media-sorter
   alias: medso
   description: MediaSorter (medso) is a command-line tool that automatically sorts media files by moving them between your Pictures and Videos directories based on file extensions, with support for preview and verbose modes.
   homepage: https://github.com/kevinveenbirkenbach/media-sorter
-  verified: 502fba5198474caaf805fb6bc3a7bbe63e699d69
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: ansenc
   provider: github.com
   repository: ansible-encryptor
   description: Ansible Encrypter is a versatile Python script for secure file management using Ansible Vault. It allows encryption and decryption of files within a directory, supports temporary file access, and automatically updates .gitignore to secure sensitive data. Ideal for enhancing data security in Ansible-managed environments
   homepage: https://github.com/kevinveenbirkenbach/ansible-encryptor/
-  verified: 2803ea3102cf3bc3d9caf670493b4270cf2d3293
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: lim
   provider: github.com
   repository: linux-image-manager
   description: Linux Image Manager is a powerful suite of shell scripts for downloading, configuring, and managing Linux images—including encrypted storage, RAID1 setups, chroot environments, and backups.
   homepage: https://github.com/kevinveenbirkenbach/linux-image-manager
-  verified: 7f82c6fcb9e5e6e8a03713e6e21184761ca0c719
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: dufiha
   provider: github.com
   repository: duplicate-file-handler
   description: Duplicate File Handler is a CLI tool that detects duplicate files and lets you manage them by deleting or replacing with hard/symbolic links. Easily installable via Kevin's Package Manager under the alias dufiha, it supports file-type filtering and offers interactive, preview, or active modes.
   homepage: https://github.com/kevinveenbirkenbach/duplicate-file-handler
-  verified: 89e15dd023aee82190bacaadc337c282b91f5357
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   provider: github.com
   alias: swafo
   repository: swap-forge
   description: SwapForge (swafo) is a Bash script that automates the creation and management of Linux swapfiles. It easily creates a swapfile of a specified size, sets proper permissions, and updates /etc/fstab to ensure the swap is activated at boot, streamlining swap management for your Linux system.
   homepage: https://github.com/kevinveenbirkenbach/swap-forge
-  verified: 0af1e6ea425ecc46f4055a10cfa00dad7b1cc511
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: sisec
   provider: github.com
   repository: splitted-secret
   description: Split Secret (sisec) is a command-line tool that securely splits a master secret among multiple users using secret sharing. Only a predefined quorum of users can combine their shares to decrypt the original secret. The tool supports robust encryption, decryption, and cleanup operations.
   homepage: https://github.com/kevinveenbirkenbach/splitted-secret
-  verified: 5e4fe2c01a8b024e5f455e555adfc99e9f131311
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: dirval
   provider: github.com
   repository: directory-validator
   description: Directory Validator (dirval) is a Python CLI tool that creates a unique hash stamp for a directory and validates its contents, ensuring you can quickly detect any changes.
   homepage: https://github.com/kevinveenbirkenbach/directory-validator
-  verified: 7db99608dd1ce4cf442cc4e3d37d2b61e6a6ec00
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: lukyma
   provider: github.com
   repository: luks-key-manager
   description: LUKS Key Manager(lukyma) is a Python-based utility that simplifies the management of LUKS encryption keys on Linux systems. It enables you to add new keys with a configurable memory cost and securely remove old ones, making it ideal for resource-constrained devices like the Raspberry Pi. 
   homepage: https://github.com/kevinveenbirkenbach/luks-key-manager
-  verified: 18ef26f9878ff9c605b9f6af0a5bd96c8da4fc9d
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: 4dvt
   provider: github.com
   repository: 4d-video-titel
   homepage: https://github.com/kevinveenbirkenbach/4d-video-titel
   description: 4D Video Titel is a CLI tool that extracts metadata from video files and automatically generates descriptive titles including local date, time, timezone, and GPS coordinates – perfect for organizing and enriching your video content!
-  verified: eb31cde28a940f01a3068142f93dfb2954c9adef
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: btrfsauba
   description: The btrfs-balance-automator automates Btrfs filesystem balancing with dynamic decrementing usage thresholds. It provides real-time status updates, enhancing system performance and storage optimization. This Python script is essential for system admins aiming to streamline Btrfs maintenance.
   provider: github.com
   repository: btrfs-auto-balancer
-  verified: 24acdf9643f946ea3513890b0ddc547c2426c0c4
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: baudolo
   homepage: https://github.com/kevinveenbirkenbach/backup-docker-to-local
   description: Backup Docker Volumes to Local is a comprehensive solution that leverages rsync to create incremental backups of Docker volumes, providing seamless recovery for both file and database data. Ideal for ensuring the integrity and security of your container data.
   provider: github.com
   repository: backup-docker-to-local
-  verified: a355f34e6ebce608ce1bad5464d7c52cf8b80f8b
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: clndoba
   homepage: https://github.com/kevinveenbirkenbach/cleanup-failed-docker-backups
   description: Backup Docker Volumes to Local is a comprehensive solution that leverages rsync to create incremental backups of Docker volumes, providing seamless recovery for both file and database data. Ideal for ensuring the integrity and security of your container data.
   provider: github.com
   repository: cleanup-failed-docker-backups
-  verified: 13b1b7d49394f9d82f8e53e3559ddbe1155e9dbb
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - alias: cedama
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/central-database-manager
   description: Scripts to manage the Central Databases Postgres in CyMaIS
   provider: github.com
   repository: central-database-manager
-  verified: f350c135e63946f9840c1d205deb8f62fbb6fcf1
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - alias: dovore
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/docker-volume-renamer
   description: A Bash script to create a new Docker volume, copy data from an existing volume to it, and remove the old volume.
   provider: github.com
   repository: docker-volume-renamer
-  verified: e702deb3347bc868134ce89273cd81b70af51899
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - alias: gigimi
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/github-to-gitea-mirror/
   description: A tool designed to automate the process of mirroring repositories from GitHub to Gitea. By leveraging the APIs of both platforms, this script identifies repositories on GitHub that aren't mirrored on Gitea and seamlessly mirrors them. Ideal for developers aiming to maintain a backup or a consistent repo state across both platforms.
   provider: github.com
   repository: github-to-gitea-mirror
-  verified: a6037b955425c256c535ac55047867af5d991e37
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - alias: seedssh
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/seed-ssh-key
   description: A tool designed to automate the process of mirroring repositories from GitHub to Gitea. By leveraging the APIs of both platforms, this script identifies repositories on GitHub that aren't mirrored on Gitea and seamlessly mirrors them. Ideal for developers aiming to maintain a backup or a consistent repo state across both platforms.
   provider: github.com
   repository: seed-ssh-key
-  verified: 0e605e23220a29d54e0867a37c57ca42bf63aec9
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - alias: anscrico
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/analyze-script-collection
   description: A versatile set of Bash scripts for Linux system diagnostics. Easily check SSH key encryption, find duplicate files, inspect your kernel version, locate large files, and list installed Java versions—all designed to simplify system management and troubleshooting.
   provider: github.com
   repository: analyze-script-collection
-  verified: ab8c92ef1d65fb5082930f80cf1736141d94a149
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - alias: heicma
   account: kevinveenbirkenbach
   homepage: https://github.com/kevinveenbirkenbach/heic-management
   description: "Bash scripts for handling HEIC images: converting to JPEG, deleting, and listing in a directory and subdirectories."
   provider: github.com
   repository: heic-management
-  verified: 3dd336b67f0f9d1f7ee4cd66724ca6c9bd091409
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   account: kevinveenbirkenbach
   alias: portfolio
@@ -183,33 +235,43 @@ repositories:
   description: Portfolio CMS is a Flask-based content management system that lets you effortlessly showcase your projects and online presence. With customizable cards, dynamic navigation, and YAML-driven configuration, it's a flexible solution for building modern, responsive portfolio websites.
   repository: portfolio
   homepage: https://github.com/kevinveenbirkenbach/portfolio
-  verified: fe1c038d1aea062ce7ad1d7ff186463994fd7f85
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: goexma
   provider: github.com
   homepage: https://github.com/kevinveenbirkenbach/cli-gnome-extension-manager
   description: CLI GNOME Extension Manager (goexma) is a Bash script that lets you install, update, enable, and disable GNOME extensions directly from the command line—perfect for automation and power users.
   repository: cli-gnome-extension-manager
-  verified: 834e6e95636a4875ca9d9c73c0521508e2192aed
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: cymais
   provider: github.com
   description: CyMaIS streamlines Linux-based system setups and Docker image administration, perfect for servers and PCs. It offers extensive solutions for system initialization, admin tools, backups, monitoring, updates, driver management, security, and VPNs.
   homepage: https://github.com/kevinveenbirkenbach/cymais
   repository: cymais
-  verified: 2898cc60868403220dcb69e0588d2d9aeb55bb27
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   provider: github.com
   repository: dynamic-miner
   homepage: https://github.com/kevinveenbirkenbach/dynamic-miner
   desciption: Automated Ethereum mining setup using Docker and a GPU/CPU monitoring script. Includes a Docker Compose file for an Ethereum miner container and a Bash script to start/stop mining based on system usage thresholds, ensuring efficient resource utilization. Perfect for idle-time mining.
-  verified: 27d85cf220f6c603487b61cb4518c5a5ad00b35d
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   provider: github.com
   description: This repository provides automated bridges for transferring content from federated platforms (like Pixelfed, Mastodon, and PeerTube) to centralized social networks (such as Instagram, X (Twitter), Facebook, and YouTube). It enables seamless cross-posting to maximize content reach across decentralized and mainstream platforms.
   repository: fediverse-to-oligopolies-bridge
   homepage: https://github.com/kevinveenbirkenbach/fediverse-to-oligopolies-bridge
-  verified: 1f6ace3fe84cb537436839a8a8164f1dc7b6e0c3
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: bure
   provider: github.com
@@ -218,7 +280,9 @@ repositories:
     Bulk Rename is a Python-based CLI tool that renames files in bulk by replacing specified substrings in file names.
     It supports both recursive and non-recursive renaming with verbose output.
   homepage: https://github.com/kevinveenbirkenbach/bulk-rename
-  verified: f76b29720edf2df5760070e34eacae23beb9d3a7
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
 - account: kevinveenbirkenbach
   alias: gitconfig
   provider: github.com
@@ -228,4 +292,6 @@ repositories:
     It offers both interactive prompts and command-line options to set merge strategies, user details,
     and commit signing preferences.
   homepage: https://github.com/kevinveenbirkenbach/git-configurator
-  verified: 8441c2c34a6916a0610bf52155f8e63c0dbe203b
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E

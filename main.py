@@ -42,6 +42,7 @@ GIT_DEFAULT_COMMANDS = [
     "clone",
     "reset",
     "revert",
+    "rebase",
     "commit"
 ]
 
@@ -98,7 +99,7 @@ For detailed help on each command, use:
     install_parser = subparsers.add_parser("install", help="Setup repository/repositories alias links to executables")
     add_identifier_arguments(install_parser)
     install_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
-    install_parser.add_argument("--no-verification", default=False, action="store_true", help="Disable verification of repository commit")
+    install_parser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
 
     deinstall_parser = subparsers.add_parser("deinstall", help="Remove alias links to repository/repositories")
     add_identifier_arguments(deinstall_parser)
@@ -110,7 +111,7 @@ For detailed help on each command, use:
     add_identifier_arguments(update_parser)
     update_parser.add_argument("--system", action="store_true", help="Include system update commands")
     update_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
-    update_parser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification of repository commit")
+    update_parser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
 
     status_parser = subparsers.add_parser("status", help="Show status for repository/repositories or system")
     add_identifier_arguments(status_parser)
@@ -158,8 +159,9 @@ For detailed help on each command, use:
                 formatter_class=argparse.RawTextHelpFormatter
                 )
         add_identifier_arguments(git_command_parsers[git_command])
-        if git_command == "pull":
-            git_command_parsers[git_command].add_argument("--no-verification", action="store_true", default=False, help="Disable verification of repository commit")
+        if git_command in ["pull","clone"]:
+            git_command_parsers[git_command].add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
+        
 
     args = parser.parse_args()
 
@@ -171,7 +173,7 @@ For detailed help on each command, use:
         install_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
     elif args.command in GIT_DEFAULT_COMMANDS:
         if args.command == "clone":
-            clone_repos(selected, repositories_base_dir, all_repos_list, args.preview)
+            clone_repos(selected, repositories_base_dir, all_repos_list, args.preview, no_verification=args.no_verification)
         elif args.command == "pull":
             from pkgmgr.pull_with_verification import pull_with_verification
             pull_with_verification(selected, repositories_base_dir, all_repos_list, args.extra_args, no_verification=args.no_verification, preview=args.preview)
