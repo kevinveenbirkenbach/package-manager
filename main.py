@@ -215,7 +215,7 @@ For detailed help on each command, use:
         status_repos(selected,repositories_base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "explore":
         for repository in selected:
-            run_command(f"nautilus {repository["directory"]}")
+            run_command(f"nautilus {repository["directory"]} & disown")
     elif args.command == "code":
         if not selected:
             print("No repositories selected.")
