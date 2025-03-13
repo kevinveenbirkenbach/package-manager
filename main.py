@@ -16,7 +16,7 @@ from pkgmgr.config_init import config_init
 from pkgmgr.create_ink import create_ink
 from pkgmgr.deinstall_repos import deinstall_repos
 from pkgmgr.delete_repos import delete_repos
-from pkgmgr.exec_git_command import exec_git_command
+from pkgmgr.exec_proxy_command import exec_proxy_command
 from pkgmgr.filter_ignored import filter_ignored
 from pkgmgr.get_repo_identifier import get_repo_identifier
 from pkgmgr.get_selected_repos import get_selected_repos
@@ -32,19 +32,29 @@ from pkgmgr.status_repos import status_repos
 from pkgmgr.update_repos import update_repos
 
 # Commands proxied by package-manager
-GIT_DEFAULT_COMMANDS = [
-    "pull",
-    "push",
-    "diff",
-    "add",
-    "show",
-    "checkout",
-    "clone",
-    "reset",
-    "revert",
-    "rebase",
-    "commit"
-]
+PROXY_COMMANDS = {
+    "git":[
+        "pull",
+        "push",
+        "diff",
+        "add",
+        "show",
+        "checkout",
+        "clone",
+        "reset",
+        "revert",
+        "rebase",
+        "commit"
+    ],
+    "docker":[
+        "start",
+        "stop"
+    ],
+    "docker compose":[
+        "up",
+        "down"
+    ]
+}
 
 class SortedSubParsersAction(argparse._SubParsersAction):
     def add_parser(self, name, **kwargs):
@@ -162,25 +172,37 @@ For detailed help on each command, use:
     add_identifier_arguments(shell_parser)
     shell_parser.add_argument("-c", "--command", nargs=argparse.REMAINDER, dest="shell_command", help="The shell command (and its arguments) to execute in each repository",default=[])
 
-    git_command_parsers = {}
-    # Proxies the default git commands
-    for git_command in GIT_DEFAULT_COMMANDS:
-        git_command_parsers[git_command] = subparsers.add_parser(
-                git_command,
-                help=f"Proxies 'git {git_command}' to one repository/repositories",
-                description=f"Executes 'git {git_command}' for the identified repos.\nTo recieve more help execute 'git {git_command} --help'",
+    proxy_command_parsers = {}
+    for command, subcommands in PROXY_COMMANDS.items():
+        for subcommand in subcommands:
+            proxy_command_parsers[f"{command}_{subcommand}"] = subparsers.add_parser(
+                subcommand,
+                help=f"Proxies '{command} {subcommand}' to repository/ies",
+                description=f"Executes '{command} {subcommand}' for the identified repos.\nTo recieve more help execute '{command} {subcommand} --help'",
                 formatter_class=argparse.RawTextHelpFormatter
                 )
-        add_identifier_arguments(git_command_parsers[git_command])
-        if git_command in ["pull","clone"]:
-            git_command_parsers[git_command].add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
-        
-
+            if subcommand in ["pull","clone"]:
+                proxy_command_parsers[f"{command}_{subcommand}"].add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
+            add_identifier_arguments(proxy_command_parsers[f"{command}_{subcommand}"])
+            
     args = parser.parse_args()
 
     # All 
     if args.command and not args.command in ["config","list","create"]:
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        
+    for command, subcommands in PROXY_COMMANDS.items():
+        for subcommand in subcommands:
+            if args.command == subcommand:
+                if args.command == "clone":
+                    clone_repos(selected, repositories_base_dir, all_repos_list, args.preview, no_verification=args.no_verification)
+                elif args.command == "pull":
+                    from pkgmgr.pull_with_verification import pull_with_verification
+                    pull_with_verification(selected, repositories_base_dir, all_repos_list, args.extra_args, no_verification=args.no_verification, preview=args.preview)
+                else:
+                    exec_proxy_command(command,selected, repositories_base_dir, all_repos_list, args.command, args.extra_args, args.preview)
+                exit(0)
+                
     # Dispatch commands.
     if args.command == "install":
         install_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
@@ -195,14 +217,6 @@ For detailed help on each command, use:
             selected = get_selected_repos(True,all_repos_list,None)
             for identifier in args.identifiers:
                 create_repo(identifier, config_merged, USER_CONFIG_PATH, BIN_DIR, remote=args.remote, preview=args.preview)
-    elif args.command in GIT_DEFAULT_COMMANDS:
-        if args.command == "clone":
-            clone_repos(selected, repositories_base_dir, all_repos_list, args.preview, no_verification=args.no_verification)
-        elif args.command == "pull":
-            from pkgmgr.pull_with_verification import pull_with_verification
-            pull_with_verification(selected, repositories_base_dir, all_repos_list, args.extra_args, no_verification=args.no_verification, preview=args.preview)
-        else:
-            exec_git_command(selected, repositories_base_dir, all_repos_list, args.command, args.extra_args, args.preview)
     elif args.command == "list":
         list_repositories(all_repos_list, repositories_base_dir, BIN_DIR, search_filter=args.search, status_filter=args.status)
     elif args.command == "deinstall":
