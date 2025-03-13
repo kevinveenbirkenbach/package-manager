@@ -39,10 +39,6 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
 
         # Create the symlink using create_ink.
         create_ink(repo, repositories_base_dir, bin_dir, all_repos, quiet=quiet, preview=preview)
-
-        setup_cmd = repo.get("setup")
-        if setup_cmd:
-            run_command(setup_cmd, cwd=repo_dir, preview=preview)
         
         # Check if a requirements.yml file exists and install additional packages.
         req_file = os.path.join(repo_dir, "requirements.yml")
@@ -78,3 +74,9 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
                     if pip_packages:
                         cmd = "python3 -m pip install " + " ".join(pip_packages)
                         run_command(cmd, preview=preview)
+                        
+        # Check if a Makefile exists and run make.
+        makefile_path = os.path.join(repo_dir, "Makefile")
+        if os.path.exists(makefile_path):
+            print(f"Makefile found in {repo_identifier}, running 'make'...")
+            run_command("make", cwd=repo_dir, preview=preview)
