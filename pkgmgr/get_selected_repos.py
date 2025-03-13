@@ -25,5 +25,5 @@ def get_selected_repos(show_all: bool, all_repos_list, identifiers=None):
     filtered = filter_ignored(selected)
     if not filtered:
         print("Error: No repositories had been selected.")
-        sys.exit(1)
+        sys.exit(4)
     return filtered

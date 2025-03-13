@@ -8,12 +8,12 @@ def load_config(user_config_path):
     """Load configuration from defaults and merge in user config if present."""
     if not os.path.exists(DEFAULT_CONFIG_PATH):
         print(f"Default configuration file '{DEFAULT_CONFIG_PATH}' not found.")
-        sys.exit(1)
+        sys.exit(5)
     with open(DEFAULT_CONFIG_PATH, 'r') as f:
         config = yaml.safe_load(f)
     if "directories" not in config or "repositories" not in config:
         print("Default config file must contain 'directories' and 'repositories' keys.")
-        sys.exit(1)
+        sys.exit(6)
     if os.path.exists(user_config_path):
         with open(user_config_path, 'r') as f:
             user_config = yaml.safe_load(f)

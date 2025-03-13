@@ -5,6 +5,7 @@ import yaml
 import argparse
 import json
 import os
+import sys
 
 # Define configuration file paths.
 USER_CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config", "config.yaml")
@@ -105,6 +106,19 @@ For detailed help on each command, use:
 
     delete_parser = subparsers.add_parser("delete", help="Delete repository/repositories alias links to executables")
     add_identifier_arguments(delete_parser)
+    
+    # Add the 'create' subcommand (with existing identifier arguments)
+    create_parser = subparsers.add_parser(
+        "create",
+        help="Create new repository entries: add them to the config if not already present, initialize the local repository, and push remotely if --remote is set."
+    )
+    # Reuse the common identifier arguments
+    add_identifier_arguments(create_parser)
+    create_parser.add_argument(
+        "--remote",
+        action="store_true",
+        help="If set, add the remote and push the initial commit."
+    )
 
     update_parser = subparsers.add_parser("update", help="Update (pull + install) repository/repositories")
     add_identifier_arguments(update_parser)
@@ -170,6 +184,16 @@ For detailed help on each command, use:
     # Dispatch commands.
     if args.command == "install":
         install_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
+    elif args.command == "create":
+        from pkgmgr.create_repo import create_repo
+        # If no identifiers are provided, you can decide to either use the repository of the current folder
+        # or prompt the user to supply at least one identifier.
+        if not args.identifiers:
+            print("No identifiers provided. Please specify at least one identifier in the format provider/account/repository.")
+            sys.exit(1)
+        else:
+            for identifier in args.identifiers:
+                create_repo(identifier, config_merged, USER_CONFIG_PATH, BIN_DIR, remote=args.remote, preview=args.preview)
     elif args.command in GIT_DEFAULT_COMMANDS:
         if args.command == "clone":
             clone_repos(selected, repositories_base_dir, all_repos_list, args.preview, no_verification=args.no_verification)
@@ -226,7 +250,7 @@ For detailed help on each command, use:
     elif args.command == "shell":
         if not args.shell_command:
             print("No shell command specified.")
-            exit(1)
+            exit(2)
         # Join the provided shell command parts into one string.
         command_to_run = " ".join(args.shell_command)
         for repository in selected:

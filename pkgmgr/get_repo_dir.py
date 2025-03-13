@@ -12,4 +12,4 @@ def get_repo_dir(repositories_base_dir:str,repo:{})->str:
                    print(f"Key '{key}' is missing.")
         else:
             print(f"Error: {e} \nThe base {base} seems not correct configured.\nPlease configure it correct.")
-        sys.exit(1)
+        sys.exit(3)
