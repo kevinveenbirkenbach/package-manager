@@ -16,7 +16,8 @@ def deinstall_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, p
                     print(f"Removed link for {repo_identifier}.")
         else:
             print(f"No link found for {repo_identifier} in {bin_dir}.")
-        teardown_cmd = repo.get("teardown")
-        repo_dir = get_repo_dir(repositories_base_dir,repo)
-        if teardown_cmd and os.path.exists(repo_dir):
-            run_command(teardown_cmd, cwd=repo_dir, preview=preview)
+        # Check if a Makefile exists and run make.
+        makefile_path = os.path.join(repo_dir, "Makefile")
+        if os.path.exists(makefile_path):
+            print(f"Makefile found in {repo_identifier}, running 'make deinstall'...")
+            run_command("make deinstall", cwd=repo_dir, preview=preview)

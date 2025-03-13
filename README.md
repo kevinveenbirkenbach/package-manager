@@ -10,7 +10,7 @@
 ## Features 🚀
 
 - **Installation & Setup:**  
-  Create executable wrappers with auto-detected commands (e.g. `main.sh` or `main.py`) and optional setup/teardown commands.
+  Create executable wrappers with auto-detected commands (e.g. `main.sh` or `main.py`).
   
 - **Git Operations:**  
   Easily perform `git pull`, `push`, `status`, `commit`, `diff`, `add`, `show`, and `checkout` with extra parameters passed through.

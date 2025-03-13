@@ -78,5 +78,5 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
         # Check if a Makefile exists and run make.
         makefile_path = os.path.join(repo_dir, "Makefile")
         if os.path.exists(makefile_path):
-            print(f"Makefile found in {repo_identifier}, running 'make'...")
-            run_command("make", cwd=repo_dir, preview=preview)
+            print(f"Makefile found in {repo_identifier}, running 'make install'...")
+            run_command("make install", cwd=repo_dir, preview=preview)

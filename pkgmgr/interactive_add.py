@@ -11,7 +11,6 @@ def interactive_add(config,USER_CONFIG_PATH:str):
     new_entry["command"] = input("Command (optional, leave blank to auto-detect): ").strip()
     new_entry["description"] = input("Description (optional): ").strip()
     new_entry["replacement"] = input("Replacement (optional): ").strip()
-    new_entry["teardown"] = input("Teardown command (optional): ").strip()
     new_entry["alias"] = input("Alias (optional): ").strip()
     # Allow the user to mark this entry as ignored.
     ignore_val = input("Ignore this entry? (y/N): ").strip().lower()
