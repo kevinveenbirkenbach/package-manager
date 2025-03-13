@@ -212,7 +212,8 @@ For detailed help on each command, use:
     
     if args.command in ["make"]:
         exec_proxy_command(args.command,selected, repositories_base_dir, all_repos_list, args.subcommand, args.extra_args, args.preview)
-
+        exit(0)
+        
     # Dispatch commands.
     if args.command == "install":
         install_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
