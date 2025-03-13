@@ -179,7 +179,7 @@ For detailed help on each command, use:
     args = parser.parse_args()
 
     # All 
-    if args.command and not args.command in ["config","list"]:
+    if args.command and not args.command in ["config","list","create"]:
         selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
     # Dispatch commands.
     if args.command == "install":
@@ -192,6 +192,7 @@ For detailed help on each command, use:
             print("No identifiers provided. Please specify at least one identifier in the format provider/account/repository.")
             sys.exit(1)
         else:
+            selected = get_selected_repos(True,all_repos_list,None)
             for identifier in args.identifiers:
                 create_repo(identifier, config_merged, USER_CONFIG_PATH, BIN_DIR, remote=args.remote, preview=args.preview)
     elif args.command in GIT_DEFAULT_COMMANDS:

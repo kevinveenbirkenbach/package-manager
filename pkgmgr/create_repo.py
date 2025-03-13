@@ -133,15 +133,8 @@ def create_repo(identifier, config_merged, user_config_path, bin_dir, remote=Fal
                 subprocess.run(cmd_remote, cwd=repo_dir, shell=True, check=True)
                 print(f"Remote 'origin' added: {remote_url}")
             except subprocess.CalledProcessError:
-                print(f"Failed to add remote using URL: {remote_url}. Exiting.")
-                sys.exit(2)
-                
-        cmd_remote = f"git remote add origin {remote_url}"
-        if preview:
-            print(f"[Preview] Would execute: '{cmd_remote}' in {repo_dir}")
-        else:
-            subprocess.run(cmd_remote, cwd=repo_dir, shell=True, check=True)
-            print(f"Remote 'origin' added: {remote_url}")
+                print(f"Failed to add remote using URL: {remote_url}.")
+
         # Push the initial commit to the remote repository
         cmd_push = "git push -u origin master"
         if preview:
@@ -149,4 +142,3 @@ def create_repo(identifier, config_merged, user_config_path, bin_dir, remote=Fal
         else:
             subprocess.run(cmd_push, cwd=repo_dir, shell=True, check=True)
             print("Initial push to the remote repository completed.")
-            exit(7)
