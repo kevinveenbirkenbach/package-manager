@@ -172,6 +172,13 @@ For detailed help on each command, use:
     add_identifier_arguments(shell_parser)
     shell_parser.add_argument("-c", "--command", nargs=argparse.REMAINDER, dest="shell_command", help="The shell command (and its arguments) to execute in each repository",default=[])
 
+    make_parser = subparsers.add_parser("make", help="Executes make commands")
+    make_subparsers = make_parser.add_subparsers(dest="subcommand", help="Make subcommands", required=True)
+    make_install = make_subparsers.add_parser("install", help="Executes the make install command")
+    add_identifier_arguments(make_install)
+    make_deinstall = make_subparsers.add_parser("deinstall", help="Executes the make deinstall command")
+    add_identifier_arguments(make_deinstall)
+
     proxy_command_parsers = {}
     for command, subcommands in PROXY_COMMANDS.items():
         for subcommand in subcommands:
@@ -202,7 +209,10 @@ For detailed help on each command, use:
                 else:
                     exec_proxy_command(command,selected, repositories_base_dir, all_repos_list, args.command, args.extra_args, args.preview)
                 exit(0)
-                
+    
+    if args.command in ["make"]:
+        exec_proxy_command(args.command,selected, repositories_base_dir, all_repos_list, args.subcommand, args.extra_args, args.preview)
+
     # Dispatch commands.
     if args.command == "install":
         install_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
