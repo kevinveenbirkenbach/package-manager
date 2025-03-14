@@ -11,7 +11,7 @@ from pkgmgr.verify import verify_repository
 def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_verification, preview=False, quiet=False):
     """
     Install repositories by creating symbolic links, running setup commands, and
-    installing additional packages if a requirements.yml file is found.
+    installing additional packages if a requirements.yml or requirements.txt file is found.
     """
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
@@ -74,7 +74,19 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
                     if pip_packages:
                         cmd = "python3 -m pip install " + " ".join(pip_packages)
                         run_command(cmd, preview=preview)
-                        
+                # Install ansible collections if defined.
+                if "collections" in requirements:
+                    print(f"Ansible collections found in {repo_identifier}, installing...")
+                    cmd = "ansible-galaxy collection install -r requirements.yml"
+                    run_command(cmd, cwd=repo_dir, preview=preview)
+        
+        # Check if a requirements.txt file exists and install Python packages.
+        req_txt_file = os.path.join(repo_dir, "requirements.txt")
+        if os.path.exists(req_txt_file):
+            print(f"requirements.txt found in {repo_identifier}, installing Python dependencies...")
+            cmd = "python3 -m pip install -r requirements.txt"
+            run_command(cmd, cwd=repo_dir, preview=preview)
+        
         # Check if a Makefile exists and run make.
         makefile_path = os.path.join(repo_dir, "Makefile")
         if os.path.exists(makefile_path):
