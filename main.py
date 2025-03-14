@@ -48,11 +48,13 @@ PROXY_COMMANDS = {
     ],
     "docker":[
         "start",
-        "stop"
+        "stop",
     ],
     "docker compose":[
         "up",
-        "down"
+        "down",
+        "exec",
+        "ps"
     ]
 }
 
