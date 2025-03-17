@@ -175,11 +175,11 @@ For detailed help on each command, use:
     shell_parser.add_argument("-c", "--command", nargs=argparse.REMAINDER, dest="shell_command", help="The shell command (and its arguments) to execute in each repository",default=[])
 
     make_parser = subparsers.add_parser("make", help="Executes make commands")
+    add_identifier_arguments(make_parser)
     make_subparsers = make_parser.add_subparsers(dest="subcommand", help="Make subcommands", required=True)
     make_install = make_subparsers.add_parser("install", help="Executes the make install command")
     add_identifier_arguments(make_install)
     make_deinstall = make_subparsers.add_parser("deinstall", help="Executes the make deinstall command")
-    add_identifier_arguments(make_deinstall)
 
     proxy_command_parsers = {}
     for command, subcommands in PROXY_COMMANDS.items():
