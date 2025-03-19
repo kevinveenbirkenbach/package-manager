@@ -47,13 +47,16 @@ def create_ink(repo, repositories_base_dir, bin_dir, all_repos, quiet=False, pre
 
         alias_name = repo.get("alias")
         if alias_name:
-            alias_link_path = os.path.join(bin_dir, alias_name)
-            try:
-                if os.path.exists(alias_link_path) or os.path.islink(alias_link_path):
-                    os.remove(alias_link_path)
-                os.symlink(link_path, alias_link_path)
-                if not quiet:
-                    print(f"Alias '{alias_name}' has been set to point to {repo_identifier}.")
-            except Exception as e:
-                if not quiet:
-                    print(f"Error creating alias '{alias_name}': {e}")
+            if alias_name == repo_identifier:
+                print(f"Skipped alias link creation. Alias '{alias_name}' and repository identifier '{repo_identifier}' are the same.")
+            else:
+                alias_link_path = os.path.join(bin_dir, alias_name)
+                try:
+                    if os.path.exists(alias_link_path) or os.path.islink(alias_link_path):
+                        os.remove(alias_link_path)
+                    os.symlink(link_path, alias_link_path)
+                    if not quiet:
+                        print(f"Alias '{alias_name}' has been set to point to {repo_identifier}.")
+                except Exception as e:
+                    if not quiet:
+                        print(f"Error creating alias '{alias_name}': {e}")

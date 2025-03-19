@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import yaml
+import tempfile
 from pkgmgr.get_repo_identifier import get_repo_identifier
 from pkgmgr.get_repo_dir import get_repo_dir
 from pkgmgr.create_ink import create_ink
@@ -74,11 +75,34 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
                     if pip_packages:
                         cmd = "python3 -m pip install " + " ".join(pip_packages)
                         run_command(cmd, preview=preview)
-                # Install ansible collections if defined.
-                if "collections" in requirements:
-                    print(f"Ansible collections found in {repo_identifier}, installing...")
-                    cmd = "ansible-galaxy collection install -r requirements.yml"
-                    run_command(cmd, cwd=repo_dir, preview=preview)
+                        
+                # Check if the requirements contain either 'collections' or 'roles'
+                if "collections" in requirements or "roles" in requirements:
+                    print(f"Ansible dependencies found in {repo_identifier}, installing...")
+
+                    # Build a new dictionary that only contains the Ansible dependencies
+                    ansible_requirements = {}
+                    if "collections" in requirements:
+                        ansible_requirements["collections"] = requirements["collections"]
+                    if "roles" in requirements:
+                        ansible_requirements["roles"] = requirements["roles"]
+
+                    # Write the ansible requirements to a temporary file.
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as tmp:
+                        yaml.dump(ansible_requirements, tmp, default_flow_style=False)
+                        tmp_filename = tmp.name
+
+                    # Install Ansible collections if defined.
+                    if "collections" in ansible_requirements:
+                        print(f"Ansible collections found in {repo_identifier}, installing...")
+                        cmd = f"ansible-galaxy collection install -r {tmp_filename}"
+                        run_command(cmd, cwd=repo_dir, preview=preview)
+
+                    # Install Ansible roles if defined.
+                    if "roles" in ansible_requirements:
+                        print(f"Ansible roles found in {repo_identifier}, installing...")
+                        cmd = f"ansible-galaxy role install -r {tmp_filename}"
+                        run_command(cmd, cwd=repo_dir, preview=preview)
         
         # Check if a requirements.txt file exists and install Python packages.
         req_txt_file = os.path.join(repo_dir, "requirements.txt")
