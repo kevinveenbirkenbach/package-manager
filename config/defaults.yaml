@@ -337,3 +337,11 @@ repositories:
     gpg_keys:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
+- account: kevinveenbirkenbach
+  alias: favgen
+  provider: github.com
+  repository: favicon-generator
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
