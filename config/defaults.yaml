@@ -2,7 +2,8 @@
 
 directories: 
   repositories: ~/Repositories/
-  workspaces: ~/Workspaces/
+  workspaces:   ~/Workspaces/
+  binaries:     ~/.local/bin/
 repositories:
 - account: kevinveenbirkenbach
   alias: arc

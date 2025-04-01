@@ -9,7 +9,6 @@ import sys
 
 # Define configuration file paths.
 USER_CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "config", "config.yaml")
-BIN_DIR = os.path.expanduser("~/.local/bin")
 
 from pkgmgr.clone_repos import clone_repos
 from pkgmgr.config_init import config_init
@@ -67,9 +66,10 @@ class SortedSubParsersAction(argparse._SubParsersAction):
 
 # Main program.
 if __name__ == "__main__":
-    config_merged = load_config(USER_CONFIG_PATH)
-    repositories_base_dir = os.path.expanduser(config_merged["directories"]["repositories"])
-    all_repos_list = config_merged["repositories"]
+    CONFIG_MERGED = load_config(USER_CONFIG_PATH)
+    REPOSITORIES_BASE_DIR = os.path.expanduser(CONFIG_MERGED["directories"]["repositories"])
+    ALL_REPOSITORIES = CONFIG_MERGED["repositories"]
+    BINARIES_DIRECTORY = os.path.expanduser(CONFIG_MERGED["directories"]["binaries"])
     description_text = """\
 \033[1;32mPackage Manager 🤖📦\033[0m
 \033[3mKevin's Package Manager ist drafted by and designed for:
@@ -198,27 +198,27 @@ For detailed help on each command, use:
 
     # All 
     if args.command and not args.command in ["config","list","create"]:
-        selected = get_selected_repos(args.all,all_repos_list,args.identifiers)
+        selected = get_selected_repos(args.all,ALL_REPOSITORIES,args.identifiers)
         
     for command, subcommands in PROXY_COMMANDS.items():
         for subcommand in subcommands:
             if args.command == subcommand:
                 if args.command == "clone":
-                    clone_repos(selected, repositories_base_dir, all_repos_list, args.preview, no_verification=args.no_verification)
+                    clone_repos(selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.preview, no_verification=args.no_verification)
                 elif args.command == "pull":
                     from pkgmgr.pull_with_verification import pull_with_verification
-                    pull_with_verification(selected, repositories_base_dir, all_repos_list, args.extra_args, no_verification=args.no_verification, preview=args.preview)
+                    pull_with_verification(selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.extra_args, no_verification=args.no_verification, preview=args.preview)
                 else:
-                    exec_proxy_command(command,selected, repositories_base_dir, all_repos_list, args.command, args.extra_args, args.preview)
+                    exec_proxy_command(command,selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.command, args.extra_args, args.preview)
                 exit(0)
     
     if args.command in ["make"]:
-        exec_proxy_command(args.command,selected, repositories_base_dir, all_repos_list, args.subcommand, args.extra_args, args.preview)
+        exec_proxy_command(args.command,selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.subcommand, args.extra_args, args.preview)
         exit(0)
         
     # Dispatch commands.
     if args.command == "install":
-        install_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, preview=args.preview, quiet=args.quiet)
+        install_repos(selected,REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, ALL_REPOSITORIES, args.no_verification, preview=args.preview, quiet=args.quiet)
     elif args.command == "create":
         from pkgmgr.create_repo import create_repo
         # If no identifiers are provided, you can decide to either use the repository of the current folder
@@ -227,19 +227,19 @@ For detailed help on each command, use:
             print("No identifiers provided. Please specify at least one identifier in the format provider/account/repository.")
             sys.exit(1)
         else:
-            selected = get_selected_repos(True,all_repos_list,None)
+            selected = get_selected_repos(True,ALL_REPOSITORIES,None)
             for identifier in args.identifiers:
-                create_repo(identifier, config_merged, USER_CONFIG_PATH, BIN_DIR, remote=args.remote, preview=args.preview)
+                create_repo(identifier, CONFIG_MERGED, USER_CONFIG_PATH, BINARIES_DIRECTORY, remote=args.remote, preview=args.preview)
     elif args.command == "list":
-        list_repositories(all_repos_list, repositories_base_dir, BIN_DIR, search_filter=args.search, status_filter=args.status)
+        list_repositories(ALL_REPOSITORIES, REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, search_filter=args.search, status_filter=args.status)
     elif args.command == "deinstall":
-        deinstall_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, preview=args.preview)
+        deinstall_repos(selected,REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, ALL_REPOSITORIES, preview=args.preview)
     elif args.command == "delete":
-        delete_repos(selected,repositories_base_dir, all_repos_list, preview=args.preview)
+        delete_repos(selected,REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, preview=args.preview)
     elif args.command == "update":
-        update_repos(selected,repositories_base_dir, BIN_DIR, all_repos_list, args.no_verification, system_update=args.system, preview=args.preview, quiet=args.quiet)
+        update_repos(selected,REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, ALL_REPOSITORIES, args.no_verification, system_update=args.system, preview=args.preview, quiet=args.quiet)
     elif args.command == "status":
-        status_repos(selected,repositories_base_dir, all_repos_list, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
+        status_repos(selected,REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "explore":
         for repository in selected:
             run_command(f"nautilus {repository["directory"]} & disown")
@@ -247,10 +247,10 @@ For detailed help on each command, use:
         if not selected:
             print("No repositories selected.")
         else:
-            identifiers = [get_repo_identifier(repo, all_repos_list) for repo in selected]
+            identifiers = [get_repo_identifier(repo, ALL_REPOSITORIES) for repo in selected]
             sorted_identifiers = sorted(identifiers)
             workspace_name = "_".join(sorted_identifiers) + ".code-workspace"
-            workspaces_dir = os.path.expanduser(config_merged.get("directories").get("workspaces"))
+            workspaces_dir = os.path.expanduser(CONFIG_MERGED.get("directories").get("workspaces"))
             os.makedirs(workspaces_dir, exist_ok=True)
             workspace_file = os.path.join(workspaces_dir, workspace_name)
             
@@ -289,11 +289,11 @@ For detailed help on each command, use:
             if args.all or (not args.identifiers):
                 show_config([], USER_CONFIG_PATH, full_config=True)
             else:
-                selected = resolve_repos(args.identifiers, all_repos_list)
+                selected = resolve_repos(args.identifiers, ALL_REPOSITORIES)
                 if selected:
                     show_config(selected, USER_CONFIG_PATH, full_config=False)
         elif args.subcommand == "add":
-            interactive_add(config_merged,USER_CONFIG_PATH)
+            interactive_add(CONFIG_MERGED,USER_CONFIG_PATH)
         elif args.subcommand == "edit":
             """Open the user configuration file in nano."""
             run_command(f"nano {USER_CONFIG_PATH}")
@@ -303,7 +303,7 @@ For detailed help on each command, use:
                     user_config = yaml.safe_load(f) or {}
             else:
                 user_config = {"repositories": []}
-            config_init(user_config, config_merged, BIN_DIR, USER_CONFIG_PATH)
+            config_init(user_config, CONFIG_MERGED, BINARIES_DIRECTORY, USER_CONFIG_PATH)
         elif args.subcommand == "delete":
             # Load user config from USER_CONFIG_PATH.
             if os.path.exists(USER_CONFIG_PATH):
