@@ -55,7 +55,7 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
                 if "pacman" in requirements:
                     pacman_packages = requirements["pacman"]
                     if pacman_packages:
-                        cmd = "sudo pacman -S " + " ".join(pacman_packages)
+                        cmd = "sudo pacman -S --noconfirm " + " ".join(pacman_packages)
                         run_command(cmd, preview=preview)
                 # Install yay packages if defined.
                 if "yay" in requirements:
