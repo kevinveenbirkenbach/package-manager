@@ -24,21 +24,26 @@
 - **Custom Aliases:**  
   Generate and manage custom aliases for easy command invocation.
 
+
 ## Installation ⚙️
 
-Clone the repository and make sure your `~/.local/bin` is in your system PATH:
+Clone the repository and ensure your `~/.local/bin` is in your system PATH:
 
 ```bash
 git clone https://github.com/kevinveenbirkenbach/package-manager.git
 cd package-manager
-chmod +x main.py
 ```
 
-Then install or update your commands:
+Then, run the following command to set up the project:
 
 ```bash
-./main.py install --all
+make setup
 ```
+
+The `make setup` command will:
+- Make `main.py` executable.
+- Install required packages from `requirements.txt`.
+- Execute `python main.py install` to complete the installation.
 
 ## Usage 📖
 
