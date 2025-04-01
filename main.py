@@ -112,6 +112,7 @@ For detailed help on each command, use:
     add_identifier_arguments(install_parser)
     install_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
     install_parser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
+    install_parser.add_argument("--clone-mode", choices=["ssh", "https"], default="ssh", help="Specify the clone mode (default: ssh)")
 
     deinstall_parser = subparsers.add_parser("deinstall", help="Remove alias links to repository/repositories")
     add_identifier_arguments(deinstall_parser)
@@ -192,6 +193,8 @@ For detailed help on each command, use:
                 )
             if subcommand in ["pull","clone"]:
                 proxy_command_parsers[f"{command}_{subcommand}"].add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
+            if subcommand == "clone":
+                proxy_command_parsers[f"{command}_{subcommand}"].add_argument("--clone-mode", choices=["ssh", "https"], default="ssh", help="Specify the clone mode (default: ssh)")
             add_identifier_arguments(proxy_command_parsers[f"{command}_{subcommand}"])
             
     args = parser.parse_args()
@@ -204,7 +207,7 @@ For detailed help on each command, use:
         for subcommand in subcommands:
             if args.command == subcommand:
                 if args.command == "clone":
-                    clone_repos(selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.preview, no_verification=args.no_verification)
+                    clone_repos(selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.preview, no_verification=args.no_verification, clone_mode=args.clone_mode)
                 elif args.command == "pull":
                     from pkgmgr.pull_with_verification import pull_with_verification
                     pull_with_verification(selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.extra_args, no_verification=args.no_verification, preview=args.preview)
@@ -218,7 +221,7 @@ For detailed help on each command, use:
         
     # Dispatch commands.
     if args.command == "install":
-        install_repos(selected,REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, ALL_REPOSITORIES, args.no_verification, preview=args.preview, quiet=args.quiet)
+        install_repos(selected, REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, ALL_REPOSITORIES, args.no_verification, preview=args.preview, quiet=args.quiet, clone_mode=args.clone_mode)
     elif args.command == "create":
         from pkgmgr.create_repo import create_repo
         # If no identifiers are provided, you can decide to either use the repository of the current folder
