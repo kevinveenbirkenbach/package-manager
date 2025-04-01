@@ -34,6 +34,12 @@ git clone https://github.com/kevinveenbirkenbach/package-manager.git
 cd package-manager
 ```
 
+Install make and pip if not installed yet:
+
+```bash
+pacman -S make python-pip
+```
+
 Then, run the following command to set up the project:
 
 ```bash
