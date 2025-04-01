@@ -8,6 +8,7 @@ from pkgmgr.get_repo_dir import get_repo_dir
 from pkgmgr.create_ink import create_ink
 from pkgmgr.run_command import run_command
 from pkgmgr.verify import verify_repository
+from pkgmgr.clone_repos import clone_repos
 
 def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_verification, preview=False, quiet=False):
     """
