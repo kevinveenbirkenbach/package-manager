@@ -342,6 +342,18 @@ repositories:
   alias: favgen
   provider: github.com
   repository: favicon-generator
+  description: Favicon-generator is a Python tool that creates multi-resolution favicons from a single image by using imgrszr for resizing and ImageMagick to combine the images into one .ico file.
+  homepage: https://github.com/kevinveenbirkenbach/favicon-generator
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+- account: kevinveenbirkenbach
+  alias: setup-hibernate
+  provider: github.com
+  description: A Python script to configure hibernation on Linux systems using a swap file, including GRUB and initramfs integration. Optional swap file creation with custom size support.
+  homepage: https://github.com/kevinveenbirkenbach/setup-hibernate
+  repository: setup-hibernate
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
