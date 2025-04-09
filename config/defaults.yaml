@@ -385,7 +385,6 @@ repositories:
   alias: cymais-presentation
   description: This repository contains a Cymais presentation designed for customers, end-users, investors, developers, and administrators, offering tailored content and insights for each group.
   homepage: https://github.com/kevinveenbirkenbach/cymais-presentation
-  ignore: true
   provider: github.com
   repository: cymais-presentation
   verified:
