@@ -53,7 +53,8 @@ PROXY_COMMANDS = {
         "up",
         "down",
         "exec",
-        "ps"
+        "ps",
+        "restart",
     ]
 }
 
