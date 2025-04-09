@@ -362,8 +362,20 @@ repositories:
 - account: kevinveenbirkenbach
   alias: dockreap
   description: A Python tool to safely detect and remove unused anonymous Docker volumes. Supports whitelisting, symlink cleanup, and optional confirmation prompts. Ideal for keeping your Docker environment clean and efficient.
+  homepage: https://github.com/kevinveenbirkenbach/docker-volume-cleaner
   provider: github.com
   repository: docker-volume-cleaner
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
+- account: kevinveenbirkenbach
+  alias: cymais-sphinx
+  description: Contains the logic and configuration for generating documentation using Sphinx for CyMaIS.
+  homepage: https://github.com/kevinveenbirkenbach/cymais-sphinx
+  provider: github.com
+  repository: cymais-sphinx
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
