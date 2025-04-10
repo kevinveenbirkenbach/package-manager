@@ -10,7 +10,7 @@ from pkgmgr.run_command import run_command
 from pkgmgr.verify import verify_repository
 from pkgmgr.clone_repos import clone_repos
 
-def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_verification, preview=False, quiet=False, clone_mode: str = "ssh"):
+def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_verification, preview=False, quiet=False, clone_mode: str = "ssh", update_dependencies: bool = True):
     """
     Install repositories by creating symbolic links, running setup commands, and
     installing additional packages if a requirements.yml or requirements.txt file is found.
@@ -67,6 +67,12 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
                 if "pkgmgr" in requirements:
                     pkgmgr_packages = requirements["pkgmgr"]
                     if pkgmgr_packages:
+                        if update_dependencies:
+                            cmd_pull = "pkgmgr pull " + " ".join(pkgmgr_packages)
+                            try:
+                                run_command(cmd_pull, preview=preview)
+                            except SystemExit as e:
+                                print(f"Warning: 'pkgmgr pull' command failed (exit code {e}). Ignoring error and continuing.")            
                         cmd = "pkgmgr install " + " ".join(pkgmgr_packages)
                         run_command(cmd, preview=preview)
                 # Install pip packages if defined.

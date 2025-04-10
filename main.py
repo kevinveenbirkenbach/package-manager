@@ -139,6 +139,7 @@ For detailed help on each command, use:
     update_parser.add_argument("--system", action="store_true", help="Include system update commands")
     update_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
     update_parser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
+    update_parser.add_argument("--dependencies", action="store_true", help="Also pull and update dependencies")
 
     status_parser = subparsers.add_parser("status", help="Show status for repository/repositories or system")
     add_identifier_arguments(status_parser)
@@ -241,7 +242,17 @@ For detailed help on each command, use:
     elif args.command == "delete":
         delete_repos(selected,REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, preview=args.preview)
     elif args.command == "update":
-        update_repos(selected,REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, ALL_REPOSITORIES, args.no_verification, system_update=args.system, preview=args.preview, quiet=args.quiet)
+        update_repos(
+            selected,
+            REPOSITORIES_BASE_DIR,
+            BINARIES_DIRECTORY,
+            ALL_REPOSITORIES,
+            args.no_verification,
+            system_update=args.system,
+            preview=args.preview,
+            quiet=args.quiet,
+            update_dependencies=args.dependencies
+        )
     elif args.command == "status":
         status_repos(selected,REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "explore":
