@@ -165,6 +165,23 @@ For detailed help on each command, use:
     terminal_parser = subparsers.add_parser("terminal", help="Open repository in a new GNOME Terminal tab")
     add_identifier_arguments(terminal_parser)
 
+    release_parser = subparsers.add_parser(
+        "release",
+        help="Create a release for repository/ies by incrementing version and updating the changelog."
+    )
+    release_parser.add_argument(
+        "release_type",
+        choices=["major", "minor", "patch"],
+        help="Type of version increment for the release (major, minor, patch)."
+    )
+    release_parser.add_argument(
+        "-m", "--message",
+        default="",
+        help="Optional release message to add to the changelog and tag."
+    )
+    add_identifier_arguments(release_parser)
+
+    
     code_parser = subparsers.add_parser("code", help="Open repository workspace with VS Code")
     add_identifier_arguments(code_parser)   
     
@@ -253,6 +270,35 @@ For detailed help on each command, use:
             quiet=args.quiet,
             update_dependencies=args.dependencies
         )
+    elif args.command == "release":
+        if not selected:
+            print("No repositories selected for release.")
+            exit(1)
+        # Import the release function from pkgmgr/release.py
+        from pkgmgr import release as rel
+        # Save the original working directory.
+        original_dir = os.getcwd()
+        for repo in selected:
+            # Determine the repository directory
+            repo_dir = repo.get("directory")
+            if not repo_dir:
+                from pkgmgr.get_repo_dir import get_repo_dir
+                repo_dir = get_repo_dir(REPOSITORIES_BASE_DIR, repo)
+            # Dynamically determine the file paths for pyproject.toml and CHANGELOG.md.
+            pyproject_path = os.path.join(repo_dir, "pyproject.toml")
+            changelog_path = os.path.join(repo_dir, "CHANGELOG.md")
+            print(f"Releasing repository '{repo.get('repository')}' in '{repo_dir}'...")
+            # Change into the repository directory so Git commands run in the right context.
+            os.chdir(repo_dir)
+            # Call the release function with the proper parameters.
+            rel.release(
+                pyproject_path=pyproject_path,
+                changelog_path=changelog_path,
+                release_type=args.release_type,
+                message=args.message
+            )
+            # Change back to the original working directory.
+            os.chdir(original_dir)
     elif args.command == "status":
         status_repos(selected,REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "explore":
