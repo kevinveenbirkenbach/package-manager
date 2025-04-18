@@ -72,9 +72,12 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
                             try:
                                 run_command(cmd_pull, preview=preview)
                             except SystemExit as e:
-                                print(f"Warning: 'pkgmgr pull' command failed (exit code {e}). Ignoring error and continuing.")            
+                                print(f"Warning: 'pkgmgr pull' command failed (exit code {e}). Trying fallback clone...")
+                                cmd_clone = "pkgmgr clone " + " ".join(pkgmgr_packages)
+                                run_command(cmd_clone, preview=preview)
                         cmd = "pkgmgr install " + " ".join(pkgmgr_packages)
                         run_command(cmd, preview=preview)
+
                 # Install pip packages if defined.
                 if "pip" in requirements:
                     pip_packages = requirements["pip"]
