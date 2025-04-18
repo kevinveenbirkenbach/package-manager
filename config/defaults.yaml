@@ -402,3 +402,14 @@ repositories:
     gpg_keys:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
+
+- account: kevinveenbirkenbach
+  alias: j2r
+  description: A minimal CLI tool to render Jinja2 templates into final YAML files – perfect for generating Ansible variable files or templated configuration outputs.
+  homepage: https://github.com/kevinveenbirkenbach/j2render
+  provider: github.com
+  repository: j2render
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
