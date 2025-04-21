@@ -140,6 +140,7 @@ For detailed help on each command, use:
     update_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
     update_parser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
     update_parser.add_argument("--dependencies", action="store_true", help="Also pull and update dependencies")
+    update_parser.add_argument("--clone-mode", choices=["ssh", "https"], default="ssh", help="Specify the clone mode (default: ssh)")
 
     status_parser = subparsers.add_parser("status", help="Show status for repository/repositories or system")
     add_identifier_arguments(status_parser)
