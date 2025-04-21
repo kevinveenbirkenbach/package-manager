@@ -226,7 +226,14 @@ For detailed help on each command, use:
         for subcommand in subcommands:
             if args.command == subcommand:
                 if args.command == "clone":
-                    clone_repos(selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.preview, no_verification=args.no_verification, clone_mode=args.clone_mode)
+                    clone_repos(
+                        selected,
+                        REPOSITORIES_BASE_DIR,
+                        ALL_REPOSITORIES,
+                        args.preview,
+                        args.no_verification,
+                        args.clone_mode
+                        )
                 elif args.command == "pull":
                     from pkgmgr.pull_with_verification import pull_with_verification
                     pull_with_verification(selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.extra_args, no_verification=args.no_verification, preview=args.preview)
