@@ -32,9 +32,9 @@ def update_repos(
         selected_repos, 
         repositories_base_dir, 
         all_repos, 
-        extra_args=[], 
-        no_verification=no_verification, 
-        preview=preview
+        [], 
+        no_verification, 
+        preview
     )
 
     install_repos(

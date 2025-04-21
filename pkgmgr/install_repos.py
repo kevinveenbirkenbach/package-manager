@@ -86,6 +86,16 @@ def install_repos(
                                 cmd_clone = "pkgmgr clone " + " ".join(pkgmgr_packages)
                                 run_command(cmd_clone, preview=preview)
                         cmd = "pkgmgr install " + " ".join(pkgmgr_packages)
+
+                        if no_verification:
+                            cmd += " --no-verification"
+
+                        if update_dependencies:
+                            cmd += " --dependencies"
+
+                        if clone_mode:
+                            cmd += f" --clone-mode {clone_mode}"
+
                         run_command(cmd, preview=preview)
 
                 # Install pip packages if defined.

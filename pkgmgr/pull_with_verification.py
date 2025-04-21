@@ -5,7 +5,13 @@ from pkgmgr.get_repo_identifier import get_repo_identifier
 from pkgmgr.get_repo_dir import get_repo_dir
 from pkgmgr.verify import verify_repository
 
-def pull_with_verification(selected_repos, repositories_base_dir, all_repos, extra_args, no_verification, preview=False):
+def pull_with_verification(
+    selected_repos,
+    repositories_base_dir,
+    all_repos,
+    extra_args,
+    no_verification,
+    preview:bool):
     """
     Executes "git pull" for each repository with verification.
     
