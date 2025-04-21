@@ -45,8 +45,8 @@ def update_repos(
         no_verification,
         preview,
         quiet,
-        update_dependencies,
-        clone_mode
+        clone_mode,
+        update_dependencies
     )
 
     if system_update:

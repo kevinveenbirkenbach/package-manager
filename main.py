@@ -257,8 +257,8 @@ For detailed help on each command, use:
             args.no_verification,
             args.preview,
             args.quiet,
+            args.clone_mode,
             args.dependencies,
-            args.clone_mode
             )
     elif args.command == "create":
         from pkgmgr.create_repo import create_repo
