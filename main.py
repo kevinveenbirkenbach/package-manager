@@ -240,7 +240,16 @@ For detailed help on each command, use:
         
     # Dispatch commands.
     if args.command == "install":
-        install_repos(selected, REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, ALL_REPOSITORIES, args.no_verification, preview=args.preview, quiet=args.quiet, clone_mode=args.clone_mode)
+        install_repos(
+            selected,
+            REPOSITORIES_BASE_DIR,
+            BINARIES_DIRECTORY,
+            ALL_REPOSITORIES,
+            args.no_verification,
+            args.preview,
+            args.quiet,
+            args.clone_mode
+            )
     elif args.command == "create":
         from pkgmgr.create_repo import create_repo
         # If no identifiers are provided, you can decide to either use the repository of the current folder
@@ -265,10 +274,11 @@ For detailed help on each command, use:
             BINARIES_DIRECTORY,
             ALL_REPOSITORIES,
             args.no_verification,
-            system_update=args.system,
-            preview=args.preview,
-            quiet=args.quiet,
-            update_dependencies=args.dependencies
+            args.system,
+            args.preview,
+            args.quiet,
+            args.dependencies,
+            args.clone_mode
         )
     elif args.command == "release":
         if not selected:

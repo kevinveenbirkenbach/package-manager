@@ -4,7 +4,14 @@ from pkgmgr.get_repo_dir import get_repo_dir
 from pkgmgr.get_repo_identifier import get_repo_identifier
 from pkgmgr.verify import verify_repository
 
-def clone_repos(selected_repos, repositories_base_dir: str, all_repos, preview: bool, no_verification: bool, clone_mode: str = "ssh"):
+def clone_repos(
+    selected_repos, 
+    repositories_base_dir: str, 
+    all_repos, 
+    preview: bool, 
+    no_verification: bool, 
+    clone_mode: str
+    ):
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = get_repo_dir(repositories_base_dir, repo)

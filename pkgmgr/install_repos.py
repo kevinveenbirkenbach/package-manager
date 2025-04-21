@@ -10,7 +10,17 @@ from pkgmgr.run_command import run_command
 from pkgmgr.verify import verify_repository
 from pkgmgr.clone_repos import clone_repos
 
-def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_verification, preview=False, quiet=False, clone_mode: str = "ssh", update_dependencies: bool = True):
+def install_repos(
+    selected_repos, 
+    repositories_base_dir, 
+    bin_dir, 
+    all_repos, 
+    no_verification, 
+    preview, 
+    quiet,
+    clone_mode: str, 
+    update_dependencies: bool
+    ):
     """
     Install repositories by creating symbolic links, running setup commands, and
     installing additional packages if a requirements.yml or requirements.txt file is found.
@@ -21,7 +31,7 @@ def install_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, no_
         if not os.path.exists(repo_dir):
             print(f"Repository directory '{repo_dir}' does not exist. Cloning it now...")
             # Pass the clone_mode parameter to clone_repos
-            clone_repos([repo], repositories_base_dir, all_repos, preview, no_verification, clone_mode=clone_mode)
+            clone_repos([repo], repositories_base_dir, all_repos, preview, no_verification, clone_mode)
             if not os.path.exists(repo_dir):
                 print(f"Cloning failed for repository {repo_identifier}. Skipping installation.")
                 continue
