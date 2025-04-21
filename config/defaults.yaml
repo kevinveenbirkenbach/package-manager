@@ -413,3 +413,16 @@ repositories:
     gpg_keys:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
+
+- account: kevinveenbirkenbach
+  alias: voltrace
+  description: A simple CLI tool to trace where Docker volumes are mounted inside containers. Quickly identify which containers use specific volumes and where they are mounted.
+  homepage: https://github.com/kevinveenbirkenbach/voltrace
+  provider: github.com
+  repository: voltrace
+  verified:
+    commit: a79730189f45318bfa0cd58c1f18ec730a4e58cd
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
