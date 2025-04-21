@@ -28,7 +28,14 @@ def update_repos(
     - update_dependencies: Whether to update dependent repositories.
     - clone_mode: Method to clone repositories (ssh or https).
     """
-    pull_with_verification(selected_repos, repositories_base_dir, all_repos, extra_args=[], no_verification=no_verification, preview=preview)
+    pull_with_verification(
+        selected_repos, 
+        repositories_base_dir, 
+        all_repos, 
+        extra_args=[], 
+        no_verification=no_verification, 
+        preview=preview
+    )
 
     install_repos(
         selected_repos,
