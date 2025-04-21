@@ -109,11 +109,20 @@ For detailed help on each command, use:
         subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
         subparser.add_argument("-a", "--args", nargs=argparse.REMAINDER, dest="extra_args", help="Additional parameters to be attached.",default=[])
 
+    def add_install_update_arguments(subparser):
+        add_identifier_arguments(subparser)
+        subparser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
+        subparser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
+        subparser.add_argument("--dependencies", action="store_true", help="Also pull and update dependencies")
+        subparser.add_argument("--clone-mode", choices=["ssh", "https"], default="ssh", help="Specify the clone mode (default: ssh)")
+
     install_parser = subparsers.add_parser("install", help="Setup repository/repositories alias links to executables")
-    add_identifier_arguments(install_parser)
-    install_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
-    install_parser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
-    install_parser.add_argument("--clone-mode", choices=["ssh", "https"], default="ssh", help="Specify the clone mode (default: ssh)")
+    add_install_update_arguments(install_parser)
+
+    update_parser = subparsers.add_parser("update", help="Update (pull + install) repository/repositories")
+    add_install_update_arguments(update_parser)
+    update_parser.add_argument("--system", action="store_true", help="Include system update commands")
+
 
     deinstall_parser = subparsers.add_parser("deinstall", help="Remove alias links to repository/repositories")
     add_identifier_arguments(deinstall_parser)
@@ -133,14 +142,6 @@ For detailed help on each command, use:
         action="store_true",
         help="If set, add the remote and push the initial commit."
     )
-
-    update_parser = subparsers.add_parser("update", help="Update (pull + install) repository/repositories")
-    add_identifier_arguments(update_parser)
-    update_parser.add_argument("--system", action="store_true", help="Include system update commands")
-    update_parser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
-    update_parser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
-    update_parser.add_argument("--dependencies", action="store_true", help="Also pull and update dependencies")
-    update_parser.add_argument("--clone-mode", choices=["ssh", "https"], default="ssh", help="Specify the clone mode (default: ssh)")
 
     status_parser = subparsers.add_parser("status", help="Show status for repository/repositories or system")
     add_identifier_arguments(status_parser)
@@ -256,6 +257,7 @@ For detailed help on each command, use:
             args.no_verification,
             args.preview,
             args.quiet,
+            args.dependencies,
             args.clone_mode
             )
     elif args.command == "create":
