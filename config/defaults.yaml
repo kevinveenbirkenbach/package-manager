@@ -424,3 +424,14 @@ repositories:
     gpg_keys:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
+
+- account: kevinveenbirkenbach
+  description: A concise Bash utility to auto‑detect and merge all connected Bluetooth audio sinks into one PulseAudio sink for simultaneous playback on Manjaro GNOME.
+  homepage: https://github.com/kevinveenbirkenbach/pulse-bluetooth-mux
+  alias: pulse-bluetooth-mux
+  provider: github.com
+  repository: pulse-bluetooth-mux
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
