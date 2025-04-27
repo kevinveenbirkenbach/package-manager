@@ -137,7 +137,7 @@ def install_repos(
         req_txt_file = os.path.join(repo_dir, "requirements.txt")
         if os.path.exists(req_txt_file):
             print(f"requirements.txt found in {repo_identifier}, installing Python dependencies...")
-            cmd = "python3 -m pip install -r requirements.txt --break-system-packages"
+            cmd = "~/.venvs/pkgmgr/bin/pip install -r requirements.txt"
             run_command(cmd, cwd=repo_dir, preview=preview)
         
         # Check if a Makefile exists and run make.
