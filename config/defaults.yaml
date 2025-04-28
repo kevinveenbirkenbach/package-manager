@@ -447,3 +447,14 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  description: Certbot Domain Bundler automates Let's Encrypt certificate requests for multiple domains using SANs. It groups domains intelligently and supports DNS or webroot challenges, DNS propagation control, wildcard domains, and test mode through simple CLI parameters.
+  homepage: https://github.com/kevinveenbirkenbach/certbot-domain-bundler
+  alias: certbundle
+  provider: github.com
+  repository: certbot-domain-bundler
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
