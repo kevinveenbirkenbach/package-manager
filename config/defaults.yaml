@@ -458,3 +458,14 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  alias: certreap
+  description: A Python utility to automatically detect, revoke, and delete unused Let's Encrypt certificates based on active NGINX configuration files.
+  homepage: https://github.com/kevinveenbirkenbach/certbot-reaper
+  provider: github.com
+  repository: certbot-reaper
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
