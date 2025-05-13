@@ -468,4 +468,13 @@ repositories:
     gpg_keys:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
-
+- account: kevinveenbirkenbach
+  alias: checkcsp
+  description: A lightweight, Dockerized CSP validation tool that uses Puppeteer to crawl your domains and report any blocked resources.
+  homepage: https://github.com/kevinveenbirkenbach/csp-checker
+  provider: github.com
+  repository: csp-checker
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
