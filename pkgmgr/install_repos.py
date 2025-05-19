@@ -68,7 +68,7 @@ def install_repos(
                         cmd = "sudo pacman -S --noconfirm " + " ".join(pacman_packages)
                         run_command(cmd, preview=preview)
                 # Install yay packages if defined.
-                if "yay" or "aur" in requirements:
+                if "yay" in requirements:
                     yay_packages = requirements["yay"]
                     if yay_packages:
                         cmd = "yay -S " + " ".join(yay_packages)
