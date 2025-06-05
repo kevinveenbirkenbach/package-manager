@@ -489,3 +489,26 @@ repositories:
     gpg_keys:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
+
+- account: kevinveenbirkenbach
+  alias: sitdepex
+  description: A lightweight Python tool that connects to your Snipe-IT instance, retrieves all assets, and calculates depreciation (AfA) over a specified date range. It outputs a CSV summary and, if requested, generates a QIF file with split transactions (depreciation expense vs. accumulated depreciation) ready for import into accounting software.
+  homepage: https://github.com/kevinveenbirkenbach/snipeit-depreciation-export/
+  provider: github.com
+  repository: snipeit-depreciation-export
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
+# This a draft not implemented yet
+#- account: kevinveenbirkenbach
+#  alias: detaxall
+#  description: A Python-based tool to generate and export daily work records with corresponding German tax allowances for remote (domestic/foreign) and onsite days. It also supports optional travel entries with customizable per-km rates. Perfect for freelancers or employees tracking per-diem and travel costs in Germany.
+#  homepage: https://github.com/kevinveenbirkenbach/de-remote-onsite-allowance-calc/
+#  provider: github.com
+#  repository: de-remote-onsite-allowance-calc
+#  verified:
+#    gpg_keys:
+#      - 44D8F11FD62F878E
+#      - B5690EEEBB952194
