@@ -501,6 +501,15 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  alias: keyusval
+  provider: github.com
+  repository: keycloak-username-validator
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
