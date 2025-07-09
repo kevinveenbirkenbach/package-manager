@@ -143,5 +143,8 @@ def install_repos(
         # Check if a Makefile exists and run make.
         makefile_path = os.path.join(repo_dir, "Makefile")
         if os.path.exists(makefile_path):
-            print(f"Makefile found in {repo_identifier}, running 'make install'...")
-            run_command("make install", cwd=repo_dir, preview=preview)
+            cmd = "make install"
+            try:
+                run_command(cmd, cwd=repo_dir, preview=preview)
+            except SystemExit as e:
+                print(f"[Warning] Failed to run '{cmd}' for {repo_identifier}: {e}")
