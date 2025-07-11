@@ -51,6 +51,20 @@ The `make setup` command will:
 - Install required packages from `requirements.txt`.
 - Execute `python main.py install` to complete the installation.
 
+## Docker Quickstart 🐳
+
+Alternatively to installing locally, you can use Docker: build the image with
+
+```bash
+docker build --no-cache -t pkgmgr .
+```
+
+and then run
+
+```bash
+docker run --rm pkgmgr --help
+```
+
 ## Usage 📖
 
 Run the script with different commands. For example:
