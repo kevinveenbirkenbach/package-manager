@@ -512,6 +512,17 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  alias: mig
+  desciption: An interactive 3D visualization tool that parses Ansible meta/main.yml files to render role entities and their run_after/dependencies relationships in an endless, navigable graph.
+  homepage: https://github.com/kevinveenbirkenbach/meta-infinite-graph
+  provider: github.com
+  repository: meta-infinite-graph
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
