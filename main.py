@@ -48,6 +48,7 @@ PROXY_COMMANDS = {
     "docker":[
         "start",
         "stop",
+        "build"
     ],
     "docker compose":[
         "up",
