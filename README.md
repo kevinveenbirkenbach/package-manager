@@ -59,6 +59,12 @@ Alternatively to installing locally, you can use Docker: build the image with
 docker build --no-cache -t pkgmgr .
 ```
 
+or alternativ pull it via
+
+```bash
+docker pull kevinveenbirkenbach/pkgmgr:latest
+```
+
 and then run
 
 ```bash

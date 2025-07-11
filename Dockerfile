@@ -24,7 +24,7 @@ COPY . .
 RUN pip install --upgrade pip \
     && pip install PyYAML \
     && chmod +x main.py \
-    && python main.py install package-manager --no-verification --quiet
+    && python main.py install package-manager --quiet --clone-mode https
 
 # Default entrypoint for pkgmgr
 ENTRYPOINT ["pkgmgr"]
