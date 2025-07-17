@@ -533,6 +533,17 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  alias: unsure
+  provider: github.com
+  repository: unit-suffix-remover
+  desciption: Python CLI to stop, disable, and remove systemd .timer and .service units by suffix.
+  homepage: https://github.com/kevinveenbirkenbach/unit-suffix-remover
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
