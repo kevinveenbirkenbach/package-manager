@@ -71,7 +71,7 @@ def install_repos(
                 if "yay" in requirements:
                     yay_packages = requirements["yay"]
                     if yay_packages:
-                        cmd = "yay -S --noconfirm" + " ".join(yay_packages)
+                        cmd = "yay -S --noconfirm " + " ".join(yay_packages)
                         run_command(cmd, preview=preview)
                 # Install pkgmgr packages if defined.
                 if "pkgmgr" in requirements:
