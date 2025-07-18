@@ -51,5 +51,5 @@ def update_repos(
 
     if system_update:
         from pkgmgr.run_command import run_command
-        run_command("yay -Syu --noconfirm", preview=preview)
+        run_command("sudo -u aur_builder yay -Syu --noconfirm", preview=preview)
         run_command("sudo pacman -Syyu --noconfirm", preview=preview)
