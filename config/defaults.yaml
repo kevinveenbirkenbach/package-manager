@@ -544,6 +544,17 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  alias: unilog
+  desciption: A Dockerized Python service that provides a /logout endpoint to dynamically expire all cookies across your subdomains.
+  homepage: https://github.com/kevinveenbirkenbach/universal-logout
+  provider: github.com
+  repository: universal-logout
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
