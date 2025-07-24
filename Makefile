@@ -14,17 +14,14 @@ install:
 	@echo "Ensuring ~/.bashrc exists..."
 	@test -f ~/.bashrc || touch ~/.bashrc
 	@echo "Ensuring automatic activation of ~/.venvs/pkgmgr for this user..."
-	@grep -qxF 'if [ -d "$$HOME/.venvs/pkgmgr" ]; then export VIRTUAL_ENV="$$HOME/.venvs/pkgmgr"; export PATH="$$VIRTUAL_ENV/bin:$$PATH"; unset PYTHONHOME; fi' ~/.bashrc \
-		|| echo 'if [ -d "$$HOME/.venvs/pkgmgr" ]; then export VIRTUAL_ENV="$$HOME/.venvs/pkgmgr"; export PATH="$$VIRTUAL_ENV/bin:$$PATH"; unset PYTHONHOME; fi' >> ~/.bashrc
-	@grep -qxF 'echo "Global Python virtual environment '\''~/.venvs/pkgmgr'\'' activated."' ~/.bashrc \
-		|| echo 'echo "Global Python virtual environment '\''~/.venvs/pkgmgr'\'' activated."' >> ~/.bashrc
+	@grep -qxF 'if [ -d "$$HOME/.venvs/pkgmgr" ]; then . "$$HOME/.venvs/pkgmgr/bin/activate"; echo "Global Python virtual environment '\''~/.venvs/pkgmgr'\'' activated."; fi' ~/.bashrc \
+		|| echo 'if [ -d "$$HOME/.venvs/pkgmgr" ]; then . "$$HOME/.venvs/pkgmgr/bin/activate"; echo "Global Python virtual environment '\''~/.venvs/pkgmgr'\'' activated."; fi' >> ~/.bashrc
 	@echo "Installation complete. Please restart your shell (or 'exec bash') for the changes to take effect."
 
 uninstall:
 	@echo "Removing global user virtual environment if it exists..."
 	@rm -rf ~/.venvs/pkgmgr
 	@echo "Cleaning up ~/.bashrc entries..."
-	@sed -i '/Global Python virtual environment '\''~\/.venvs\/pkgmgr'\'' activated\./d' ~/.bashrc
-	@sed -i '/if \[ -d "\$\$HOME\/\.venvs\/pkgmgr" \]; then export VIRTUAL_ENV="\$\$HOME\/\.venvs\/pkgmgr"; export PATH="\$\$VIRTUAL_ENV\/bin:\$\$PATH"; unset PYTHONHOME; fi/d' ~/.bashrc
+	@sed -i '/if \[ -d "\$\$HOME\/\.venvs\/pkgmgr" \]; then \. "\$\$HOME\/\.venvs\/pkgmgr\/bin\/activate"; echo "Global Python virtual environment '\\''~\/.venvs\/pkgmgr'\\'' activated."; fi/d' ~/.bashrc
 	@echo "Uninstallation complete. Please restart your shell (or 'exec bash') for the changes to fully apply."
 
