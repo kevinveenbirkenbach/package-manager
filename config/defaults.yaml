@@ -556,11 +556,11 @@ repositories:
       - B5690EEEBB952194
 
 - account: kevinveenbirkenbach
-  alias: pgsr
-  desciption: A Python-based CLI tool to bulk search (and optionally replace) text across all text/varchar columns in a PostgreSQL database, running either locally or inside a Docker container, with customizable SQL logic stored in a Jinja2 template.
+  alias: dbsr
+  desciption: A Python-based CLI tool to bulk search (and optionally replace) text across all text/varchar columns in a relational database, running either locally or inside a Docker container, with customizable SQL logic stored in a Jinja2 template.
   homepage: https://github.com/kevinveenbirkenbach/pg-search-replace
   provider: github.com
-  repository: pg-search-replace
+  repository: database-search-replace
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
