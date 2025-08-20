@@ -565,6 +565,18 @@ repositories:
     gpg_keys:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
+
+- account: kevinveenbirkenbach
+  desciption: A lightweight fix tool for Docker containers stuck with stale systemd transient scopes or cgroups. It ships a single script – main.sh – that cleans up orphaned docker-<ID>.scope units, removes lingering cgroups, kills leftover shim/runc processes, and reloads systemd/Docker when necessary.
+  homepage: https://github.com/kevinveenbirkenbach/docker-scope-cleaner/
+  alias:  doscol
+  provider: github.com
+  repository: docker-scope-cleaner
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
