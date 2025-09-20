@@ -577,6 +577,17 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  desciption: poc-mcp-llm-stack is a proof-of-concept showcasing an AI architecture with LLM, Vector DB, and MCP-style proxy. The Docker Compose stack includes Ollama, Open WebUI, LiteLLM, Qdrant, MinIO, Flowise, and mock APIs for ERP, CRM, and ticketsystem. It lets developers explore modular LLM-business app integrations.
+  homepage: https://github.com/kevinveenbirkenbach/poc-mcp-llm-stackv
+  alias:  pmls
+  provider: github.com
+  repository: poc-mcp-llm-stack
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
