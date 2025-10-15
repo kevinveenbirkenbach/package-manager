@@ -621,6 +621,17 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  alias: automtu
+  desciption: Automatically detects the optimal MTU for WireGuard and network interfaces to improve VPN performance and stability.
+  homepage: https://github.com/kevinveenbirkenbach/wg-mtu-auto
+  provider: github.com
+  repository: wg-mtu-auto
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
