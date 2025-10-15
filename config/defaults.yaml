@@ -610,6 +610,17 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  desciption: A simple Python CLI tool to safely rename Linux user accounts using usermod — including home directory migration and validation checks.
+  homepage: https://github.com/kevinveenbirkenbach/user-rename
+  alias: reuse
+  provider: github.com
+  repository: user-rename
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
