@@ -599,6 +599,17 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 
+- account: kevinveenbirkenbach
+  desciption: Infinito Inventory Builder — a containerized web application that dynamically generates Ansible inventory files from invokable Infinito.Nexus roles through an interactive, browser-based interface.
+  homepage: https://github.com/kevinveenbirkenbach/infinito-inventory-builder
+  alias: invbuild
+  provider: github.com
+  repository: infinito-inventory-builder
+  verified:
+    gpg_keys:
+      - 44D8F11FD62F878E
+      - B5690EEEBB952194
+
 # This a draft not implemented yet
 #- account: kevinveenbirkenbach
 #  alias: detaxall
