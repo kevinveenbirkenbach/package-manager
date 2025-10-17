@@ -1,16 +1,20 @@
 .PHONY: install setup uninstall
 
 setup: install
-	@python main.py install
+	@python3 main.py install
 
 install:
 	@echo "Making 'main.py' executable..."
 	@chmod +x main.py
 	@echo "Checking if global user virtual environment exists..."
-	@mkdir -p ~/.venvs/pkgmgr
-	@test -d ~/.venvs/pkgmgr || (echo "Creating global venv at ~/.venvs/pkgmgr..." && python -m venv ~/.venvs/pkgmgr)
+	@mkdir -p ~/.venvs
+	@if [ ! -d ~/.venvs/pkgmgr ]; then \
+		echo "Creating global venv at ~/.venvs/pkgmgr..."; \
+		python3 -m venv ~/.venvs/pkgmgr; \
+	fi
 	@echo "Installing required Python packages into ~/.venvs/pkgmgr..."
-	@~/.venvs/pkgmgr/bin/pip install --upgrade pip
+	@~/.venvs/pkgmgr/bin/python -m ensurepip --upgrade
+	@~/.venvs/pkgmgr/bin/pip install --upgrade pip setuptools wheel
 	@~/.venvs/pkgmgr/bin/pip install -r requirements.txt
 	@echo "Ensuring ~/.bashrc and ~/.zshrc exist..."
 	@touch ~/.bashrc ~/.zshrc
