@@ -3,6 +3,10 @@
 setup: install
 	@python3 main.py install
 
+test:
+	docker build -t package-manager-test .
+	docker run --rm --entrypoint python package-manager-test -m unittest discover -s tests -p "test_*.py"
+
 install:
 	@echo "Making 'main.py' executable..."
 	@chmod +x main.py

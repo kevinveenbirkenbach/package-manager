@@ -22,25 +22,48 @@ def clone_repos(
         parent_dir = os.path.dirname(repo_dir)
         os.makedirs(parent_dir, exist_ok=True)
         # Build clone URL based on the clone_mode
+        # Build clone URL based on the clone_mode
         if clone_mode == "ssh":
-            clone_url = f"git@{repo.get('provider')}:{repo.get('account')}/{repo.get('repository')}.git"
-        elif clone_mode == "https":
+            clone_url = (
+                f"git@{repo.get('provider')}:"
+                f"{repo.get('account')}/"
+                f"{repo.get('repository')}.git"
+            )
+        elif clone_mode in ("https", "shallow"):
             # Use replacement if defined, otherwise construct from provider/account/repository
             if repo.get("replacement"):
                 clone_url = f"https://{repo.get('replacement')}.git"
             else:
-                clone_url = f"https://{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}.git"
+                clone_url = (
+                    f"https://{repo.get('provider')}/"
+                    f"{repo.get('account')}/"
+                    f"{repo.get('repository')}.git"
+                )
         else:
             print(f"Unknown clone mode '{clone_mode}'. Aborting clone for {repo_identifier}.")
             continue
 
-        print(f"[INFO] Attempting to clone '{repo_identifier}' using {clone_mode.upper()} from {clone_url} into '{repo_dir}'.")
-        
+        # Build base clone command
+        base_clone_cmd = "git clone"
+        if clone_mode == "shallow":
+            # Shallow clone: only latest state via HTTPS, no full history
+            base_clone_cmd += " --depth 1 --single-branch"
+
+        mode_label = "HTTPS (shallow)" if clone_mode == "shallow" else clone_mode.upper()
+        print(
+            f"[INFO] Attempting to clone '{repo_identifier}' using {mode_label} "
+            f"from {clone_url} into '{repo_dir}'."
+        )
+
         if preview:
-            print(f"[Preview] Would run: git clone {clone_url} {repo_dir} in {parent_dir}")
+            print(f"[Preview] Would run: {base_clone_cmd} {clone_url} {repo_dir} in {parent_dir}")
             result = subprocess.CompletedProcess(args=[], returncode=0)
         else:
-            result = subprocess.run(f"git clone {clone_url} {repo_dir}", cwd=parent_dir, shell=True)
+            result = subprocess.run(
+                f"{base_clone_cmd} {clone_url} {repo_dir}",
+                cwd=parent_dir,
+                shell=True,
+            )
         
         if result.returncode != 0:
             # Only offer fallback if the original mode was SSH.

@@ -1,31 +1,40 @@
-FROM python:3.11-slim
+FROM archlinux:latest
 
-# Install system dependencies (make, pip) as per README
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    make \
-    python3-pip \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+# Update system and install core tooling
+RUN pacman -Syu --noconfirm \
+    && pacman -S --noconfirm --needed \
+        git \
+        make \
+        sudo \
+        python \
+        python-pip \
+        python-virtualenv \
+        python-setuptools \
+        python-wheel \
+    && pacman -Scc --noconfirm
 
-# Ensure local bin is in PATH (for aliases) as per README
+# Ensure local bin is in PATH (for pkgmgr links)
 ENV PATH="/root/.local/bin:$PATH"
 
-# Create and activate a virtual environment
+# Create virtual environment
 ENV VIRTUAL_ENV=/root/.venvs/pkgmgr
-RUN python3 -m venv $VIRTUAL_ENV
+RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Copy local package-manager source into the image
+# Working directory for the package-manager project
 WORKDIR /root/Repositories/github.com/kevinveenbirkenbach/package-manager
+
+# Copy local package-manager source into container
 COPY . .
 
-# Install Python dependencies and set up the tool non-interactively
+# Install Python dependencies and register pkgmgr inside the venv
 RUN pip install --upgrade pip \
     && pip install PyYAML \
     && chmod +x main.py \
-    && python main.py install package-manager --quiet --clone-mode https
+    && python main.py install package-manager --quiet --clone-mode shallow --no-verification
 
-# Default entrypoint for pkgmgr
+# Copy again to allow rebuild-based code changes
+COPY . .
+
 ENTRYPOINT ["pkgmgr"]
 CMD ["--help"]

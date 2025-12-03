@@ -112,10 +112,29 @@ For detailed help on each command, use:
 
     def add_install_update_arguments(subparser):
         add_identifier_arguments(subparser)
-        subparser.add_argument("-q", "--quiet", action="store_true", help="Suppress warnings and info messages")
-        subparser.add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
-        subparser.add_argument("--dependencies", action="store_true", help="Also pull and update dependencies")
-        subparser.add_argument("--clone-mode", choices=["ssh", "https"], default="ssh", help="Specify the clone mode (default: ssh)")
+        subparser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            help="Suppress warnings and info messages",
+        )
+        subparser.add_argument(
+            "--no-verification",
+            action="store_true",
+            default=False,
+            help="Disable verification via commit/gpg",
+        )
+        subparser.add_argument(
+            "--dependencies",
+            action="store_true",
+            help="Also pull and update dependencies",
+        )
+        subparser.add_argument(
+            "--clone-mode",
+            choices=["ssh", "https", "shallow"],
+            default="ssh",
+            help="Specify the clone mode: ssh, https, or shallow (HTTPS shallow clone; default: ssh)",
+        )
 
     install_parser = subparsers.add_parser("install", help="Setup repository/repositories alias links to executables")
     add_install_update_arguments(install_parser)
@@ -213,10 +232,20 @@ For detailed help on each command, use:
                 description=f"Executes '{command} {subcommand}' for the identified repos.\nTo recieve more help execute '{command} {subcommand} --help'",
                 formatter_class=argparse.RawTextHelpFormatter
                 )
-            if subcommand in ["pull","clone"]:
-                proxy_command_parsers[f"{command}_{subcommand}"].add_argument("--no-verification", action="store_true", default=False, help="Disable verification via commit/gpg")
+            if subcommand in ["pull", "clone"]:
+                proxy_command_parsers[f"{command}_{subcommand}"].add_argument(
+                    "--no-verification",
+                    action="store_true",
+                    default=False,
+                    help="Disable verification via commit/gpg",
+                )
             if subcommand == "clone":
-                proxy_command_parsers[f"{command}_{subcommand}"].add_argument("--clone-mode", choices=["ssh", "https"], default="ssh", help="Specify the clone mode (default: ssh)")
+                proxy_command_parsers[f"{command}_{subcommand}"].add_argument(
+                    "--clone-mode",
+                    choices=["ssh", "https", "shallow"],
+                    default="ssh",
+                    help="Specify the clone mode: ssh, https, or shallow (HTTPS shallow clone; default: ssh)",
+                )
             add_identifier_arguments(proxy_command_parsers[f"{command}_{subcommand}"])
             
     args = parser.parse_args()
@@ -331,7 +360,7 @@ For detailed help on each command, use:
         status_repos(selected,REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
     elif args.command == "explore":
         for repository in selected:
-            run_command(f"nautilus {repository["directory"]} & disown")
+            run_command(f"nautilus {repository['directory']} & disown")
     elif args.command == "code":
         if not selected:
             print("No repositories selected.")
@@ -371,7 +400,7 @@ For detailed help on each command, use:
         # Join the provided shell command parts into one string.
         command_to_run = " ".join(args.shell_command)
         for repository in selected:
-            print(f"Executing in '{repository["directory"]}': {command_to_run}")
+            print(f"Executing in '{repository['directory']}': {command_to_run}")
             run_command(command_to_run, cwd=repository["directory"], preview=args.preview)
     elif args.command == "config":
         if args.subcommand == "show":
