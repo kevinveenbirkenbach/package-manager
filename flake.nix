@@ -43,27 +43,33 @@
       );
 
       # Packages: nix build .#pkgmgr / .#default
-      packages = forAllSystems (system:
-        let
-          pkgs   = nixpkgs.legacyPackages.${system};
-          python = pkgs.python311;
-          pypkgs = pkgs.python311Packages;
+        packages = forAllSystems (system:
+            let
+            pkgs   = nixpkgs.legacyPackages.${system};
+            python = pkgs.python311;
+            pypkgs = pkgs.python311Packages;
 
-          pkgmgrPkg = pypkgs.buildPythonApplication {
-            pname = "package-manager";
-            version = "0.1.0";
-            src = ./.;
+            # Be robust: ansible-core if available, otherwise ansible.
+            ansiblePkg =
+                if pkgs ? ansible-core then pkgs.ansible-core
+                else pkgs.ansible;
+            in
+            rec {
+            pkgmgr = pypkgs.buildPythonApplication {
+                pname = "package-manager";
+                version = "0.1.0";
+                src = ./.;
 
-            propagatedBuildInputs = [
-              pypkgs.pyyaml
-              # add further dependencies here
-            ];
-          };
-        in {
-          pkgmgr  = pkgmgrPkg;
-          default = pkgmgrPkg;
-        }
-      );
+                propagatedBuildInputs = [
+                pypkgs.pyyaml
+                ansiblePkg
+                ];
+            };
+
+            # default package just points to pkgmgr
+            default = pkgmgr;
+            }
+        );
 
       # Apps: nix run .#pkgmgr / .#default
       apps = forAllSystems (system:
