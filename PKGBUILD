@@ -1,7 +1,7 @@
 # Maintainer: Kevin Veen-Birkenbach <info@veen.world>
 
 pkgname=package-manager
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc="Wrapper that runs Kevin's package-manager via Nix flake."
 arch=('any')
