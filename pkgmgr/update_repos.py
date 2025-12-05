@@ -1,6 +1,9 @@
 import sys
+import shutil
+
 from pkgmgr.pull_with_verification import pull_with_verification
 from pkgmgr.install_repos import install_repos
+
 
 def update_repos(
     selected_repos,
@@ -10,9 +13,10 @@ def update_repos(
     no_verification,
     system_update,
     preview: bool,
-    quiet: bool, 
+    quiet: bool,
     update_dependencies: bool,
-    clone_mode: str):
+    clone_mode: str,
+):
     """
     Update repositories by pulling latest changes and installing them.
 
@@ -29,12 +33,12 @@ def update_repos(
     - clone_mode: Method to clone repositories (ssh or https).
     """
     pull_with_verification(
-        selected_repos, 
-        repositories_base_dir, 
-        all_repos, 
-        [], 
-        no_verification, 
-        preview
+        selected_repos,
+        repositories_base_dir,
+        all_repos,
+        [],
+        no_verification,
+        preview,
     )
 
     install_repos(
@@ -46,10 +50,19 @@ def update_repos(
         preview,
         quiet,
         clone_mode,
-        update_dependencies
+        update_dependencies,
     )
 
     if system_update:
         from pkgmgr.run_command import run_command
+
+        # Nix: upgrade all profile entries (if Nix is available)
+        if shutil.which("nix") is not None:
+            try:
+                run_command("nix profile upgrade '.*'", preview=preview)
+            except SystemExit as e:
+                print(f"[Warning] 'nix profile upgrade' failed: {e}")
+
+        # Arch / AUR system update
         run_command("sudo -u aur_builder yay -Syu --noconfirm", preview=preview)
         run_command("sudo pacman -Syyu --noconfirm", preview=preview)

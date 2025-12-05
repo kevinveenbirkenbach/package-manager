@@ -1,0 +1,35 @@
+[build-system]
+# This tells pip/build how to build your project (PEP 517).
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "package-manager"
+version = "0.1.0"
+description = "Kevin's Package Manager is a configurable Python tool to manage multiple repositories via Bash."
+readme = "README.md"
+requires-python = ">=3.10"
+
+# Use a simple SPDX license string to avoid the deprecation warning.
+license = "MIT"
+
+authors = [
+  { name = "Kevin Veen-Birkenbach", email = "info@veen.world" }
+]
+
+# Python runtime dependencies.
+dependencies = [
+  "PyYAML"
+]
+
+[project.urls]
+Homepage = "https://www.veen.world"
+Repository = "https://github.com/kevinveenbirkenbach/package-manager"
+Funding-GitHub-Sponsors = "https://github.com/sponsors/kevinveenbirkenbach"
+Funding-Patreon = "https://www.patreon.com/c/kevinveenbirkenbach"
+Funding-BuyMeACoffee = "https://buymeacoffee.com/kevinveenbirkenbach"
+Funding-PayPal = "https://s.veen.world/paypaldonate"
+
+[tool.setuptools]
+packages = ["pkgmgr"]
+

@@ -1,2 +1,27 @@
+
+# Prevents unwanted files from being committed to version control.
+
+# Custom Config file
 config/config.yaml
-*__pycache__*
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+.venvs/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Editor files
+.vscode/
+.idea/
+
+# OS noise
+.DS_Store
+Thumbs.db
