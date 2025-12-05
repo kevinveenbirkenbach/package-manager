@@ -1,9 +1,0 @@
-# This file defines Ansible Galaxy dependencies for this repository.
-# It is used by `ansible-galaxy install -r requirements.yml`
-# to download required collections and roles.
-#
-# Since the package-manager project does not rely on Ansible,
-# both sections are intentionally left empty.
-
-collections: []
-roles: []

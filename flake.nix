@@ -59,19 +59,18 @@
             else pkgs.ansible;
         in
         rec {
-          pkgmgr = pypkgs.buildPythonApplication {
-            pname   = "package-manager";
+            pkgmgr = pkgs.stdenv.mkDerivation {
+            pname = "package-manager";
             version = "0.1.0";
-            src     = ./.;
 
-            pyproject    = true;
-            build-system = [ pypkgs.setuptools ];
+            src = ./.;
 
-            propagatedBuildInputs = [
-              pypkgs.pyyaml
-              ansiblePkg
-            ];
-          };
+            installPhase = ''
+                mkdir -p $out/bin
+                cp main.py $out/bin/pkgmgr
+                chmod +x $out/bin/pkgmgr
+            '';
+            };
 
           # default package just points to pkgmgr
           default = pkgmgr;
