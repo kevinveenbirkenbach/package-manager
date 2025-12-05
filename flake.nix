@@ -46,36 +46,47 @@
         }
       );
 
-      # Packages: nix build .#pkgmgr / .#default
-      packages = forAllSystems (system:
-        let
-          pkgs   = nixpkgs.legacyPackages.${system};
-          python = pkgs.python311;
-          pypkgs = pkgs.python311Packages;
+packages = forAllSystems (system:
+  let
+    pkgs   = nixpkgs.legacyPackages.${system};
+    python = pkgs.python311;
+    pypkgs = pkgs.python311Packages;
 
-          # Be robust: ansible-core if available, otherwise ansible.
-          ansiblePkg =
-            if pkgs ? ansible-core then pkgs.ansible-core
-            else pkgs.ansible;
-        in
-        rec {
-            pkgmgr = pkgs.stdenv.mkDerivation {
-            pname = "package-manager";
-            version = "0.1.0";
+    # Optional: ansible mit in den Closure nehmen
+    ansiblePkg =
+      if pkgs ? ansible-core then pkgs.ansible-core
+      else pkgs.ansible;
+  in
+  rec {
+    pkgmgr = pkgs.stdenv.mkDerivation {
+      pname   = "package-manager";
+      version = "0.1.0";
 
-            src = ./.;
+      src = ./.;
 
-            installPhase = ''
-                mkdir -p $out/bin
-                cp main.py $out/bin/pkgmgr
-                chmod +x $out/bin/pkgmgr
-            '';
-            };
+      # Nix soll *kein* configure / build ausführen (also auch kein make)
+      dontConfigure = true;
+      dontBuild     = true;
 
-          # default package just points to pkgmgr
-          default = pkgmgr;
-        }
-      );
+      # Wenn du Python/Ansible im Runtime-Closure haben willst:
+      buildInputs = [
+        python
+        pypkgs.pyyaml
+        ansiblePkg
+      ];
+
+      installPhase = ''
+        mkdir -p "$out/bin"
+        cp main.py "$out/bin/pkgmgr"
+        chmod +x "$out/bin/pkgmgr"
+      '';
+    };
+
+    # default package just points to pkgmgr
+    default = pkgmgr;
+  }
+);
+
 
 
       # Apps: nix run .#pkgmgr / .#default
