@@ -1,0 +1,26 @@
+# Docker build context cleanup
+
+# Nix local store/cache
+.nix/
+
+# Git internals
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# venvs
+.venv/
+venv/
+.venvs/
+
+# Editor/OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -25,3 +25,6 @@ build/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Nix Cache to speed up tests
+.nix/

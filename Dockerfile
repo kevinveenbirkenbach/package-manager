@@ -1,40 +1,31 @@
 FROM archlinux:latest
 
-# Update system and install core tooling
+# 1) System basis + Nix
 RUN pacman -Syu --noconfirm \
     && pacman -S --noconfirm --needed \
+        base-devel \
         git \
-        make \
-        sudo \
-        python \
-        python-pip \
-        python-virtualenv \
-        python-setuptools \
-        python-wheel \
+        nix \
     && pacman -Scc --noconfirm
 
-# Ensure local bin is in PATH (for pkgmgr links)
-ENV PATH="/root/.local/bin:$PATH"
+ENV NIX_CONFIG="experimental-features = nix-command flakes"
 
-# Create virtual environment
-ENV VIRTUAL_ENV=/root/.venvs/pkgmgr
-RUN python -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+# 2) Unprivileged user for building Arch packages
+RUN useradd -m builder
+WORKDIR /build
 
-# Working directory for the package-manager project
-WORKDIR /root/Repositories/github.com/kevinveenbirkenbach/package-manager
+# 3) Only PKGBUILD rein, um dein Wrapper-Paket zu bauen
+COPY PKGBUILD .
 
-# Copy local package-manager source into container
+RUN chown -R builder:builder /build \
+    && su builder -c "makepkg -s --noconfirm --clean" \
+    && pacman -U --noconfirm package-manager-*.pkg.tar.* \
+    && rm -rf /build
+
+# 4) Projekt-Quellen für Tests in den Container kopieren
+WORKDIR /src
 COPY . .
 
-# Install Python dependencies and register pkgmgr inside the venv
-RUN pip install --upgrade pip \
-    && pip install PyYAML \
-    && chmod +x main.py \
-    && python main.py install package-manager --quiet --clone-mode shallow --no-verification
-
-# Copy again to allow rebuild-based code changes
-COPY . .
-
+# pkgmgr (Arch-Package) ist installiert und ruft nix run auf.
 ENTRYPOINT ["pkgmgr"]
 CMD ["--help"]

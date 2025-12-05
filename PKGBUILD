@@ -3,37 +3,38 @@
 pkgname=package-manager
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="A configurable Python tool to manage multiple repositories via Bash and automate common Git operations."
+pkgdesc="Wrapper that runs Kevin's package-manager via Nix flake."
 arch=('any')
 url="https://github.com/kevinveenbirkenbach/package-manager"
 license=('MIT')
 
-depends=(
-  'python'
-  'python-yaml'
-  'git'
-  'bash'
-)
+# Nix is the only runtime dependency.
+depends=('nix')
 
-makedepends=(
-  'python-build'
-  'python-installer'
-  'python-wheel'
-  'python-setuptools'
-)
+makedepends=()
 
-source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+source=()
+sha256sums=()
 
 build() {
-  cd "$srcdir/$pkgname-$pkgver"
-  python -m build --wheel --no-isolation
+  :
 }
 
 package() {
-  cd "$srcdir/$pkgname-$pkgver"
-  python -m installer --destdir="$pkgdir" dist/*.whl
+  install -d "$pkgdir/usr/bin"
 
-  # Optional: add pkgmgr executable symlink
-  install -Dm755 main.py "$pkgdir/usr/bin/pkgmgr"
+  cat > "$pkgdir/usr/bin/pkgmgr" << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Enable flakes if not already configured.
+if [[ -z "${NIX_CONFIG:-}" ]]; then
+  export NIX_CONFIG="experimental-features = nix-command flakes"
+fi
+
+# Run package-manager via Nix flake
+exec nix run "github:kevinveenbirkenbach/package-manager#pkgmgr" -- "$@"
+EOF
+
+  chmod 755 "$pkgdir/usr/bin/pkgmgr"
 }

@@ -1,7 +1,3 @@
-# flake.nix
-# This file defines a Nix flake providing a reproducible development environment
-# and optional installation package for the package-manager tool.
-
 {
   description = "Nix flake for Kevin's package-manager tool";
 
@@ -11,30 +7,75 @@
 
   outputs = { self, nixpkgs }:
     let
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      systems = [ "x86_64-linux" "aarch64-linux" ];
+
+      # Small helper: build an attrset for all systems
+      forAllSystems = f:
+        builtins.listToAttrs (map (system: {
+          name = system;
+          value = f system;
+        }) systems);
     in {
+      # Dev shells: nix develop .#default (on both architectures)
+      devShells = forAllSystems (system:
+        let
+          pkgs   = nixpkgs.legacyPackages.${system};
+          python = pkgs.python311;
+          pypkgs = pkgs.python311Packages;
 
-      # Development environment used via: nix develop
-      devShells.default = pkgs.mkShell {
-        # System packages for development
-        buildInputs = [
-          pkgs.python311
-          pkgs.python311Packages.pyyaml
-          pkgs.git
-        ];
+          # Be robust: ansible-core if available, otherwise ansible.
+          ansiblePkg =
+            if pkgs ? ansible-core then pkgs.ansible-core
+            else pkgs.ansible;
+        in {
+          default = pkgs.mkShell {
+            buildInputs = [
+              python
+              pypkgs.pyyaml
+              pkgs.git
+              ansiblePkg
+            ];
+            shellHook = ''
+              echo "Entered pkgmgr development environment for ${system}";
+            '';
+          };
+        }
+      );
 
-        # Message shown on environment entry
-        shellHook = ''
-          echo "Entered pkgmgr development environment";
-        '';
-      };
+      # Packages: nix build .#pkgmgr / .#default
+      packages = forAllSystems (system:
+        let
+          pkgs   = nixpkgs.legacyPackages.${system};
+          python = pkgs.python311;
+          pypkgs = pkgs.python311Packages;
 
-      # Optional installable package for "nix profile install"
-      packages.pkgmgr = pkgs.python311Packages.buildPythonApplication {
-        pname = "package-manager";
-        version = "0.1.0";
-        src = ./.;
-        propagatedBuildInputs = [ pkgs.python311Packages.pyyaml ];
-      };
+          pkgmgrPkg = pypkgs.buildPythonApplication {
+            pname = "package-manager";
+            version = "0.1.0";
+            src = ./.;
+
+            propagatedBuildInputs = [
+              pypkgs.pyyaml
+              # add further dependencies here
+            ];
+          };
+        in {
+          pkgmgr  = pkgmgrPkg;
+          default = pkgmgrPkg;
+        }
+      );
+
+      # Apps: nix run .#pkgmgr / .#default
+      apps = forAllSystems (system:
+        let
+          pkgmgrPkg = self.packages.${system}.pkgmgr;
+        in {
+          pkgmgr = {
+            type = "app";
+            program = "${pkgmgrPkg}/bin/pkgmgr";
+          };
+          default = self.apps.${system}.pkgmgr;
+        }
+      );
     };
 }

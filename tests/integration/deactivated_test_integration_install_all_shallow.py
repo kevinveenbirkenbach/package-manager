@@ -1,4 +1,3 @@
-# tests/test_integration_install_all_shallow.py
 """
 Integration test: install all configured repositories using
 --clone-mode shallow (HTTPS shallow clone) and --no-verification.
