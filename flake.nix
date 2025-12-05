@@ -60,7 +60,7 @@ packages = forAllSystems (system:
   rec {
     pkgmgr = pkgs.stdenv.mkDerivation {
       pname   = "package-manager";
-      version = "0.1.0";
+      version = "0.1.1";
 
       src = ./.;
 
