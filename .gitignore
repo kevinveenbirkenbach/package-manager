@@ -28,3 +28,6 @@ Thumbs.db
 
 # Nix Cache to speed up tests
 .nix/
+
+# Ignore logs
+*.log

@@ -1,6 +1,10 @@
 {
   description = "Nix flake for Kevin's package-manager tool";
 
+    nixConfig = {
+    extra-experimental-features = [ "nix-command" "flakes" ];
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
