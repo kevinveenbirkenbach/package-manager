@@ -32,10 +32,8 @@ class PkgbuildInstaller(BaseInstaller):
     def _extract_pkgbuild_array(self, ctx: RepoContext, var_name: str) -> List[str]:
         """
         Extract a Bash array (depends/makedepends) from PKGBUILD using bash itself.
-        Returns a list of package names or an empty list on error.
 
-        Uses a minimal shell environment (no profile/rc) to avoid noise from MOTD
-        or interactive shell banners polluting the output.
+        Any failure in sourcing or extracting the variable is treated as fatal.
         """
         pkgbuild_path = os.path.join(ctx.repo_dir, self.PKGBUILD_NAME)
         if not os.path.exists(pkgbuild_path):
@@ -48,8 +46,14 @@ class PkgbuildInstaller(BaseInstaller):
                 cwd=ctx.repo_dir,
                 text=True,
             )
-        except Exception:
-            return []
+        except Exception as exc:
+            print(
+                f"[Error] Failed to extract '{var_name}' from PKGBUILD in "
+                f"{ctx.identifier}: {exc}"
+            )
+            raise SystemExit(
+                f"PKGBUILD parsing failed for '{var_name}' in {ctx.identifier}: {exc}"
+            )
 
         packages: List[str] = []
         for line in output.splitlines():

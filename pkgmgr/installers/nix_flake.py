@@ -5,7 +5,7 @@
 Installer for Nix flakes.
 
 If a repository contains flake.nix and the 'nix' command is available, this
-installer will try to install a profile output from the flake.
+installer will try to install profile outputs from the flake.
 """
 
 import os
@@ -22,12 +22,22 @@ class NixFlakeInstaller(BaseInstaller):
     FLAKE_FILE = "flake.nix"
 
     def supports(self, ctx: RepoContext) -> bool:
+        """
+        Only support repositories that:
+          - Have a flake.nix
+          - And have the `nix` command available.
+        """
         if shutil.which("nix") is None:
             return False
         flake_path = os.path.join(ctx.repo_dir, self.FLAKE_FILE)
         return os.path.exists(flake_path)
 
     def run(self, ctx: RepoContext) -> None:
+        """
+        Install Nix flake profile outputs (pkgmgr, default).
+
+        Any failure in `nix profile install` is treated as fatal (SystemExit).
+        """
         flake_path = os.path.join(ctx.repo_dir, self.FLAKE_FILE)
         if not os.path.exists(flake_path):
             return
@@ -43,5 +53,6 @@ class NixFlakeInstaller(BaseInstaller):
                 run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
                 print(f"Nix flake output '{output}' successfully installed.")
             except SystemExit as e:
-                print(f"[Warning] Failed to install Nix flake output '{output}': {e}")
-
+                print(f"[Error] Failed to install Nix flake output '{output}': {e}")
+                # Hard fail: a broken flake is considered a fatal error.
+                raise

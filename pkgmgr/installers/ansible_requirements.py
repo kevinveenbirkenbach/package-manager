@@ -8,6 +8,7 @@ This installer installs collections and roles via ansible-galaxy when found.
 """
 
 import os
+import shutil
 import tempfile
 from typing import Any, Dict, List
 
@@ -50,24 +51,30 @@ class AnsibleRequirementsInstaller(BaseInstaller):
         return ""
 
     def _load_requirements(self, req_path: str, identifier: str) -> Dict[str, Any]:
+        """
+        Load requirements.yml.
+
+        Any parsing error is treated as fatal (SystemExit).
+        """
         try:
             with open(req_path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         except Exception as exc:
             print(f"Error loading {self.REQUIREMENTS_FILE} in {identifier}: {exc}")
-            return {}
+            raise SystemExit(
+                f"{self.REQUIREMENTS_FILE} parsing failed for {identifier}: {exc}"
+            )
 
     def _validate_requirements(self, requirements: Dict[str, Any], identifier: str) -> None:
         """
         Validate the requirements.yml structure.
+
         Raises SystemExit on any validation error.
         """
-
         errors: List[str] = []
 
         if not isinstance(requirements, dict):
             errors.append("Top-level structure must be a mapping.")
-
         else:
             allowed_keys = {"collections", "roles"}
             unknown_keys = set(requirements.keys()) - allowed_keys
@@ -88,19 +95,19 @@ class AnsibleRequirementsInstaller(BaseInstaller):
 
                 for idx, entry in enumerate(value):
                     if isinstance(entry, str):
-                        # short form "community.docker" etc.
+                        # Short form "community.docker", etc.
                         continue
 
                     if isinstance(entry, dict):
-                        # Collections: brauchen zwingend 'name'
                         if section == "collections":
+                            # Collections require 'name'
                             if not entry.get("name"):
                                 errors.append(
                                     f"Entry #{idx} in '{section}' is a mapping "
                                     f"but has no 'name' key."
                                 )
                         else:
-                            # Roles: 'name' ODER 'src' sind ok (beides gängig)
+                            # Roles: 'name' OR 'src' are acceptable.
                             if not (entry.get("name") or entry.get("src")):
                                 errors.append(
                                     f"Entry #{idx} in '{section}' is a mapping but "
@@ -127,7 +134,7 @@ class AnsibleRequirementsInstaller(BaseInstaller):
         if not requirements:
             return
 
-        # Validate structure before doing anything dangerous
+        # Validate structure before doing anything dangerous.
         self._validate_requirements(requirements, ctx.identifier)
 
         if "collections" not in requirements and "roles" not in requirements:
@@ -166,4 +173,3 @@ class AnsibleRequirementsInstaller(BaseInstaller):
             print(f"Ansible roles found in {ctx.identifier}, installing...")
             cmd = f"{galaxy_cmd} role install -r {tmp_filename}"
             run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
-

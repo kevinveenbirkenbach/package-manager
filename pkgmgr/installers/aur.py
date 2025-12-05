@@ -1,9 +1,23 @@
-# pkgmgr/installers/aur.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Installer for Arch AUR dependencies declared in an `aur.yml` file.
+
+This installer is:
+  - Arch-only (requires `pacman`)
+  - helper-driven (yay/paru/..)
+  - safe to ignore on non-Arch systems
+
+Config parsing errors are treated as fatal to avoid silently ignoring
+broken configuration.
+"""
 
 import os
 import shutil
-import yaml
 from typing import List
+
+import yaml
 
 from pkgmgr.installers.base import BaseInstaller
 from pkgmgr.context import RepoContext
@@ -16,11 +30,6 @@ AUR_CONFIG_FILENAME = "aur.yml"
 class AurInstaller(BaseInstaller):
     """
     Installer for Arch AUR dependencies declared in an `aur.yml` file.
-
-    This installer is:
-      - Arch-only (requires `pacman`)
-      - optional helper-driven (yay/paru/..)
-      - safe to ignore on non-Arch systems
     """
 
     def _is_arch_like(self) -> bool:
@@ -30,6 +39,12 @@ class AurInstaller(BaseInstaller):
         return os.path.join(ctx.repo_dir, AUR_CONFIG_FILENAME)
 
     def _load_config(self, ctx: RepoContext) -> dict:
+        """
+        Load and validate aur.yml.
+
+        Any parsing error or invalid top-level structure is treated as fatal
+        (SystemExit).
+        """
         path = self._config_path(ctx)
         if not os.path.exists(path):
             return {}
@@ -38,12 +53,12 @@ class AurInstaller(BaseInstaller):
             with open(path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
         except Exception as exc:
-            print(f"[Warning] Failed to load AUR config from '{path}': {exc}")
-            return {}
+            print(f"[Error] Failed to load AUR config from '{path}': {exc}")
+            raise SystemExit(f"AUR config '{path}' could not be parsed: {exc}")
 
         if not isinstance(data, dict):
-            print(f"[Warning] AUR config '{path}' is not a mapping. Ignoring.")
-            return {}
+            print(f"[Error] AUR config '{path}' is not a mapping.")
+            raise SystemExit(f"AUR config '{path}' must be a mapping at top level.")
 
         return data
 
@@ -85,6 +100,8 @@ class AurInstaller(BaseInstaller):
           - We are on an Arch-like system (pacman available),
           - An aur.yml exists,
           - That aur.yml declares at least one package.
+
+        An invalid aur.yml will raise SystemExit during config loading.
         """
         if not self._is_arch_like():
             return False
@@ -99,6 +116,9 @@ class AurInstaller(BaseInstaller):
     def run(self, ctx: RepoContext) -> None:
         """
         Install AUR packages using the configured helper (default: yay).
+
+        Missing helper is treated as non-fatal (warning), everything else
+        that fails in run_command() is fatal.
         """
         if not self._is_arch_like():
             print("AUR installer skipped: not an Arch-like system.")
@@ -127,5 +147,4 @@ class AurInstaller(BaseInstaller):
         print(f"Installing AUR packages via '{helper}': {pkg_list_str}")
 
         cmd = f"{helper} -S --noconfirm {pkg_list_str}"
-        # We respect preview mode to allow dry runs.
         run_command(cmd, preview=ctx.preview)

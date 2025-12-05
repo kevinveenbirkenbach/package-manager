@@ -11,14 +11,14 @@ This module orchestrates the installation of repositories by:
   3. Creating executable links using create_ink().
   4. Running a sequence of modular installer components that handle
      specific technologies or manifests (pkgmgr.yml, PKGBUILD, Nix,
-     Ansible requirements, Python, Makefile).
+     Ansible requirements, Python, Makefile, AUR).
 
 The goal is to keep this file thin and delegate most logic to small,
 focused installer classes.
 """
 
 import os
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 
 from pkgmgr.get_repo_identifier import get_repo_identifier
 from pkgmgr.get_repo_dir import get_repo_dir
@@ -38,7 +38,7 @@ from pkgmgr.installers.makefile import MakefileInstaller
 from pkgmgr.installers.aur import AurInstaller
 
 
-# Ordered list of installers to apply to each repository
+# Ordered list of installers to apply to each repository.
 INSTALLERS = [
     PkgmgrManifestInstaller(),
     PkgbuildInstaller(),
@@ -159,7 +159,10 @@ def install_repos(
     """
     Install repositories by creating symbolic links and processing standard
     manifest files (pkgmgr.yml, PKGBUILD, flake.nix, Ansible requirements,
-    Python manifests, Makefile) via dedicated installer components.
+    Python manifests, Makefile, AUR) via dedicated installer components.
+
+    Any installer failure (SystemExit) is treated as fatal and will abort
+    the current installation.
     """
     for repo in selected_repos:
         identifier = get_repo_identifier(repo, all_repos)

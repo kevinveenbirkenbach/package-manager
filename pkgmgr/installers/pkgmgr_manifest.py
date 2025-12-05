@@ -28,12 +28,19 @@ class PkgmgrManifestInstaller(BaseInstaller):
         return os.path.exists(manifest_path)
 
     def _load_manifest(self, manifest_path: str) -> Dict[str, Any]:
+        """
+        Load the pkgmgr.yml manifest.
+
+        Any parsing error is treated as a fatal error (SystemExit).
+        """
         try:
             with open(manifest_path, "r", encoding="utf-8") as f:
                 return yaml.safe_load(f) or {}
         except Exception as exc:
             print(f"Error loading {self.MANIFEST_NAME} in '{manifest_path}': {exc}")
-            return {}
+            raise SystemExit(
+                f"{self.MANIFEST_NAME} parsing failed for '{manifest_path}': {exc}"
+            )
 
     def _collect_dependency_ids(self, dependencies: List[Dict[str, Any]]) -> List[str]:
         ids: List[str] = []
@@ -70,14 +77,12 @@ class PkgmgrManifestInstaller(BaseInstaller):
 
         dep_repo_ids = self._collect_dependency_ids(dependencies)
 
+        # Optionally pull dependencies if requested.
         if ctx.update_dependencies and dep_repo_ids:
             cmd_pull = "pkgmgr pull " + " ".join(dep_repo_ids)
-            try:
-                run_command(cmd_pull, preview=ctx.preview)
-            except SystemExit as exc:
-                print(f"Warning: 'pkgmgr pull' for dependencies failed (exit code {exc}).")
+            run_command(cmd_pull, preview=ctx.preview)
 
-        # Install dependencies one by one
+        # Install dependencies one by one.
         for dep in dependencies:
             if not isinstance(dep, dict):
                 continue
@@ -108,7 +113,5 @@ class PkgmgrManifestInstaller(BaseInstaller):
             if ctx.clone_mode:
                 cmd += f" --clone-mode {ctx.clone_mode}"
 
-            try:
-                run_command(cmd, preview=ctx.preview)
-            except SystemExit as exc:
-                print(f"[Warning] Failed to install dependency '{repo_id}': {exc}")
+            # Dependency installation failures are fatal.
+            run_command(cmd, preview=ctx.preview)

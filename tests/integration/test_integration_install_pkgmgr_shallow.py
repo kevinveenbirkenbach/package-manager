@@ -16,7 +16,7 @@ import unittest
 
 
 class TestIntegrationInstallAllShallow(unittest.TestCase):
-    def test_install_all_repositories_shallow(self):
+    def test_install_pkgmgr_self_install(self):
         """
         Run: pkgmgr install --all --clone-mode shallow --no-verification
 

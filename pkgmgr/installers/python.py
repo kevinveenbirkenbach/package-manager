@@ -1,31 +1,35 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Installer for Python projects based on pyproject.toml and/or requirements.txt.
+
+Strategy:
+  - Determine a pip command in this order:
+      1. $PKGMGR_PIP (explicit override, e.g. ~/.venvs/pkgmgr/bin/pip)
+      2. sys.executable -m pip (current interpreter)
+      3. "pip" from PATH as last resort
+  - If pyproject.toml exists: pip install .
+  - If requirements.txt exists: pip install -r requirements.txt
+
+All installation failures are treated as fatal errors (SystemExit).
+"""
+
 import os
 import sys
 
-from .base import BaseInstaller
+from pkgmgr.installers.base import BaseInstaller
 from pkgmgr.run_command import run_command
 
 
 class PythonInstaller(BaseInstaller):
-    """
-    Install Python projects based on pyproject.toml and/or requirements.txt.
-
-    Strategy:
-      - Determine a pip command in this order:
-          1. $PKGMGR_PIP (explicit override, e.g. ~/.venvs/pkgmgr/bin/pip)
-          2. sys.executable -m pip (current interpreter)
-          3. "pip" from PATH as last resort
-      - If pyproject.toml exists: pip install .
-      - If requirements.txt exists: pip install -r requirements.txt
-    """
+    """Install Python projects and dependencies via pip."""
 
     name = "python"
 
     def supports(self, ctx) -> bool:
         """
         Return True if this installer should handle the given repository.
-
-        ctx must provide:
-          - repo_dir: filesystem path to the repository
         """
         repo_dir = ctx.repo_dir
         return (
@@ -37,24 +41,20 @@ class PythonInstaller(BaseInstaller):
         """
         Resolve the pip command to use.
         """
-        # 1) Explicit override via environment variable
         explicit = os.environ.get("PKGMGR_PIP", "").strip()
         if explicit:
             return explicit
 
-        # 2) Current Python interpreter (works well in Nix/dev shells)
         if sys.executable:
             return f"{sys.executable} -m pip"
 
-        # 3) Fallback to plain pip
         return "pip"
 
     def run(self, ctx) -> None:
         """
-        ctx must provide:
-          - repo_dir: path to repository
-          - identifier: human readable name
-          - preview: bool
+        Install Python project (pyproject.toml) and/or requirements.txt.
+
+        Any pip failure is propagated as SystemExit.
         """
         pip_cmd = self._pip_cmd()
 
@@ -65,12 +65,7 @@ class PythonInstaller(BaseInstaller):
                 f"installing Python project..."
             )
             cmd = f"{pip_cmd} install ."
-            try:
-                run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
-            except SystemExit as exc:
-                print(
-                    f"[Warning] Failed to install Python project in {ctx.identifier}: {exc}"
-                )
+            run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
 
         req_txt = os.path.join(ctx.repo_dir, "requirements.txt")
         if os.path.exists(req_txt):
@@ -79,11 +74,4 @@ class PythonInstaller(BaseInstaller):
                 f"installing Python dependencies..."
             )
             cmd = f"{pip_cmd} install -r requirements.txt"
-            try:
-                run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
-            except SystemExit as exc:
-                print(
-                    f"[Warning] Failed to install Python dependencies in {ctx.identifier}: {exc}"
-                )
-
-
+            run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)

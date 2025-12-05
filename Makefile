@@ -1,8 +1,8 @@
 .PHONY: install setup uninstall aur_builder_setup test
 
 # Local Nix cache directories in the repo
-NIX_STORE_DIR := .nix/store
-NIX_CACHE_DIR := .nix/cache
+NIX_STORE_VOLUME := pkgmgr_nix_store
+NIX_CACHE_VOLUME := pkgmgr_nix_cache
 
 setup: install
 	@echo "Running pkgmgr setup via main.py..."
@@ -14,20 +14,28 @@ setup: install
 		python3 main.py install; \
 	fi
 
-test:
-	@echo "Ensuring local Nix cache directories exist..."
-	@mkdir -p "$(NIX_STORE_DIR)" "$(NIX_CACHE_DIR)"
+
+build-no-cache:
+	@echo "Building test image 'package-manager-test' with no cache..."
+	docker build --no-cache -t package-manager-test .
+
+build:
 	@echo "Building test image 'package-manager-test'..."
 	docker build -t package-manager-test .
-	@echo "Running tests inside Nix devShell with local cache..."
+
+
+test: build
+	@echo "Ensuring Docker Nix volumes exist (auto-created if missing)..."
+	@echo "Running tests inside Nix devShell with cached store..."
 	docker run --rm \
-		-v "$$(pwd)/$(NIX_STORE_DIR):/nix" \
-		-v "$$(pwd)/$(NIX_CACHE_DIR):/root/.cache/nix" \
+		-v "$$(pwd):/src" \
+		-v "$(NIX_STORE_VOLUME):/nix" \
+		-v "$(NIX_CACHE_VOLUME):/root/.cache/nix" \
 		--workdir /src \
-		--entrypoint nix \
+		--entrypoint bash \
 		package-manager-test \
-		develop .#default --no-write-lock-file -c \
-			python -m unittest discover -s tests -p "test_*.py"
+		-c 'git config --global --add safe.directory /src && nix develop .#default --no-write-lock-file -c python3 -m unittest discover -s tests -p "test_*.py"'
+
 
 install:
 	@echo "Making 'main.py' executable..."

@@ -25,8 +25,11 @@ class MakefileInstaller(BaseInstaller):
         return os.path.exists(makefile_path)
 
     def run(self, ctx: RepoContext) -> None:
+        """
+        Execute `make install` in the repository directory.
+
+        Any failure in `make install` is treated as a fatal error and will
+        propagate as SystemExit from run_command().
+        """
         cmd = "make install"
-        try:
-            run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
-        except SystemExit as exc:
-            print(f"[Warning] Failed to run '{cmd}' for {ctx.identifier}: {exc}")
+        run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
