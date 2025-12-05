@@ -27,6 +27,28 @@ class AnsibleRequirementsInstaller(BaseInstaller):
         req_file = os.path.join(ctx.repo_dir, self.REQUIREMENTS_FILE)
         return os.path.exists(req_file)
 
+    def _get_ansible_galaxy_cmd(self) -> str:
+        """
+        Resolve how to call ansible-galaxy:
+
+        1. If ansible-galaxy is on PATH, use it directly.
+        2. Else, if nix is available, run it via Nix:
+           nix --extra-experimental-features 'nix-command flakes' \
+               run nixpkgs#ansible-core -- ansible-galaxy
+        3. If neither is available, return an empty string.
+        """
+        if shutil.which("ansible-galaxy"):
+            return "ansible-galaxy"
+
+        if shutil.which("nix"):
+            # Use Nix as the preferred provider
+            return (
+                "nix --extra-experimental-features 'nix-command flakes' "
+                "run nixpkgs#ansible-core -- ansible-galaxy"
+            )
+
+        return ""
+
     def _load_requirements(self, req_path: str, identifier: str) -> Dict[str, Any]:
         try:
             with open(req_path, "r", encoding="utf-8") as f:
@@ -127,12 +149,21 @@ class AnsibleRequirementsInstaller(BaseInstaller):
             yaml.dump(ansible_requirements, tmp, default_flow_style=False)
             tmp_filename = tmp.name
 
+        galaxy_cmd = self._get_ansible_galaxy_cmd()
+        if not galaxy_cmd:
+            print(
+                "Warning: ansible-galaxy is not available and 'nix' is missing. "
+                "Skipping Ansible requirements installation."
+            )
+            return
+
         if "collections" in ansible_requirements:
             print(f"Ansible collections found in {ctx.identifier}, installing...")
-            cmd = f"ansible-galaxy collection install -r {tmp_filename}"
+            cmd = f"{galaxy_cmd} collection install -r {tmp_filename}"
             run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
 
         if "roles" in ansible_requirements:
             print(f"Ansible roles found in {ctx.identifier}, installing...")
-            cmd = f"ansible-galaxy role install -r {tmp_filename}"
+            cmd = f"{galaxy_cmd} role install -r {tmp_filename}"
             run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
+
