@@ -1,0 +1,18 @@
+Source: package-manager
+Section: utils
+Priority: optional
+Maintainer: Kevin Veen-Birkenbach <info@veen.world>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/kevinveenbirkenbach/package-manager
+
+Package: package-manager
+Architecture: any
+Depends: nix, ${misc:Depends}
+Description: Wrapper that runs Kevin's package-manager via Nix flake
+ This package provides the `pkgmgr` command, which runs Kevin's package
+ manager via a Nix flake:
+   nix run "github:kevinveenbirkenbach/package-manager#pkgmgr" -- ...
+ Nix is used as the only runtime dependency and must be initialized on
+ the system to work correctly.

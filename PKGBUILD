@@ -8,13 +8,14 @@ arch=('any')
 url="https://github.com/kevinveenbirkenbach/package-manager"
 license=('MIT')
 
-# Nix is the only runtime dependency.
 depends=('nix')
 
-makedepends=()
+install=${pkgname}.install
 
-source=()
-sha256sums=()
+source=('scripts/pkgmgr-wrapper.sh'
+        'scripts/init-nix.sh')
+sha256sums=('SKIP'
+            'SKIP')
 
 build() {
   :
@@ -22,19 +23,11 @@ build() {
 
 package() {
   install -d "$pkgdir/usr/bin"
+  install -d "$pkgdir/usr/lib/package-manager"
 
-  cat > "$pkgdir/usr/bin/pkgmgr" << 'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
+  # Wrapper
+  install -m0755 "scripts/pkgmgr-wrapper.sh" "$pkgdir/usr/bin/pkgmgr"
 
-# Enable flakes if not already configured.
-if [[ -z "${NIX_CONFIG:-}" ]]; then
-  export NIX_CONFIG="experimental-features = nix-command flakes"
-fi
-
-# Run package-manager via Nix flake
-exec nix run "github:kevinveenbirkenbach/package-manager#pkgmgr" -- "$@"
-EOF
-
-  chmod 755 "$pkgdir/usr/bin/pkgmgr"
+  # Shared Nix init script
+  install -m0755 "scripts/init-nix.sh" "$pkgdir/usr/lib/package-manager/init-nix.sh"
 }

@@ -18,12 +18,17 @@ from pkgmgr.installers.base import BaseInstaller
 from pkgmgr.run_command import run_command
 
 
-class PkgbuildInstaller(BaseInstaller):
+class ArchPkgbuildInstaller(BaseInstaller):
     """Install Arch dependencies (depends/makedepends) from PKGBUILD."""
 
     PKGBUILD_NAME = "PKGBUILD"
 
     def supports(self, ctx: RepoContext) -> bool:
+        """
+        This installer is supported if:
+          - pacman is available, and
+          - a PKGBUILD file exists in the repository root.
+        """
         if shutil.which("pacman") is None:
             return False
         pkgbuild_path = os.path.join(ctx.repo_dir, self.PKGBUILD_NAME)
@@ -39,7 +44,10 @@ class PkgbuildInstaller(BaseInstaller):
         if not os.path.exists(pkgbuild_path):
             return []
 
-        script = f'source {self.PKGBUILD_NAME} >/dev/null 2>&1; printf "%s\\n" "${{{var_name}[@]}}"'
+        script = (
+            f'source {self.PKGBUILD_NAME} >/dev/null 2>&1; '
+            f'printf "%s\\n" "${{{var_name}[@]}}"'
+        )
         try:
             output = subprocess.check_output(
                 ["bash", "--noprofile", "--norc", "-c", script],
@@ -64,6 +72,9 @@ class PkgbuildInstaller(BaseInstaller):
         return packages
 
     def run(self, ctx: RepoContext) -> None:
+        """
+        Install all packages from depends + makedepends via pacman.
+        """
         depends = self._extract_pkgbuild_array(ctx, "depends")
         makedepends = self._extract_pkgbuild_array(ctx, "makedepends")
         all_pkgs = depends + makedepends
@@ -72,4 +83,4 @@ class PkgbuildInstaller(BaseInstaller):
             return
 
         cmd = "sudo pacman -S --noconfirm " + " ".join(all_pkgs)
-        run_command(cmd, preview=ctx.preview)
+        run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)

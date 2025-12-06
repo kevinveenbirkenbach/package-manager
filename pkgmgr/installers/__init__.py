@@ -4,16 +4,17 @@
 """
 Installer package for pkgmgr.
 
-Each installer implements a small, focused step in the repository
-installation pipeline (e.g. PKGBUILD dependencies, Nix flakes, Python,
-Ansible requirements, pkgmgr.yml, Makefile, AUR).
+This exposes all installer classes so users can import them directly from
+pkgmgr.installers.
 """
 
 from pkgmgr.installers.base import BaseInstaller  # noqa: F401
 from pkgmgr.installers.pkgmgr_manifest import PkgmgrManifestInstaller  # noqa: F401
-from pkgmgr.installers.pkgbuild import PkgbuildInstaller  # noqa: F401
 from pkgmgr.installers.nix_flake import NixFlakeInstaller  # noqa: F401
-from pkgmgr.installers.ansible_requirements import AnsibleRequirementsInstaller  # noqa: F401
 from pkgmgr.installers.python import PythonInstaller  # noqa: F401
 from pkgmgr.installers.makefile import MakefileInstaller  # noqa: F401
-from pkgmgr.installers.aur import AurInstaller  # noqa: F401
+
+# OS-specific installers
+from pkgmgr.installers.os_packages.arch_pkgbuild import ArchPkgbuildInstaller  # noqa: F401
+from pkgmgr.installers.os_packages.debian_control import DebianControlInstaller  # noqa: F401
+from pkgmgr.installers.os_packages.rpm_spec import RpmSpecInstaller  # noqa: F401

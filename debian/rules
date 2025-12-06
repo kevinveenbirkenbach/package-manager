@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	# Install wrapper
+	install -D -m0755 scripts/pkgmgr-wrapper.sh debian/package-manager/usr/bin/pkgmgr
+	# Install shared Nix init script
+	install -D -m0755 scripts/init-nix.sh debian/package-manager/usr/lib/package-manager/init-nix.sh

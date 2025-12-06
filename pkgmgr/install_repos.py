@@ -30,23 +30,30 @@ from pkgmgr.context import RepoContext
 
 # Installer implementations
 from pkgmgr.installers.pkgmgr_manifest import PkgmgrManifestInstaller
-from pkgmgr.installers.pkgbuild import PkgbuildInstaller
+from pkgmgr.installers.os_packages import (
+    ArchPkgbuildInstaller,
+    DebianControlInstaller,
+    RpmSpecInstaller,
+)
 from pkgmgr.installers.nix_flake import NixFlakeInstaller
-from pkgmgr.installers.ansible_requirements import AnsibleRequirementsInstaller
 from pkgmgr.installers.python import PythonInstaller
 from pkgmgr.installers.makefile import MakefileInstaller
-from pkgmgr.installers.aur import AurInstaller
 
 
-# Ordered list of installers to apply to each repository.
+# Layering:
+#   1) pkgmgr.yml (high-level repo dependencies)
+#   2) OS packages: PKGBUILD / debian/control / RPM spec
+#   3) Nix flakes (flake.nix)
+#   4) Python (pyproject / requirements)
+#   5) Makefile fallback
 INSTALLERS = [
-    PkgmgrManifestInstaller(),
-    PkgbuildInstaller(),
-    NixFlakeInstaller(),
-    AnsibleRequirementsInstaller(),
-    PythonInstaller(),
-    MakefileInstaller(),
-    AurInstaller(),
+    PkgmgrManifestInstaller(),      # meta/pkgmgr.yml deps
+    ArchPkgbuildInstaller(),        # Arch
+    DebianControlInstaller(),       # Debian/Ubuntu
+    RpmSpecInstaller(),             # Fedora/RHEL/CentOS
+    NixFlakeInstaller(),            # 2) flake.nix (Nix layer)
+    PythonInstaller(),              # 3) pyproject / requirements (fallback if no flake+nix)
+    MakefileInstaller(),            # generic 'make install'
 ]
 
 

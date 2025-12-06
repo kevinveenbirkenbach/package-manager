@@ -1,14 +1,14 @@
-# tests/unit/pkgmgr/installers/test_pkgbuild.py
+# tests/unit/pkgmgr/installers/os_packages/test_arch_pkgbuild.py
 
 import os
 import unittest
 from unittest.mock import patch
 
 from pkgmgr.context import RepoContext
-from pkgmgr.installers.pkgbuild import PkgbuildInstaller
+from pkgmgr.installers.os_packages.arch_pkgbuild import ArchPkgbuildInstaller
 
 
-class TestPkgbuildInstaller(unittest.TestCase):
+class TestArchPkgbuildInstaller(unittest.TestCase):
     def setUp(self):
         self.repo = {"name": "test-repo"}
         self.ctx = RepoContext(
@@ -24,7 +24,7 @@ class TestPkgbuildInstaller(unittest.TestCase):
             clone_mode="ssh",
             update_dependencies=False,
         )
-        self.installer = PkgbuildInstaller()
+        self.installer = ArchPkgbuildInstaller()
 
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which", return_value="/usr/bin/pacman")
@@ -38,7 +38,7 @@ class TestPkgbuildInstaller(unittest.TestCase):
     def test_supports_false_when_pkgbuild_missing(self, mock_which, mock_exists):
         self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.installers.pkgbuild.run_command")
+    @patch("pkgmgr.installers.os_packages.arch_pkgbuild.run_command")
     @patch("subprocess.check_output", return_value="python\ngit\n")
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which", return_value="/usr/bin/pacman")
@@ -47,14 +47,14 @@ class TestPkgbuildInstaller(unittest.TestCase):
     ):
         self.installer.run(self.ctx)
 
-        # Check subprocess.check_output arguments (clean shell)
+        # subprocess.check_output call
         args, kwargs = mock_check_output.call_args
         cmd_list = args[0]
         self.assertEqual(cmd_list[0], "bash")
         self.assertIn("--noprofile", cmd_list)
         self.assertIn("--norc", cmd_list)
 
-        # Check that pacman is called with the extracted packages
+        # pacman install command
         cmd = mock_run_command.call_args[0][0]
         self.assertTrue(cmd.startswith("sudo pacman -S --noconfirm "))
         self.assertIn("python", cmd)
