@@ -1,0 +1,19 @@
+post_install() {
+  echo ">>> Initializing Nix for this system..."
+
+  # Create /nix if missing
+  if [ ! -d /nix ]; then
+    sudo mkdir -m 0755 /nix
+    sudo chown root:root /nix
+  fi
+
+  # Enable Nix daemon
+  if systemctl list-unit-files | grep -q nix-daemon.service; then
+    sudo systemctl enable --now nix-daemon.service
+  fi
+
+  # Add user to nix-users
+  if id -u kevinveenbirkenbach >/dev/null 2>&1; then
+    sudo usermod -aG nix-users kevinveenbirkenbach
+  fi
+}
