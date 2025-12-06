@@ -38,6 +38,10 @@ test: build
 
 
 install:
+	@if [ -n "$$IN_NIX_SHELL" ]; then \
+		echo "Nix shell detected (IN_NIX_SHELL=1). Skipping venv/pip install – handled by Nix flake."; \
+		exit 0; \
+	fi
 	@echo "Making 'main.py' executable..."
 	@chmod +x main.py
 	@echo "Checking if global user virtual environment exists..."
@@ -49,7 +53,16 @@ install:
 	@echo "Installing required Python packages into $$HOME/.venvs/pkgmgr..."
 	@$$HOME/.venvs/pkgmgr/bin/python -m ensurepip --upgrade
 	@$$HOME/.venvs/pkgmgr/bin/pip install --upgrade pip setuptools wheel
-	@$$HOME/.venvs/pkgmgr/bin/pip install -r requirements.txt
+	@echo "Looking for requirements.txt / _requirements.txt..."
+	@if [ -f requirements.txt ]; then \
+		echo "Installing Python packages from requirements.txt..."; \
+		$$HOME/.venvs/pkgmgr/bin/pip install -r requirements.txt; \
+	elif [ -f _requirements.txt ]; then \
+		echo "Installing Python packages from _requirements.txt..."; \
+		$$HOME/.venvs/pkgmgr/bin/pip install -r _requirements.txt; \
+	else \
+		echo "No requirements.txt or _requirements.txt found, skipping dependency installation."; \
+	fi
 	@echo "Ensuring $$HOME/.bashrc and $$HOME/.zshrc exist..."
 	@touch "$$HOME/.bashrc" "$$HOME/.zshrc"
 	@echo "Ensuring automatic activation of $$HOME/.venvs/pkgmgr for this user..."
