@@ -10,16 +10,21 @@ installer will try to install profile outputs from the flake.
 Behavior:
   - If flake.nix is present and `nix` exists on PATH:
       * First remove any existing `package-manager` profile entry (best-effort).
-      * Then install the flake outputs (pkgmgr, default) via `nix profile install`.
-  - Any failure in `nix profile install` is treated as fatal (SystemExit).
+      * Then install the flake outputs (`pkgmgr`, `default`) via `nix profile install`.
+  - Failure installing `pkgmgr` is treated as fatal.
+  - Failure installing `default` is logged as an error/warning but does not abort.
 """
 
 import os
 import shutil
+from typing import TYPE_CHECKING
 
-from pkgmgr.context import RepoContext
 from pkgmgr.installers.base import BaseInstaller
 from pkgmgr.run_command import run_command
+
+if TYPE_CHECKING:
+    from pkgmgr.context import RepoContext
+    from pkgmgr.install_repos import InstallContext
 
 
 class NixFlakeInstaller(BaseInstaller):
@@ -28,7 +33,7 @@ class NixFlakeInstaller(BaseInstaller):
     FLAKE_FILE = "flake.nix"
     PROFILE_NAME = "package-manager"
 
-    def supports(self, ctx: RepoContext) -> bool:
+    def supports(self, ctx: "RepoContext") -> bool:
         """
         Only support repositories that:
           - Have a flake.nix
@@ -39,7 +44,7 @@ class NixFlakeInstaller(BaseInstaller):
         flake_path = os.path.join(ctx.repo_dir, self.FLAKE_FILE)
         return os.path.exists(flake_path)
 
-    def _ensure_old_profile_removed(self, ctx: RepoContext) -> None:
+    def _ensure_old_profile_removed(self, ctx: "RepoContext") -> None:
         """
         Best-effort removal of an existing profile entry.
 
@@ -53,45 +58,46 @@ class NixFlakeInstaller(BaseInstaller):
         if shutil.which("nix") is None:
             return
 
-        # We do NOT use run_command here, because we explicitly want to ignore
-        # the failure of `nix profile remove` (e.g. entry not present).
-        # Using `|| true` makes this idempotent.
         cmd = f"nix profile remove {self.PROFILE_NAME} || true"
-        # This will still respect preview mode inside run_command.
         try:
+            # NOTE: no allow_failure here → matches the existing unit tests
             run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
         except SystemExit:
-            # Ignore any error here: if the profile entry does not exist,
-            # that's fine and not a fatal condition.
+            # Unit tests explicitly assert this is swallowed
             pass
 
-    def run(self, ctx: RepoContext) -> None:
+    def run(self, ctx: "InstallContext") -> None:
         """
         Install Nix flake profile outputs (pkgmgr, default).
 
-        Any failure in `nix profile install` is treated as fatal (SystemExit).
-        The "already installed / file conflict" situation is avoided by
-        removing the existing profile entry beforehand.
+        Any failure installing `pkgmgr` is treated as fatal (SystemExit).
+        A failure installing `default` is logged but does not abort.
         """
-        flake_path = os.path.join(ctx.repo_dir, self.FLAKE_FILE)
-        if not os.path.exists(flake_path):
-            return
-
-        if shutil.which("nix") is None:
-            print("Warning: flake.nix found but 'nix' command not available. Skipping flake setup.")
+        # Reuse supports() to keep logic in one place
+        if not self.supports(ctx):  # type: ignore[arg-type]
             return
 
         print("Nix flake detected, attempting to install profile outputs...")
 
         # Handle the "already installed" case up-front:
-        self._ensure_old_profile_removed(ctx)
+        self._ensure_old_profile_removed(ctx)  # type: ignore[arg-type]
 
         for output in ("pkgmgr", "default"):
             cmd = f"nix profile install {ctx.repo_dir}#{output}"
+
             try:
-                run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
+                # For 'default' we don't want the process to exit on error
+                allow_failure = output == "default"
+                run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview, allow_failure=allow_failure)
                 print(f"Nix flake output '{output}' successfully installed.")
             except SystemExit as e:
                 print(f"[Error] Failed to install Nix flake output '{output}': {e}")
-                # Hard fail: a broken flake is considered a fatal error.
-                raise
+                if output == "pkgmgr":
+                    # Broken main CLI install → fatal
+                    raise
+                # For 'default' we log and continue
+                print(
+                    "[Warning] Continuing despite failure to install 'default' "
+                    "because 'pkgmgr' is already installed."
+                )
+                break
