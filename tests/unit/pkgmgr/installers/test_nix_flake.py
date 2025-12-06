@@ -40,7 +40,17 @@ class TestNixFlakeInstaller(unittest.TestCase):
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which", return_value="/usr/bin/nix")
     @mock.patch("pkgmgr.installers.nix_flake.run_command")
-    def test_run_tries_pkgmgr_then_default(self, mock_run_command, mock_which, mock_exists):
+    def test_run_removes_old_profile_and_installs_outputs(
+        self,
+        mock_run_command,
+        mock_which,
+        mock_exists,
+    ):
+        """
+        Ensure that run():
+          - first tries to remove the old 'package-manager' profile entry
+          - then installs both 'pkgmgr' and 'default' outputs.
+        """
         cmds = []
 
         def side_effect(cmd, cwd=None, preview=False, *args, **kwargs):
@@ -51,14 +61,45 @@ class TestNixFlakeInstaller(unittest.TestCase):
 
         self.installer.run(self.ctx)
 
-        self.assertIn(
-            f"nix profile install {self.ctx.repo_dir}#pkgmgr",
-            cmds,
+        remove_cmd = f"nix profile remove {self.installer.PROFILE_NAME} || true"
+        install_pkgmgr_cmd = f"nix profile install {self.ctx.repo_dir}#pkgmgr"
+        install_default_cmd = f"nix profile install {self.ctx.repo_dir}#default"
+
+        # Mindestens diese drei Kommandos müssen aufgerufen worden sein
+        self.assertIn(remove_cmd, cmds)
+        self.assertIn(install_pkgmgr_cmd, cmds)
+        self.assertIn(install_default_cmd, cmds)
+
+        # Optional: sicherstellen, dass der remove-Aufruf zuerst kam
+        self.assertEqual(cmds[0], remove_cmd)
+
+    @patch("shutil.which", return_value="/usr/bin/nix")
+    @mock.patch("pkgmgr.installers.nix_flake.run_command")
+    def test_ensure_old_profile_removed_ignores_systemexit(
+        self,
+        mock_run_command,
+        mock_which,
+    ):
+        """
+        _ensure_old_profile_removed() must not propagate SystemExit, even if
+        'nix profile remove' fails (e.g. profile entry does not exist).
+        """
+
+        def side_effect(cmd, cwd=None, preview=False, *args, **kwargs):
+            raise SystemExit(1)
+
+        mock_run_command.side_effect = side_effect
+
+        # Should not raise, SystemExit is swallowed internally.
+        self.installer._ensure_old_profile_removed(self.ctx)
+
+        remove_cmd = f"nix profile remove {self.installer.PROFILE_NAME} || true"
+        mock_run_command.assert_called_with(
+            remove_cmd,
+            cwd=self.ctx.repo_dir,
+            preview=self.ctx.preview,
         )
-        self.assertIn(
-            f"nix profile install {self.ctx.repo_dir}#default",
-            cmds,
-        )
+
 
 if __name__ == "__main__":
     unittest.main()
