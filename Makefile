@@ -45,8 +45,11 @@ test: build
 			pacman -U --noconfirm /src/package-manager-*.pkg.tar.*; \
 			echo "Run tests inside Nix devShell..."; \
 			git config --global --add safe.directory /src && \
+			cd /src && \
 			nix develop .#default --no-write-lock-file -c \
-				python3 -m unittest discover -s tests -p \"test_*.py\" \
+				python3 -m unittest discover \
+					-s /src/tests \
+					-p "test_*.py" \
 		'
 
 install:
