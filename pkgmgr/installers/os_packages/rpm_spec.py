@@ -2,16 +2,21 @@
 # -*- coding: utf-8 -*-
 
 """
-Installer for RPM-based system dependencies defined in *.spec files.
+Installer for RPM-based packages defined in *.spec files.
 
-This installer parses the first *.spec file it finds in the repository
-and installs packages from BuildRequires / Requires via dnf or yum on
-RPM-based systems (Fedora / RHEL / CentOS / Rocky / Alma, etc.).
+This installer:
+
+  1. Installs build dependencies via dnf/yum builddep (where available)
+  2. Uses rpmbuild to build RPMs from the provided .spec file
+  3. Installs the resulting RPMs via `rpm -i`
+
+It targets RPM-based systems (Fedora / RHEL / CentOS / Rocky / Alma, etc.).
 """
 
 import glob
 import os
 import shutil
+
 from typing import List, Optional
 
 from pkgmgr.context import RepoContext
@@ -20,23 +25,44 @@ from pkgmgr.run_command import run_command
 
 
 class RpmSpecInstaller(BaseInstaller):
-    """Install RPM-based system packages from *.spec files."""
+    """
+    Build and install RPM-based packages from *.spec files.
+
+    This installer is responsible for the full build + install of the
+    application on RPM-like systems.
+    """
+
+    # Logical layer name, used by capability matchers.
+    layer = "os-packages"
 
     def _is_rpm_like(self) -> bool:
-        return shutil.which("dnf") is not None or shutil.which("yum") is not None
+        """
+        Basic RPM-like detection:
+
+          - rpmbuild must be available
+          - at least one of dnf / yum / yum-builddep must be present
+        """
+        if shutil.which("rpmbuild") is None:
+            return False
+
+        has_dnf = shutil.which("dnf") is not None
+        has_yum = shutil.which("yum") is not None
+        has_yum_builddep = shutil.which("yum-builddep") is not None
+
+        return has_dnf or has_yum or has_yum_builddep
 
     def _spec_path(self, ctx: RepoContext) -> Optional[str]:
+        """Return the first *.spec file in the repository root, if any."""
         pattern = os.path.join(ctx.repo_dir, "*.spec")
-        matches = glob.glob(pattern)
+        matches = sorted(glob.glob(pattern))
         if not matches:
             return None
-        # Take the first match deterministically (sorted)
-        return sorted(matches)[0]
+        return matches[0]
 
     def supports(self, ctx: RepoContext) -> bool:
         """
         This installer is supported if:
-          - we are on an RPM-based system (dnf or yum available), and
+          - we are on an RPM-based system (rpmbuild + dnf/yum/yum-builddep available), and
           - a *.spec file exists in the repository root.
         """
         if not self._is_rpm_like():
@@ -44,109 +70,91 @@ class RpmSpecInstaller(BaseInstaller):
 
         return self._spec_path(ctx) is not None
 
-    def _parse_spec_dependencies(self, spec_path: str) -> List[str]:
+    def _find_built_rpms(self) -> List[str]:
         """
-        Parse BuildRequires and Requires from a .spec file.
+        Find RPMs built by rpmbuild.
 
-        Best-effort parser that:
-          - joins continuation lines starting with space or tab,
-          - splits fields by comma,
-          - takes the first token of each entry as the package name,
-          - ignores macros and empty entries.
+        By default, rpmbuild outputs RPMs into:
+          ~/rpmbuild/RPMS/*/*.rpm
         """
-        if not os.path.exists(spec_path):
-            return []
+        home = os.path.expanduser("~")
+        pattern = os.path.join(home, "rpmbuild", "RPMS", "**", "*.rpm")
+        return sorted(glob.glob(pattern, recursive=True))
 
-        with open(spec_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+    def _install_build_dependencies(self, ctx: RepoContext, spec_path: str) -> None:
+        """
+        Install build dependencies for the given .spec file.
 
-        deps: List[str] = []
-        current_key = None
-        current_val_lines: List[str] = []
+        Strategy (best-effort):
 
-        target_keys = {
-            "BuildRequires",
-            "Requires",
-        }
+          1. If dnf is available:
+               sudo dnf builddep -y <spec>
+          2. Else if yum-builddep is available:
+               sudo yum-builddep -y <spec>
+          3. Else if yum is available:
+               sudo yum-builddep -y <spec>   # Some systems provide it via yum plugin
+          4. Otherwise: print a warning and skip automatic builddep install.
 
-        def flush_current():
-            nonlocal current_key, current_val_lines, deps
-            if not current_key or not current_val_lines:
-                return
-            value = " ".join(l.strip() for l in current_val_lines)
-            # Split by comma into individual dependency expressions
-            for part in value.split(","):
-                part = part.strip()
-                if not part:
-                    continue
-                # Take first token as package name: "pkg >= 1.0" → "pkg"
-                token = part.split()[0].strip()
-                if not token:
-                    continue
-                # Ignore macros like %{?something}
-                if token.startswith("%"):
-                    continue
-                deps.append(token)
-            current_key = None
-            current_val_lines = []
+        Any failure in builddep installation is treated as fatal (SystemExit),
+        consistent with other installer steps.
+        """
+        spec_basename = os.path.basename(spec_path)
 
-        for line in lines:
-            stripped = line.lstrip()
-            if stripped.startswith("#"):
-                # Comment
-                continue
+        if shutil.which("dnf") is not None:
+            cmd = f"sudo dnf builddep -y {spec_basename}"
+        elif shutil.which("yum-builddep") is not None:
+            cmd = f"sudo yum-builddep -y {spec_basename}"
+        elif shutil.which("yum") is not None:
+            # Some distributions ship yum-builddep as a plugin.
+            cmd = f"sudo yum-builddep -y {spec_basename}"
+        else:
+            print(
+                "[Warning] No suitable RPM builddep tool (dnf/yum-builddep/yum) found. "
+                "Skipping automatic build dependency installation for RPM."
+            )
+            return
 
-            if line.startswith(" ") or line.startswith("\t"):
-                # Continuation of previous field
-                if current_key in target_keys:
-                    current_val_lines.append(line)
-                continue
-
-            # New field
-            flush_current()
-
-            if ":" not in line:
-                continue
-            key, val = line.split(":", 1)
-            key = key.strip()
-            val = val.strip()
-
-            if key in target_keys:
-                current_key = key
-                current_val_lines = [val]
-
-        # Flush last field
-        flush_current()
-
-        # De-duplicate while preserving order
-        seen = set()
-        unique_deps: List[str] = []
-        for pkg in deps:
-            if pkg not in seen:
-                seen.add(pkg)
-                unique_deps.append(pkg)
-
-        return unique_deps
+        # Run builddep in the repository directory so relative spec paths work.
+        run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
 
     def run(self, ctx: RepoContext) -> None:
         """
-        Install RPM-based system packages via dnf or yum.
+        Build and install RPM-based packages.
+
+        Steps:
+          1. dnf/yum builddep <spec> (automatic build dependency installation)
+          2. rpmbuild -ba path/to/spec
+          3. sudo rpm -i ~/rpmbuild/RPMS/*/*.rpm
         """
         spec_path = self._spec_path(ctx)
         if not spec_path:
             return
 
-        packages = self._parse_spec_dependencies(spec_path)
-        if not packages:
-            return
+        # 1) Install build dependencies
+        self._install_build_dependencies(ctx, spec_path)
 
-        pkg_mgr = shutil.which("dnf") or shutil.which("yum")
-        if not pkg_mgr:
+        # 2) Build RPMs
+        # Use the full spec path, but run in the repo directory.
+        spec_basename = os.path.basename(spec_path)
+        build_cmd = f"rpmbuild -ba {spec_basename}"
+        run_command(build_cmd, cwd=ctx.repo_dir, preview=ctx.preview)
+
+        # 3) Find built RPMs
+        rpms = self._find_built_rpms()
+        if not rpms:
             print(
-                "[Warning] No suitable RPM package manager (dnf/yum) found on PATH. "
-                "Skipping RPM dependency installation."
+                "[Warning] No RPM files found after rpmbuild. "
+                "Skipping RPM package installation."
             )
             return
 
-        cmd = f"sudo {pkg_mgr} install -y " + " ".join(packages)
-        run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
+        # 4) Install RPMs
+        if shutil.which("rpm") is None:
+            print(
+                "[Warning] rpm binary not found on PATH. "
+                "Cannot install built RPMs."
+            )
+            return
+
+        install_cmd = "sudo rpm -i " + " ".join(rpms)
+        run_command(install_cmd, cwd=ctx.repo_dir, preview=ctx.preview)

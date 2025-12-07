@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Installer for Python projects based on pyproject.toml and/or requirements.txt.
+Installer for Python projects based on pyproject.toml.
 
 Strategy:
   - Determine a pip command in this order:
@@ -10,7 +10,6 @@ Strategy:
       2. sys.executable -m pip (current interpreter)
       3. "pip" from PATH as last resort
   - If pyproject.toml exists: pip install .
-  - If requirements.txt exists: pip install -r requirements.txt
 
 All installation failures are treated as fatal errors (SystemExit).
 """
@@ -25,17 +24,18 @@ from pkgmgr.run_command import run_command
 class PythonInstaller(BaseInstaller):
     """Install Python projects and dependencies via pip."""
 
-    name = "python"
+    # Logical layer name, used by capability matchers.
+    layer = "python"
 
     def supports(self, ctx) -> bool:
         """
         Return True if this installer should handle the given repository.
+
+        Only pyproject.toml is supported as the single source of truth
+        for Python dependencies and packaging metadata.
         """
         repo_dir = ctx.repo_dir
-        return (
-            os.path.exists(os.path.join(repo_dir, "pyproject.toml"))
-            or os.path.exists(os.path.join(repo_dir, "requirements.txt"))
-        )
+        return os.path.exists(os.path.join(repo_dir, "pyproject.toml"))
 
     def _pip_cmd(self) -> str:
         """
@@ -52,7 +52,7 @@ class PythonInstaller(BaseInstaller):
 
     def run(self, ctx) -> None:
         """
-        Install Python project (pyproject.toml) and/or requirements.txt.
+        Install Python project defined via pyproject.toml.
 
         Any pip failure is propagated as SystemExit.
         """
@@ -65,13 +65,4 @@ class PythonInstaller(BaseInstaller):
                 f"installing Python project..."
             )
             cmd = f"{pip_cmd} install ."
-            run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
-
-        req_txt = os.path.join(ctx.repo_dir, "requirements.txt")
-        if os.path.exists(req_txt):
-            print(
-                f"requirements.txt found in {ctx.identifier}, "
-                f"installing Python dependencies..."
-            )
-            cmd = f"{pip_cmd} install -r requirements.txt"
             run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)

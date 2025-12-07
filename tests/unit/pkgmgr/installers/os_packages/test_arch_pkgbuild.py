@@ -26,39 +26,69 @@ class TestArchPkgbuildInstaller(unittest.TestCase):
         )
         self.installer = ArchPkgbuildInstaller()
 
+    @patch("pkgmgr.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
     @patch("os.path.exists", return_value=True)
-    @patch("shutil.which", return_value="/usr/bin/pacman")
-    def test_supports_true_when_pacman_and_pkgbuild_exist(self, mock_which, mock_exists):
+    @patch("shutil.which")
+    def test_supports_true_when_tools_and_pkgbuild_exist(
+        self, mock_which, mock_exists, mock_geteuid
+    ):
+        def which_side_effect(name):
+            if name in ("pacman", "makepkg"):
+                return f"/usr/bin/{name}"
+            return None
+
+        mock_which.side_effect = which_side_effect
+
         self.assertTrue(self.installer.supports(self.ctx))
-        mock_which.assert_called_with("pacman")
+
+        calls = [c.args[0] for c in mock_which.call_args_list]
+        self.assertIn("pacman", calls)
+        self.assertIn("makepkg", calls)
         mock_exists.assert_called_with(os.path.join(self.ctx.repo_dir, "PKGBUILD"))
 
+    @patch("pkgmgr.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=0)
+    @patch("os.path.exists", return_value=True)
+    @patch("shutil.which")
+    def test_supports_false_when_running_as_root(
+        self, mock_which, mock_exists, mock_geteuid
+    ):
+        mock_which.return_value = "/usr/bin/pacman"
+        self.assertFalse(self.installer.supports(self.ctx))
+
+    @patch("pkgmgr.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
     @patch("os.path.exists", return_value=False)
-    @patch("shutil.which", return_value="/usr/bin/pacman")
-    def test_supports_false_when_pkgbuild_missing(self, mock_which, mock_exists):
+    @patch("shutil.which")
+    def test_supports_false_when_pkgbuild_missing(
+        self, mock_which, mock_exists, mock_geteuid
+    ):
+        mock_which.return_value = "/usr/bin/pacman"
         self.assertFalse(self.installer.supports(self.ctx))
 
     @patch("pkgmgr.installers.os_packages.arch_pkgbuild.run_command")
-    @patch("subprocess.check_output", return_value="python\ngit\n")
+    @patch("pkgmgr.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
     @patch("os.path.exists", return_value=True)
-    @patch("shutil.which", return_value="/usr/bin/pacman")
-    def test_run_installs_all_packages_and_uses_clean_bash(
-        self, mock_which, mock_exists, mock_check_output, mock_run_command
+    @patch("shutil.which")
+    def test_run_builds_and_installs_with_makepkg(
+        self, mock_which, mock_exists, mock_geteuid, mock_run_command
     ):
+        def which_side_effect(name):
+            if name in ("pacman", "makepkg"):
+                return f"/usr/bin/{name}"
+            return None
+
+        mock_which.side_effect = which_side_effect
+
         self.installer.run(self.ctx)
 
-        # subprocess.check_output call
-        args, kwargs = mock_check_output.call_args
-        cmd_list = args[0]
-        self.assertEqual(cmd_list[0], "bash")
-        self.assertIn("--noprofile", cmd_list)
-        self.assertIn("--norc", cmd_list)
-
-        # pacman install command
         cmd = mock_run_command.call_args[0][0]
-        self.assertTrue(cmd.startswith("sudo pacman -S --noconfirm "))
-        self.assertIn("python", cmd)
-        self.assertIn("git", cmd)
+        self.assertEqual(
+            cmd,
+            "makepkg --syncdeps --cleanbuild --install --noconfirm",
+        )
+        self.assertEqual(
+            mock_run_command.call_args[1].get("cwd"),
+            self.ctx.repo_dir,
+        )
 
 
 if __name__ == "__main__":

@@ -10,8 +10,8 @@ This module orchestrates the installation of repositories by:
   2. Verifying the repository according to the configured policies.
   3. Creating executable links using create_ink().
   4. Running a sequence of modular installer components that handle
-     specific technologies or manifests (pkgmgr.yml, PKGBUILD, Nix,
-     Ansible requirements, Python, Makefile, AUR).
+     specific technologies or manifests (PKGBUILD, Nix flakes, Python
+     via pyproject.toml, Makefile, OS-specific package metadata).
 
 The goal is to keep this file thin and delegate most logic to small,
 focused installer classes.
@@ -29,7 +29,6 @@ from pkgmgr.clone_repos import clone_repos
 from pkgmgr.context import RepoContext
 
 # Installer implementations
-from pkgmgr.installers.pkgmgr_manifest import PkgmgrManifestInstaller
 from pkgmgr.installers.os_packages import (
     ArchPkgbuildInstaller,
     DebianControlInstaller,
@@ -41,18 +40,16 @@ from pkgmgr.installers.makefile import MakefileInstaller
 
 
 # Layering:
-#   1) pkgmgr.yml (high-level repo dependencies)
-#   2) OS packages: PKGBUILD / debian/control / RPM spec
-#   3) Nix flakes (flake.nix)
-#   4) Python (pyproject / requirements)
-#   5) Makefile fallback
+#   1) OS packages: PKGBUILD / debian/control / RPM spec  → os-deps.*
+#   2) Nix flakes (flake.nix)                            → e.g. python-runtime, make-install
+#   3) Python (pyproject.toml)                           → e.g. python-runtime, make-install
+#   4) Makefile fallback                                 → e.g. make-install
 INSTALLERS = [
-    PkgmgrManifestInstaller(),      # meta/pkgmgr.yml deps
     ArchPkgbuildInstaller(),        # Arch
     DebianControlInstaller(),       # Debian/Ubuntu
     RpmSpecInstaller(),             # Fedora/RHEL/CentOS
-    NixFlakeInstaller(),            # 2) flake.nix (Nix layer)
-    PythonInstaller(),              # 3) pyproject / requirements (fallback if no flake+nix)
+    NixFlakeInstaller(),            # flake.nix (Nix layer)
+    PythonInstaller(),              # pyproject.toml
     MakefileInstaller(),            # generic 'make install'
 ]
 
@@ -165,8 +162,8 @@ def install_repos(
 ) -> None:
     """
     Install repositories by creating symbolic links and processing standard
-    manifest files (pkgmgr.yml, PKGBUILD, flake.nix, Ansible requirements,
-    Python manifests, Makefile, AUR) via dedicated installer components.
+    manifest files (PKGBUILD, flake.nix, Python manifests, Makefile, etc.)
+    via dedicated installer components.
 
     Any installer failure (SystemExit) is treated as fatal and will abort
     the current installation.
@@ -217,7 +214,29 @@ def install_repos(
             preview=preview,
         )
 
-        # Run all installers that support this repository.
+        # Track which logical capabilities have already been provided by
+        # earlier installers for this repository. This allows us to skip
+        # installers that would only duplicate work (e.g. Python runtime
+        # already provided by Nix flake → skip pyproject/Makefile).
+        provided_capabilities: set[str] = set()
+
+        # Run all installers that support this repository, but only if they
+        # provide at least one capability that is not yet satisfied.
         for installer in INSTALLERS:
-            if installer.supports(ctx):
-                installer.run(ctx)
+            if not installer.supports(ctx):
+                continue
+
+            caps = installer.discover_capabilities(ctx)
+
+            # If the installer declares capabilities and *all* of them are
+            # already provided, we can safely skip it.
+            if caps and caps.issubset(provided_capabilities):
+                if not quiet:
+                    print(
+                        f"Skipping installer {installer.__class__.__name__} "
+                        f"for {identifier} – capabilities {caps} already provided."
+                    )
+                continue
+
+            installer.run(ctx)
+            provided_capabilities.update(caps)

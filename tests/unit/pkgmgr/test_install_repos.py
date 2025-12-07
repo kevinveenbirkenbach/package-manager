@@ -1,13 +1,18 @@
-from pkgmgr.run_command import run_command
+# tests/unit/pkgmgr/test_install_repos.py
+
 import unittest
 from unittest.mock import patch, MagicMock
 
 from pkgmgr.context import RepoContext
 import pkgmgr.install_repos as install_module
+from pkgmgr.installers.base import BaseInstaller
 
 
-class DummyInstaller:
+class DummyInstaller(BaseInstaller):
     """Simple installer for testing orchestration."""
+
+    layer = None  # keine speziellen Capabilities
+
     def __init__(self):
         self.calls = []
 

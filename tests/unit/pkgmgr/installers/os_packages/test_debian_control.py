@@ -1,7 +1,8 @@
 # tests/unit/pkgmgr/installers/os_packages/test_debian_control.py
 
+import os
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 
 from pkgmgr.context import RepoContext
 from pkgmgr.installers.os_packages.debian_control import DebianControlInstaller
@@ -26,40 +27,53 @@ class TestDebianControlInstaller(unittest.TestCase):
         self.installer = DebianControlInstaller()
 
     @patch("os.path.exists", return_value=True)
-    @patch("shutil.which", return_value="/usr/bin/apt-get")
+    @patch("shutil.which", return_value="/usr/bin/dpkg-buildpackage")
     def test_supports_true(self, mock_which, mock_exists):
         self.assertTrue(self.installer.supports(self.ctx))
 
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which", return_value=None)
-    def test_supports_false_without_apt(self, mock_which, mock_exists):
+    def test_supports_false_without_dpkg_buildpackage(self, mock_which, mock_exists):
         self.assertFalse(self.installer.supports(self.ctx))
 
     @patch("pkgmgr.installers.os_packages.debian_control.run_command")
-    @patch("builtins.open", new_callable=mock_open, read_data="""
-Build-Depends: python3, git (>= 2.0)
-Depends: curl | wget
-""")
+    @patch("glob.glob", return_value=["/tmp/package-manager_0.1.1_all.deb"])
     @patch("os.path.exists", return_value=True)
-    @patch("shutil.which", return_value="/usr/bin/apt-get")
-    def test_run_installs_parsed_packages(
+    @patch("shutil.which")
+    def test_run_builds_and_installs_debs(
         self,
         mock_which,
         mock_exists,
-        mock_file,
-        mock_run_command
+        mock_glob,
+        mock_run_command,
     ):
+        # dpkg-buildpackage + apt-get vorhanden
+        def which_side_effect(name):
+            if name == "dpkg-buildpackage":
+                return "/usr/bin/dpkg-buildpackage"
+            if name == "apt-get":
+                return "/usr/bin/apt-get"
+            return None
+
+        mock_which.side_effect = which_side_effect
+
         self.installer.run(self.ctx)
 
-        # First call: apt-get update
-        self.assertIn("apt-get update", mock_run_command.call_args_list[0][0][0])
+        cmds = [c[0][0] for c in mock_run_command.call_args_list]
 
-        # Second call: install packages
-        install_cmd = mock_run_command.call_args_list[1][0][0]
-        self.assertIn("apt-get install -y", install_cmd)
-        self.assertIn("python3", install_cmd)
-        self.assertIn("git", install_cmd)
-        self.assertIn("curl", install_cmd)
+        # 1) apt-get update
+        self.assertTrue(any("apt-get update" in cmd for cmd in cmds))
+
+        # 2) apt-get build-dep ./ 
+        self.assertTrue(any("apt-get build-dep -y ./ " in cmd or
+                            "apt-get build-dep -y ./"
+                            in cmd for cmd in cmds))
+
+        # 3) dpkg-buildpackage -b -us -uc
+        self.assertTrue(any("dpkg-buildpackage -b -us -uc" in cmd for cmd in cmds))
+
+        # 4) dpkg -i ../*.deb
+        self.assertTrue(any(cmd.startswith("sudo dpkg -i ") for cmd in cmds))
 
 
 if __name__ == "__main__":

@@ -4,7 +4,33 @@
 	dh $@
 
 override_dh_auto_install:
+	# Create target directories
+	install -d debian/package-manager/usr/bin
+	install -d debian/package-manager/usr/lib/package-manager
+
 	# Install wrapper
-	install -D -m0755 scripts/pkgmgr-wrapper.sh debian/package-manager/usr/bin/pkgmgr
+	install -m0755 scripts/pkgmgr-wrapper.sh \
+		debian/package-manager/usr/bin/pkgmgr
+
 	# Install shared Nix init script
-	install -D -m0755 scripts/init-nix.sh debian/package-manager/usr/lib/package-manager/init-nix.sh
+	install -m0755 scripts/init-nix.sh \
+		debian/package-manager/usr/lib/package-manager/init-nix.sh
+
+	# Copy full project source into /usr/lib/package-manager,
+	# but do not include the debian/ directory itself.
+	find . -mindepth 1 -maxdepth 1 \
+	  ! -name debian \
+	  ! -name .git \
+	  -exec cp -a {} debian/package-manager/usr/lib/package-manager/ \;
+
+	# Remove packaging-only and development artefacts from the installed tree
+	rm -rf \
+	  debian/package-manager/usr/lib/package-manager/debian \
+	  debian/package-manager/usr/lib/package-manager/PKGBUILD \
+	  debian/package-manager/usr/lib/package-manager/Dockerfile \
+	  debian/package-manager/usr/lib/package-manager/.git \
+	  debian/package-manager/usr/lib/package-manager/.github \
+	  debian/package-manager/usr/lib/package-manager/tests \
+	  debian/package-manager/usr/lib/package-manager/.gitignore \
+	  debian/package-manager/usr/lib/package-manager/__pycache__ \
+	  debian/package-manager/usr/lib/package-manager/.gitkeep || true

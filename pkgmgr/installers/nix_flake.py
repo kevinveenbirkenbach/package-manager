@@ -30,6 +30,9 @@ if TYPE_CHECKING:
 class NixFlakeInstaller(BaseInstaller):
     """Install Nix flake profiles for repositories that define flake.nix."""
 
+    # Logical layer name, used by capability matchers.
+    layer = "nix"
+
     FLAKE_FILE = "flake.nix"
     PROFILE_NAME = "package-manager"
 

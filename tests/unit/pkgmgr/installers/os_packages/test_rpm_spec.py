@@ -1,7 +1,7 @@
 # tests/unit/pkgmgr/installers/os_packages/test_rpm_spec.py
 
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 
 from pkgmgr.context import RepoContext
 from pkgmgr.installers.os_packages.rpm_spec import RpmSpecInstaller
@@ -26,34 +26,67 @@ class TestRpmSpecInstaller(unittest.TestCase):
         self.installer = RpmSpecInstaller()
 
     @patch("glob.glob", return_value=["/tmp/repo/test.spec"])
-    @patch("shutil.which", return_value="/usr/bin/dnf")
+    @patch("shutil.which")
     def test_supports_true(self, mock_which, mock_glob):
+        def which_side_effect(name):
+            if name == "rpmbuild":
+                return "/usr/bin/rpmbuild"
+            if name == "dnf":
+                return "/usr/bin/dnf"
+            return None
+
+        mock_which.side_effect = which_side_effect
+
         self.assertTrue(self.installer.supports(self.ctx))
 
     @patch("glob.glob", return_value=[])
-    @patch("shutil.which", return_value="/usr/bin/dnf")
+    @patch("shutil.which")
     def test_supports_false_missing_spec(self, mock_which, mock_glob):
+        mock_which.return_value = "/usr/bin/rpmbuild"
         self.assertFalse(self.installer.supports(self.ctx))
 
     @patch("pkgmgr.installers.os_packages.rpm_spec.run_command")
-    @patch("builtins.open", new_callable=mock_open, read_data="""
-BuildRequires: python3-devel, git >= 2.0
-Requires: curl
-""")
-    @patch("glob.glob", return_value=["/tmp/repo/test.spec"])
-    @patch("shutil.which", return_value="/usr/bin/dnf")
-    @patch("os.path.exists", return_value=True)
-    def test_run_installs_parsed_dependencies(
-        self, mock_exists, mock_which, mock_glob, mock_file, mock_run_command
+    @patch("glob.glob")
+    @patch("shutil.which")
+    def test_run_builds_and_installs_rpms(
+        self,
+        mock_which,
+        mock_glob,
+        mock_run_command,
     ):
+        # glob.glob wird zweimal benutzt: einmal für *.spec, einmal für gebaute RPMs
+        def glob_side_effect(pattern, recursive=False):
+            if pattern.endswith("*.spec"):
+                return ["/tmp/repo/package-manager.spec"]
+            if "rpmbuild/RPMS" in pattern:
+                return ["/home/user/rpmbuild/RPMS/x86_64/package-manager-0.1.1.rpm"]
+            return []
+
+        mock_glob.side_effect = glob_side_effect
+
+        def which_side_effect(name):
+            if name == "rpmbuild":
+                return "/usr/bin/rpmbuild"
+            if name == "dnf":
+                return "/usr/bin/dnf"
+            if name == "rpm":
+                return "/usr/bin/rpm"
+            return None
+
+        mock_which.side_effect = which_side_effect
+
         self.installer.run(self.ctx)
 
-        install_cmd = mock_run_command.call_args_list[0][0][0]
+        cmds = [c[0][0] for c in mock_run_command.call_args_list]
 
-        self.assertIn("dnf install -y", install_cmd)
-        self.assertIn("python3-devel", install_cmd)
-        self.assertIn("git", install_cmd)
-        self.assertIn("curl", install_cmd)
+        # 1) builddep
+        self.assertTrue(any("builddep -y" in cmd for cmd in cmds))
+
+        # 2) rpmbuild -ba
+        self.assertTrue(any(cmd.startswith("rpmbuild -ba ") for cmd in cmds))
+
+        # 3) rpm -i …
+        self.assertTrue(any(cmd.startswith("sudo rpm -i ") for cmd in cmds))
 
 
 if __name__ == "__main__":

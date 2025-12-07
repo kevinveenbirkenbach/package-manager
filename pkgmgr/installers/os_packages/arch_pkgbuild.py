@@ -1,17 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-Installer for Arch Linux dependencies defined in PKGBUILD files.
-
-This installer extracts depends/makedepends from PKGBUILD and installs them
-via pacman on Arch-based systems.
-"""
+# pkgmgr/installers/os_packages/arch_pkgbuild.py
 
 import os
 import shutil
-import subprocess
-from typing import List
 
 from pkgmgr.context import RepoContext
 from pkgmgr.installers.base import BaseInstaller
@@ -19,68 +9,51 @@ from pkgmgr.run_command import run_command
 
 
 class ArchPkgbuildInstaller(BaseInstaller):
-    """Install Arch dependencies (depends/makedepends) from PKGBUILD."""
+    """
+    Build and install an Arch package from PKGBUILD via makepkg.
+
+    This installer is responsible for the full build + install of the
+    application on Arch-based systems. System dependencies are resolved
+    by makepkg itself (--syncdeps).
+
+    Note: makepkg must not be run as root, so this installer refuses
+    to run when the current user is UID 0.
+    """
+
+    # Logical layer name, used by capability matchers.
+    layer = "os-packages"
 
     PKGBUILD_NAME = "PKGBUILD"
 
     def supports(self, ctx: RepoContext) -> bool:
         """
         This installer is supported if:
-          - pacman is available, and
-          - a PKGBUILD file exists in the repository root.
+          - pacman and makepkg are available,
+          - a PKGBUILD file exists in the repository root,
+          - the current user is NOT root (makepkg forbids root).
         """
-        if shutil.which("pacman") is None:
+        # Do not run makepkg as root – it is explicitly forbidden.
+        try:
+            if hasattr(os, "geteuid") and os.geteuid() == 0:
+                return False
+        except Exception:
+            # On non-POSIX platforms just ignore this check.
+            pass
+
+        if shutil.which("pacman") is None or shutil.which("makepkg") is None:
             return False
+
         pkgbuild_path = os.path.join(ctx.repo_dir, self.PKGBUILD_NAME)
         return os.path.exists(pkgbuild_path)
 
-    def _extract_pkgbuild_array(self, ctx: RepoContext, var_name: str) -> List[str]:
-        """
-        Extract a Bash array (depends/makedepends) from PKGBUILD using bash itself.
-
-        Any failure in sourcing or extracting the variable is treated as fatal.
-        """
-        pkgbuild_path = os.path.join(ctx.repo_dir, self.PKGBUILD_NAME)
-        if not os.path.exists(pkgbuild_path):
-            return []
-
-        script = (
-            f'source {self.PKGBUILD_NAME} >/dev/null 2>&1; '
-            f'printf "%s\\n" "${{{var_name}[@]}}"'
-        )
-        try:
-            output = subprocess.check_output(
-                ["bash", "--noprofile", "--norc", "-c", script],
-                cwd=ctx.repo_dir,
-                text=True,
-            )
-        except Exception as exc:
-            print(
-                f"[Error] Failed to extract '{var_name}' from PKGBUILD in "
-                f"{ctx.identifier}: {exc}"
-            )
-            raise SystemExit(
-                f"PKGBUILD parsing failed for '{var_name}' in {ctx.identifier}: {exc}"
-            )
-
-        packages: List[str] = []
-        for line in output.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            packages.append(line)
-        return packages
-
     def run(self, ctx: RepoContext) -> None:
         """
-        Install all packages from depends + makedepends via pacman.
+        Build and install the package using makepkg.
+
+        This uses:
+          makepkg --syncdeps --cleanbuild --install --noconfirm
+
+        Any failure is treated as fatal (SystemExit).
         """
-        depends = self._extract_pkgbuild_array(ctx, "depends")
-        makedepends = self._extract_pkgbuild_array(ctx, "makedepends")
-        all_pkgs = depends + makedepends
-
-        if not all_pkgs:
-            return
-
-        cmd = "sudo pacman -S --noconfirm " + " ".join(all_pkgs)
+        cmd = "makepkg --syncdeps --cleanbuild --install --noconfirm"
         run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)

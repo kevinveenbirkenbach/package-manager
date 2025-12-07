@@ -2,15 +2,22 @@
 # -*- coding: utf-8 -*-
 
 """
-Installer for Debian/Ubuntu system dependencies defined in debian/control.
+Installer for Debian/Ubuntu packages defined via debian/control.
 
-This installer parses the debian/control file and installs packages from
-Build-Depends / Build-Depends-Indep / Depends via apt-get on Debian-based
-systems.
+This installer:
+
+  1. Installs build dependencies via `apt-get build-dep ./`
+  2. Uses dpkg-buildpackage to build .deb packages from debian/*
+  3. Installs the resulting .deb files via `dpkg -i`
+
+It is intended for Debian-based systems where dpkg-buildpackage and
+apt/dpkg tooling are available.
 """
 
+import glob
 import os
 import shutil
+
 from typing import List
 
 from pkgmgr.context import RepoContext
@@ -19,13 +26,22 @@ from pkgmgr.run_command import run_command
 
 
 class DebianControlInstaller(BaseInstaller):
-    """Install Debian/Ubuntu system packages from debian/control."""
+    """
+    Build and install a Debian/Ubuntu package from debian/control.
+
+    This installer is responsible for the full build + install of the
+    application on Debian-like systems.
+    """
+
+    # Logical layer name, used by capability matchers.
+    layer = "os-packages"
 
     CONTROL_DIR = "debian"
     CONTROL_FILE = "control"
 
     def _is_debian_like(self) -> bool:
-        return shutil.which("apt-get") is not None
+        """Return True if this looks like a Debian-based system."""
+        return shutil.which("dpkg-buildpackage") is not None
 
     def _control_path(self, ctx: RepoContext) -> str:
         return os.path.join(ctx.repo_dir, self.CONTROL_DIR, self.CONTROL_FILE)
@@ -33,7 +49,7 @@ class DebianControlInstaller(BaseInstaller):
     def supports(self, ctx: RepoContext) -> bool:
         """
         This installer is supported if:
-          - we are on a Debian-like system (apt-get available), and
+          - we are on a Debian-like system (dpkg-buildpackage available), and
           - debian/control exists.
         """
         if not self._is_debian_like():
@@ -41,101 +57,73 @@ class DebianControlInstaller(BaseInstaller):
 
         return os.path.exists(self._control_path(ctx))
 
-    def _parse_control_dependencies(self, control_path: str) -> List[str]:
+    def _find_built_debs(self, repo_dir: str) -> List[str]:
         """
-        Parse Build-Depends, Build-Depends-Indep and Depends fields
-        from debian/control.
+        Find .deb files built by dpkg-buildpackage.
 
-        This is a best-effort parser that:
-          - joins continuation lines starting with space,
-          - splits fields by comma,
-          - strips version constraints and alternatives (x | y → x),
-          - filters out variable placeholders like ${misc:Depends}.
+        By default, dpkg-buildpackage creates .deb files in the parent
+        directory of the source tree.
         """
-        if not os.path.exists(control_path):
-            return []
+        parent = os.path.dirname(repo_dir)
+        pattern = os.path.join(parent, "*.deb")
+        return sorted(glob.glob(pattern))
 
-        with open(control_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+    def _install_build_dependencies(self, ctx: RepoContext) -> None:
+        """
+        Install build dependencies using `apt-get build-dep ./`.
 
-        deps: List[str] = []
-        current_key = None
-        current_val_lines: List[str] = []
+        This is a best-effort implementation that assumes:
+          - deb-src entries are configured in /etc/apt/sources.list*,
+          - apt-get is available on PATH.
 
-        target_keys = {
-            "Build-Depends",
-            "Build-Depends-Indep",
-            "Depends",
-        }
+        Any failure is treated as fatal (SystemExit), just like other
+        installer steps.
+        """
+        if shutil.which("apt-get") is None:
+            print(
+                "[Warning] apt-get not found on PATH. "
+                "Skipping automatic build-dep installation for Debian."
+            )
+            return
 
-        def flush_current():
-            nonlocal current_key, current_val_lines, deps
-            if not current_key or not current_val_lines:
-                return
-            value = " ".join(l.strip() for l in current_val_lines)
-            # Split by comma into individual dependency expressions
-            for part in value.split(","):
-                part = part.strip()
-                if not part:
-                    continue
-                # Take the first alternative: "foo | bar" → "foo"
-                if "|" in part:
-                    part = part.split("|", 1)[0].strip()
-                # Strip version constraints: "pkg (>= 1.0)" → "pkg"
-                if " " in part:
-                    part = part.split(" ", 1)[0].strip()
-                # Skip variable placeholders
-                if part.startswith("${") and part.endswith("}"):
-                    continue
-                if part:
-                    deps.append(part)
-            current_key = None
-            current_val_lines = []
+        # Update package lists first for reliable build-dep resolution.
+        run_command("sudo apt-get update", cwd=ctx.repo_dir, preview=ctx.preview)
 
-        for line in lines:
-            if line.startswith(" ") or line.startswith("\t"):
-                # Continuation of previous field
-                if current_key in target_keys:
-                    current_val_lines.append(line)
-                continue
-
-            # New field
-            flush_current()
-
-            if ":" not in line:
-                continue
-            key, val = line.split(":", 1)
-            key = key.strip()
-            val = val.strip()
-
-            if key in target_keys:
-                current_key = key
-                current_val_lines = [val]
-
-        # Flush last field
-        flush_current()
-
-        # De-duplicate while preserving order
-        seen = set()
-        unique_deps: List[str] = []
-        for pkg in deps:
-            if pkg not in seen:
-                seen.add(pkg)
-                unique_deps.append(pkg)
-
-        return unique_deps
+        # Install build dependencies based on debian/control in the current tree.
+        # `apt-get build-dep ./` uses the source in the current directory.
+        builddep_cmd = "sudo apt-get build-dep -y ./"
+        run_command(builddep_cmd, cwd=ctx.repo_dir, preview=ctx.preview)
 
     def run(self, ctx: RepoContext) -> None:
         """
-        Install Debian/Ubuntu system packages via apt-get.
+        Build and install Debian/Ubuntu packages from debian/*.
+
+        Steps:
+          1. apt-get build-dep ./ (automatic build dependency installation)
+          2. dpkg-buildpackage -b -us -uc
+          3. sudo dpkg -i ../*.deb
         """
         control_path = self._control_path(ctx)
-        packages = self._parse_control_dependencies(control_path)
-        if not packages:
+        if not os.path.exists(control_path):
             return
 
-        # Update and install in two separate commands for clarity.
-        run_command("sudo apt-get update", cwd=ctx.repo_dir, preview=ctx.preview)
+        # 1) Install build dependencies
+        self._install_build_dependencies(ctx)
 
-        cmd = "sudo apt-get install -y " + " ".join(packages)
-        run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
+        # 2) Build the package
+        build_cmd = "dpkg-buildpackage -b -us -uc"
+        run_command(build_cmd, cwd=ctx.repo_dir, preview=ctx.preview)
+
+        # 3) Locate built .deb files
+        debs = self._find_built_debs(ctx.repo_dir)
+        if not debs:
+            print(
+                "[Warning] No .deb files found after dpkg-buildpackage. "
+                "Skipping Debian package installation."
+            )
+            return
+
+        # 4) Install .deb files
+        install_cmd = "sudo dpkg -i " + " ".join(os.path.basename(d) for d in debs)
+        parent = os.path.dirname(ctx.repo_dir)
+        run_command(install_cmd, cwd=parent, preview=ctx.preview)

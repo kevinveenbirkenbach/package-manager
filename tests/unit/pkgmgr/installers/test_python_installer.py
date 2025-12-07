@@ -30,37 +30,16 @@ class TestPythonInstaller(unittest.TestCase):
     def test_supports_true_when_pyproject_exists(self, mock_exists):
         self.assertTrue(self.installer.supports(self.ctx))
 
-    @patch("os.path.exists", side_effect=lambda path: path.endswith("requirements.txt"))
-    def test_supports_true_when_requirements_exists(self, mock_exists):
-        self.assertTrue(self.installer.supports(self.ctx))
-
     @patch("os.path.exists", return_value=False)
-    def test_supports_false_when_no_python_files(self, mock_exists):
+    def test_supports_false_when_no_pyproject(self, mock_exists):
         self.assertFalse(self.installer.supports(self.ctx))
 
     @patch("pkgmgr.installers.python.run_command")
-    @patch(
-        "os.path.exists",
-        side_effect=lambda path: path.endswith("pyproject.toml")
-    )
+    @patch("os.path.exists", side_effect=lambda path: path.endswith("pyproject.toml"))
     def test_run_installs_project_from_pyproject(self, mock_exists, mock_run_command):
         self.installer.run(self.ctx)
         cmd = mock_run_command.call_args[0][0]
         self.assertIn("pip install .", cmd)
-        self.assertEqual(
-            mock_run_command.call_args[1].get("cwd"),
-            self.ctx.repo_dir,
-        )
-
-    @patch("pkgmgr.installers.python.run_command")
-    @patch(
-        "os.path.exists",
-        side_effect=lambda path: path.endswith("requirements.txt")
-    )
-    def test_run_installs_dependencies_from_requirements(self, mock_exists, mock_run_command):
-        self.installer.run(self.ctx)
-        cmd = mock_run_command.call_args[0][0]
-        self.assertIn("pip install -r requirements.txt", cmd)
         self.assertEqual(
             mock_run_command.call_args[1].get("cwd"),
             self.ctx.repo_dir,

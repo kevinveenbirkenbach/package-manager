@@ -9,7 +9,6 @@ pkgmgr.installers.
 """
 
 from pkgmgr.installers.base import BaseInstaller  # noqa: F401
-from pkgmgr.installers.pkgmgr_manifest import PkgmgrManifestInstaller  # noqa: F401
 from pkgmgr.installers.nix_flake import NixFlakeInstaller  # noqa: F401
 from pkgmgr.installers.python import PythonInstaller  # noqa: F401
 from pkgmgr.installers.makefile import MakefileInstaller  # noqa: F401

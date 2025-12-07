@@ -18,6 +18,9 @@ from pkgmgr.run_command import run_command
 class MakefileInstaller(BaseInstaller):
     """Run `make install` if a Makefile exists in the repository."""
 
+    # Logical layer name, used by capability matchers.
+    layer = "makefile"
+
     MAKEFILE_NAME = "Makefile"
 
     def supports(self, ctx: RepoContext) -> bool:

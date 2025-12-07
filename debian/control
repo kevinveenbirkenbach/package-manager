@@ -12,7 +12,7 @@ Architecture: any
 Depends: nix, ${misc:Depends}
 Description: Wrapper that runs Kevin's package-manager via Nix flake
  This package provides the `pkgmgr` command, which runs Kevin's package
- manager via a Nix flake:
-   nix run "github:kevinveenbirkenbach/package-manager#pkgmgr" -- ...
- Nix is used as the only runtime dependency and must be initialized on
+ manager via a local Nix flake
+   nix run /usr/lib/package-manager#pkgmgr -- ...
+ Nix is the only runtime dependency and must be initialized on
  the system to work correctly.

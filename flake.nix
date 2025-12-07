@@ -13,14 +13,14 @@
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
 
-      # Small helper: build an attrset for all systems
+      # Helper to build an attribute set for all target systems
       forAllSystems = f:
         builtins.listToAttrs (map (system: {
           name = system;
           value = f system;
         }) systems);
     in {
-      # Dev shells: nix develop .#default (on both architectures)
+      # Development shells: `nix develop .#default`
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
@@ -28,13 +28,13 @@
           # Base Python interpreter
           python = pkgs.python311;
 
-          # Python env with pip + pyyaml available, so `python -m pip` works
+          # Python environment with pip + PyYAML so `python -m pip` works
           pythonEnv = python.withPackages (ps: with ps; [
             pip
             pyyaml
           ]);
 
-          # Be robust: ansible-core if available, otherwise ansible.
+          # Be robust: use ansible-core if available, otherwise ansible
           ansiblePkg =
             if pkgs ? ansible-core then pkgs.ansible-core
             else pkgs.ansible;
@@ -52,12 +52,13 @@
         }
       );
 
+      # Packages: `nix build .#pkgmgr` or `nix build .#default`
       packages = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           python = pkgs.python311;
 
-          # Runtime Python for pkgmgr (with pip + pyyaml)
+          # Runtime Python for pkgmgr (with pip + PyYAML)
           pythonEnv = python.withPackages (ps: with ps; [
             pip
             pyyaml
@@ -73,40 +74,49 @@
             pname   = "package-manager";
             version = "0.1.1";
 
+            # Use the current repository as the source
             src = ./.;
 
-            # Nix should not run configure / build (no make)
+            # No traditional configure/build steps
             dontConfigure = true;
             dontBuild     = true;
 
-            # Runtime deps: Python (with pip) + Ansible
+            # Runtime dependencies: Python (with pip + PyYAML) + Ansible
             buildInputs = [
               pythonEnv
               ansiblePkg
             ];
 
             installPhase = ''
-              mkdir -p "$out/bin"
+              mkdir -p "$out/bin" "$out/lib/package-manager"
 
-              # Wrapper that always uses the pythonEnv interpreter, so
-              # sys.executable -m pip has a working pip.
-              cat > "$out/bin/pkgmgr" << EOF
+              # Copy the full project tree into the runtime closure
+              cp -a . "$out/lib/package-manager/"
+
+              # Wrapper that runs main.py from the copied tree,
+              # using the pythonEnv interpreter.
+              cat > "$out/bin/pkgmgr" << 'EOF'
 #!${pythonEnv}/bin/python3
+import os
 import runpy
+
 if __name__ == "__main__":
-    runpy.run_module("main", run_name="__main__")
+    base_dir = os.path.join(os.path.dirname(__file__), "..", "lib", "package-manager")
+    main_path = os.path.join(base_dir, "main.py")
+    os.chdir(base_dir)
+    runpy.run_path(main_path, run_name="__main__")
 EOF
 
               chmod +x "$out/bin/pkgmgr"
             '';
           };
 
-          # default package just points to pkgmgr
+          # Default package points to pkgmgr
           default = pkgmgr;
         }
       );
 
-      # Apps: nix run .#pkgmgr / .#default
+      # Apps: `nix run .#pkgmgr` or `nix run .#default`
       apps = forAllSystems (system:
         let
           pkgmgrPkg = self.packages.${system}.pkgmgr;
