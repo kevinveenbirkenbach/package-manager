@@ -36,7 +36,16 @@ dev = [
 [project.scripts]
 pkgmgr = "pkgmgr.cli:main"
 
-# Tell setuptools to find the pkgmgr package
+# -----------------------------
+# setuptools configuration
+# -----------------------------
+# We use find_packages(), not a fixed list,
+# and explicitly include pkgmgr* and config*
+
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pkgmgr*"]
+include = ["pkgmgr*", "config*"]
+
+# Ensure defaults.yaml is shipped inside wheels & nix builds
+[tool.setuptools.package-data]
+"config" = ["defaults.yaml"]
