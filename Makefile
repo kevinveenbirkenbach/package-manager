@@ -10,7 +10,7 @@ NIX_CACHE_VOLUME := pkgmgr_nix_cache
 # ------------------------------------------------------------
 # Distro list and base images
 # ------------------------------------------------------------
-DISTROS := arch #debian ubuntu fedora centos
+DISTROS := arch debian ubuntu fedora centos
 
 BASE_IMAGE_arch   := archlinux:latest
 BASE_IMAGE_debian := debian:stable-slim
@@ -82,9 +82,16 @@ test: build
 		echo "============================================================"; \
 		echo ">>> Running tests in container for distro: $$distro"; \
 		echo "============================================================"; \
+		# Nur für Arch /nix als Volume mounten, bei anderen Distros nicht, \
+		# damit die im Image installierte Nix-Installation sichtbar bleibt. \
+		if [ "$$distro" = "arch" ]; then \
+			NIX_STORE_MOUNT='-v $(NIX_STORE_VOLUME):/nix'; \
+		else \
+			NIX_STORE_MOUNT=''; \
+		fi; \
 		docker run --rm \
 			-v "$$(pwd):/src" \
-			-v "$(NIX_STORE_VOLUME):/nix" \
+			$$NIX_STORE_MOUNT \
 			-v "$(NIX_CACHE_VOLUME):/root/.cache/nix" \
 			--workdir /src \
 			--entrypoint bash \
@@ -108,20 +115,17 @@ test: build
 				fi; \
 				\
 				echo "Preparing Nix environment..."; \
-				# Try to source typical Nix profile scripts (if they exist) \
 				if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then \
 					. "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"; \
 				fi; \
 				if [ -f "$$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then \
 					. "$$HOME/.nix-profile/etc/profile.d/nix.sh"; \
 				fi; \
-				# Hard-extend PATH for common Nix locations \
 				PATH="/nix/var/nix/profiles/default/bin:$$HOME/.nix-profile/bin:$$PATH"; \
 				export PATH; \
 				echo "PATH is now:"; \
 				echo "$$PATH"; \
 				\
-				# Determine which Nix binary to use \
 				NIX_CMD=""; \
 				if command -v nix >/dev/null 2>&1; then \
 					echo "Found nix on PATH:"; \
@@ -153,7 +157,6 @@ test: build
 						-p "test_*.py"; \
 			' || exit $$?; \
 	done
-
 
 
 # ------------------------------------------------------------
