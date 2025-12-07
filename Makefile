@@ -34,7 +34,20 @@ test: build
 		--workdir /src \
 		--entrypoint bash \
 		package-manager-test \
-		-c 'git config --global --add safe.directory /src && nix develop .#default --no-write-lock-file -c python3 -m unittest discover -s tests -p "test_*.py"'
+		-c '\
+			set -e; \
+			echo "Remove existing Arch package-manager (if any)..."; \
+			pacman -Rns --noconfirm package-manager || true; \
+			echo "Rebuild Arch package from /src..."; \
+			rm -f /src/package-manager-*.pkg.tar.* || true; \
+			chown -R builder:builder /src; \
+			su builder -c "cd /src && makepkg -sf --noconfirm --clean"; \
+			pacman -U --noconfirm /src/package-manager-*.pkg.tar.*; \
+			echo "Run tests inside Nix devShell..."; \
+			git config --global --add safe.directory /src && \
+			nix develop .#default --no-write-lock-file -c \
+				python3 -m unittest discover -s tests -p \"test_*.py\" \
+		'
 
 install:
 	@if [ -n "$$IN_NIX_SHELL" ]; then \
