@@ -36,7 +36,6 @@ test: build
 		package-manager-test \
 		-c 'git config --global --add safe.directory /src && nix develop .#default --no-write-lock-file -c python3 -m unittest discover -s tests -p "test_*.py"'
 
-
 install:
 	@if [ -n "$$IN_NIX_SHELL" ]; then \
 		echo "Nix shell detected (IN_NIX_SHELL=1). Skipping venv/pip install – handled by Nix flake."; \

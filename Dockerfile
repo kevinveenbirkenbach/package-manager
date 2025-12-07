@@ -9,6 +9,8 @@ RUN pacman -Syu --noconfirm \
         rsync \
     && pacman -Scc --noconfirm
 
+ENV NIX_CONFIG="experimental-features = nix-command flakes"
+
 # 2) Unprivileged user for building Arch packages
 RUN useradd -m builder
 WORKDIR /build
