@@ -76,6 +76,9 @@ def pkgmgr_help_debug() -> None:
     print(f"returncode: {proc.returncode}")
     print("--- END ---\n")
 
+    if proc.returncode != 0:
+        raise AssertionError(f"'pkgmgr --help' failed with exit code {proc.returncode}")
+
     # Wichtig: Hier KEIN AssertionError mehr – das ist reine Debug-Ausgabe.
     # Falls du später hart testen willst, kannst du optional:
     #   if proc.returncode != 0:
