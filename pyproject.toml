@@ -1,0 +1,42 @@
+[build-system]
+requires = [
+  "setuptools>=68",
+  "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "package-manager"
+version = "0.1.1"
+description = "Kevin's package-manager tool (pkgmgr)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+authors = [
+  { name = "Kevin Veen-Birkenbach", email = "info@veen.world" }
+]
+
+# Base runtime dependencies
+dependencies = [
+  "PyYAML>=6.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/kevinveenbirkenbach/package-manager"
+Source   = "https://github.com/kevinveenbirkenbach/package-manager"
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "mypy"
+]
+
+# CLI entrypoint: this is the "pkgmgr" command
+[project.scripts]
+pkgmgr = "pkgmgr.cli:main"
+
+# Tell setuptools to find the pkgmgr package
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pkgmgr*"]

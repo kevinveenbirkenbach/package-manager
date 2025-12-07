@@ -24,13 +24,11 @@ _srcdir_name="source"
 
 prepare() {
   mkdir -p "$srcdir/$_srcdir_name"
-
-  # Copy the full local tree into $srcdir/source,
-  # but avoid makepkg's own directories and the VCS metadata.
   rsync -a \
-    --exclude="src" \
-    --exclude="pkg" \
     --exclude=".git" \
+    --exclude=".github" \
+    --exclude="pkg" \
+    --exclude="srcpkg" \
     "$startdir/" "$srcdir/$_srcdir_name/"
 }
 

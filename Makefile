@@ -55,43 +55,43 @@ test: build
 install:
 	@if [ -n "$$IN_NIX_SHELL" ]; then \
 		echo "Nix shell detected (IN_NIX_SHELL=1). Skipping venv/pip install – handled by Nix flake."; \
-		exit 0; \
-	fi
-	@echo "Making 'main.py' executable..."
-	@chmod +x main.py
-	@echo "Checking if global user virtual environment exists..."
-	@mkdir -p "$$HOME/.venvs"
-	@if [ ! -d "$$HOME/.venvs/pkgmgr" ]; then \
-		echo "Creating global venv at $$HOME/.venvs/pkgmgr..."; \
-		python3 -m venv "$$HOME/.venvs/pkgmgr"; \
-	fi
-	@echo "Installing required Python packages into $$HOME/.venvs/pkgmgr..."
-	@$$HOME/.venvs/pkgmgr/bin/python -m ensurepip --upgrade
-	@$$HOME/.venvs/pkgmgr/bin/pip install --upgrade pip setuptools wheel
-	@echo "Looking for requirements.txt / _requirements.txt..."
-	@if [ -f requirements.txt ]; then \
-		echo "Installing Python packages from requirements.txt..."; \
-		$$HOME/.venvs/pkgmgr/bin/pip install -r requirements.txt; \
-	elif [ -f _requirements.txt ]; then \
-		echo "Installing Python packages from _requirements.txt..."; \
-		$$HOME/.venvs/pkgmgr/bin/pip install -r _requirements.txt; \
 	else \
-		echo "No requirements.txt or _requirements.txt found, skipping dependency installation."; \
+		echo "Making 'main.py' executable..."; \
+		chmod +x main.py; \
+		echo "Checking if global user virtual environment exists..."; \
+		mkdir -p "$$HOME/.venvs"; \
+		if [ ! -d "$$HOME/.venvs/pkgmgr" ]; then \
+			echo "Creating global venv at $$HOME/.venvs/pkgmgr..."; \
+			python3 -m venv "$$HOME/.venvs/pkgmgr"; \
+		fi; \
+		echo "Installing required Python packages into $$HOME/.venvs/pkgmgr..."; \
+		"$$HOME/.venvs/pkgmgr/bin/python" -m ensurepip --upgrade; \
+		"$$HOME/.venvs/pkgmgr/bin/pip" install --upgrade pip setuptools wheel; \
+		echo "Looking for requirements.txt / _requirements.txt..."; \
+		if [ -f requirements.txt ]; then \
+			echo "Installing Python packages from requirements.txt..."; \
+			"$$HOME/.venvs/pkgmgr/bin/pip" install -r requirements.txt; \
+		elif [ -f _requirements.txt ]; then \
+			echo "Installing Python packages from _requirements.txt..."; \
+			"$$HOME/.venvs/pkgmgr/bin/pip" install -r _requirements.txt; \
+		else \
+			echo "No requirements.txt or _requirements.txt found, skipping dependency installation."; \
+		fi; \
+		echo "Ensuring $$HOME/.bashrc and $$HOME/.zshrc exist..."; \
+		touch "$$HOME/.bashrc" "$$HOME/.zshrc"; \
+		echo "Ensuring automatic activation of $$HOME/.venvs/pkgmgr for this user..."; \
+		for rc in "$$HOME/.bashrc" "$$HOME/.zshrc"; do \
+			rc_line='if [ -d "$${HOME}/.venvs/pkgmgr" ]; then . "$${HOME}/.venvs/pkgmgr/bin/activate"; if [ -n "$${PS1:-}" ]; then echo "Global Python virtual environment '\''~/.venvs/pkgmgr'\'' activated."; fi; fi'; \
+			grep -qxF "$${rc_line}" "$$rc" || echo "$${rc_line}" >> "$$rc"; \
+		done; \
+		echo "Arch/Manjaro detection and optional AUR setup..."; \
+		if command -v pacman >/dev/null 2>&1; then \
+			$(MAKE) aur_builder_setup; \
+		else \
+			echo "Not Arch-based (no pacman). Skipping aur_builder/yay setup."; \
+		fi; \
+		echo "Installation complete. Please restart your shell (or 'exec bash' or 'exec zsh') for the changes to take effect."; \
 	fi
-	@echo "Ensuring $$HOME/.bashrc and $$HOME/.zshrc exist..."
-	@touch "$$HOME/.bashrc" "$$HOME/.zshrc"
-	@echo "Ensuring automatic activation of $$HOME/.venvs/pkgmgr for this user..."
-	@for rc in "$$HOME/.bashrc" "$$HOME/.zshrc"; do \
-		rc_line='if [ -d "$${HOME}/.venvs/pkgmgr" ]; then . "$${HOME}/.venvs/pkgmgr/bin/activate"; if [ -n "$${PS1:-}" ]; then echo "Global Python virtual environment '\''~/.venvs/pkgmgr'\'' activated."; fi; fi'; \
-		grep -qxF "$${rc_line}" "$$rc" || echo "$${rc_line}" >> "$$rc"; \
-	done
-	@echo "Arch/Manjaro detection and optional AUR setup..."
-	@if command -v pacman >/dev/null 2>&1; then \
-		$(MAKE) aur_builder_setup; \
-	else \
-		echo "Not Arch-based (no pacman). Skipping aur_builder/yay setup."; \
-	fi
-	@echo "Installation complete. Please restart your shell (or 'exec bash' or 'exec zsh') for the changes to take effect."
 
 # Only runs on Arch/Manjaro
 aur_builder_setup:
