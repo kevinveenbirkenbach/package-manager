@@ -6,6 +6,7 @@ RUN pacman -Syu --noconfirm \
         base-devel \
         git \
         nix \
+        rsync \
     && pacman -Scc --noconfirm
 
 # 2) Unprivileged user for building Arch packages
@@ -13,7 +14,7 @@ RUN useradd -m builder
 WORKDIR /build
 
 # 3) Only PKGBUILD rein, um dein Wrapper-Paket zu bauen
-COPY PKGBUILD .
+COPY . .
 
 RUN chown -R builder:builder /build \
     && su builder -c "makepkg -s --noconfirm --clean" \

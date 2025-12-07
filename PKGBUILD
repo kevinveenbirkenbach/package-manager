@@ -16,12 +16,8 @@ install=${pkgname}.install
 
 # Local source checkout — avoids the tarball requirement.
 # This assumes you build the package from inside the main project repository.
-source=(
-  "scripts/pkgmgr-wrapper.sh"
-  "scripts/init-nix.sh"
-)
-
-sha256sums=('SKIP' 'SKIP')
+source=()
+sha256sums=()
 
 # Local source directory name under $srcdir
 _srcdir_name="source"
