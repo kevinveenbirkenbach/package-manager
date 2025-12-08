@@ -1,14 +1,19 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 
 import argparse
+import os
 import sys
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from pkgmgr.cli_core.context import CLIContext
 from pkgmgr.clone_repos import clone_repos
 from pkgmgr.exec_proxy_command import exec_proxy_command
-from pkgmgr.get_selected_repos import get_selected_repos
 from pkgmgr.pull_with_verification import pull_with_verification
+from pkgmgr.get_selected_repos import get_selected_repos
+from pkgmgr.get_repo_dir import get_repo_dir
 
 
 PROXY_COMMANDS: Dict[str, List[str]] = {
@@ -42,10 +47,7 @@ PROXY_COMMANDS: Dict[str, List[str]] = {
 
 def _add_proxy_identifier_arguments(parser: argparse.ArgumentParser) -> None:
     """
-    Local copy of the identifier argument set for proxy commands.
-
-    This duplicates the semantics of cli.parser.add_identifier_arguments
-    to avoid circular imports.
+    Selection arguments for proxy subcommands.
     """
     parser.add_argument(
         "identifiers",
@@ -64,6 +66,24 @@ def _add_proxy_identifier_arguments(parser: argparse.ArgumentParser) -> None:
             "Some subcommands ask for confirmation. If you want to give this "
             "confirmation for all repositories, pipe 'yes'. E.g: "
             "yes | pkgmgr {subcommand} --all"
+        ),
+    )
+    parser.add_argument(
+        "--category",
+        nargs="+",
+        default=[],
+        help=(
+            "Filter repositories by category patterns derived from config "
+            "filenames or repo metadata (use filename without .yml/.yaml, "
+            "or /regex/ to use a regular expression)."
+        ),
+    )
+    parser.add_argument(
+        "--string",
+        default="",
+        help=(
+            "Filter repositories whose identifier / name / path contains this "
+            "substring (case-insensitive). Use /regex/ for regular expressions."
         ),
     )
     parser.add_argument(
@@ -86,12 +106,62 @@ def _add_proxy_identifier_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _proxy_has_explicit_selection(args: argparse.Namespace) -> bool:
+    """
+    Same semantics as in the main dispatch:
+    True if the user explicitly selected repositories.
+    """
+    identifiers = getattr(args, "identifiers", []) or []
+    use_all = getattr(args, "all", False)
+    categories = getattr(args, "category", []) or []
+    string_filter = getattr(args, "string", "") or ""
+
+    # Proxy commands currently do not support --tag, so it is not checked here.
+    return bool(
+        use_all
+        or identifiers
+        or categories
+        or string_filter
+    )
+
+
+def _select_repo_for_current_directory(
+    ctx: CLIContext,
+) -> List[Dict[str, Any]]:
+    """
+    Heuristic: find the repository whose local directory matches the
+    current working directory or is the closest parent.
+    """
+    cwd = os.path.abspath(os.getcwd())
+    candidates: List[tuple[str, Dict[str, Any]]] = []
+
+    for repo in ctx.all_repositories:
+        repo_dir = repo.get("directory")
+        if not repo_dir:
+            try:
+                repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
+            except Exception:
+                repo_dir = None
+        if not repo_dir:
+            continue
+
+        repo_dir_abs = os.path.abspath(os.path.expanduser(repo_dir))
+        if cwd == repo_dir_abs or cwd.startswith(repo_dir_abs + os.sep):
+            candidates.append((repo_dir_abs, repo))
+
+    if not candidates:
+        return []
+
+    # Pick the repo with the longest (most specific) path.
+    candidates.sort(key=lambda item: len(item[0]), reverse=True)
+    return [candidates[0][1]]
+
+
 def register_proxy_commands(
     subparsers: argparse._SubParsersAction,
 ) -> None:
     """
-    Register proxy commands (git, docker, docker compose) as
-    top-level subcommands on the given subparsers.
+    Register proxy subcommands for git, docker, docker compose, ...
     """
     for command, subcommands in PROXY_COMMANDS.items():
         for subcommand in subcommands:
@@ -100,7 +170,8 @@ def register_proxy_commands(
                 help=f"Proxies '{command} {subcommand}' to repository/ies",
                 description=(
                     f"Executes '{command} {subcommand}' for the "
-                    "identified repos.\nTo recieve more help execute "
+                    "selected repositories. "
+                    "For more details see the underlying tool's help: "
                     f"'{command} {subcommand} --help'"
                 ),
                 formatter_class=argparse.RawTextHelpFormatter,
@@ -129,8 +200,8 @@ def register_proxy_commands(
 
 def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
     """
-    If the parsed command is a proxy command, execute it and return True.
-    Otherwise return False to let the main dispatcher continue.
+    If the top-level command is one of the proxy subcommands
+    (git / docker / docker compose), handle it here and return True.
     """
     all_proxy_subcommands = {
         sub for subs in PROXY_COMMANDS.values() for sub in subs
@@ -139,12 +210,17 @@ def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
     if args.command not in all_proxy_subcommands:
         return False
 
-    # Use generic selection semantics for proxies
-    selected = get_selected_repos(
-        getattr(args, "all", False),
-        ctx.all_repositories,
-        getattr(args, "identifiers", []),
-    )
+    # Default semantics: without explicit selection → repo of current folder.
+    if _proxy_has_explicit_selection(args):
+        selected = get_selected_repos(args, ctx.all_repositories)
+    else:
+        selected = _select_repo_for_current_directory(ctx)
+        if not selected:
+            print(
+                "[ERROR] No repository matches the current directory. "
+                "Specify identifiers or use --all/--category/--string."
+            )
+            sys.exit(1)
 
     for command, subcommands in PROXY_COMMANDS.items():
         if args.command not in subcommands:

@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 
 import sys
@@ -12,7 +15,7 @@ from pkgmgr.status_repos import status_repos
 from pkgmgr.list_repositories import list_repositories
 from pkgmgr.run_command import run_command
 from pkgmgr.create_repo import create_repo
-
+from pkgmgr.get_selected_repos import get_selected_repos
 
 Repository = Dict[str, Any]
 
@@ -23,15 +26,12 @@ def handle_repos_command(
     selected: List[Repository],
 ) -> None:
     """
-    Handle repository-related commands:
-    - install / update / deinstall / delete / status
-    - path / shell
-    - create / list
+    Handle core repository commands (install/update/deinstall/delete/.../list).
     """
 
-    # --------------------------------------------------------
-    # install / update
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
+    # install
+    # ------------------------------------------------------------
     if args.command == "install":
         install_repos(
             selected,
@@ -46,6 +46,9 @@ def handle_repos_command(
         )
         return
 
+    # ------------------------------------------------------------
+    # update
+    # ------------------------------------------------------------
     if args.command == "update":
         update_repos(
             selected,
@@ -61,9 +64,9 @@ def handle_repos_command(
         )
         return
 
-    # --------------------------------------------------------
-    # deinstall / delete
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
+    # deinstall
+    # ------------------------------------------------------------
     if args.command == "deinstall":
         deinstall_repos(
             selected,
@@ -74,6 +77,9 @@ def handle_repos_command(
         )
         return
 
+    # ------------------------------------------------------------
+    # delete
+    # ------------------------------------------------------------
     if args.command == "delete":
         delete_repos(
             selected,
@@ -83,9 +89,9 @@ def handle_repos_command(
         )
         return
 
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     # status
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     if args.command == "status":
         status_repos(
             selected,
@@ -98,20 +104,20 @@ def handle_repos_command(
         )
         return
 
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     # path
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     if args.command == "path":
         for repository in selected:
             print(repository["directory"])
         return
 
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     # shell
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     if args.command == "shell":
         if not args.shell_command:
-            print("No shell command specified.")
+            print("[ERROR] 'shell' requires a command via -c/--command.")
             sys.exit(2)
         command_to_run = " ".join(args.shell_command)
         for repository in selected:
@@ -125,13 +131,13 @@ def handle_repos_command(
             )
         return
 
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     # create
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     if args.command == "create":
         if not args.identifiers:
             print(
-                "No identifiers provided. Please specify at least one identifier "
+                "[ERROR] 'create' requires at least one identifier "
                 "in the format provider/account/repository."
             )
             sys.exit(1)
@@ -147,15 +153,19 @@ def handle_repos_command(
             )
         return
 
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     # list
-    # --------------------------------------------------------
+    # ------------------------------------------------------------
     if args.command == "list":
         list_repositories(
-            ctx.all_repositories,
+            selected,
             ctx.repositories_base_dir,
             ctx.binaries_dir,
-            search_filter=args.search,
-            status_filter=args.status,
+            status_filter=getattr(args, "status", "") or "",
+            extra_tags=getattr(args, "tag", []) or [],
+            show_description=getattr(args, "description", False),
         )
         return
+
+    print(f"[ERROR] Unknown repos command: {args.command}")
+    sys.exit(2)
