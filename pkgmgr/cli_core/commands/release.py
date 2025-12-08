@@ -21,32 +21,56 @@ def handle_release(
     Handle the 'release' command.
 
     Creates a release by incrementing the version and updating the changelog
-    in the selected repositories.
+    in a single selected repository.
+
+    Important:
+      - Releases are strictly limited to exactly ONE repository.
+      - Using --all or specifying multiple identifiers for release does
+        not make sense and is therefore rejected.
+      - The --preview flag is respected and passed through to the release
+        implementation so that no changes are made in preview mode.
     """
 
     if not selected:
         print("No repositories selected for release.")
         sys.exit(1)
 
+    if len(selected) > 1:
+        print(
+            "[ERROR] Release operations are limited to a single repository.\n"
+            "Do not use --all or multiple identifiers with 'pkgmgr release'."
+        )
+        sys.exit(1)
+
     original_dir = os.getcwd()
 
-    for repo in selected:
-        repo_dir: Optional[str] = repo.get("directory")
-        if not repo_dir:
-            repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
+    repo = selected[0]
 
-        pyproject_path = os.path.join(repo_dir, "pyproject.toml")
-        changelog_path = os.path.join(repo_dir, "CHANGELOG.md")
+    repo_dir: Optional[str] = repo.get("directory")
+    if not repo_dir:
+        repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
 
+    if not os.path.isdir(repo_dir):
         print(
-            f"Releasing repository '{repo.get('repository')}' in '{repo_dir}'..."
+            f"[ERROR] Repository directory does not exist locally: {repo_dir}"
         )
+        sys.exit(1)
 
-        os.chdir(repo_dir)
+    pyproject_path = os.path.join(repo_dir, "pyproject.toml")
+    changelog_path = os.path.join(repo_dir, "CHANGELOG.md")
+
+    print(
+        f"Releasing repository '{repo.get('repository')}' in '{repo_dir}'..."
+    )
+
+    os.chdir(repo_dir)
+    try:
         rel.release(
             pyproject_path=pyproject_path,
             changelog_path=changelog_path,
             release_type=args.release_type,
             message=args.message,
+            preview=getattr(args, "preview", False),
         )
+    finally:
         os.chdir(original_dir)

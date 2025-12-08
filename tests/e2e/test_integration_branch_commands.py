@@ -8,33 +8,37 @@ from unittest.mock import patch
 
 class TestIntegrationBranchCommands(unittest.TestCase):
     """
-    E2E-style tests for the 'pkgmgr branch' CLI wiring.
+    Integration tests for the `pkgmgr branch` CLI wiring.
 
-    We do NOT call real git; instead we patch pkgmgr.branch_commands.open_branch
-    and verify that the CLI invokes it with the correct parameters.
+    These tests execute the real entry point (main.py) and mock
+    the high-level `open_branch` helper to ensure that argument
+    parsing and dispatch behave as expected.
     """
 
-    def _run_pkgmgr(self, argv: list[str]) -> None:
+    def _run_pkgmgr(self, extra_args: list[str]) -> None:
         """
-        Helper to run 'pkgmgr' via its entry module with a given argv.
+        Run the main entry point with the given extra args, as if called via:
+
+            pkgmgr <extra_args...>
+
+        We explicitly set sys.argv and execute main.py as __main__ using runpy.
         """
         original_argv = list(sys.argv)
         try:
-            # argv typically looks like: ["pkgmgr", "branch", ...]
-            sys.argv = argv
-            # Run the CLI entry point
-            runpy.run_module("pkgmgr.cli", run_name="__main__")
+            # argv[0] is the program name; the rest are CLI arguments.
+            sys.argv = ["pkgmgr"] + list(extra_args)
+            runpy.run_module("main", run_name="__main__")
         finally:
             sys.argv = original_argv
 
-    @patch("pkgmgr.branch_commands.open_branch")
+    @patch("pkgmgr.cli_core.commands.branch.open_branch")
     def test_branch_open_with_name_and_base(self, mock_open_branch) -> None:
         """
-        pkgmgr branch open feature/test --base develop
-        should invoke open_branch(name='feature/test', base_branch='develop', cwd='.')
+        `pkgmgr branch open feature/test --base develop` must forward
+        the name and base branch to open_branch() with cwd=".".
         """
         self._run_pkgmgr(
-            ["pkgmgr", "branch", "open", "feature/test", "--base", "develop"]
+            ["branch", "open", "feature/test", "--base", "develop"]
         )
 
         mock_open_branch.assert_called_once()
@@ -43,14 +47,16 @@ class TestIntegrationBranchCommands(unittest.TestCase):
         self.assertEqual(kwargs.get("base_branch"), "develop")
         self.assertEqual(kwargs.get("cwd"), ".")
 
-    @patch("pkgmgr.branch_commands.open_branch")
-    def test_branch_open_without_name_uses_default_base(self, mock_open_branch) -> None:
+    @patch("pkgmgr.cli_core.commands.branch.open_branch")
+    def test_branch_open_without_name_uses_default_base(
+        self,
+        mock_open_branch,
+    ) -> None:
         """
-        pkgmgr branch open
-        should invoke open_branch(name=None, base_branch='main', cwd='.')
-        (the branch name will be asked interactively inside open_branch).
+        `pkgmgr branch open` without a name must still call open_branch(),
+        passing name=None and the default base branch 'main'.
         """
-        self._run_pkgmgr(["pkgmgr", "branch", "open"])
+        self._run_pkgmgr(["branch", "open"])
 
         mock_open_branch.assert_called_once()
         _, kwargs = mock_open_branch.call_args
