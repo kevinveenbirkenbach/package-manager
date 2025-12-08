@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "package-manager"
-version = "0.4.0"
+version = "0.4.1"
 description = "Kevin's package-manager tool (pkgmgr)"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -1,3 +1,4 @@
+# pkgmgr/release.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -151,8 +152,14 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
             tmp.write(initial_message.strip() + "\n")
         tmp.flush()
 
-    # Open editor
-    subprocess.call([editor, tmp_path])
+    # Open editor (best-effort; fall back gracefully if not available)
+    try:
+        subprocess.call([editor, tmp_path])
+    except FileNotFoundError:
+        print(
+            f"[WARN] Editor {editor!r} not found; proceeding without "
+            "interactive changelog message."
+        )
 
     # Read back content
     try:
@@ -651,8 +658,8 @@ def _release_impl(
 
     # 2) Update files.
     update_pyproject_version(pyproject_path, new_ver_str, preview=preview)
-    # Let update_changelog resolve or edit the message; reuse it for debian.
-    message = update_changelog(
+    # Let update_changelog resolve or edit the message; capture it separately.
+    changelog_message = update_changelog(
         changelog_path,
         new_ver_str,
         message=message,
@@ -669,6 +676,12 @@ def _release_impl(
     spec_path = os.path.join(repo_root, "package-manager.spec")
     update_spec_version(spec_path, new_ver_str, preview=preview)
 
+    # Determine an effective message for tag & Debian changelog.
+    effective_message: Optional[str] = message
+    if effective_message is None and isinstance(changelog_message, str):
+        if changelog_message.strip():
+            effective_message = changelog_message.strip()
+
     debian_changelog_path = os.path.join(repo_root, "debian", "changelog")
     # Use repo directory name as a simple default for package name
     package_name = os.path.basename(repo_root) or "package-manager"
@@ -676,13 +689,13 @@ def _release_impl(
         debian_changelog_path,
         package_name=package_name,
         new_version=new_ver_str,
-        message=message,
+        message=effective_message,
         preview=preview,
     )
 
     # 3) Git operations: stage, commit, tag, push.
     commit_msg = f"Release version {new_ver_str}"
-    tag_msg = message or commit_msg
+    tag_msg = effective_message or commit_msg
 
     try:
         branch = get_current_branch() or "main"
