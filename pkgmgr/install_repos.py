@@ -238,5 +238,40 @@ def install_repos(
                     )
                 continue
 
-            installer.run(ctx)
+            # ------------------------------------------------------------
+            # Debug + aussagekräftiger Fehler bei Installer-Fail
+            # ------------------------------------------------------------
+            if not quiet:
+                print(
+                    f"[pkgmgr] Running installer {installer.__class__.__name__} "
+                    f"for {identifier} in '{repo_dir}' "
+                    f"(new capabilities: {caps or '∅'})..."
+                )
+
+            try:
+                installer.run(ctx)
+            except SystemExit as exc:
+                exit_code = exc.code if isinstance(exc.code, int) else str(exc.code)
+
+                print(
+                    f"[ERROR] Installer {installer.__class__.__name__} failed "
+                    f"for repository {identifier} (dir: {repo_dir}) "
+                    f"with exit code {exit_code}."
+                )
+                print(
+                    "[ERROR] This usually means an underlying command failed "
+                    "(e.g. 'make install', 'nix build', 'pip install', ...)."
+                )
+                print(
+                    "[ERROR] Check the log above for the exact command output. "
+                    "You can also run this repository in isolation via:\n"
+                    f"        pkgmgr install {identifier} --clone-mode shallow --no-verification"
+                )
+
+                # Re-raise, damit CLI/Test sauber fehlschlägt,
+                # aber nun mit deutlich mehr Kontext.
+                raise
+
+            # Nur wenn der Installer erfolgreich war, Capabilities mergen
             provided_capabilities.update(caps)
+
