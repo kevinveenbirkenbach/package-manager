@@ -270,6 +270,35 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     )
 
     # ------------------------------------------------------------
+    # branch
+    # ------------------------------------------------------------
+    branch_parser = subparsers.add_parser(
+        "branch",
+        help="Branch-related utilities (e.g. open feature branches)",
+    )
+    branch_subparsers = branch_parser.add_subparsers(
+        dest="subcommand",
+        help="Branch subcommands",
+        required=True,
+    )
+
+    branch_open = branch_subparsers.add_parser(
+        "open",
+        help="Create and push a new branch on top of a base branch",
+    )
+    branch_open.add_argument(
+        "name",
+        nargs="?",
+        help="Name of the new branch (optional; will be asked interactively if omitted)",
+    )
+    branch_open.add_argument(
+        "--base",
+        default="main",
+        help="Base branch to create the new branch from (default: main)",
+    )
+
+
+    # ------------------------------------------------------------
     # release
     # ------------------------------------------------------------
     release_parser = subparsers.add_parser(
@@ -305,8 +334,6 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
         ),
     )
     add_identifier_arguments(version_parser)
-
-
 
     # ------------------------------------------------------------
     # changelog

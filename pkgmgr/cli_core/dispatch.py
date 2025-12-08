@@ -15,6 +15,7 @@ from pkgmgr.cli_core.commands import (
     handle_config,
     handle_make,
     handle_changelog,
+    handle_branch,
 )
 
 
@@ -47,6 +48,7 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         "version",
         "make",
         "changelog",
+        # intentionally NOT "branch" – it operates on cwd only
     ]
 
     if args.command in commands_with_selection:
@@ -83,6 +85,10 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         handle_config(args, ctx)
     elif args.command == "make":
         handle_make(args, ctx, selected)
+    elif args.command == "branch":
+        # Branch commands currently operate on the current working
+        # directory only, not on the pkgmgr repository selection.
+        handle_branch(args, ctx)
     else:
         print(f"Unknown command: {args.command}")
         sys.exit(2)
