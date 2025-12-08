@@ -8,7 +8,12 @@ URL:            https://github.com/kevinveenbirkenbach/package-manager
 Source0:        %{name}-%{version}.tar.gz
 
 BuildArch:      noarch
-Requires:       nix
+
+# NOTE:
+# Nix is a runtime requirement, but it is *not* declared here as a hard
+# RPM dependency, because many distributions do not ship a "nix" RPM.
+# Instead, Nix is installed and initialized by init-nix.sh, which is
+# called in the %post scriptlet below.
 
 %description
 This package provides the `pkgmgr` command, which runs Kevin's package
@@ -16,14 +21,15 @@ manager via a local Nix flake:
 
   nix run /usr/lib/package-manager#pkgmgr -- ...
 
-Nix is the only runtime dependency and must be initialized on the
-system to work correctly.
+Nix is a runtime requirement and is installed/initialized by the
+init-nix.sh helper during package installation if it is not yet
+available on the system.
 
 %prep
 %setup -q
 
 %build
-# No build step required
+# No build step required; we ship the project tree as-is.
 :
 
 %install
@@ -53,6 +59,7 @@ rm -rf \
   %{buildroot}%{_libdir}/package-manager/.gitkeep || true
 
 %post
+# Initialize Nix (if needed) after installing the package-manager files.
 if [ -x %{_libdir}/package-manager/init-nix.sh ]; then
     %{_libdir}/package-manager/init-nix.sh || true
 else

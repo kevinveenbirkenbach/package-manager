@@ -5,150 +5,175 @@ ARG BASE_IMAGE=archlinux:latest
 FROM ${BASE_IMAGE}
 
 # ------------------------------------------------------------
-# System base + conditional package installation
+# System base + conditional package tool installation
+#
+# Important:
+# - We do NOT install Nix directly here via curl.
+# - Nix is installed/initialized by init-nix.sh, which is invoked
+#   from the system packaging hooks (Arch .install, Debian postinst,
+#   RPM %post).
 # ------------------------------------------------------------
 RUN set -e; \
     if [ -f /etc/os-release ]; then . /etc/os-release; else echo "No /etc/os-release found" && exit 1; fi; \
     echo "Detected base image: ${ID:-unknown} (like: ${ID_LIKE:-})"; \
     \
-    # --------------------------------------------------------
-    # Archlinux: Nix via pacman
-    # --------------------------------------------------------
     if [ "$ID" = "arch" ]; then \
         pacman -Syu --noconfirm && \
         pacman -S --noconfirm --needed \
             base-devel \
             git \
-            nix \
             rsync \
-            python && \
+            curl \
+            ca-certificates \
+            xz && \
         pacman -Scc --noconfirm; \
-    \
-    # --------------------------------------------------------
-    # Debian: Nix installer (single-user, root, no build-users-group)
-    # --------------------------------------------------------
     elif [ "$ID" = "debian" ]; then \
         apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            ca-certificates \
-            curl \
+            build-essential \
+            debhelper \
+            dpkg-dev \
             git \
-            python3 \
-            python3-venv \
             rsync \
             bash \
+            curl \
+            ca-certificates \
             xz-utils && \
-        rm -rf /var/lib/apt/lists/* && \
-        echo "Preparing /nix + /etc/nix/nix.conf on Debian..." && \
-        mkdir -p /nix && chmod 0755 /nix && chown root:root /nix && \
-        mkdir -p /etc/nix && printf 'build-users-group =\n' > /etc/nix/nix.conf && \
-        echo "Downloading Nix installer on Debian..." && \
-        curl -L https://nixos.org/nix/install -o /tmp/nix-install && \
-        echo "Installing Nix on Debian (single-user, as root, no build-users-group)..." && \
-        HOME=/root NIX_INSTALLER_NO_MODIFY_PROFILE=1 sh /tmp/nix-install --no-daemon && \
-        rm -f /tmp/nix-install; \
-    \
-    # --------------------------------------------------------
-    # Ubuntu: Nix installer (single-user, root, no build-users-group)
-    # --------------------------------------------------------
+        rm -rf /var/lib/apt/lists/*; \
     elif [ "$ID" = "ubuntu" ]; then \
         apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            ca-certificates \
-            curl \
+            build-essential \
+            debhelper \
+            dpkg-dev \
             git \
             tzdata \
             lsb-release \
-            python3 \
-            python3-venv \
             rsync \
             bash \
+            curl \
+            ca-certificates \
             xz-utils && \
-        rm -rf /var/lib/apt/lists/* && \
-        echo "Preparing /nix + /etc/nix/nix.conf on Ubuntu..." && \
-        mkdir -p /nix && chmod 0755 /nix && chown root:root /nix && \
-        mkdir -p /etc/nix && printf 'build-users-group =\n' > /etc/nix/nix.conf && \
-        echo "Downloading Nix installer on Ubuntu..." && \
-        curl -L https://nixos.org/nix/install -o /tmp/nix-install && \
-        echo "Installing Nix on Ubuntu (single-user, as root, no build-users-group)..." && \
-        HOME=/root NIX_INSTALLER_NO_MODIFY_PROFILE=1 sh /tmp/nix-install --no-daemon && \
-        rm -f /tmp/nix-install; \
-    \
-    # --------------------------------------------------------
-    # Fedora: Nix installer (single-user, root, no build-users-group)
-    # --------------------------------------------------------
+        rm -rf /var/lib/apt/lists/*; \
     elif [ "$ID" = "fedora" ]; then \
         dnf -y update && \
         dnf -y install \
-            ca-certificates \
-            curl \
             git \
-            python3 \
             rsync \
+            rpm-build \
+            make \
+            gcc \
             bash \
+            curl \
+            ca-certificates \
             xz && \
-        dnf clean all && \
-        echo "Preparing /nix + /etc/nix/nix.conf on Fedora..." && \
-        mkdir -p /nix && chmod 0755 /nix && chown root:root /nix && \
-        mkdir -p /etc/nix && printf 'build-users-group =\n' > /etc/nix/nix.conf && \
-        echo "Downloading Nix installer on Fedora..." && \
-        curl -L https://nixos.org/nix/install -o /tmp/nix-install && \
-        echo "Installing Nix on Fedora (single-user, as root, no build-users-group)..." && \
-        HOME=/root NIX_INSTALLER_NO_MODIFY_PROFILE=1 sh /tmp/nix-install --no-daemon && \
-        rm -f /tmp/nix-install; \
-    \
-    # --------------------------------------------------------
-    # CentOS Stream: Nix installer (single-user, root, no build-users-group)
-    # --------------------------------------------------------
+        dnf clean all; \
     elif [ "$ID" = "centos" ]; then \
         dnf -y update && \
         dnf -y install \
-            ca-certificates \
-            curl-minimal \
             git \
-            python3 \
             rsync \
+            rpm-build \
+            make \
+            gcc \
             bash \
+            curl-minimal \
+            ca-certificates \
             xz && \
-        dnf clean all && \
-        echo "Preparing /nix + /etc/nix/nix.conf on CentOS..." && \
-        mkdir -p /nix && chmod 0755 /nix && chown root:root /nix && \
-        mkdir -p /etc/nix && printf 'build-users-group =\n' > /etc/nix/nix.conf && \
-        echo "Downloading Nix installer on CentOS..." && \
-        curl -L https://nixos.org/nix/install -o /tmp/nix-install && \
-        echo "Installing Nix on CentOS (single-user, as root, no build-users-group)..." && \
-        HOME=/root NIX_INSTALLER_NO_MODIFY_PROFILE=1 sh /tmp/nix-install --no-daemon && \
-        rm -f /tmp/nix-install; \
+        dnf clean all; \
     else \
         echo "Unsupported base image: ${ID}" && exit 1; \
     fi
 
 # ------------------------------------------------------------
 # Nix environment defaults
+#
+# Nix itself is installed by your system packages (via init-nix.sh).
+# Here we only define default configuration options.
 # ------------------------------------------------------------
 ENV NIX_CONFIG="experimental-features = nix-command flakes"
-ENV PATH="/root/.nix-profile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # ------------------------------------------------------------
-# Unprivileged user for building Arch packages
+# Unprivileged user for Arch package build (makepkg)
 # ------------------------------------------------------------
-RUN useradd -m builder
+RUN useradd -m builder || true
 
 # ------------------------------------------------------------
-# Build stage (for Arch) — optional, installs package-manager inside image
+# Build and install distro-native package-manager package
+#
+# - Arch:    PKGBUILD  -> pacman -U
+# - Debian:  debhelper -> dpkg-buildpackage -> apt install ./package-manager_*.deb
+# - Ubuntu:  same as Debian
+# - Fedora:  rpmbuild  -> dnf/dnf5/yum install package-manager-*.rpm
+# - CentOS:  rpmbuild  -> dnf/yum install package-manager-*.rpm
+#
+# Nix is NOT manually installed here; it is handled by init-nix.sh.
 # ------------------------------------------------------------
 WORKDIR /build
 COPY . .
 
 RUN set -e; \
-    if [ -f /etc/os-release ]; then . /etc/os-release; fi; \
+    . /etc/os-release; \
     if [ "$ID" = "arch" ]; then \
-        echo "Running Arch build stage (makepkg)..."; \
-        chown -R builder:builder /build && \
-        su builder -c "cd /build && rm -f package-manager-*.pkg.tar.* && makepkg -sf --noconfirm --clean"; \
+        echo 'Building Arch package (makepkg --nodeps)...'; \
+        chown -R builder:builder /build; \
+        su builder -c "cd /build && rm -f package-manager-*.pkg.tar.* && makepkg --noconfirm --clean --nodeps"; \
+        \
+        echo 'Installing generated Arch package...'; \
         pacman -U --noconfirm package-manager-*.pkg.tar.*; \
+    elif [ "$ID" = "debian" ] || [ "$ID" = "ubuntu" ]; then \
+        echo 'Building Debian/Ubuntu package...'; \
+        dpkg-buildpackage -us -uc -b; \
+        \
+        echo 'Installing generated DEB package...'; \
+        apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y ./../package-manager_*.deb && \
+        rm -rf /var/lib/apt/lists/*; \
+    elif [ "$ID" = "fedora" ] || [ "$ID" = "centos" ]; then \
+        echo 'Setting up rpmbuild dirs...'; \
+        mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}; \
+        \
+        echo "Extracting version from package-manager.spec..."; \
+        version=$(grep -E '^Version:' /build/package-manager.spec | awk '{print $2}'); \
+        if [ -z "$version" ]; then echo 'ERROR: Version missing!' && exit 1; fi; \
+        srcdir="package-manager-${version}"; \
+        \
+        echo "Preparing source tree for RPM: $srcdir"; \
+        rm -rf "/tmp/$srcdir"; \
+        mkdir -p "/tmp/$srcdir"; \
+        cp -a /build/. "/tmp/$srcdir/"; \
+        \
+        echo "Creating source tarball: /root/rpmbuild/SOURCES/$srcdir.tar.gz"; \
+        tar czf "/root/rpmbuild/SOURCES/$srcdir.tar.gz" -C /tmp "$srcdir"; \
+        \
+        echo 'Copying SPEC...'; \
+        cp /build/package-manager.spec /root/rpmbuild/SPECS/; \
+        \
+        echo 'Running rpmbuild...'; \
+        cd /root/rpmbuild/SPECS && rpmbuild -bb package-manager.spec; \
+        \
+        echo 'Installing generated RPM...'; \
+        rpm_path=$(find /root/rpmbuild/RPMS -name "package-manager-*.rpm" | head -n1); \
+        if [ -z "$rpm_path" ]; then echo 'ERROR: RPM not found!' && exit 1; fi; \
+        \
+        if command -v dnf5 >/dev/null 2>&1; then \
+            echo 'Using dnf5 to install local RPM...'; \
+            dnf5 install -y "$rpm_path"; \
+        elif command -v dnf >/dev/null 2>&1; then \
+            echo 'Using dnf to install local RPM...'; \
+            dnf install -y "$rpm_path"; \
+        elif command -v yum >/dev/null 2>&1; then \
+            echo 'Using yum to install local RPM...'; \
+            yum localinstall -y "$rpm_path"; \
+        else \
+            echo 'No dnf/dnf5/yum found, falling back to rpm -i (no deps)...'; \
+            rpm -i "$rpm_path"; \
+        fi; \
+        \
+        rm -rf "/tmp/$srcdir"; \
     else \
-        echo "Non-Arch base detected — skipping Arch package build."; \
+        echo "Unsupported distro: ${ID}"; \
+        exit 1; \
     fi; \
     rm -rf /build
 

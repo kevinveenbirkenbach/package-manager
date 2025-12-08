@@ -82,10 +82,10 @@ build-arch:
 # Test targets
 # ------------------------------------------------------------
 
-# Unit tests: only in Arch container (fastest feedback)
+# Unit tests: only in Arch container (fastest feedback), via Nix devShell
 test-unit: build-arch
 	@echo "============================================================"
-	@echo ">>> Running UNIT tests in Arch container"
+	@echo ">>> Running UNIT tests in Arch container (via Nix devShell)"
 	@echo "============================================================"
 	docker run --rm \
 		-v "$$(pwd):/src" \
@@ -96,20 +96,20 @@ test-unit: build-arch
 			set -e; \
 			if [ -f /etc/os-release ]; then . /etc/os-release; fi; \
 			echo "Detected container distro: $${ID:-unknown} (like: $${ID_LIKE:-})"; \
-			echo "Running Python unit tests (tests/unit)..."; \
+			echo "Running Python unit tests (tests/unit) via nix develop..."; \
 			git config --global --add safe.directory /src || true; \
 			cd /src; \
-			export PYTHONPATH=/src:$${PYTHONPATH}; \
-			python -m unittest discover \
-				-s tests/unit \
-				-t /src \
-				-p "test_*.py"; \
+			nix develop .#default --no-write-lock-file -c \
+				python -m unittest discover \
+					-s tests/unit \
+					-t /src \
+					-p "test_*.py"; \
 		'
 
-# Integration tests: also in Arch container, but using tests/integration
-test-integration: build
+# Integration tests: also in Arch container, via Nix devShell
+test-integration: build-arch
 	@echo "============================================================"
-	@echo ">>> Running INTEGRATION tests in Arch container"
+	@echo ">>> Running INTEGRATION tests in Arch container (via Nix devShell)"
 	@echo "============================================================"
 	docker run --rm \
 		-v "$$(pwd):/src" \
@@ -120,14 +120,14 @@ test-integration: build
 			set -e; \
 			if [ -f /etc/os-release ]; then . /etc/os-release; fi; \
 			echo "Detected container distro: $${ID:-unknown} (like: $${ID_LIKE:-})"; \
-			echo "Running Python integration tests (tests/integration)..."; \
+			echo "Running Python integration tests (tests/integration) via nix develop..."; \
 			git config --global --add safe.directory /src || true; \
 			cd /src; \
-			export PYTHONPATH=/src:$${PYTHONPATH}; \
-			python -m unittest discover \
-				-s tests/integration \
-				-t /src \
-				-p "test_*.py"; \
+			nix develop .#default --no-write-lock-file -c \
+				python -m unittest discover \
+					-s tests/integration \
+					-t /src \
+					-p "test_*.py"; \
 		'
 
 # End-to-end tests: run in all distros via Nix devShell (tests/e2e)

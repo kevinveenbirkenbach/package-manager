@@ -3,6 +3,25 @@
 %:
 	dh $@
 
+# ---------------------------------------------------------------------------
+# Disable automatic build + tests for Debian package
+#
+# The package is effectively a wrapper around the project source and the
+# Nix flake. We do not need dh_auto_build to invoke the top-level Makefile,
+# because that Makefile is meant for developer workflows (venv, setup, etc.)
+# and would fail in the minimal build environment.
+# ---------------------------------------------------------------------------
+override_dh_auto_build:
+	# No build step required for this package; skip calling the top-level Makefile.
+	:
+
+override_dh_auto_test:
+	# We do not run tests as part of the Debian package build.
+	:
+
+# ---------------------------------------------------------------------------
+# Install phase: copy wrapper + init script + full project source
+# ---------------------------------------------------------------------------
 override_dh_auto_install:
 	# Create target directories
 	install -d debian/package-manager/usr/bin
