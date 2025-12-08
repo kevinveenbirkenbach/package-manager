@@ -360,10 +360,32 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     release_parser.add_argument(
         "-m",
         "--message",
-        default="",
-        help="Optional release message to add to the changelog and tag.",
+        default=None,
+        help=(
+            "Optional release message to add to the changelog and tag."
+        ),
     )
+    # Generic selection / preview / list / extra_args
     add_identifier_arguments(release_parser)
+    # Close current branch after successful release
+    release_parser.add_argument(
+        "--close",
+        action="store_true",
+        help=(
+            "Close the current branch after a successful release in each "
+            "repository, if it is not main/master."
+        ),
+    )
+    # Force: skip preview+confirmation and run release directly
+    release_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help=(
+            "Skip the interactive preview+confirmation step and run the "
+            "release directly."
+        ),
+    )
 
     # ------------------------------------------------------------
     # version

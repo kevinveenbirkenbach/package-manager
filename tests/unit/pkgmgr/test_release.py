@@ -365,6 +365,7 @@ class TestUpdateDebianChangelog(unittest.TestCase):
 
 
 class TestReleaseOrchestration(unittest.TestCase):
+    @patch("pkgmgr.release.sys.stdin.isatty", return_value=False)
     @patch("pkgmgr.release._run_git_command")
     @patch("pkgmgr.release.update_debian_changelog")
     @patch("pkgmgr.release.update_spec_version")
@@ -387,6 +388,7 @@ class TestReleaseOrchestration(unittest.TestCase):
         mock_update_spec,
         mock_update_debian_changelog,
         mock_run_git_command,
+        mock_isatty,
     ) -> None:
         mock_determine_current_version.return_value = SemVer(1, 2, 3)
         mock_bump_semver.return_value = SemVer(1, 2, 4)
@@ -449,6 +451,7 @@ class TestReleaseOrchestration(unittest.TestCase):
         self.assertIn("git push origin develop", git_calls)
         self.assertIn("git push origin --tags", git_calls)
 
+    @patch("pkgmgr.release.sys.stdin.isatty", return_value=False)
     @patch("pkgmgr.release._run_git_command")
     @patch("pkgmgr.release.update_debian_changelog")
     @patch("pkgmgr.release.update_spec_version")
@@ -471,6 +474,7 @@ class TestReleaseOrchestration(unittest.TestCase):
         mock_update_spec,
         mock_update_debian_changelog,
         mock_run_git_command,
+        mock_isatty,
     ) -> None:
         mock_determine_current_version.return_value = SemVer(1, 2, 3)
         mock_bump_semver.return_value = SemVer(1, 2, 4)

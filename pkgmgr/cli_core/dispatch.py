@@ -3,12 +3,14 @@
 
 from __future__ import annotations
 
+import os
 import sys
-from typing import List
+from typing import List, Dict, Any
 
 from pkgmgr.cli_core.context import CLIContext
 from pkgmgr.cli_core.proxy import maybe_handle_proxy
 from pkgmgr.get_selected_repos import get_selected_repos
+from pkgmgr.get_repo_dir import get_repo_dir
 
 from pkgmgr.cli_core.commands import (
     handle_repos_command,
@@ -20,6 +22,63 @@ from pkgmgr.cli_core.commands import (
     handle_changelog,
     handle_branch,
 )
+
+
+def _has_explicit_selection(args) -> bool:
+    """
+    Return True if the user explicitly selected repositories via
+    identifiers / --all / --category / --tag / --string.
+    """
+    identifiers = getattr(args, "identifiers", []) or []
+    use_all = getattr(args, "all", False)
+    categories = getattr(args, "category", []) or []
+    tags = getattr(args, "tag", []) or []
+    string_filter = getattr(args, "string", "") or ""
+
+    return bool(
+        use_all
+        or identifiers
+        or categories
+        or tags
+        or string_filter
+    )
+
+
+def _select_repo_for_current_directory(
+    ctx: CLIContext,
+) -> List[Dict[str, Any]]:
+    """
+    Heuristic: find the repository whose local directory matches the
+    current working directory or is the closest parent.
+
+    Example:
+      - Repo directory: /home/kevin/Repositories/foo
+      - CWD:           /home/kevin/Repositories/foo/subdir
+      → 'foo' is selected.
+    """
+    cwd = os.path.abspath(os.getcwd())
+    candidates: List[tuple[str, Dict[str, Any]]] = []
+
+    for repo in ctx.all_repositories:
+        repo_dir = repo.get("directory")
+        if not repo_dir:
+            try:
+                repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
+            except Exception:
+                repo_dir = None
+        if not repo_dir:
+            continue
+
+        repo_dir_abs = os.path.abspath(os.path.expanduser(repo_dir))
+        if cwd == repo_dir_abs or cwd.startswith(repo_dir_abs + os.sep):
+            candidates.append((repo_dir_abs, repo))
+
+    if not candidates:
+        return []
+
+    # Pick the repo with the longest (most specific) path.
+    candidates.sort(key=lambda item: len(item[0]), reverse=True)
+    return [candidates[0][1]]
 
 
 def dispatch_command(args, ctx: CLIContext) -> None:
@@ -52,7 +111,15 @@ def dispatch_command(args, ctx: CLIContext) -> None:
     ]
 
     if getattr(args, "command", None) in commands_with_selection:
-        selected = get_selected_repos(args, ctx.all_repositories)
+        if _has_explicit_selection(args):
+            # Classic selection logic (identifiers / --all / filters)
+            selected = get_selected_repos(args, ctx.all_repositories)
+        else:
+            # Default per help text: repository of current folder.
+            selected = _select_repo_for_current_directory(ctx)
+            # If none is found, leave 'selected' empty.
+            # Individual handlers will then emit a clear message instead
+            # of silently picking an unrelated repository.
     else:
         selected = []
 

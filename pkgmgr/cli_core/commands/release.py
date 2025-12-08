@@ -1,12 +1,31 @@
+# pkgmgr/cli_core/commands/release.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Release command wiring for the pkgmgr CLI.
+
+This module implements the `pkgmgr release` subcommand on top of the
+generic selection logic from cli_core.dispatch. It does not define its
+own subparser; the CLI surface is configured in cli_core.parser.
+
+Responsibilities:
+  - Take the parsed argparse.Namespace for the `release` command.
+  - Use the list of selected repositories provided by dispatch_command().
+  - Optionally list affected repositories when --list is set.
+  - For each selected repository, run pkgmgr.release.release(...) in
+    the context of that repository directory.
+"""
+
 from __future__ import annotations
 
 import os
-import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from pkgmgr.cli_core.context import CLIContext
 from pkgmgr.get_repo_dir import get_repo_dir
-from pkgmgr import release as rel
+from pkgmgr.get_repo_identifier import get_repo_identifier
+from pkgmgr.release import release as run_release
 
 
 Repository = Dict[str, Any]
@@ -18,59 +37,63 @@ def handle_release(
     selected: List[Repository],
 ) -> None:
     """
-    Handle the 'release' command.
+    Handle the `pkgmgr release` subcommand.
 
-    Creates a release by incrementing the version and updating the changelog
-    in a single selected repository.
-
-    Important:
-      - Releases are strictly limited to exactly ONE repository.
-      - Using --all or specifying multiple identifiers for release does
-        not make sense and is therefore rejected.
-      - The --preview flag is respected and passed through to the release
-        implementation so that no changes are made in preview mode.
+    Flow:
+      1) Use the `selected` repositories as computed by dispatch_command().
+      2) If --list is given, print the identifiers of the selected repos
+         and return without running any release.
+      3) For each selected repository:
+           - Resolve its identifier and local directory.
+           - Change into that directory.
+           - Call pkgmgr.release.release(...) with the parsed options.
     """
-
     if not selected:
-        print("No repositories selected for release.")
-        sys.exit(1)
+        print("[pkgmgr] No repositories selected for release.")
+        return
 
-    if len(selected) > 1:
+    # List-only mode: show which repositories would be affected.
+    if getattr(args, "list", False):
+        print("[pkgmgr] Repositories that would be affected by this release:")
+        for repo in selected:
+            identifier = get_repo_identifier(repo, ctx.all_repositories)
+            print(f"  - {identifier}")
+        return
+
+    for repo in selected:
+        identifier = get_repo_identifier(repo, ctx.all_repositories)
+
+        repo_dir = repo.get("directory")
+        if not repo_dir:
+            try:
+                repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
+            except Exception:
+                repo_dir = None
+
+        if not repo_dir or not os.path.isdir(repo_dir):
+            print(
+                f"[WARN] Skipping repository {identifier}: "
+                "local directory does not exist."
+            )
+            continue
+
         print(
-            "[ERROR] Release operations are limited to a single repository.\n"
-            "Do not use --all or multiple identifiers with 'pkgmgr release'."
+            f"[pkgmgr] Running release for repository {identifier} "
+            f"in '{repo_dir}'..."
         )
-        sys.exit(1)
 
-    original_dir = os.getcwd()
-
-    repo = selected[0]
-
-    repo_dir: Optional[str] = repo.get("directory")
-    if not repo_dir:
-        repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
-
-    if not os.path.isdir(repo_dir):
-        print(
-            f"[ERROR] Repository directory does not exist locally: {repo_dir}"
-        )
-        sys.exit(1)
-
-    pyproject_path = os.path.join(repo_dir, "pyproject.toml")
-    changelog_path = os.path.join(repo_dir, "CHANGELOG.md")
-
-    print(
-        f"Releasing repository '{repo.get('repository')}' in '{repo_dir}'..."
-    )
-
-    os.chdir(repo_dir)
-    try:
-        rel.release(
-            pyproject_path=pyproject_path,
-            changelog_path=changelog_path,
-            release_type=args.release_type,
-            message=args.message,
-            preview=getattr(args, "preview", False),
-        )
-    finally:
-        os.chdir(original_dir)
+        # Change to repo directory and invoke the helper.
+        cwd_before = os.getcwd()
+        try:
+            os.chdir(repo_dir)
+            run_release(
+                pyproject_path="pyproject.toml",
+                changelog_path="CHANGELOG.md",
+                release_type=args.release_type,
+                message=args.message or None,
+                preview=getattr(args, "preview", False),
+                force=getattr(args, "force", False),
+                close=getattr(args, "close", False),
+            )
+        finally:
+            os.chdir(cwd_before)
