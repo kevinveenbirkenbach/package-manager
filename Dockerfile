@@ -152,22 +152,31 @@ RUN set -e; \
         echo 'Running rpmbuild...'; \
         cd /root/rpmbuild/SPECS && rpmbuild -bb package-manager.spec; \
         \
-        echo 'Installing generated RPM...'; \
+        echo 'Installing generated RPM (local, offline)...'; \
         rpm_path=$(find /root/rpmbuild/RPMS -name "package-manager-*.rpm" | head -n1); \
         if [ -z "$rpm_path" ]; then echo 'ERROR: RPM not found!' && exit 1; fi; \
         \
         if command -v dnf5 >/dev/null 2>&1; then \
-            echo 'Using dnf5 to install local RPM...'; \
-            dnf5 install -y "$rpm_path"; \
+            echo 'Using dnf5 to install local RPM (no remote repos)...'; \
+            if ! dnf5 install -y --disablerepo='*' "$rpm_path"; then \
+                echo 'dnf5 failed, falling back to rpm -i --nodeps'; \
+                rpm -i --nodeps "$rpm_path"; \
+            fi; \
         elif command -v dnf >/dev/null 2>&1; then \
-            echo 'Using dnf to install local RPM...'; \
-            dnf install -y "$rpm_path"; \
+            echo 'Using dnf to install local RPM (no remote repos)...'; \
+            if ! dnf install -y --disablerepo='*' "$rpm_path"; then \
+                echo 'dnf failed, falling back to rpm -i --nodeps'; \
+                rpm -i --nodeps "$rpm_path"; \
+            fi; \
         elif command -v yum >/dev/null 2>&1; then \
-            echo 'Using yum to install local RPM...'; \
-            yum localinstall -y "$rpm_path"; \
+            echo 'Using yum to install local RPM (no remote repos)...'; \
+            if ! yum localinstall -y --disablerepo='*' "$rpm_path"; then \
+                echo 'yum failed, falling back to rpm -i --nodeps'; \
+                rpm -i --nodeps "$rpm_path"; \
+            fi; \
         else \
-            echo 'No dnf/dnf5/yum found, falling back to rpm -i (no deps)...'; \
-            rpm -i "$rpm_path"; \
+            echo 'No dnf/dnf5/yum found, falling back to rpm -i --nodeps...'; \
+            rpm -i --nodeps "$rpm_path"; \
         fi; \
         \
         rm -rf "/tmp/$srcdir"; \
