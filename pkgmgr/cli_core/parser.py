@@ -306,6 +306,30 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     )
     add_identifier_arguments(version_parser)
 
+
+
+    # ------------------------------------------------------------
+    # changelog
+    # ------------------------------------------------------------
+    changelog_parser = subparsers.add_parser(
+        "changelog",
+        help=(
+            "Show changelog derived from Git history. "
+            "By default, shows the changes between the last two SemVer tags."
+        ),
+    )
+    changelog_parser.add_argument(
+        "range",
+        nargs="?",
+        default="",
+        help=(
+            "Optional tag or range (e.g. v1.2.3 or v1.2.0..v1.2.3). "
+            "If omitted, the changelog between the last two SemVer "
+            "tags is shown."
+        ),
+    )
+    add_identifier_arguments(changelog_parser)
+
     # ------------------------------------------------------------
     # list
     # ------------------------------------------------------------

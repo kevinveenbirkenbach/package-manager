@@ -4,6 +4,7 @@ from .tools import handle_tools_command
 from .release import handle_release
 from .version import handle_version
 from .make import handle_make
+from .changelog import handle_changelog
 
 __all__ = [
     "handle_repos_command",
@@ -12,4 +13,5 @@ __all__ = [
     "handle_release",
     "handle_version",
     "handle_make",
+    "handle_changelog",
 ]

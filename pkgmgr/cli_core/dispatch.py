@@ -7,12 +7,15 @@ from pkgmgr.cli_core.context import CLIContext
 from pkgmgr.cli_core.proxy import maybe_handle_proxy
 from pkgmgr.get_selected_repos import get_selected_repos
 
-from pkgmgr.cli_core.commands.repos import handle_repos_command
-from pkgmgr.cli_core.commands.tools import handle_tools_command
-from pkgmgr.cli_core.commands.release import handle_release
-from pkgmgr.cli_core.commands.version import handle_version
-from pkgmgr.cli_core.commands.config import handle_config
-from pkgmgr.cli_core.commands.make import handle_make
+from pkgmgr.cli_core.commands import (
+    handle_repos_command,
+    handle_tools_command,
+    handle_release,
+    handle_version,
+    handle_config,
+    handle_make,
+    handle_changelog,
+)
 
 
 def dispatch_command(args, ctx: CLIContext) -> None:
@@ -43,6 +46,7 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         "release",
         "version",
         "make",
+        "changelog",
     ]
 
     if args.command in commands_with_selection:
@@ -73,6 +77,8 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         handle_release(args, ctx, selected)
     elif args.command == "version":
         handle_version(args, ctx, selected)
+    elif args.command == "changelog":
+        handle_changelog(args, ctx, selected)
     elif args.command == "config":
         handle_config(args, ctx)
     elif args.command == "make":
