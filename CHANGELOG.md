@@ -1,3 +1,8 @@
+## [0.4.0] - 2025-12-08
+
+* Add branch closing helper and --close flag to release command, including CLI wiring and tests (see https://chatgpt.com/share/69374aec-74ec-800f-bde3-5d91dfdb9b91)
+
+
 ## [0.2.0] - 2025-12-08
 
 * Add preview-first release workflow and extended packaging support (see ChatGPT conversation: https://chatgpt.com/share/693722b4-af9c-800f-bccc-8a4036e99630)

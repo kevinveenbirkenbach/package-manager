@@ -23,6 +23,9 @@ Additional behaviour:
       1) Preview-only run (dry-run).
       2) Interactive confirmation, then real release if confirmed.
     This confirmation can be skipped with the `-f/--force` flag.
+  - If `-c/--close` is used and the current branch is not main/master,
+    the branch will be closed via branch_commands.close_branch() after
+    a successful release.
 """
 
 from __future__ import annotations
@@ -37,6 +40,7 @@ from datetime import date, datetime
 from typing import Optional, Tuple
 
 from pkgmgr.git_utils import get_tags, get_current_branch, GitError
+from pkgmgr.branch_commands import close_branch
 from pkgmgr.versioning import (
     SemVer,
     find_latest_version,
@@ -613,6 +617,7 @@ def _release_impl(
     release_type: str = "patch",
     message: Optional[str] = None,
     preview: bool = False,
+    close: bool = False,
 ) -> None:
     """
     Internal implementation that performs a single-phase release.
@@ -625,6 +630,8 @@ def _release_impl(
     If `preview` is False:
       - Files are updated.
       - Git commit, tag, and push are executed.
+      - If `close` is True and the current branch is not main/master,
+        the branch will be closed after a successful release.
     """
     # 1) Determine the current version from Git tags.
     current_ver = _determine_current_version()
@@ -701,6 +708,18 @@ def _release_impl(
         print(f'[PREVIEW] Would run: git tag -a {new_tag} -m "{tag_msg}"')
         print(f"[PREVIEW] Would run: git push origin {branch}")
         print("[PREVIEW] Would run: git push origin --tags")
+
+        if close and branch not in ("main", "master"):
+            print(
+                f"[PREVIEW] Would also close branch {branch} after the release "
+                "(--close specified and branch is not main/master)."
+            )
+        elif close:
+            print(
+                f"[PREVIEW] --close specified but current branch is {branch}; "
+                "no branch would be closed."
+            )
+
         print("Preview completed. No changes were made.")
         return
 
@@ -713,6 +732,24 @@ def _release_impl(
     _run_git_command("git push origin --tags")
 
     print(f"Release {new_ver_str} completed.")
+
+    # Optional: close the current branch after a successful release.
+    if close:
+        if branch in ("main", "master"):
+            print(
+                f"[INFO] --close specified but current branch is {branch}; "
+                "nothing to close."
+            )
+            return
+
+        print(
+            f"[INFO] Closing branch {branch} after successful release "
+            "(--close enabled and branch is not main/master)..."
+        )
+        try:
+            close_branch(name=branch, base_branch="main", cwd=".")
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[WARN] Failed to close branch {branch} automatically: {exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -727,6 +764,7 @@ def release(
     message: Optional[str] = None,
     preview: bool = False,
     force: bool = False,
+    close: bool = False,
 ) -> None:
     """
     High-level release entry point.
@@ -753,6 +791,9 @@ def release(
         * In non-interactive environments (stdin not a TTY), the
           confirmation step is skipped automatically and a single
           REAL phase is executed, to avoid blocking on input().
+
+    The `close` flag controls whether the current branch should be
+    closed after a successful REAL release (only if it is not main/master).
     """
     # Explicit preview mode: just do a single PREVIEW phase and exit.
     if preview:
@@ -762,6 +803,7 @@ def release(
             release_type=release_type,
             message=message,
             preview=True,
+            close=close,
         )
         return
 
@@ -773,6 +815,7 @@ def release(
             release_type=release_type,
             message=message,
             preview=False,
+            close=close,
         )
         return
 
@@ -784,6 +827,7 @@ def release(
             release_type=release_type,
             message=message,
             preview=False,
+            close=close,
         )
         return
 
@@ -795,6 +839,7 @@ def release(
         release_type=release_type,
         message=message,
         preview=True,
+        close=close,
     )
 
     # Ask for confirmation
@@ -815,6 +860,7 @@ def release(
         release_type=release_type,
         message=message,
         preview=False,
+        close=close,
     )
 
 
@@ -867,6 +913,16 @@ def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
             "release directly."
         ),
     )
+    parser.add_argument(
+        "-c",
+        "--close",
+        dest="close",
+        action="store_true",
+        help=(
+            "Close the current branch after a successful release, "
+            "if it is not main/master."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -879,4 +935,5 @@ if __name__ == "__main__":
         message=args.message,
         preview=args.preview,
         force=args.force,
+        close=args.close,
     )

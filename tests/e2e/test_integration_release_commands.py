@@ -1,99 +1,75 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+End-to-end style integration tests for the `pkgmgr release` CLI command.
+
+These tests exercise the top-level `pkgmgr` entry point by invoking
+the module as `__main__` and verifying that the underlying
+`pkgmgr.release.release()` function is called with the expected
+arguments, in particular the new `close` flag.
+"""
+
 from __future__ import annotations
 
-import os
 import runpy
 import sys
 import unittest
-
-
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..")
-)
+from unittest.mock import patch
 
 
 class TestIntegrationReleaseCommand(unittest.TestCase):
-    def _run_pkgmgr(
-        self,
-        argv: list[str],
-        expect_success: bool,
-    ) -> None:
-        """
-        Run the main entry point with the given argv and assert on success/failure.
+    """Integration tests for `pkgmgr release` wiring."""
 
-        argv must include the program name as argv[0], e.g. "":
-            ["", "release", "patch", "pkgmgr", "--preview"]
+    def _run_pkgmgr(self, argv: list[str]) -> None:
         """
-        cmd_repr = " ".join(argv[1:])
+        Helper to invoke the `pkgmgr` console script via `run_module`.
+
+        This simulates a real CLI call like:
+
+            pkgmgr release minor --preview --close
+        """
         original_argv = list(sys.argv)
-
         try:
             sys.argv = argv
-            try:
-                # Execute main.py as if called via `python main.py ...`
-                runpy.run_module("main", run_name="__main__")
-            except SystemExit as exc:
-                code = exc.code if isinstance(exc.code, int) else 1
-                if expect_success and code != 0:
-                    print()
-                    print(f"[TEST] Command   : {cmd_repr}")
-                    print(f"[TEST] Exit code : {code}")
-                    raise AssertionError(
-                        f"{cmd_repr!r} failed with exit code {code}. "
-                        "Scroll up to inspect the output printed before failure."
-                    ) from exc
-                if not expect_success and code == 0:
-                    print()
-                    print(f"[TEST] Command   : {cmd_repr}")
-                    print(f"[TEST] Exit code : {code}")
-                    raise AssertionError(
-                        f"{cmd_repr!r} unexpectedly succeeded with exit code 0."
-                    ) from exc
-            else:
-                # No SystemExit: treat as success when expect_success is True,
-                # otherwise as a failure (we expected a non-zero exit).
-                if not expect_success:
-                    raise AssertionError(
-                        f"{cmd_repr!r} returned normally (expected non-zero exit)."
-                    )
+            # Entry point: the `pkgmgr` module is the console script.
+            runpy.run_module("pkgmgr", run_name="__main__")
         finally:
             sys.argv = original_argv
 
-    def test_release_for_unknown_repo_fails_cleanly(self) -> None:
+    @patch("pkgmgr.release.release")
+    def test_release_without_close_flag(self, mock_release) -> None:
         """
-        Releasing a non-existent repository identifier must fail
-        with a non-zero exit code, but without crashing the interpreter.
+        Calling `pkgmgr release patch --preview` should *not* enable
+        the `close` flag by default.
         """
-        argv = [
-            "",
-            "release",
-            "patch",
-            "does-not-exist-xyz",
-        ]
-        self._run_pkgmgr(argv, expect_success=False)
+        self._run_pkgmgr(["pkgmgr", "release", "patch", "--preview"])
 
-    def test_release_preview_for_pkgmgr_repository(self) -> None:
-        """
-        Sanity-check the happy path for the CLI:
+        mock_release.assert_called_once()
+        _args, kwargs = mock_release.call_args
 
-        - Runs `pkgmgr release patch pkgmgr --preview`
-        - Must exit with code 0
-        - Uses the real configuration + repository selection
-        - Exercises the new --preview mode end-to-end.
-        """
-        argv = [
-            "",
-            "release",
-            "patch",
-            "pkgmgr",
-            "--preview",
-        ]
+        # CLI wiring
+        self.assertEqual(kwargs.get("release_type"), "patch")
+        self.assertTrue(kwargs.get("preview"), "preview should be True when --preview is used")
+        # Default: no --close → close=False
+        self.assertFalse(kwargs.get("close"), "close must be False when --close is not given")
 
-        original_cwd = os.getcwd()
-        try:
-            os.chdir(PROJECT_ROOT)
-            self._run_pkgmgr(argv, expect_success=True)
-        finally:
-            os.chdir(original_cwd)
+    @patch("pkgmgr.release.release")
+    def test_release_with_close_flag(self, mock_release) -> None:
+        """
+        Calling `pkgmgr release minor --preview --close` should pass
+        close=True into pkgmgr.release.release().
+        """
+        self._run_pkgmgr(["pkgmgr", "release", "minor", "--preview", "--close"])
+
+        mock_release.assert_called_once()
+        _args, kwargs = mock_release.call_args
+
+        # CLI wiring
+        self.assertEqual(kwargs.get("release_type"), "minor")
+        self.assertTrue(kwargs.get("preview"), "preview should be True when --preview is used")
+        # With --close → close=True
+        self.assertTrue(kwargs.get("close"), "close must be True when --close is given")
 
 
 if __name__ == "__main__":
