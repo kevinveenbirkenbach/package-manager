@@ -18,6 +18,11 @@ Additional behaviour:
   - If `preview=True` (from --preview), no files are written and no
     Git commands are executed. Instead, a detailed summary of the
     planned changes and commands is printed.
+  - If `preview=False` and not forced, the release is executed in two
+    phases:
+      1) Preview-only run (dry-run).
+      2) Interactive confirmation, then real release if confirmed.
+    This confirmation can be skipped with the `-f/--force` flag.
 """
 
 from __future__ import annotations
@@ -598,11 +603,11 @@ def update_debian_changelog(
 
 
 # ---------------------------------------------------------------------------
-# Public release entry point
+# Internal implementation (single-phase, preview or real)
 # ---------------------------------------------------------------------------
 
 
-def release(
+def _release_impl(
     pyproject_path: str = "pyproject.toml",
     changelog_path: str = "CHANGELOG.md",
     release_type: str = "patch",
@@ -610,22 +615,16 @@ def release(
     preview: bool = False,
 ) -> None:
     """
-    Perform a release by:
+    Internal implementation that performs a single-phase release.
 
-    1. Determining the current version from Git tags.
-    2. Computing the next version (major/minor/patch).
-    3. Updating pyproject.toml with the new version.
-    4. Updating CHANGELOG.md with a new entry.
-    5. Updating additional packaging files where present:
-       - flake.nix
-       - PKGBUILD
-       - debian/changelog
-       - package-manager.spec
-    6. Staging all these files.
-    7. Committing, tagging, and pushing the changes.
+    If `preview` is True:
+      - No files are written.
+      - No git commands are executed.
+      - Planned actions are printed.
 
-    If `preview` is True, no files are written and no Git commands
-    are executed. Instead, the planned actions are printed.
+    If `preview` is False:
+      - Files are updated.
+      - Git commit, tag, and push are executed.
     """
     # 1) Determine the current version from Git tags.
     current_ver = _determine_current_version()
@@ -717,6 +716,109 @@ def release(
 
 
 # ---------------------------------------------------------------------------
+# Public release entry point (with preview-first + confirmation logic)
+# ---------------------------------------------------------------------------
+
+
+def release(
+    pyproject_path: str = "pyproject.toml",
+    changelog_path: str = "CHANGELOG.md",
+    release_type: str = "patch",
+    message: Optional[str] = None,
+    preview: bool = False,
+    force: bool = False,
+) -> None:
+    """
+    High-level release entry point.
+
+    Modes:
+
+    - preview=True:
+        * Single-phase PREVIEW only.
+        * No files are changed, no git commands are executed.
+        * `force` is ignored in this mode.
+
+    - preview=False, force=True:
+        * Single-phase REAL release, no interactive preview.
+        * Files are changed and git commands are executed immediately.
+
+    - preview=False, force=False:
+        * Two-phase flow (intended default for interactive CLI use):
+            1) PREVIEW: dry-run, printing all planned actions.
+            2) Ask the user for confirmation:
+                 "Proceed with the actual release? [y/N]: "
+               If confirmed, perform the REAL release.
+               Otherwise, abort without changes.
+
+        * In non-interactive environments (stdin not a TTY), the
+          confirmation step is skipped automatically and a single
+          REAL phase is executed, to avoid blocking on input().
+    """
+    # Explicit preview mode: just do a single PREVIEW phase and exit.
+    if preview:
+        _release_impl(
+            pyproject_path=pyproject_path,
+            changelog_path=changelog_path,
+            release_type=release_type,
+            message=message,
+            preview=True,
+        )
+        return
+
+    # Non-preview, but forced: run REAL release directly.
+    if force:
+        _release_impl(
+            pyproject_path=pyproject_path,
+            changelog_path=changelog_path,
+            release_type=release_type,
+            message=message,
+            preview=False,
+        )
+        return
+
+    # Non-interactive environment? Skip confirmation to avoid blocking.
+    if not sys.stdin.isatty():
+        _release_impl(
+            pyproject_path=pyproject_path,
+            changelog_path=changelog_path,
+            release_type=release_type,
+            message=message,
+            preview=False,
+        )
+        return
+
+    # Interactive two-phase flow:
+    print("[INFO] Running preview before actual release...\n")
+    _release_impl(
+        pyproject_path=pyproject_path,
+        changelog_path=changelog_path,
+        release_type=release_type,
+        message=message,
+        preview=True,
+    )
+
+    # Ask for confirmation
+    try:
+        answer = input("Proceed with the actual release? [y/N]: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        print("\n[INFO] Release aborted (no confirmation).")
+        return
+
+    if answer not in ("y", "yes"):
+        print("Release aborted by user. No changes were made.")
+        return
+
+    print("\n[INFO] Running REAL release...\n")
+    _release_impl(
+        pyproject_path=pyproject_path,
+        changelog_path=changelog_path,
+        release_type=release_type,
+        message=message,
+        preview=False,
+    )
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point for standalone use
 # ---------------------------------------------------------------------------
 
@@ -750,7 +852,20 @@ def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--preview",
         action="store_true",
-        help="Preview release changes without modifying files or running git.",
+        help=(
+            "Preview release changes without modifying files or running git. "
+            "This mode never executes the real release."
+        ),
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_true",
+        help=(
+            "Skip the interactive preview+confirmation step and run the "
+            "release directly."
+        ),
     )
     return parser.parse_args(argv)
 
@@ -763,4 +878,5 @@ if __name__ == "__main__":
         release_type=args.release_type,
         message=args.message,
         preview=args.preview,
+        force=args.force,
     )

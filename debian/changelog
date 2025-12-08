@@ -1,3 +1,9 @@
+package-manager (0.2.0-1) unstable; urgency=medium
+
+  * Add preview-first release workflow and extended packaging support (see ChatGPT conversation: https://chatgpt.com/share/693722b4-af9c-800f-bccc-8a4036e99630)
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Mon, 08 Dec 2025 20:31:19 +0100
+
 package-manager (0.1.0-1) unstable; urgency=medium
 
   * Updated to correct version
