@@ -1,4 +1,4 @@
-name: Test package-manager
+name: Test package-manager (e2e)
 
 on:
   push:
@@ -10,9 +10,9 @@ on:
   pull_request:
 
 jobs:
-  test:
+  test-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60  # E2E + all distros can be heavier
 
     steps:
       - name: Checkout repository
@@ -21,5 +21,5 @@ jobs:
       - name: Show Docker version
         run: docker version
 
-      - name: Run tests via make (builds Docker image and runs unit + integration tests)
-        run: make test
+      - name: Run E2E tests via make (all distros)
+        run: make test-e2e

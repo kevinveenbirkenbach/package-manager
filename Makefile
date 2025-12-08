@@ -1,5 +1,5 @@
 .PHONY: install setup uninstall aur_builder_setup \
-        test build build-no-cache
+        test build build-no-cache test-unit test-e2e
 
 # ------------------------------------------------------------
 # Local Nix cache directories in the repo
@@ -72,22 +72,47 @@ build:
 	done
 
 # ------------------------------------------------------------
-# Test target: run tests in all three images
+# Test targets
 # ------------------------------------------------------------
-test: build
+
+# Unit tests: only in Arch container (fastest feedback)
+test-unit: build
+	@echo "============================================================"
+	@echo ">>> Running UNIT tests in Arch container"
+	@echo "============================================================"
+	docker run --rm \
+		-v "$$(pwd):/src" \
+		--workdir /src \
+		--entrypoint bash \
+		"package-manager-test-arch" \
+		-c '\
+			set -e; \
+			if [ -f /etc/os-release ]; then . /etc/os-release; fi; \
+			echo "Detected container distro: $${ID:-unknown} (like: $${ID_LIKE:-})"; \
+			echo "Running Python unit tests (tests/unit)..."; \
+			git config --global --add safe.directory /src || true; \
+			cd /src; \
+			export PYTHONPATH=/src:$${PYTHONPATH}; \
+			python -m unittest discover \
+				-s tests/unit \
+				-t /src \
+				-p "test_*.py"; \
+		'
+
+# End-to-end tests: run in all distros via Nix devShell (tests/e2e)
+test-e2e: build
 	@echo "Ensuring Docker Nix volumes exist (auto-created if missing)..."
-	@echo "Running tests inside Nix devShell with cached store for all distros: $(DISTROS)"
+	@echo "Running E2E tests inside Nix devShell with cached store for all distros: $(DISTROS)"
 
 	@for distro in $(DISTROS); do \
 		echo "============================================================"; \
-		echo ">>> Running tests in container for distro: $$distro"; \
+		echo ">>> Running E2E tests in container for distro: $$distro"; \
 		echo "============================================================"; \
-		# Nur für Arch /nix als Volume mounten, bei anderen Distros nicht, \
-		# damit die im Image installierte Nix-Installation sichtbar bleibt. \
+		# Only for Arch: mount /nix as volume, for others use image-installed Nix \
 		if [ "$$distro" = "arch" ]; then \
-			NIX_STORE_MOUNT='-v $(NIX_STORE_VOLUME):/nix'; \
+			NIX_STORE_MOUNT="-v $(NIX_STORE_VOLUME):/nix"; \
 		else \
-			NIX_STORE_MOUNT=''; \
+			NIX_STORE_MOUNT=""; \
 		fi; \
 		docker run --rm \
 			-v "$$(pwd):/src" \
@@ -100,20 +125,6 @@ test: build
 				set -e; \
 				if [ -f /etc/os-release ]; then . /etc/os-release; fi; \
 				echo "Detected container distro: $${ID:-unknown} (like: $${ID_LIKE:-})"; \
-				\
-				# Arch-only: rebuild Arch package inside the container \
-				if [ "$${ID}" = "arch" ]; then \
-					echo "Remove existing Arch package-manager (if any)..."; \
-					pacman -Rns --noconfirm package-manager || true; \
-					echo "Rebuild Arch package from /src..."; \
-					rm -f /src/package-manager-*.pkg.tar.* || true; \
-					chown -R builder:builder /src; \
-					su builder -c "cd /src && makepkg -sf --noconfirm --clean"; \
-					pacman -U --noconfirm /src/package-manager-*.pkg.tar.*; \
-				else \
-					echo "Non-Arch distro – skipping Arch package rebuild."; \
-				fi; \
-				\
 				echo "Preparing Nix environment..."; \
 				if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then \
 					. "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"; \
@@ -125,7 +136,6 @@ test: build
 				export PATH; \
 				echo "PATH is now:"; \
 				echo "$$PATH"; \
-				\
 				NIX_CMD=""; \
 				if command -v nix >/dev/null 2>&1; then \
 					echo "Found nix on PATH:"; \
@@ -141,26 +151,26 @@ test: build
 						fi; \
 					done; \
 				fi; \
-				\
 				if [ -z "$$NIX_CMD" ]; then \
 					echo "ERROR: nix binary not found anywhere – cannot run devShell"; \
 					exit 1; \
 				fi; \
-				\
 				echo "Using Nix command: $$NIX_CMD"; \
-				echo "Run tests inside Nix devShell..."; \
-				git config --global --add safe.directory /src; \
+				echo "Run E2E tests inside Nix devShell (tests/e2e)..."; \
+				git config --global --add safe.directory /src || true; \
 				cd /src; \
 				"$$NIX_CMD" develop .#default --no-write-lock-file -c \
 					python3 -m unittest discover \
-						-s /src/tests \
+						-s /src/tests/e2e \
 						-p "test_*.py"; \
 			' || exit $$?; \
 	done
 
+# Combined test target for local + CI (unit + e2e)
+test: build test-unit test-e2e
 
 # ------------------------------------------------------------
-# Installer for host systems (your original logic)
+# Installer for host systems (original logic)
 # ------------------------------------------------------------
 install:
 	@if [ -n "$$IN_NIX_SHELL" ]; then \

@@ -20,7 +20,8 @@ RUN set -e; \
             base-devel \
             git \
             nix \
-            rsync && \
+            rsync \
+            python && \
         pacman -Scc --noconfirm; \
     \
     # --------------------------------------------------------
@@ -118,25 +119,23 @@ RUN set -e; \
         echo "Installing Nix on CentOS (single-user, as root, no build-users-group)..." && \
         HOME=/root NIX_INSTALLER_NO_MODIFY_PROFILE=1 sh /tmp/nix-install --no-daemon && \
         rm -f /tmp/nix-install; \
-    \
-    # --------------------------------------------------------
-    # Unknown distro
-    # --------------------------------------------------------
     else \
         echo "Unsupported base image: ${ID}" && exit 1; \
     fi
 
-# Nix CLI behavior (used later in tests)
+# ------------------------------------------------------------
+# Nix environment defaults
+# ------------------------------------------------------------
 ENV NIX_CONFIG="experimental-features = nix-command flakes"
 ENV PATH="/root/.nix-profile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # ------------------------------------------------------------
-# Create unprivileged build user (used on Arch for makepkg)
+# Unprivileged user for building Arch packages
 # ------------------------------------------------------------
 RUN useradd -m builder
 
 # ------------------------------------------------------------
-# Build stage — only active on Arch
+# Build stage (for Arch) — optional, installs package-manager inside image
 # ------------------------------------------------------------
 WORKDIR /build
 COPY . .
@@ -154,13 +153,10 @@ RUN set -e; \
     rm -rf /build
 
 # ------------------------------------------------------------
-# Runtime working directory for the mounted repository
+# Runtime working directory and dev entrypoint
 # ------------------------------------------------------------
 WORKDIR /src
 
-# ------------------------------------------------------------
-# Development entry script
-# ------------------------------------------------------------
 COPY scripts/docker-entry-dev.sh /usr/local/bin/docker-entry-dev.sh
 RUN chmod +x /usr/local/bin/docker-entry-dev.sh
 
