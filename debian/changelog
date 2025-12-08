@@ -1,3 +1,9 @@
+package-manager (0.4.2-1) unstable; urgency=medium
+
+  * Wire pkgmgr release CLI to new helper and add unit tests (see ChatGPT conversation: https://chatgpt.com/share/69374f09-c760-800f-92e4-5b44a4510b62)
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 09 Dec 2025 00:03:46 +0100
+
 package-manager (0.4.1-1) unstable; urgency=medium
 
   * Add branch close subcommand and integrate release close/editor flow (ChatGPT: https://chatgpt.com/share/69374f09-c760-800f-92e4-5b44a4510b62)

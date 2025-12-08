@@ -1,3 +1,8 @@
+## [0.4.2] - 2025-12-09
+
+* Wire pkgmgr release CLI to new helper and add unit tests (see ChatGPT conversation: https://chatgpt.com/share/69374f09-c760-800f-92e4-5b44a4510b62)
+
+
 ## [0.4.1] - 2025-12-08
 
 * Add branch close subcommand and integrate release close/editor flow (ChatGPT: https://chatgpt.com/share/69374f09-c760-800f-92e4-5b44a4510b62)
