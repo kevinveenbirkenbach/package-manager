@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 
 import argparse
@@ -12,13 +15,20 @@ class SortedSubParsersAction(argparse._SubParsersAction):
 
     def add_parser(self, name, **kwargs):
         parser = super().add_parser(name, **kwargs)
+        # Sort choices alphabetically by dest (subcommand name)
         self._choices_actions.sort(key=lambda a: a.dest)
         return parser
 
 
 def add_identifier_arguments(subparser: argparse.ArgumentParser) -> None:
     """
-    Attach generic repository selection arguments to a subparser.
+    Common identifier / selection arguments for many subcommands.
+
+    Selection modes (mutual intent, not hard-enforced):
+      - identifiers (positional): select by alias / provider/account/repo
+      - --all: select all repositories
+      - --category / --string / --tag: filter-based selection on top
+        of the full repository set
     """
     subparser.add_argument(
         "identifiers",
@@ -37,6 +47,33 @@ def add_identifier_arguments(subparser: argparse.ArgumentParser) -> None:
             "Some subcommands ask for confirmation. If you want to give this "
             "confirmation for all repositories, pipe 'yes'. E.g: "
             "yes | pkgmgr {subcommand} --all"
+        ),
+    )
+    subparser.add_argument(
+        "--category",
+        nargs="+",
+        default=[],
+        help=(
+            "Filter repositories by category patterns derived from config "
+            "filenames or repo metadata (use filename without .yml/.yaml, "
+            "or /regex/ to use a regular expression)."
+        ),
+    )
+    subparser.add_argument(
+        "--string",
+        default="",
+        help=(
+            "Filter repositories whose identifier / name / path contains this "
+            "substring (case-insensitive). Use /regex/ for regular expressions."
+        ),
+    )
+    subparser.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help=(
+            "Filter repositories by tag. Matches tags from the repository "
+            "collector and category tags. Use /regex/ for regular expressions."
         ),
     )
     subparser.add_argument(
@@ -61,7 +98,7 @@ def add_identifier_arguments(subparser: argparse.ArgumentParser) -> None:
 
 def add_install_update_arguments(subparser: argparse.ArgumentParser) -> None:
     """
-    Attach shared flags for install/update-like commands.
+    Common arguments for install/update commands.
     """
     add_identifier_arguments(subparser)
     subparser.add_argument(
@@ -94,10 +131,7 @@ def add_install_update_arguments(subparser: argparse.ArgumentParser) -> None:
 
 def create_parser(description_text: str) -> argparse.ArgumentParser:
     """
-    Create and configure the top-level argument parser for pkgmgr.
-
-    This function defines *only* the CLI surface (arguments & subcommands),
-    but no business logic.
+    Create the top-level argument parser for pkgmgr.
     """
     parser = argparse.ArgumentParser(
         description=description_text,
@@ -110,7 +144,7 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     )
 
     # ------------------------------------------------------------
-    # install / update
+    # install / update / deinstall / delete
     # ------------------------------------------------------------
     install_parser = subparsers.add_parser(
         "install",
@@ -129,9 +163,6 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
         help="Include system update commands",
     )
 
-    # ------------------------------------------------------------
-    # deinstall / delete
-    # ------------------------------------------------------------
     deinstall_parser = subparsers.add_parser(
         "deinstall",
         help="Remove alias links to repository/repositories",
@@ -147,7 +178,7 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     # ------------------------------------------------------------
     # create
     # ------------------------------------------------------------
-    create_parser = subparsers.add_parser(
+    create_cmd_parser = subparsers.add_parser(
         "create",
         help=(
             "Create new repository entries: add them to the config if not "
@@ -155,8 +186,8 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
             "remotely if --remote is set."
         ),
     )
-    add_identifier_arguments(create_parser)
-    create_parser.add_argument(
+    add_identifier_arguments(create_cmd_parser)
+    create_cmd_parser.add_argument(
         "--remote",
         action="store_true",
         help="If set, add the remote and push the initial commit.",
@@ -228,6 +259,14 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
         help="Set ignore to true or false",
     )
 
+    config_subparsers.add_parser(
+        "update",
+        help=(
+            "Update default config files in ~/.config/pkgmgr/ from the "
+            "installed pkgmgr package (does not touch config.yaml)."
+        ),
+    )
+
     # ------------------------------------------------------------
     # path / explore / terminal / code / shell
     # ------------------------------------------------------------
@@ -265,7 +304,10 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
         "--command",
         nargs=argparse.REMAINDER,
         dest="shell_command",
-        help="The shell command (and its arguments) to execute in each repository",
+        help=(
+            "The shell command (and its arguments) to execute in each "
+            "repository"
+        ),
         default=[],
     )
 
@@ -289,14 +331,16 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     branch_open.add_argument(
         "name",
         nargs="?",
-        help="Name of the new branch (optional; will be asked interactively if omitted)",
+        help=(
+            "Name of the new branch (optional; will be asked interactively "
+            "if omitted)"
+        ),
     )
     branch_open.add_argument(
         "--base",
         default="main",
         help="Base branch to create the new branch from (default: main)",
     )
-
 
     # ------------------------------------------------------------
     # release
@@ -317,9 +361,7 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
         "-m",
         "--message",
         default="",
-        help=(
-            "Optional release message to add to the changelog and tag."
-        ),
+        help="Optional release message to add to the changelog and tag.",
     )
     add_identifier_arguments(release_parser)
 
@@ -330,7 +372,8 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
         "version",
         help=(
             "Show version information for repository/ies "
-            "(git tags, pyproject.toml, flake.nix, PKGBUILD, debian, spec, Ansible Galaxy)."
+            "(git tags, pyproject.toml, flake.nix, PKGBUILD, debian, spec, "
+            "Ansible Galaxy)."
         ),
     )
     add_identifier_arguments(version_parser)
@@ -364,20 +407,29 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
         "list",
         help="List all repositories with details and status",
     )
-    list_parser.add_argument(
-        "--search",
-        default="",
-        help="Filter repositories that contain the given string",
-    )
+    # dieselbe Selektionslogik wie bei install/update/etc.:
+    add_identifier_arguments(list_parser)
     list_parser.add_argument(
         "--status",
         type=str,
         default="",
-        help="Filter repositories by status (case insensitive)",
+        help=(
+            "Filter repositories by status (case insensitive). "
+            "Use /regex/ for regular expressions."
+        ),
+    )
+    list_parser.add_argument(
+        "--description",
+        action="store_true",
+        help=(
+            "Show an additional detailed section per repository "
+            "(description, homepage, tags, categories, paths)."
+        ),
     )
 
+
     # ------------------------------------------------------------
-    # make (wrapper around make in repositories)
+    # make
     # ------------------------------------------------------------
     make_parser = subparsers.add_parser(
         "make",
@@ -403,7 +455,7 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     add_identifier_arguments(make_deinstall)
 
     # ------------------------------------------------------------
-    # Proxy commands (git, docker, docker compose)
+    # Proxy commands (git, docker, docker compose, ...)
     # ------------------------------------------------------------
     register_proxy_commands(subparsers)
 

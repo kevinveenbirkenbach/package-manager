@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 
 import sys
@@ -21,18 +24,14 @@ from pkgmgr.cli_core.commands import (
 
 def dispatch_command(args, ctx: CLIContext) -> None:
     """
-    Top-level command dispatcher.
-
-    Responsible for:
-    - computing selected repositories (where applicable)
-    - delegating to the correct command handler module
+    Dispatch the parsed arguments to the appropriate command handler.
     """
 
-    # 1) Proxy commands (git, docker, docker compose) short-circuit.
+    # First: proxy commands (git / docker / docker compose / make wrapper etc.)
     if maybe_handle_proxy(args, ctx):
         return
 
-    # 2) Determine if this command uses repository selection.
+    # Commands that operate on repository selections
     commands_with_selection: List[str] = [
         "install",
         "update",
@@ -41,26 +40,25 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         "status",
         "path",
         "shell",
-        "code",
-        "explore",
-        "terminal",
+        "create",
+        "list",
+        "make",
         "release",
         "version",
-        "make",
         "changelog",
-        # intentionally NOT "branch" – it operates on cwd only
+        "explore",
+        "terminal",
+        "code",
     ]
 
-    if args.command in commands_with_selection:
-        selected = get_selected_repos(
-            getattr(args, "all", False),
-            ctx.all_repositories,
-            getattr(args, "identifiers", []),
-        )
+    if getattr(args, "command", None) in commands_with_selection:
+        selected = get_selected_repos(args, ctx.all_repositories)
     else:
         selected = []
 
-    # 3) Delegate based on command.
+    # ------------------------------------------------------------------ #
+    # Repos-related commands
+    # ------------------------------------------------------------------ #
     if args.command in (
         "install",
         "update",
@@ -73,22 +71,41 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         "list",
     ):
         handle_repos_command(args, ctx, selected)
-    elif args.command in ("code", "explore", "terminal"):
+        return
+
+    # ------------------------------------------------------------------ #
+    # Tools (explore / terminal / code)
+    # ------------------------------------------------------------------ #
+    if args.command in ("explore", "terminal", "code"):
         handle_tools_command(args, ctx, selected)
-    elif args.command == "release":
+        return
+
+    # ------------------------------------------------------------------ #
+    # Release / Version / Changelog / Config / Make / Branch
+    # ------------------------------------------------------------------ #
+    if args.command == "release":
         handle_release(args, ctx, selected)
-    elif args.command == "version":
+        return
+
+    if args.command == "version":
         handle_version(args, ctx, selected)
-    elif args.command == "changelog":
+        return
+
+    if args.command == "changelog":
         handle_changelog(args, ctx, selected)
-    elif args.command == "config":
+        return
+
+    if args.command == "config":
         handle_config(args, ctx)
-    elif args.command == "make":
+        return
+
+    if args.command == "make":
         handle_make(args, ctx, selected)
-    elif args.command == "branch":
-        # Branch commands currently operate on the current working
-        # directory only, not on the pkgmgr repository selection.
+        return
+
+    if args.command == "branch":
         handle_branch(args, ctx)
-    else:
-        print(f"Unknown command: {args.command}")
-        sys.exit(2)
+        return
+
+    print(f"Unknown command: {args.command}")
+    sys.exit(2)

@@ -73,20 +73,16 @@ class TestCliVersion(unittest.TestCase):
         # Patch get_selected_repos so that 'version' operates on our temp dir.
         # In the new modular CLI this function is used inside
         # pkgmgr.cli_core.dispatch, so we patch it there.
-        def _fake_selected_repos(
-            all_flag: bool,
-            repos: List[dict],
-            identifiers: List[str],
-        ):
-            # We always return exactly one "repository" whose directory is the temp dir.
+        def _fake_selected_repos(args, all_repositories):
             return [
-                {
-                    "provider": "github.com",
-                    "account": "test",
-                    "repository": "pkgmgr-test",
-                    "directory": self._tmp_dir.name,
-                }
-            ]
+            {
+                "provider": "github.com",
+                "account": "test",
+                "repository": "pkgmgr-test",
+                "directory": self._tmp_dir.name,
+            }
+        ]
+
 
         self._patch_get_selected_repos = mock.patch(
             "pkgmgr.cli_core.dispatch.get_selected_repos",

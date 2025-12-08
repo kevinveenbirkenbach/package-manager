@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 
 import argparse
@@ -7,8 +10,8 @@ from typing import Dict, List
 from pkgmgr.cli_core.context import CLIContext
 from pkgmgr.clone_repos import clone_repos
 from pkgmgr.exec_proxy_command import exec_proxy_command
-from pkgmgr.get_selected_repos import get_selected_repos
 from pkgmgr.pull_with_verification import pull_with_verification
+from pkgmgr.get_selected_repos import get_selected_repos
 
 
 PROXY_COMMANDS: Dict[str, List[str]] = {
@@ -42,10 +45,7 @@ PROXY_COMMANDS: Dict[str, List[str]] = {
 
 def _add_proxy_identifier_arguments(parser: argparse.ArgumentParser) -> None:
     """
-    Local copy of the identifier argument set for proxy commands.
-
-    This duplicates the semantics of cli.parser.add_identifier_arguments
-    to avoid circular imports.
+    Selection arguments for proxy subcommands.
     """
     parser.add_argument(
         "identifiers",
@@ -64,6 +64,24 @@ def _add_proxy_identifier_arguments(parser: argparse.ArgumentParser) -> None:
             "Some subcommands ask for confirmation. If you want to give this "
             "confirmation for all repositories, pipe 'yes'. E.g: "
             "yes | pkgmgr {subcommand} --all"
+        ),
+    )
+    parser.add_argument(
+        "--category",
+        nargs="+",
+        default=[],
+        help=(
+            "Filter repositories by category patterns derived from config "
+            "filenames or repo metadata (use filename without .yml/.yaml, "
+            "or /regex/ to use a regular expression)."
+        ),
+    )
+    parser.add_argument(
+        "--string",
+        default="",
+        help=(
+            "Filter repositories whose identifier / name / path contains this "
+            "substring (case-insensitive). Use /regex/ for regular expressions."
         ),
     )
     parser.add_argument(
@@ -90,8 +108,7 @@ def register_proxy_commands(
     subparsers: argparse._SubParsersAction,
 ) -> None:
     """
-    Register proxy commands (git, docker, docker compose) as
-    top-level subcommands on the given subparsers.
+    Register proxy subcommands for git, docker, docker compose, ...
     """
     for command, subcommands in PROXY_COMMANDS.items():
         for subcommand in subcommands:
@@ -100,7 +117,8 @@ def register_proxy_commands(
                 help=f"Proxies '{command} {subcommand}' to repository/ies",
                 description=(
                     f"Executes '{command} {subcommand}' for the "
-                    "identified repos.\nTo recieve more help execute "
+                    "selected repositories. "
+                    "For more details see the underlying tool's help: "
                     f"'{command} {subcommand} --help'"
                 ),
                 formatter_class=argparse.RawTextHelpFormatter,
@@ -129,8 +147,8 @@ def register_proxy_commands(
 
 def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
     """
-    If the parsed command is a proxy command, execute it and return True.
-    Otherwise return False to let the main dispatcher continue.
+    If the top-level command is one of the proxy subcommands
+    (git / docker / docker compose), handle it here and return True.
     """
     all_proxy_subcommands = {
         sub for subs in PROXY_COMMANDS.values() for sub in subs
@@ -139,12 +157,7 @@ def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
     if args.command not in all_proxy_subcommands:
         return False
 
-    # Use generic selection semantics for proxies
-    selected = get_selected_repos(
-        getattr(args, "all", False),
-        ctx.all_repositories,
-        getattr(args, "identifiers", []),
-    )
+    selected = get_selected_repos(args, ctx.all_repositories)
 
     for command, subcommands in PROXY_COMMANDS.items():
         if args.command not in subcommands:

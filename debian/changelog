@@ -1,3 +1,17 @@
+package-manager (0.3.0-1) unstable; urgency=medium
+
+  * Massive refactor and feature expansion:
+- Complete rewrite of config loading system (layered defaults + user config)
+- New selection engine (--string, --category, --tag)
+- Overhauled list output (colored statuses, alias highlight)
+- New config update logic + default YAML sync
+- Improved proxy command handling
+- Full CLI routing refactor
+- Expanded E2E tests for list, proxy, and selection logic
+Konversation: https://chatgpt.com/share/693745c3-b8d8-800f-aa29-c8481a2ffae1
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Mon, 08 Dec 2025 22:40:49 +0100
+
 package-manager (0.2.0-1) unstable; urgency=medium
 
   * Add preview-first release workflow and extended packaging support (see ChatGPT conversation: https://chatgpt.com/share/693722b4-af9c-800f-bccc-8a4036e99630)

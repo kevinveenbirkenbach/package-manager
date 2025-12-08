@@ -9,9 +9,9 @@ import sys
 from pkgmgr.load_config import load_config
 from pkgmgr.cli_core import CLIContext, create_parser, dispatch_command
 
-# Define configuration file paths.
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-USER_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "config.yaml")
+# User config lives in the home directory:
+#   ~/.config/pkgmgr/config.yaml
+USER_CONFIG_PATH = os.path.expanduser("~/.config/pkgmgr/config.yaml")
 
 DESCRIPTION_TEXT = """\
 \033[1;32mPackage Manager 🤖📦\033[0m
@@ -63,20 +63,31 @@ For detailed help on each command, use:
 
 
 def main() -> None:
-    # Load merged configuration
+    """
+    Entry point for the pkgmgr CLI.
+    """
+
     config_merged = load_config(USER_CONFIG_PATH)
 
-    repositories_base_dir = os.path.expanduser(
-        config_merged["directories"]["repositories"]
+    # Directories: be robust and provide sane defaults if missing
+    directories = config_merged.get("directories") or {}
+    repositories_dir = os.path.expanduser(
+        directories.get("repositories", "~/Repositories")
     )
     binaries_dir = os.path.expanduser(
-        config_merged["directories"]["binaries"]
+        directories.get("binaries", "~/.local/bin")
     )
-    all_repositories = config_merged["repositories"]
+
+    # Ensure the merged config actually contains the resolved directories
+    config_merged.setdefault("directories", {})
+    config_merged["directories"]["repositories"] = repositories_dir
+    config_merged["directories"]["binaries"] = binaries_dir
+
+    all_repositories = config_merged.get("repositories", [])
 
     ctx = CLIContext(
         config_merged=config_merged,
-        repositories_base_dir=repositories_base_dir,
+        repositories_base_dir=repositories_dir,
         all_repositories=all_repositories,
         binaries_dir=binaries_dir,
         user_config_path=USER_CONFIG_PATH,
@@ -85,7 +96,6 @@ def main() -> None:
     parser = create_parser(DESCRIPTION_TEXT)
     args = parser.parse_args()
 
-    # If no subcommand is provided, show help
     if not getattr(args, "command", None):
         parser.print_help()
         return
