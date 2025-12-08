@@ -98,6 +98,11 @@ class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
         The installers' supports() are forced to True so that only the
         capability-shadowing logic decides whether they are skipped.
         The installers' run() methods are patched to avoid real commands.
+
+        NOTE:
+        We patch resolve_command_for_repo() to always return a dummy
+        command path so that command resolution does not interfere with
+        capability-layering tests.
         """
         if selected_repos is None:
             repo = {}
@@ -128,7 +133,8 @@ class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
              patch.object(install_mod, "get_repo_dir", return_value=repo_dir), \
              patch.object(install_mod, "verify_repository", return_value=(True, [], None, None)), \
              patch.object(install_mod, "create_ink"), \
-             patch.object(install_mod, "clone_repos"):
+             patch.object(install_mod, "clone_repos"), \
+             patch.object(install_mod, "resolve_command_for_repo", return_value="/bin/dummy"):
 
             install_repos(
                 selected_repos=selected_repos,
@@ -143,6 +149,7 @@ class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
             )
 
         return called_installers
+
 
     # ------------------------------------------------------------------
     # Scenario 1: Only Makefile with install target

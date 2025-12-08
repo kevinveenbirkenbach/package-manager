@@ -8,7 +8,8 @@ This module orchestrates the installation of repositories by:
 
   1. Ensuring the repository directory exists (cloning if necessary).
   2. Verifying the repository according to the configured policies.
-  3. Creating executable links using create_ink().
+  3. Creating executable links using create_ink(), after resolving the
+     appropriate command via resolve_command_for_repo().
   4. Running a sequence of modular installer components that handle
      specific technologies or manifests (PKGBUILD, Nix flakes, Python
      via pyproject.toml, Makefile, OS-specific package metadata).
@@ -25,8 +26,8 @@ from pkgmgr.get_repo_dir import get_repo_dir
 from pkgmgr.create_ink import create_ink
 from pkgmgr.verify import verify_repository
 from pkgmgr.clone_repos import clone_repos
-
 from pkgmgr.context import RepoContext
+from pkgmgr.resolve_command import resolve_command_for_repo
 
 # Installer implementations
 from pkgmgr.installers.os_packages import (
@@ -204,7 +205,24 @@ def install_repos(
             update_dependencies=update_dependencies,
         )
 
-        # Create the symlink using create_ink before running installers.
+        # ------------------------------------------------------------
+        # Resolve the command for this repository before creating the link.
+        # If no command is resolved, no link will be created.
+        # ------------------------------------------------------------
+        resolved_command = resolve_command_for_repo(
+            repo=repo,
+            repo_identifier=identifier,
+            repo_dir=repo_dir,
+        )
+
+        if resolved_command:
+            repo["command"] = resolved_command
+        else:
+            repo.pop("command", None)
+
+        # ------------------------------------------------------------
+        # Create the symlink using create_ink (if a command is set).
+        # ------------------------------------------------------------
         create_ink(
             repo,
             repositories_base_dir,
@@ -239,7 +257,7 @@ def install_repos(
                 continue
 
             # ------------------------------------------------------------
-            # Debug + aussagekräftiger Fehler bei Installer-Fail
+            # Debug output + clear error if an installer fails
             # ------------------------------------------------------------
             if not quiet:
                 print(
@@ -268,10 +286,9 @@ def install_repos(
                     f"        pkgmgr install {identifier} --clone-mode shallow --no-verification"
                 )
 
-                # Re-raise, damit CLI/Test sauber fehlschlägt,
-                # aber nun mit deutlich mehr Kontext.
+                # Re-raise so that CLI/tests fail clearly,
+                # but now with much more context.
                 raise
 
-            # Nur wenn der Installer erfolgreich war, Capabilities mergen
+            # Only merge capabilities if the installer succeeded
             provided_capabilities.update(caps)
-

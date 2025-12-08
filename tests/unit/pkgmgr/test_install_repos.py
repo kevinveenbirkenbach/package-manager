@@ -11,7 +11,7 @@ from pkgmgr.installers.base import BaseInstaller
 class DummyInstaller(BaseInstaller):
     """Simple installer for testing orchestration."""
 
-    layer = None  # keine speziellen Capabilities
+    layer = None  # no specific capabilities
 
     def __init__(self):
         self.calls = []
@@ -26,6 +26,7 @@ class DummyInstaller(BaseInstaller):
 
 class TestInstallReposOrchestration(unittest.TestCase):
     @patch("pkgmgr.install_repos.create_ink")
+    @patch("pkgmgr.install_repos.resolve_command_for_repo")
     @patch("pkgmgr.install_repos.verify_repository")
     @patch("pkgmgr.install_repos.get_repo_dir")
     @patch("pkgmgr.install_repos.get_repo_identifier")
@@ -36,6 +37,7 @@ class TestInstallReposOrchestration(unittest.TestCase):
         mock_get_repo_identifier,
         mock_get_repo_dir,
         mock_verify_repository,
+        mock_resolve_command_for_repo,
         mock_create_ink,
     ):
         repo1 = {"name": "repo1"}
@@ -49,6 +51,9 @@ class TestInstallReposOrchestration(unittest.TestCase):
 
         # Simulate verification success: (ok, errors, commit, key)
         mock_verify_repository.return_value = (True, [], "commit", "key")
+
+        # Resolve commands for both repos so create_ink will be called
+        mock_resolve_command_for_repo.side_effect = ["/bin/cmd1", "/bin/cmd2"]
 
         # Ensure directories exist (no cloning)
         with patch("os.path.exists", return_value=True):
@@ -75,6 +80,7 @@ class TestInstallReposOrchestration(unittest.TestCase):
         self.assertEqual(dummy_installer.calls, ["id1", "id2"])
         self.assertEqual(mock_create_ink.call_count, 2)
         self.assertEqual(mock_verify_repository.call_count, 2)
+        self.assertEqual(mock_resolve_command_for_repo.call_count, 2)
 
     @patch("pkgmgr.install_repos.verify_repository")
     @patch("pkgmgr.install_repos.get_repo_dir")
@@ -100,6 +106,7 @@ class TestInstallReposOrchestration(unittest.TestCase):
         dummy_installer = DummyInstaller()
         with patch("os.path.exists", return_value=True), \
              patch("pkgmgr.install_repos.create_ink") as mock_create_ink, \
+             patch("pkgmgr.install_repos.resolve_command_for_repo") as mock_resolve_cmd, \
              patch("builtins.input", return_value="n"):
             old_installers = install_module.INSTALLERS
             install_module.INSTALLERS = [dummy_installer]
@@ -121,6 +128,7 @@ class TestInstallReposOrchestration(unittest.TestCase):
         # No installer run and no create_ink when user declines
         self.assertEqual(dummy_installer.calls, [])
         mock_create_ink.assert_not_called()
+        mock_resolve_cmd.assert_not_called()
 
 
 if __name__ == "__main__":
