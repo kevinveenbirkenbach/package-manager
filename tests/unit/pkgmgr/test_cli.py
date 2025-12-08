@@ -70,8 +70,14 @@ class TestCliVersion(unittest.TestCase):
         )
         self.mock_load_config = self._patch_load_config.start()
 
-        # Patch get_selected_repos so that 'version' operates on our temp dir
-        def _fake_selected_repos(all_flag: bool, repos: List[dict], identifiers: List[str]):
+        # Patch get_selected_repos so that 'version' operates on our temp dir.
+        # In the new modular CLI this function is used inside
+        # pkgmgr.cli_core.dispatch, so we patch it there.
+        def _fake_selected_repos(
+            all_flag: bool,
+            repos: List[dict],
+            identifiers: List[str],
+        ):
             # We always return exactly one "repository" whose directory is the temp dir.
             return [
                 {
@@ -83,7 +89,8 @@ class TestCliVersion(unittest.TestCase):
             ]
 
         self._patch_get_selected_repos = mock.patch(
-            "pkgmgr.cli.get_selected_repos", side_effect=_fake_selected_repos
+            "pkgmgr.cli_core.dispatch.get_selected_repos",
+            side_effect=_fake_selected_repos,
         )
         self.mock_get_selected_repos = self._patch_get_selected_repos.start()
 
@@ -125,7 +132,10 @@ class TestCliVersion(unittest.TestCase):
             f.write(content)
         return path
 
-    def _run_cli_version_and_capture(self, extra_args: List[str] | None = None) -> str:
+    def _run_cli_version_and_capture(
+        self,
+        extra_args: List[str] | None = None,
+    ) -> str:
         """
         Run 'pkgmgr version [extra_args]' via cli.main() and return captured stdout.
         """
@@ -158,9 +168,9 @@ class TestCliVersion(unittest.TestCase):
         # Arrange: pyproject.toml with version 1.2.3
         self._write_pyproject("1.2.3")
 
-        # Arrange: mock git tags
+        # Arrange: mock git tags used by handle_version
         with mock.patch(
-            "pkgmgr.git_utils.get_tags",
+            "pkgmgr.cli_core.commands.version.get_tags",
             return_value=["v1.2.0", "v1.2.3", "v1.0.0"],
         ):
             # Act
@@ -192,7 +202,7 @@ class TestCliVersion(unittest.TestCase):
 
         # Arrange: mock git tags (latest is 1.2.3)
         with mock.patch(
-            "pkgmgr.git_utils.get_tags",
+            "pkgmgr.cli_core.commands.version.get_tags",
             return_value=["v1.2.3"],
         ):
             stdout = self._run_cli_version_and_capture()
@@ -218,9 +228,9 @@ class TestCliVersion(unittest.TestCase):
         # Arrange: pyproject.toml exists
         self._write_pyproject("0.0.1")
 
-        # Arrange: no tags returned
+        # Arrange: no tags returned (again: patch handle_version's get_tags)
         with mock.patch(
-            "pkgmgr.git_utils.get_tags",
+            "pkgmgr.cli_core.commands.version.get_tags",
             return_value=[],
         ):
             stdout = self._run_cli_version_and_capture()
