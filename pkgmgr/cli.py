@@ -4,8 +4,8 @@ import os
 import yaml
 import argparse
 import json
-import os
 import sys
+from typing import Optional
 
 # Define configuration file paths.
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -33,7 +33,7 @@ from pkgmgr.update_repos import update_repos
 
 # Commands proxied by package-manager
 PROXY_COMMANDS = {
-    "git":[
+    "git": [
         "pull",
         "push",
         "diff",
@@ -44,21 +44,22 @@ PROXY_COMMANDS = {
         "reset",
         "revert",
         "rebase",
-        "commit"
+        "commit",
     ],
-    "docker":[
+    "docker": [
         "start",
         "stop",
-        "build"
+        "build",
     ],
-    "docker compose":[
+    "docker compose": [
         "up",
         "down",
         "exec",
         "ps",
         "restart",
-    ]
+    ],
 }
+
 
 class SortedSubParsersAction(argparse._SubParsersAction):
     def add_parser(self, name, **kwargs):
@@ -67,12 +68,16 @@ class SortedSubParsersAction(argparse._SubParsersAction):
         self._choices_actions.sort(key=lambda a: a.dest)
         return parser
 
-# Main program.
+
 def main() -> None:
     CONFIG_MERGED = load_config(USER_CONFIG_PATH)
-    REPOSITORIES_BASE_DIR = os.path.expanduser(CONFIG_MERGED["directories"]["repositories"])
+    REPOSITORIES_BASE_DIR = os.path.expanduser(
+        CONFIG_MERGED["directories"]["repositories"]
+    )
     ALL_REPOSITORIES = CONFIG_MERGED["repositories"]
-    BINARIES_DIRECTORY = os.path.expanduser(CONFIG_MERGED["directories"]["binaries"])
+    BINARIES_DIRECTORY = os.path.expanduser(
+        CONFIG_MERGED["directories"]["binaries"]
+    )
     description_text = """\
 \033[1;32mPackage Manager 🤖📦\033[0m
 \033[3mKevin's Package Manager is a multi-repository, multi-package, and multi-format 
@@ -121,23 +126,52 @@ For detailed help on each command, use:
     \033[1mpkgmgr <command> --help\033[0m
 """
 
-    parser = argparse.ArgumentParser(description=description_text,formatter_class=argparse.RawTextHelpFormatter)
-    subparsers = parser.add_subparsers(dest="command", help="Subcommands", action=SortedSubParsersAction)
+    parser = argparse.ArgumentParser(
+        description=description_text,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    subparsers = parser.add_subparsers(
+        dest="command", help="Subcommands", action=SortedSubParsersAction
+    )
+
     def add_identifier_arguments(subparser):
         subparser.add_argument(
             "identifiers",
             nargs="*",
-            help="Identifier(s) for repositories. Default: Repository of current folder.",
-            )
+            help=(
+                "Identifier(s) for repositories. "
+                "Default: Repository of current folder."
+            ),
+        )
         subparser.add_argument(
-            "--all", 
-            action="store_true", 
-            default=False, 
-            help="Apply the subcommand to all repositories in the config. Some subcommands ask for confirmation. If you want to give this confirmation for all repositories, pipe 'yes'. E.g: yes | pkgmgr {subcommand} --all"
-            )
-        subparser.add_argument("--preview", action="store_true", help="Preview changes without executing commands")
-        subparser.add_argument("--list", action="store_true", help="List affected repositories (with preview or status)")
-        subparser.add_argument("-a", "--args", nargs=argparse.REMAINDER, dest="extra_args", help="Additional parameters to be attached.",default=[])
+            "--all",
+            action="store_true",
+            default=False,
+            help=(
+                "Apply the subcommand to all repositories in the config. "
+                "Some subcommands ask for confirmation. If you want to give this "
+                "confirmation for all repositories, pipe 'yes'. E.g: "
+                "yes | pkgmgr {subcommand} --all"
+            ),
+        )
+        subparser.add_argument(
+            "--preview",
+            action="store_true",
+            help="Preview changes without executing commands",
+        )
+        subparser.add_argument(
+            "--list",
+            action="store_true",
+            help="List affected repositories (with preview or status)",
+        )
+        subparser.add_argument(
+            "-a",
+            "--args",
+            nargs=argparse.REMAINDER,
+            dest="extra_args",
+            help="Additional parameters to be attached.",
+            default=[],
+        )
 
     def add_install_update_arguments(subparser):
         add_identifier_arguments(subparser)
@@ -162,127 +196,248 @@ For detailed help on each command, use:
             "--clone-mode",
             choices=["ssh", "https", "shallow"],
             default="ssh",
-            help="Specify the clone mode: ssh, https, or shallow (HTTPS shallow clone; default: ssh)",
+            help=(
+                "Specify the clone mode: ssh, https, or shallow "
+                "(HTTPS shallow clone; default: ssh)"
+            ),
         )
 
-    install_parser = subparsers.add_parser("install", help="Setup repository/repositories alias links to executables")
+    install_parser = subparsers.add_parser(
+        "install",
+        help="Setup repository/repositories alias links to executables",
+    )
     add_install_update_arguments(install_parser)
 
-    update_parser = subparsers.add_parser("update", help="Update (pull + install) repository/repositories")
+    update_parser = subparsers.add_parser(
+        "update", help="Update (pull + install) repository/repositories"
+    )
     add_install_update_arguments(update_parser)
-    update_parser.add_argument("--system", action="store_true", help="Include system update commands")
+    update_parser.add_argument(
+        "--system",
+        action="store_true",
+        help="Include system update commands",
+    )
 
-
-    deinstall_parser = subparsers.add_parser("deinstall", help="Remove alias links to repository/repositories")
+    deinstall_parser = subparsers.add_parser(
+        "deinstall", help="Remove alias links to repository/repositories"
+    )
     add_identifier_arguments(deinstall_parser)
 
-    delete_parser = subparsers.add_parser("delete", help="Delete repository/repositories alias links to executables")
+    delete_parser = subparsers.add_parser(
+        "delete",
+        help="Delete repository/repositories alias links to executables",
+    )
     add_identifier_arguments(delete_parser)
-    
-    # Add the 'create' subcommand (with existing identifier arguments)
+
     create_parser = subparsers.add_parser(
         "create",
-        help="Create new repository entries: add them to the config if not already present, initialize the local repository, and push remotely if --remote is set."
+        help=(
+            "Create new repository entries: add them to the config if not "
+            "already present, initialize the local repository, and push "
+            "remotely if --remote is set."
+        ),
     )
-    # Reuse the common identifier arguments
     add_identifier_arguments(create_parser)
     create_parser.add_argument(
         "--remote",
         action="store_true",
-        help="If set, add the remote and push the initial commit."
+        help="If set, add the remote and push the initial commit.",
     )
 
-    status_parser = subparsers.add_parser("status", help="Show status for repository/repositories or system")
+    status_parser = subparsers.add_parser(
+        "status", help="Show status for repository/repositories or system"
+    )
     add_identifier_arguments(status_parser)
-    status_parser.add_argument("--system", action="store_true", help="Show system status")
+    status_parser.add_argument(
+        "--system",
+        action="store_true",
+        help="Show system status",
+    )
 
     config_parser = subparsers.add_parser("config", help="Manage configuration")
-    config_subparsers = config_parser.add_subparsers(dest="subcommand", help="Config subcommands", required=True)
-    config_show = config_subparsers.add_parser("show", help="Show configuration")
+    config_subparsers = config_parser.add_subparsers(
+        dest="subcommand", help="Config subcommands", required=True
+    )
+    config_show = config_subparsers.add_parser(
+        "show", help="Show configuration"
+    )
     add_identifier_arguments(config_show)
-    config_add = config_subparsers.add_parser("add", help="Interactively add a new repository entry")
-    config_edit = config_subparsers.add_parser("edit", help="Edit configuration file with nano")
-    config_init_parser = config_subparsers.add_parser("init", help="Initialize user configuration by scanning the base directory")
-    config_delete = config_subparsers.add_parser("delete", help="Delete repository entry from user config")
+    config_add = config_subparsers.add_parser(
+        "add", help="Interactively add a new repository entry"
+    )
+    config_edit = config_subparsers.add_parser(
+        "edit", help="Edit configuration file with nano"
+    )
+    config_init_parser = config_subparsers.add_parser(
+        "init",
+        help=(
+            "Initialize user configuration by scanning the base directory"
+        ),
+    )
+    config_delete = config_subparsers.add_parser(
+        "delete", help="Delete repository entry from user config"
+    )
     add_identifier_arguments(config_delete)
-    config_ignore = config_subparsers.add_parser("ignore", help="Set ignore flag for repository entries in user config")
+    config_ignore = config_subparsers.add_parser(
+        "ignore",
+        help="Set ignore flag for repository entries in user config",
+    )
     add_identifier_arguments(config_ignore)
-    config_ignore.add_argument("--set", choices=["true", "false"], required=True, help="Set ignore to true or false")
-    path_parser = subparsers.add_parser("path", help="Print the path(s) of repository/repositories")
+    config_ignore.add_argument(
+        "--set",
+        choices=["true", "false"],
+        required=True,
+        help="Set ignore to true or false",
+    )
+
+    path_parser = subparsers.add_parser(
+        "path", help="Print the path(s) of repository/repositories"
+    )
     add_identifier_arguments(path_parser)
-    explore_parser = subparsers.add_parser("explore", help="Open repository in Nautilus file manager")
+
+    explore_parser = subparsers.add_parser(
+        "explore", help="Open repository in Nautilus file manager"
+    )
     add_identifier_arguments(explore_parser)
 
-    terminal_parser = subparsers.add_parser("terminal", help="Open repository in a new GNOME Terminal tab")
+    terminal_parser = subparsers.add_parser(
+        "terminal", help="Open repository in a new GNOME Terminal tab"
+    )
     add_identifier_arguments(terminal_parser)
 
     release_parser = subparsers.add_parser(
         "release",
-        help="Create a release for repository/ies by incrementing version and updating the changelog."
+        help=(
+            "Create a release for repository/ies by incrementing version "
+            "and updating the changelog."
+        ),
     )
     release_parser.add_argument(
         "release_type",
         choices=["major", "minor", "patch"],
-        help="Type of version increment for the release (major, minor, patch)."
+        help="Type of version increment for the release (major, minor, patch).",
     )
     release_parser.add_argument(
-        "-m", "--message",
+        "-m",
+        "--message",
         default="",
-        help="Optional release message to add to the changelog and tag."
+        help="Optional release message to add to the changelog and tag.",
     )
     add_identifier_arguments(release_parser)
 
-    
-    code_parser = subparsers.add_parser("code", help="Open repository workspace with VS Code")
-    add_identifier_arguments(code_parser)   
-    
-    list_parser = subparsers.add_parser("list", help="List all repositories with details and status")
-    list_parser.add_argument("--search", default="", help="Filter repositories that contain the given string")
-    list_parser.add_argument("--status", type=str, default="", help="Filter repositories by status (case insensitive)")
-    
-    # Add the subcommand parser for "shell"
-    shell_parser = subparsers.add_parser("shell", help="Execute a shell command in each repository")
-    add_identifier_arguments(shell_parser)
-    shell_parser.add_argument("-c", "--command", nargs=argparse.REMAINDER, dest="shell_command", help="The shell command (and its arguments) to execute in each repository",default=[])
+    # Version command: like other repo commands, supports identifiers + --all
+    version_parser = subparsers.add_parser(
+        "version",
+        help=(
+            "Show version information for repository/ies "
+            "(git tags, pyproject.toml, flake.nix, PKGBUILD, debian, spec, Ansible Galaxy)."
+        ),
+    )
+    add_identifier_arguments(version_parser)
 
-    make_parser = subparsers.add_parser("make", help="Executes make commands")
+    code_parser = subparsers.add_parser(
+        "code", help="Open repository workspace with VS Code"
+    )
+    add_identifier_arguments(code_parser)
+
+    list_parser = subparsers.add_parser(
+        "list", help="List all repositories with details and status"
+    )
+    list_parser.add_argument(
+        "--search",
+        default="",
+        help="Filter repositories that contain the given string",
+    )
+    list_parser.add_argument(
+        "--status",
+        type=str,
+        default="",
+        help="Filter repositories by status (case insensitive)",
+    )
+
+    shell_parser = subparsers.add_parser(
+        "shell", help="Execute a shell command in each repository"
+    )
+    add_identifier_arguments(shell_parser)
+    shell_parser.add_argument(
+        "-c",
+        "--command",
+        nargs=argparse.REMAINDER,
+        dest="shell_command",
+        help=(
+            "The shell command (and its arguments) to execute in each "
+            "repository"
+        ),
+        default=[],
+    )
+
+    make_parser = subparsers.add_parser(
+        "make", help="Executes make commands"
+    )
     add_identifier_arguments(make_parser)
-    make_subparsers = make_parser.add_subparsers(dest="subcommand", help="Make subcommands", required=True)
-    make_install = make_subparsers.add_parser("install", help="Executes the make install command")
+    make_subparsers = make_parser.add_subparsers(
+        dest="subcommand", help="Make subcommands", required=True
+    )
+    make_install = make_subparsers.add_parser(
+        "install", help="Executes the make install command"
+    )
     add_identifier_arguments(make_install)
-    make_deinstall = make_subparsers.add_parser("deinstall", help="Executes the make deinstall command")
+    make_deinstall = make_subparsers.add_parser(
+        "deinstall", help="Executes the make deinstall command"
+    )
 
     proxy_command_parsers = {}
     for command, subcommands in PROXY_COMMANDS.items():
         for subcommand in subcommands:
-            proxy_command_parsers[f"{command}_{subcommand}"] = subparsers.add_parser(
-                subcommand,
-                help=f"Proxies '{command} {subcommand}' to repository/ies",
-                description=f"Executes '{command} {subcommand}' for the identified repos.\nTo recieve more help execute '{command} {subcommand} --help'",
-                formatter_class=argparse.RawTextHelpFormatter
+            proxy_command_parsers[f"{command}_{subcommand}"] = (
+                subparsers.add_parser(
+                    subcommand,
+                    help=f"Proxies '{command} {subcommand}' to repository/ies",
+                    description=(
+                        f"Executes '{command} {subcommand}' for the "
+                        "identified repos.\nTo recieve more help execute "
+                        f"'{command} {subcommand} --help'"
+                    ),
+                    formatter_class=argparse.RawTextHelpFormatter,
                 )
+            )
             if subcommand in ["pull", "clone"]:
-                proxy_command_parsers[f"{command}_{subcommand}"].add_argument(
+                proxy_command_parsers[
+                    f"{command}_{subcommand}"
+                ].add_argument(
                     "--no-verification",
                     action="store_true",
                     default=False,
                     help="Disable verification via commit/gpg",
                 )
             if subcommand == "clone":
-                proxy_command_parsers[f"{command}_{subcommand}"].add_argument(
+                proxy_command_parsers[
+                    f"{command}_{subcommand}"
+                ].add_argument(
                     "--clone-mode",
                     choices=["ssh", "https", "shallow"],
                     default="ssh",
-                    help="Specify the clone mode: ssh, https, or shallow (HTTPS shallow clone; default: ssh)",
+                    help=(
+                        "Specify the clone mode: ssh, https, or shallow "
+                        "(HTTPS shallow clone; default: ssh)"
+                    ),
                 )
-            add_identifier_arguments(proxy_command_parsers[f"{command}_{subcommand}"])
-            
+            add_identifier_arguments(
+                proxy_command_parsers[f"{command}_{subcommand}"]
+            )
+
     args = parser.parse_args()
 
-    # All 
-    if args.command and not args.command in ["config","list","create"]:
-        selected = get_selected_repos(args.all,ALL_REPOSITORIES,args.identifiers)
-        
+    # Select repositories for commands that operate on the repository list.
+    # (config, list, create work differently and don't use selection)
+    if args.command and args.command not in ["config", "list", "create"]:
+        selected = get_selected_repos(
+            args.all, ALL_REPOSITORIES, getattr(args, "identifiers", [])
+        )
+    else:
+        selected = []
+
+    # Proxy commands (git, docker, docker compose)
     for command, subcommands in PROXY_COMMANDS.items():
         for subcommand in subcommands:
             if args.command == subcommand:
@@ -293,26 +448,45 @@ For detailed help on each command, use:
                         ALL_REPOSITORIES,
                         args.preview,
                         args.no_verification,
-                        args.clone_mode
-                        )
+                        args.clone_mode,
+                    )
                 elif args.command == "pull":
-                    from pkgmgr.pull_with_verification import pull_with_verification
+                    from pkgmgr.pull_with_verification import (
+                        pull_with_verification,
+                    )
+
                     pull_with_verification(
                         selected,
                         REPOSITORIES_BASE_DIR,
                         ALL_REPOSITORIES,
                         args.extra_args,
                         args.no_verification,
-                        args.preview
-                        )
+                        args.preview,
+                    )
                 else:
-                    exec_proxy_command(command,selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.command, args.extra_args, args.preview)
-                exit(0)
-    
+                    exec_proxy_command(
+                        command,
+                        selected,
+                        REPOSITORIES_BASE_DIR,
+                        ALL_REPOSITORIES,
+                        args.command,
+                        args.extra_args,
+                        args.preview,
+                    )
+                sys.exit(0)
+
     if args.command in ["make"]:
-        exec_proxy_command(args.command,selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.subcommand, args.extra_args, args.preview)
-        exit(0)
-        
+        exec_proxy_command(
+            args.command,
+            selected,
+            REPOSITORIES_BASE_DIR,
+            ALL_REPOSITORIES,
+            args.subcommand,
+            args.extra_args,
+            args.preview,
+        )
+        sys.exit(0)
+
     # Dispatch commands.
     if args.command == "install":
         install_repos(
@@ -325,24 +499,47 @@ For detailed help on each command, use:
             args.quiet,
             args.clone_mode,
             args.dependencies,
-            )
+        )
     elif args.command == "create":
         from pkgmgr.create_repo import create_repo
-        # If no identifiers are provided, you can decide to either use the repository of the current folder
-        # or prompt the user to supply at least one identifier.
+
         if not args.identifiers:
-            print("No identifiers provided. Please specify at least one identifier in the format provider/account/repository.")
+            print(
+                "No identifiers provided. Please specify at least one identifier "
+                "in the format provider/account/repository."
+            )
             sys.exit(1)
         else:
-            selected = get_selected_repos(True,ALL_REPOSITORIES,None)
+            selected = get_selected_repos(True, ALL_REPOSITORIES, None)
             for identifier in args.identifiers:
-                create_repo(identifier, CONFIG_MERGED, USER_CONFIG_PATH, BINARIES_DIRECTORY, remote=args.remote, preview=args.preview)
+                create_repo(
+                    identifier,
+                    CONFIG_MERGED,
+                    USER_CONFIG_PATH,
+                    BINARIES_DIRECTORY,
+                    remote=args.remote,
+                    preview=args.preview,
+                )
     elif args.command == "list":
-        list_repositories(ALL_REPOSITORIES, REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, search_filter=args.search, status_filter=args.status)
+        list_repositories(
+            ALL_REPOSITORIES,
+            REPOSITORIES_BASE_DIR,
+            BINARIES_DIRECTORY,
+            search_filter=args.search,
+            status_filter=args.status,
+        )
     elif args.command == "deinstall":
-        deinstall_repos(selected,REPOSITORIES_BASE_DIR, BINARIES_DIRECTORY, ALL_REPOSITORIES, preview=args.preview)
+        deinstall_repos(
+            selected,
+            REPOSITORIES_BASE_DIR,
+            BINARIES_DIRECTORY,
+            ALL_REPOSITORIES,
+            preview=args.preview,
+        )
     elif args.command == "delete":
-        delete_repos(selected,REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, preview=args.preview)
+        delete_repos(
+            selected, REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, preview=args.preview
+        )
     elif args.command == "update":
         update_repos(
             selected,
@@ -354,39 +551,137 @@ For detailed help on each command, use:
             args.preview,
             args.quiet,
             args.dependencies,
-            args.clone_mode
+            args.clone_mode,
         )
     elif args.command == "release":
         if not selected:
             print("No repositories selected for release.")
-            exit(1)
-        # Import the release function from pkgmgr/release.py
+            sys.exit(1)
         from pkgmgr import release as rel
-        # Save the original working directory.
+
         original_dir = os.getcwd()
         for repo in selected:
-            # Determine the repository directory
-            repo_dir = repo.get("directory")
+            repo_dir: Optional[str] = repo.get("directory")
             if not repo_dir:
                 from pkgmgr.get_repo_dir import get_repo_dir
+
                 repo_dir = get_repo_dir(REPOSITORIES_BASE_DIR, repo)
-            # Dynamically determine the file paths for pyproject.toml and CHANGELOG.md.
             pyproject_path = os.path.join(repo_dir, "pyproject.toml")
             changelog_path = os.path.join(repo_dir, "CHANGELOG.md")
-            print(f"Releasing repository '{repo.get('repository')}' in '{repo_dir}'...")
-            # Change into the repository directory so Git commands run in the right context.
+            print(
+                f"Releasing repository '{repo.get('repository')}' in '{repo_dir}'..."
+            )
             os.chdir(repo_dir)
-            # Call the release function with the proper parameters.
             rel.release(
                 pyproject_path=pyproject_path,
                 changelog_path=changelog_path,
                 release_type=args.release_type,
-                message=args.message
+                message=args.message,
             )
-            # Change back to the original working directory.
             os.chdir(original_dir)
+    elif args.command == "version":
+        from pkgmgr.git_utils import get_tags
+        from pkgmgr.versioning import SemVer, find_latest_version
+        from pkgmgr.version_sources import (
+            read_pyproject_version,
+            read_flake_version,
+            read_pkgbuild_version,
+            read_debian_changelog_version,
+            read_spec_version,
+            read_ansible_galaxy_version,
+        )
+        from pkgmgr.get_repo_dir import get_repo_dir
+
+        repo_list = selected
+        if not repo_list:
+            print("No repositories selected for version.")
+            sys.exit(1)
+
+        print("pkgmgr version info")
+        print("====================")
+
+        for repo in repo_list:
+            # Resolve repository directory
+            repo_dir = repo.get("directory")
+            if not repo_dir:
+                try:
+                    repo_dir = get_repo_dir(REPOSITORIES_BASE_DIR, repo)
+                except Exception:
+                    repo_dir = None
+
+            # If no local clone exists, skip gracefully with info message
+            if not repo_dir or not os.path.isdir(repo_dir):
+                identifier = get_repo_identifier(repo, ALL_REPOSITORIES)
+                print(f"\nRepository: {identifier}")
+                print("----------------------------------------")
+                print(
+                    "[INFO] Skipped: repository directory does not exist "
+                    "locally, version detection is not possible."
+                )
+                continue
+
+            print(f"\nRepository: {repo_dir}")
+            print("----------------------------------------")
+
+            # 1) Git tags (SemVer)
+            try:
+                tags = get_tags(cwd=repo_dir)
+            except Exception as exc:
+                print(f"[ERROR] Could not read git tags: {exc}")
+                tags = []
+
+            latest_tag_info = find_latest_version(tags) if tags else None
+            if latest_tag_info is None:
+                latest_tag_str = None
+                latest_ver = None
+            else:
+                latest_tag_str, latest_ver = latest_tag_info
+
+            # 2) Packaging / metadata sources
+            pyproject_version = read_pyproject_version(repo_dir)
+            flake_version = read_flake_version(repo_dir)
+            pkgbuild_version = read_pkgbuild_version(repo_dir)
+            debian_version = read_debian_changelog_version(repo_dir)
+            spec_version = read_spec_version(repo_dir)
+            ansible_version = read_ansible_galaxy_version(repo_dir)
+
+            # 3) Print version summary
+            if latest_ver is not None:
+                print(
+                    f"Git (latest SemVer tag): {latest_tag_str} (parsed: {latest_ver})"
+                )
+            else:
+                print("Git (latest SemVer tag): <none found>")
+
+            print(f"pyproject.toml:         {pyproject_version or '<not found>'}")
+            print(f"flake.nix:              {flake_version or '<not found>'}")
+            print(f"PKGBUILD:               {pkgbuild_version or '<not found>'}")
+            print(f"debian/changelog:       {debian_version or '<not found>'}")
+            print(f"package-manager.spec:   {spec_version or '<not found>'}")
+            print(f"Ansible Galaxy meta:    {ansible_version or '<not found>'}")
+
+            # 4) Consistency hint (Git tag vs. pyproject)
+            if latest_ver is not None and pyproject_version is not None:
+                try:
+                    file_ver = SemVer.parse(pyproject_version)
+                    if file_ver != latest_ver:
+                        print(
+                            f"[WARN] Version mismatch: Git={latest_ver}, pyproject={file_ver}"
+                        )
+                except ValueError:
+                    print(
+                        f"[WARN] pyproject version {pyproject_version!r} is not valid SemVer."
+                    )
     elif args.command == "status":
-        status_repos(selected,REPOSITORIES_BASE_DIR, ALL_REPOSITORIES, args.extra_args, list_only=args.list, system_status=args.system, preview=args.preview)
+        status_repos(
+            selected,
+            REPOSITORIES_BASE_DIR,
+            ALL_REPOSITORIES,
+            args.extra_args,
+            list_only=args.list,
+            system_status=args.system,
+            preview=args.preview,
+        )
     elif args.command == "explore":
         for repository in selected:
             run_command(f"nautilus {repository['directory']} & disown")
@@ -394,20 +689,24 @@ For detailed help on each command, use:
         if not selected:
             print("No repositories selected.")
         else:
-            identifiers = [get_repo_identifier(repo, ALL_REPOSITORIES) for repo in selected]
+            identifiers = [
+                get_repo_identifier(repo, ALL_REPOSITORIES) for repo in selected
+            ]
             sorted_identifiers = sorted(identifiers)
             workspace_name = "_".join(sorted_identifiers) + ".code-workspace"
-            workspaces_dir = os.path.expanduser(CONFIG_MERGED.get("directories").get("workspaces"))
+            workspaces_dir = os.path.expanduser(
+                CONFIG_MERGED.get("directories").get("workspaces")
+            )
             os.makedirs(workspaces_dir, exist_ok=True)
             workspace_file = os.path.join(workspaces_dir, workspace_name)
-            
+
             folders = []
             for repository in selected:
                 folders.append({"path": repository["directory"]})
-            
+
             workspace_data = {
                 "folders": folders,
-                "settings": {}
+                "settings": {},
             }
             if not os.path.exists(workspace_file):
                 with open(workspace_file, "w") as f:
@@ -418,19 +717,24 @@ For detailed help on each command, use:
             run_command(f'code "{workspace_file}"')
     elif args.command == "terminal":
         for repository in selected:
-            run_command(f'gnome-terminal --tab --working-directory="{repository["directory"]}"')
+            run_command(
+                f'gnome-terminal --tab --working-directory="{repository["directory"]}"'
+            )
     elif args.command == "path":
         for repository in selected:
             print(repository["directory"])
     elif args.command == "shell":
         if not args.shell_command:
             print("No shell command specified.")
-            exit(2)
-        # Join the provided shell command parts into one string.
+            sys.exit(2)
         command_to_run = " ".join(args.shell_command)
         for repository in selected:
-            print(f"Executing in '{repository['directory']}': {command_to_run}")
-            run_command(command_to_run, cwd=repository["directory"], preview=args.preview)
+            print(
+                f"Executing in '{repository['directory']}': {command_to_run}"
+            )
+            run_command(
+                command_to_run, cwd=repository["directory"], preview=args.preview
+            )
     elif args.command == "config":
         if args.subcommand == "show":
             if args.all or (not args.identifiers):
@@ -438,52 +742,82 @@ For detailed help on each command, use:
             else:
                 selected = resolve_repos(args.identifiers, ALL_REPOSITORIES)
                 if selected:
-                    show_config(selected, USER_CONFIG_PATH, full_config=False)
+                    show_config(
+                        selected, USER_CONFIG_PATH, full_config=False
+                    )
         elif args.subcommand == "add":
-            interactive_add(CONFIG_MERGED,USER_CONFIG_PATH)
+            interactive_add(CONFIG_MERGED, USER_CONFIG_PATH)
         elif args.subcommand == "edit":
-            """Open the user configuration file in nano."""
             run_command(f"nano {USER_CONFIG_PATH}")
         elif args.subcommand == "init":
             if os.path.exists(USER_CONFIG_PATH):
-                with open(USER_CONFIG_PATH, 'r') as f:
+                with open(USER_CONFIG_PATH, "r") as f:
                     user_config = yaml.safe_load(f) or {}
             else:
                 user_config = {"repositories": []}
-            config_init(user_config, CONFIG_MERGED, BINARIES_DIRECTORY, USER_CONFIG_PATH)
+            config_init(
+                user_config,
+                CONFIG_MERGED,
+                BINARIES_DIRECTORY,
+                USER_CONFIG_PATH,
+            )
         elif args.subcommand == "delete":
-            # Load user config from USER_CONFIG_PATH.
             if os.path.exists(USER_CONFIG_PATH):
-                with open(USER_CONFIG_PATH, 'r') as f:
+                with open(USER_CONFIG_PATH, "r") as f:
                     user_config = yaml.safe_load(f) or {"repositories": []}
             else:
                 user_config = {"repositories": []}
             if args.all or not args.identifiers:
                 print("You must specify identifiers to delete.")
             else:
-                to_delete = resolve_repos(args.identifiers, user_config.get("repositories", []))
-                new_repos = [entry for entry in user_config.get("repositories", []) if entry not in to_delete]
+                to_delete = resolve_repos(
+                    args.identifiers, user_config.get("repositories", [])
+                )
+                new_repos = [
+                    entry
+                    for entry in user_config.get("repositories", [])
+                    if entry not in to_delete
+                ]
                 user_config["repositories"] = new_repos
-                save_user_config(user_config,USER_CONFIG_PATH)
-                print(f"Deleted {len(to_delete)} entries from user config.")
+                save_user_config(user_config, USER_CONFIG_PATH)
+                print(
+                    f"Deleted {len(to_delete)} entries from user config."
+                )
         elif args.subcommand == "ignore":
-            # Load user config from USER_CONFIG_PATH.
             if os.path.exists(USER_CONFIG_PATH):
-                with open(USER_CONFIG_PATH, 'r') as f:
+                with open(USER_CONFIG_PATH, "r") as f:
                     user_config = yaml.safe_load(f) or {"repositories": []}
             else:
                 user_config = {"repositories": []}
             if args.all or not args.identifiers:
-                print("You must specify identifiers to modify ignore flag.")
+                print(
+                    "You must specify identifiers to modify ignore flag."
+                )
             else:
-                to_modify = resolve_repos(args.identifiers, user_config.get("repositories", []))
+                to_modify = resolve_repos(
+                    args.identifiers, user_config.get("repositories", [])
+                )
                 for entry in user_config["repositories"]:
-                    key = (entry.get("provider"), entry.get("account"), entry.get("repository"))
+                    key = (
+                        entry.get("provider"),
+                        entry.get("account"),
+                        entry.get("repository"),
+                    )
                     for mod in to_modify:
-                        mod_key = (mod.get("provider"), mod.get("account"), mod.get("repository"))
+                        mod_key = (
+                            mod.get("provider"),
+                            mod.get("account"),
+                            mod.get("repository"),
+                        )
                         if key == mod_key:
-                            entry["ignore"] = (args.set == "true")
-                            print(f"Set ignore for {key} to {entry['ignore']}")
-                save_user_config(user_config,USER_CONFIG_PATH)
+                            entry["ignore"] = args.set == "true"
+                            print(
+                                f"Set ignore for {key} to {entry['ignore']}"
+                            )
+                save_user_config(user_config, USER_CONFIG_PATH)
     else:
         parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
