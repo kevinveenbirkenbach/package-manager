@@ -42,7 +42,7 @@ def _fake_config() -> Dict[str, Any]:
             "workspaces": "/tmp/pkgmgr-workspaces",
         },
         # The actual list of repositories is not used directly by the tests,
-        # because we mock get_selected_repos(). It must exist, though.
+        # because we mock the selection logic. It must exist, though.
         "repositories": [],
     }
 
@@ -54,8 +54,9 @@ class TestCliVersion(unittest.TestCase):
     Each test:
     - Runs in a temporary working directory.
     - Uses a fake configuration via load_config().
-    - Uses a mocked get_selected_repos() that returns a single repo
-      pointing to the temporary directory.
+    - Uses the same selection logic as the new CLI:
+      * dispatch_command() calls _select_repo_for_current_directory()
+        when there is no explicit selection.
     """
 
     def setUp(self) -> None:
@@ -64,31 +65,30 @@ class TestCliVersion(unittest.TestCase):
         self._old_cwd = os.getcwd()
         os.chdir(self._tmp_dir.name)
 
+        # Define a fake repo pointing to our temp dir
+        self._fake_repo = {
+            "provider": "github.com",
+            "account": "test",
+            "repository": "pkgmgr-test",
+            "directory": self._tmp_dir.name,
+        }
+
         # Patch load_config so cli.main() does not read real config files
         self._patch_load_config = mock.patch(
             "pkgmgr.cli.load_config", return_value=_fake_config()
         )
         self.mock_load_config = self._patch_load_config.start()
 
-        # Patch get_selected_repos so that 'version' operates on our temp dir.
-        # In the new modular CLI this function is used inside
-        # pkgmgr.cli_core.dispatch, so we patch it there.
-        def _fake_selected_repos(args, all_repositories):
-            return [
-            {
-                "provider": "github.com",
-                "account": "test",
-                "repository": "pkgmgr-test",
-                "directory": self._tmp_dir.name,
-            }
-        ]
-
-
-        self._patch_get_selected_repos = mock.patch(
-            "pkgmgr.cli_core.dispatch.get_selected_repos",
-            side_effect=_fake_selected_repos,
+        # Patch the "current directory" selection used by dispatch_command().
+        # This matches the new behaviour: without explicit identifiers,
+        # version uses _select_repo_for_current_directory(ctx).
+        self._patch_select_repo_for_current_directory = mock.patch(
+            "pkgmgr.cli_core.dispatch._select_repo_for_current_directory",
+            return_value=[self._fake_repo],
         )
-        self.mock_get_selected_repos = self._patch_get_selected_repos.start()
+        self.mock_select_repo_for_current_directory = (
+            self._patch_select_repo_for_current_directory.start()
+        )
 
         # Keep a reference to the original sys.argv, so we can restore it
         self._old_argv = list(sys.argv)
@@ -98,7 +98,7 @@ class TestCliVersion(unittest.TestCase):
         sys.argv = self._old_argv
 
         # Stop all patches
-        self._patch_get_selected_repos.stop()
+        self._patch_select_repo_for_current_directory.stop()
         self._patch_load_config.stop()
 
         # Restore working directory
@@ -224,7 +224,7 @@ class TestCliVersion(unittest.TestCase):
         # Arrange: pyproject.toml exists
         self._write_pyproject("0.0.1")
 
-        # Arrange: no tags returned (again: patch handle_version's get_tags)
+        # Arrange: no tags returned
         with mock.patch(
             "pkgmgr.cli_core.commands.version.get_tags",
             return_value=[],
