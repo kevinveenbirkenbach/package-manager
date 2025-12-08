@@ -71,12 +71,19 @@ build:
 			-t "package-manager-test-$$distro" . || exit $$?; \
 	done
 
+build-arch:
+	@base_image="$(BASE_IMAGE_arch)"; \
+	echo "Building test image 'package-manager-test-arch' (BASE_IMAGE=$$base_image)..."; \
+	docker build \
+		--build-arg BASE_IMAGE="$$base_image" \
+		-t "package-manager-test-arch" . || exit $$?;
+
 # ------------------------------------------------------------
 # Test targets
 # ------------------------------------------------------------
 
 # Unit tests: only in Arch container (fastest feedback)
-test-unit: build
+test-unit: build-arch
 	@echo "============================================================"
 	@echo ">>> Running UNIT tests in Arch container"
 	@echo "============================================================"
