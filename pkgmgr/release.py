@@ -1,3 +1,4 @@
+# pkgmgr/release.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -22,12 +23,14 @@ Additional behaviour:
     phases:
       1) Preview-only run (dry-run).
       2) Interactive confirmation, then real release if confirmed.
-    This confirmation can be skipped with the `-f/--force` flag.
+    This confirmation can be skipped with the `force=True` flag.
+  - If `close=True` is used and the current branch is not main/master,
+    the branch will be closed via branch_commands.close_branch() after
+    a successful release.
 """
 
 from __future__ import annotations
 
-import argparse
 import os
 import re
 import subprocess
@@ -37,6 +40,7 @@ from datetime import date, datetime
 from typing import Optional, Tuple
 
 from pkgmgr.git_utils import get_tags, get_current_branch, GitError
+from pkgmgr.branch_commands import close_branch
 from pkgmgr.versioning import (
     SemVer,
     find_latest_version,
@@ -137,7 +141,6 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
         encoding="utf-8",
     ) as tmp:
         tmp_path = tmp.name
-        # Prefill with instructions as comments
         tmp.write(
             "# Write the changelog entry for this release.\n"
             "# Lines starting with '#' will be ignored.\n"
@@ -147,10 +150,14 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
             tmp.write(initial_message.strip() + "\n")
         tmp.flush()
 
-    # Open editor
-    subprocess.call([editor, tmp_path])
+    try:
+        subprocess.call([editor, tmp_path])
+    except FileNotFoundError:
+        print(
+            f"[WARN] Editor {editor!r} not found; proceeding without "
+            "interactive changelog message."
+        )
 
-    # Read back content
     try:
         with open(tmp_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -160,7 +167,6 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
         except OSError:
             pass
 
-    # Filter out commented lines and return joined text
     lines = [
         line for line in content.splitlines()
         if not line.strip().startswith("#")
@@ -186,14 +192,6 @@ def update_pyproject_version(
         version = "X.Y.Z"
 
     and replaces the version part with the given new_version string.
-
-    It does not try to parse the full TOML structure here. This keeps the
-    implementation small and robust as long as the version line follows
-    the standard pattern.
-
-    Behaviour:
-      - In normal mode: write the updated content back to the file.
-      - In preview mode: do NOT write, only report what would change.
     """
     try:
         with open(pyproject_path, "r", encoding="utf-8") as f:
@@ -231,13 +229,6 @@ def update_flake_version(
 ) -> None:
     """
     Update the version in flake.nix, if present.
-
-    Looks for a line like:
-        version = "1.2.3";
-
-    and replaces the string inside the quotes. If the file does not
-    exist or no version line is found, this is treated as a non-fatal
-    condition and only a log message is printed.
     """
     if not os.path.exists(flake_path):
         print("[INFO] flake.nix not found, skipping.")
@@ -282,13 +273,6 @@ def update_pkgbuild_version(
     Expects:
         pkgver=1.2.3
         pkgrel=1
-
-    Behaviour:
-      - Set pkgver to the new_version (e.g. 1.2.3).
-      - Reset pkgrel to 1.
-
-    If the file does not exist, this is non-fatal and only a log
-    message is printed.
     """
     if not os.path.exists(pkgbuild_path):
         print("[INFO] PKGBUILD not found, skipping.")
@@ -301,7 +285,6 @@ def update_pkgbuild_version(
         print(f"[WARN] Could not read PKGBUILD: {exc}")
         return
 
-    # Update pkgver
     ver_pattern = r"^(pkgver\s*=\s*)(.+)$"
     new_content, ver_count = re.subn(
         ver_pattern,
@@ -312,9 +295,8 @@ def update_pkgbuild_version(
 
     if ver_count == 0:
         print("[WARN] No pkgver line found in PKGBUILD.")
-        new_content = content  # revert to original if we didn't change anything
+        new_content = content
 
-    # Reset pkgrel to 1
     rel_pattern = r"^(pkgrel\s*=\s*)(.+)$"
     new_content, rel_count = re.subn(
         rel_pattern,
@@ -343,19 +325,6 @@ def update_spec_version(
 ) -> None:
     """
     Update the version in an RPM spec file, if present.
-
-    Assumes a file like 'package-manager.spec' with lines:
-
-        Version: 1.2.3
-        Release: 1%{?dist}
-
-    Behaviour:
-      - Set 'Version:' to new_version.
-      - Reset 'Release:' to '1' while preserving any macro suffix,
-        e.g. '1%{?dist}'.
-
-    If the file does not exist, this is non-fatal and only a log
-    message is printed.
     """
     if not os.path.exists(spec_path):
         print("[INFO] RPM spec file not found, skipping.")
@@ -368,7 +337,6 @@ def update_spec_version(
         print(f"[WARN] Could not read spec file: {exc}")
         return
 
-    # Update Version:
     ver_pattern = r"^(Version:\s*)(.+)$"
     new_content, ver_count = re.subn(
         ver_pattern,
@@ -380,12 +348,10 @@ def update_spec_version(
     if ver_count == 0:
         print("[WARN] No 'Version:' line found in spec file.")
 
-    # Reset Release:
     rel_pattern = r"^(Release:\s*)(.+)$"
 
     def _release_repl(m: re.Match[str]) -> str:  # type: ignore[name-defined]
         rest = m.group(2).strip()
-        # Reset numeric prefix to "1" and keep any suffix (e.g. % macros).
         match = re.match(r"^(\d+)(.*)$", rest)
         if match:
             suffix = match.group(2)
@@ -428,21 +394,11 @@ def update_changelog(
     """
     Prepend a new release section to CHANGELOG.md with the new version,
     current date, and a message.
-
-    Behaviour:
-      - If message is None and preview is False:
-          → open $EDITOR (fallback 'nano') to let the user enter a message.
-      - If message is None and preview is True:
-          → use a generic automated message.
-      - The resulting changelog entry is printed to stdout.
-      - Returns the final message text used.
     """
     today = date.today().isoformat()
 
-    # Resolve message
     if message is None:
         if preview:
-            # Do not open editor in preview mode; keep it non-interactive.
             message = "Automated release."
         else:
             print(
@@ -470,7 +426,6 @@ def update_changelog(
 
     new_changelog = header + "\n" + changelog if changelog else header
 
-    # Show the entry that will be written
     print("\n================ CHANGELOG ENTRY ================")
     print(header.rstrip())
     print("=================================================\n")
@@ -495,8 +450,6 @@ def update_changelog(
 def _get_git_config_value(key: str) -> Optional[str]:
     """
     Try to read a value from `git config --get <key>`.
-
-    Returns the stripped value or None if not set / on error.
     """
     try:
         result = subprocess.run(
@@ -515,12 +468,6 @@ def _get_git_config_value(key: str) -> Optional[str]:
 def _get_debian_author() -> Tuple[str, str]:
     """
     Determine the maintainer name/email for debian/changelog entries.
-
-    Priority:
-      1. DEBFULLNAME / DEBEMAIL
-      2. GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL
-      3. git config user.name / user.email
-      4. Fallback: 'Unknown Maintainer' / 'unknown@example.com'
     """
     name = os.environ.get("DEBFULLNAME")
     email = os.environ.get("DEBEMAIL")
@@ -552,12 +499,6 @@ def update_debian_changelog(
 ) -> None:
     """
     Prepend a new entry to debian/changelog, if it exists.
-
-    The first line typically looks like:
-        package-name (1.2.3-1) unstable; urgency=medium
-
-    We generate a new stanza at the top with Debian-style version
-    'X.Y.Z-1'. If the file does not exist, this function does nothing.
     """
     if not os.path.exists(debian_changelog_path):
         print("[INFO] debian/changelog not found, skipping.")
@@ -565,15 +506,12 @@ def update_debian_changelog(
 
     debian_version = f"{new_version}-1"
     now = datetime.now().astimezone()
-    # Debian-like date string, e.g. "Mon, 08 Dec 2025 12:34:56 +0100"
     date_str = now.strftime("%a, %d %b %Y %H:%M:%S %z")
 
     author_name, author_email = _get_debian_author()
 
     first_line = f"{package_name} ({debian_version}) unstable; urgency=medium"
-    body_line = (
-        message.strip() if message else f"Automated release {new_version}."
-    )
+    body_line = message.strip() if message else f"Automated release {new_version}."
     stanza = (
         f"{first_line}\n\n"
         f"  * {body_line}\n\n"
@@ -613,23 +551,12 @@ def _release_impl(
     release_type: str = "patch",
     message: Optional[str] = None,
     preview: bool = False,
+    close: bool = False,
 ) -> None:
     """
     Internal implementation that performs a single-phase release.
-
-    If `preview` is True:
-      - No files are written.
-      - No git commands are executed.
-      - Planned actions are printed.
-
-    If `preview` is False:
-      - Files are updated.
-      - Git commit, tag, and push are executed.
     """
-    # 1) Determine the current version from Git tags.
     current_ver = _determine_current_version()
-
-    # 2) Compute the next version.
     new_ver = _bump_semver(current_ver, release_type)
     new_ver_str = str(new_ver)
     new_tag = new_ver.to_tag(with_prefix=True)
@@ -639,20 +566,16 @@ def _release_impl(
     print(f"Current version: {current_ver}")
     print(f"New version:     {new_ver_str} ({release_type})")
 
-    # Determine repository root based on pyproject location
     repo_root = os.path.dirname(os.path.abspath(pyproject_path))
 
-    # 2) Update files.
     update_pyproject_version(pyproject_path, new_ver_str, preview=preview)
-    # Let update_changelog resolve or edit the message; reuse it for debian.
-    message = update_changelog(
+    changelog_message = update_changelog(
         changelog_path,
         new_ver_str,
         message=message,
         preview=preview,
     )
 
-    # Additional packaging files (non-fatal if missing)
     flake_path = os.path.join(repo_root, "flake.nix")
     update_flake_version(flake_path, new_ver_str, preview=preview)
 
@@ -662,20 +585,23 @@ def _release_impl(
     spec_path = os.path.join(repo_root, "package-manager.spec")
     update_spec_version(spec_path, new_ver_str, preview=preview)
 
+    effective_message: Optional[str] = message
+    if effective_message is None and isinstance(changelog_message, str):
+        if changelog_message.strip():
+            effective_message = changelog_message.strip()
+
     debian_changelog_path = os.path.join(repo_root, "debian", "changelog")
-    # Use repo directory name as a simple default for package name
     package_name = os.path.basename(repo_root) or "package-manager"
     update_debian_changelog(
         debian_changelog_path,
         package_name=package_name,
         new_version=new_ver_str,
-        message=message,
+        message=effective_message,
         preview=preview,
     )
 
-    # 3) Git operations: stage, commit, tag, push.
     commit_msg = f"Release version {new_ver_str}"
-    tag_msg = message or commit_msg
+    tag_msg = effective_message or commit_msg
 
     try:
         branch = get_current_branch() or "main"
@@ -683,7 +609,6 @@ def _release_impl(
         branch = "main"
     print(f"Releasing on branch: {branch}")
 
-    # Stage all relevant packaging files so they are included in the commit
     files_to_add = [
         pyproject_path,
         changelog_path,
@@ -701,6 +626,18 @@ def _release_impl(
         print(f'[PREVIEW] Would run: git tag -a {new_tag} -m "{tag_msg}"')
         print(f"[PREVIEW] Would run: git push origin {branch}")
         print("[PREVIEW] Would run: git push origin --tags")
+
+        if close and branch not in ("main", "master"):
+            print(
+                f"[PREVIEW] Would also close branch {branch} after the release "
+                "(close=True and branch is not main/master)."
+            )
+        elif close:
+            print(
+                f"[PREVIEW] close=True but current branch is {branch}; "
+                "no branch would be closed."
+            )
+
         print("Preview completed. No changes were made.")
         return
 
@@ -714,9 +651,26 @@ def _release_impl(
 
     print(f"Release {new_ver_str} completed.")
 
+    if close:
+        if branch in ("main", "master"):
+            print(
+                f"[INFO] close=True but current branch is {branch}; "
+                "nothing to close."
+            )
+            return
+
+        print(
+            f"[INFO] Closing branch {branch} after successful release "
+            "(close=True and branch is not main/master)..."
+        )
+        try:
+            close_branch(name=branch, base_branch="main", cwd=".")
+        except Exception as exc:  # pragma: no cover
+            print(f"[WARN] Failed to close branch {branch} automatically: {exc}")
+
 
 # ---------------------------------------------------------------------------
-# Public release entry point (with preview-first + confirmation logic)
+# Public release entry point
 # ---------------------------------------------------------------------------
 
 
@@ -727,6 +681,7 @@ def release(
     message: Optional[str] = None,
     preview: bool = False,
     force: bool = False,
+    close: bool = False,
 ) -> None:
     """
     High-level release entry point.
@@ -735,26 +690,13 @@ def release(
 
     - preview=True:
         * Single-phase PREVIEW only.
-        * No files are changed, no git commands are executed.
-        * `force` is ignored in this mode.
 
     - preview=False, force=True:
         * Single-phase REAL release, no interactive preview.
-        * Files are changed and git commands are executed immediately.
 
     - preview=False, force=False:
-        * Two-phase flow (intended default for interactive CLI use):
-            1) PREVIEW: dry-run, printing all planned actions.
-            2) Ask the user for confirmation:
-                 "Proceed with the actual release? [y/N]: "
-               If confirmed, perform the REAL release.
-               Otherwise, abort without changes.
-
-        * In non-interactive environments (stdin not a TTY), the
-          confirmation step is skipped automatically and a single
-          REAL phase is executed, to avoid blocking on input().
+        * Two-phase flow (intended default for interactive CLI use).
     """
-    # Explicit preview mode: just do a single PREVIEW phase and exit.
     if preview:
         _release_impl(
             pyproject_path=pyproject_path,
@@ -762,10 +704,10 @@ def release(
             release_type=release_type,
             message=message,
             preview=True,
+            close=close,
         )
         return
 
-    # Non-preview, but forced: run REAL release directly.
     if force:
         _release_impl(
             pyproject_path=pyproject_path,
@@ -773,10 +715,10 @@ def release(
             release_type=release_type,
             message=message,
             preview=False,
+            close=close,
         )
         return
 
-    # Non-interactive environment? Skip confirmation to avoid blocking.
     if not sys.stdin.isatty():
         _release_impl(
             pyproject_path=pyproject_path,
@@ -784,10 +726,10 @@ def release(
             release_type=release_type,
             message=message,
             preview=False,
+            close=close,
         )
         return
 
-    # Interactive two-phase flow:
     print("[INFO] Running preview before actual release...\n")
     _release_impl(
         pyproject_path=pyproject_path,
@@ -795,9 +737,9 @@ def release(
         release_type=release_type,
         message=message,
         preview=True,
+        close=close,
     )
 
-    # Ask for confirmation
     try:
         answer = input("Proceed with the actual release? [y/N]: ").strip().lower()
     except (EOFError, KeyboardInterrupt):
@@ -815,68 +757,5 @@ def release(
         release_type=release_type,
         message=message,
         preview=False,
-    )
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point for standalone use
-# ---------------------------------------------------------------------------
-
-
-def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="pkgmgr release helper")
-    parser.add_argument(
-        "release_type",
-        choices=["major", "minor", "patch"],
-        help="Type of release (major/minor/patch).",
-    )
-    parser.add_argument(
-        "-m",
-        "--message",
-        dest="message",
-        default=None,
-        help="Release message to use for changelog and tag.",
-    )
-    parser.add_argument(
-        "--pyproject",
-        dest="pyproject",
-        default="pyproject.toml",
-        help="Path to pyproject.toml (default: pyproject.toml)",
-    )
-    parser.add_argument(
-        "--changelog",
-        dest="changelog",
-        default="CHANGELOG.md",
-        help="Path to CHANGELOG.md (default: CHANGELOG.md)",
-    )
-    parser.add_argument(
-        "--preview",
-        action="store_true",
-        help=(
-            "Preview release changes without modifying files or running git. "
-            "This mode never executes the real release."
-        ),
-    )
-    parser.add_argument(
-        "-f",
-        "--force",
-        dest="force",
-        action="store_true",
-        help=(
-            "Skip the interactive preview+confirmation step and run the "
-            "release directly."
-        ),
-    )
-    return parser.parse_args(argv)
-
-
-if __name__ == "__main__":
-    args = _parse_args()
-    release(
-        pyproject_path=args.pyproject,
-        changelog_path=args.changelog,
-        release_type=args.release_type,
-        message=args.message,
-        preview=args.preview,
-        force=args.force,
+        close=close,
     )
