@@ -1,0 +1,29 @@
+name: Test package-manager (integration)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - "*"
+  pull_request:
+
+jobs:
+  test-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Docker version
+        run: docker version
+
+      # Build Arch test image (same as used in test-unit and test-e2e)
+      - name: Build test images
+        run: make build
+
+      - name: Run integration tests via make (Arch container)
+        run: make test-integration

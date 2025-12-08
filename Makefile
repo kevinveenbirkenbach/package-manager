@@ -1,5 +1,5 @@
 .PHONY: install setup uninstall aur_builder_setup \
-        test build build-no-cache test-unit test-e2e
+        test build build-no-cache test-unit test-e2e test-integration
 
 # ------------------------------------------------------------
 # Local Nix cache directories in the repo
@@ -99,6 +99,30 @@ test-unit: build
 				-p "test_*.py"; \
 		'
 
+# Integration tests: also in Arch container, but using tests/integration
+test-integration: build
+	@echo "============================================================"
+	@echo ">>> Running INTEGRATION tests in Arch container"
+	@echo "============================================================"
+	docker run --rm \
+		-v "$$(pwd):/src" \
+		--workdir /src \
+		--entrypoint bash \
+		"package-manager-test-arch" \
+		-c '\
+			set -e; \
+			if [ -f /etc/os-release ]; then . /etc/os-release; fi; \
+			echo "Detected container distro: $${ID:-unknown} (like: $${ID_LIKE:-})"; \
+			echo "Running Python integration tests (tests/integration)..."; \
+			git config --global --add safe.directory /src || true; \
+			cd /src; \
+			export PYTHONPATH=/src:$${PYTHONPATH}; \
+			python -m unittest discover \
+				-s tests/integration \
+				-t /src \
+				-p "test_*.py"; \
+		'
+
 # End-to-end tests: run in all distros via Nix devShell (tests/e2e)
 test-e2e: build
 	@echo "Ensuring Docker Nix volumes exist (auto-created if missing)..."
@@ -166,8 +190,8 @@ test-e2e: build
 			' || exit $$?; \
 	done
 
-# Combined test target for local + CI (unit + e2e)
-test: build test-unit test-e2e
+# Combined test target for local + CI (unit + e2e + integration)
+test: build test-unit test-e2e test-integration
 
 # ------------------------------------------------------------
 # Installer for host systems (original logic)

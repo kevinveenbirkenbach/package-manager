@@ -14,6 +14,20 @@ Each capability is represented by a class that:
 This allows pkgmgr to dynamically decide if a higher layer already covers
 work a lower layer would otherwise do (e.g. Nix calling pyproject/make,
 or distro packages wrapping Nix or Makefile logic).
+
+On top of the raw detection, this module also exposes a bottom-up
+"effective capability" resolver:
+
+  - We start from the lowest layer (e.g. "makefile") and go upwards.
+  - For each capability provided by a lower layer, we check whether any
+    higher layer also provides the same capability.
+  - If yes, we consider the capability "shadowed" by the higher layer;
+    the lower layer does not list it as an effective capability.
+  - If no higher layer provides it, the capability remains attached to
+    the lower layer.
+
+This yields, for each layer, only those capabilities that are not
+redundant with respect to higher layers in the stack.
 """
 
 from __future__ import annotations
@@ -50,6 +64,8 @@ def _scan_files_for_patterns(files: Iterable[str], patterns: Iterable[str]) -> b
     """
     lower_patterns = [p.lower() for p in patterns]
     for path in files:
+        if not path:
+            continue
         content = _read_text_if_exists(path)
         if not content:
             continue
@@ -295,3 +311,97 @@ CAPABILITY_MATCHERS: list[CapabilityMatcher] = [
     MakeInstallCapability(),
     NixFlakeCapability(),
 ]
+
+
+# ---------------------------------------------------------------------------
+# Layer ordering and effective capability resolution
+# ---------------------------------------------------------------------------
+
+#: Default bottom-up order of installer layers.
+#: Lower indices = lower layers; higher indices = higher layers.
+LAYER_ORDER: list[str] = [
+    "makefile",
+    "python",
+    "nix",
+    "os-packages",
+]
+
+
+def detect_capabilities(
+    ctx: "RepoContext",
+    layers: Iterable[str],
+) -> dict[str, set[str]]:
+    """
+    Perform raw capability detection per layer, without any shadowing.
+
+    Returns a mapping:
+
+        {
+            "makefile":    {"make-install"},
+            "python":      {"python-runtime", "make-install"},
+            "nix":         {"python-runtime", "make-install", "nix-flake"},
+            "os-packages": set(),
+        }
+
+    depending on which matchers report capabilities for each layer.
+    """
+    layers_list = list(layers)
+    caps_by_layer: dict[str, set[str]] = {layer: set() for layer in layers_list}
+
+    for matcher in CAPABILITY_MATCHERS:
+        for layer in layers_list:
+            if not matcher.applies_to_layer(layer):
+                continue
+            if matcher.is_provided(ctx, layer):
+                caps_by_layer[layer].add(matcher.name)
+
+    return caps_by_layer
+
+
+def resolve_effective_capabilities(
+    ctx: "RepoContext",
+    layers: Iterable[str] | None = None,
+) -> dict[str, set[str]]:
+    """
+    Resolve *effective* capabilities for each layer using a bottom-up strategy.
+
+    Algorithm (layer-agnostic, works for all layers in the given order):
+
+      1. Run raw detection (detect_capabilities) to obtain which capabilities
+         are provided by which layer.
+      2. Iterate layers from bottom to top (the order in `layers`):
+           For each capability that a lower layer provides, check whether
+           any *higher* layer also provides the same capability.
+           - If yes, the capability is considered "shadowed" by the higher
+             layer and is NOT listed as effective for the lower layer.
+           - If no higher layer provides it, it remains as an effective
+             capability of the lower layer.
+      3. Return a mapping layer → set of effective capabilities.
+
+    This means *any* higher layer can overshadow a lower layer, not just
+    a specific one like Nix. The resolver is completely generic.
+    """
+    if layers is None:
+        layers_list = list(LAYER_ORDER)
+    else:
+        layers_list = list(layers)
+
+    raw_caps = detect_capabilities(ctx, layers_list)
+    effective: dict[str, set[str]] = {layer: set() for layer in layers_list}
+
+    # Bottom-up walk: lower index = lower layer, higher index = higher layer
+    for idx, lower in enumerate(layers_list):
+        lower_caps = raw_caps.get(lower, set())
+        for cap in lower_caps:
+            # Check if any higher layer also provides this capability
+            covered_by_higher = False
+            for higher in layers_list[idx + 1 :]:
+                higher_caps = raw_caps.get(higher, set())
+                if cap in higher_caps:
+                    covered_by_higher = True
+                    break
+
+            if not covered_by_higher:
+                effective[lower].add(cap)
+
+    return effective
