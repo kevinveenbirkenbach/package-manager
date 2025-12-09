@@ -1,3 +1,9 @@
+package-manager (0.7.3-1) unstable; urgency=medium
+
+  * Fixed bug: Ignored packages are now ignored
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 09 Dec 2025 16:08:31 +0100
+
 package-manager (0.7.2-1) unstable; urgency=medium
 
   * Implemented Changelog Support for Fedora and Debian

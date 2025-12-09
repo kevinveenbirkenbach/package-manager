@@ -1,3 +1,8 @@
+## [0.7.3] - 2025-12-09
+
+* Fixed bug: Ignored packages are now ignored
+
+
 ## [0.7.2] - 2025-12-09
 
 * Implemented Changelog Support for Fedora and Debian
