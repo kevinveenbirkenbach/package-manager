@@ -1,3 +1,8 @@
+## [0.7.6] - 2025-12-09
+
+* Fixed pull --preview bug in e2e test
+
+
 ## [0.7.5] - 2025-12-09
 
 * Fixed wrong directory permissions for nix
