@@ -1,3 +1,8 @@
+## [0.7.7] - 2025-12-09
+
+* Added TEST_PATTERN parameter to execute dedicated tests
+
+
 ## [0.7.6] - 2025-12-09
 
 * Fixed pull --preview bug in e2e test

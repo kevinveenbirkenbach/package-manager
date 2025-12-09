@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        0.7.6
+Version:        0.7.7
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -77,6 +77,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Dec 09 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.7.7-1
+- Added TEST_PATTERN parameter to execute dedicated tests
+
 * Tue Dec 09 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.7.6-1
 - Fixed pull --preview bug in e2e test
 

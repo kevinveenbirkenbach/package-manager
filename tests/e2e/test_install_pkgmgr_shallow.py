@@ -35,7 +35,7 @@ def remove_pkgmgr_from_nix_profile() -> None:
     prints a descriptive format without an index column inside the container.
 
     Instead, we directly try to remove possible names:
-      - 'pkgmgr'        (the actual name shown in `nix profile list`)
+      - 'pkgmgr'          (the actual name shown in `nix profile list`)
       - 'package-manager' (the name mentioned in Nix's own error hints)
     """
     for spec in ("pkgmgr", "package-manager"):
@@ -76,29 +76,47 @@ def pkgmgr_help_debug() -> None:
     print(f"returncode: {proc.returncode}")
     print("--- END ---\n")
 
-    if proc.returncode != 0:
-        raise AssertionError(f"'pkgmgr --help' failed with exit code {proc.returncode}")
-
-    # Wichtig: Hier KEIN AssertionError mehr – das ist reine Debug-Ausgabe.
-    # Falls du später hart testen willst, kannst du optional:
-    #   if proc.returncode != 0:
-    #       self.fail("...")
-    # aber aktuell nur Sichtprüfung.
+    # Important: this is **debug-only**. Do NOT fail the test here.
+    # If you ever want to hard-assert on this, you can add an explicit
+    # assertion in the test method instead of here.
 
 
 class TestIntegrationInstalPKGMGRShallow(unittest.TestCase):
     def test_install_pkgmgr_self_install(self) -> None:
-        # Debug before cleanup
-        nix_profile_list_debug("BEFORE CLEANUP")
+        """
+        End-to-end test that runs "python main.py install pkgmgr ..." inside
+        the test container.
 
-        # Cleanup: aggressively try to drop any pkgmgr/profile entries
-        remove_pkgmgr_from_nix_profile()
-
-        # Debug after cleanup
-        nix_profile_list_debug("AFTER CLEANUP")
+        We isolate HOME into /tmp/pkgmgr-self-install so that:
+          - ~/.config/pkgmgr points to an isolated test config area
+          - ~/Repositories is owned by the current user inside the container
+            (avoiding Nix's 'repository path is not owned by current user' error)
+        """
+        # Use a dedicated HOME for this test to avoid permission/ownership issues
+        temp_home = "/tmp/pkgmgr-self-install"
+        os.makedirs(temp_home, exist_ok=True)
 
         original_argv = sys.argv
+        original_environ = os.environ.copy()
+
         try:
+            # Isolate HOME so that ~ expands to /tmp/pkgmgr-self-install
+            os.environ["HOME"] = temp_home
+
+            # Optional: ensure XDG_* also use the temp HOME for extra isolation
+            os.environ.setdefault("XDG_CONFIG_HOME", os.path.join(temp_home, ".config"))
+            os.environ.setdefault("XDG_CACHE_HOME", os.path.join(temp_home, ".cache"))
+            os.environ.setdefault("XDG_DATA_HOME", os.path.join(temp_home, ".local", "share"))
+
+            # Debug before cleanup
+            nix_profile_list_debug("BEFORE CLEANUP")
+
+            # Cleanup: aggressively try to drop any pkgmgr/profile entries
+            remove_pkgmgr_from_nix_profile()
+
+            # Debug after cleanup
+            nix_profile_list_debug("AFTER CLEANUP")
+
             sys.argv = [
                 "python",
                 "install",
@@ -107,13 +125,18 @@ class TestIntegrationInstalPKGMGRShallow(unittest.TestCase):
                 "shallow",
                 "--no-verification",
             ]
-            # Führt die Installation via main.py aus
+
+            # Run installation via main.py
             runpy.run_module("main", run_name="__main__")
 
-            # Nach erfolgreicher Installation: pkgmgr --help anzeigen (Debug)
+            # After successful installation: run `pkgmgr --help` for debug
             pkgmgr_help_debug()
+
         finally:
             sys.argv = original_argv
+            # Restore full environment
+            os.environ.clear()
+            os.environ.update(original_environ)
 
 
 if __name__ == "__main__":

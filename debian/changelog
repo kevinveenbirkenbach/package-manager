@@ -1,3 +1,9 @@
+package-manager (0.7.7-1) unstable; urgency=medium
+
+  * Added TEST_PATTERN parameter to execute dedicated tests
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 09 Dec 2025 17:54:38 +0100
+
 package-manager (0.7.6-1) unstable; urgency=medium
 
   * Fixed pull --preview bug in e2e test
