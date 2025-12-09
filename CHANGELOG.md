@@ -1,3 +1,8 @@
+## [0.5.1] - 2025-12-09
+
+* Refine pkgmgr release CLI close wiring and integration tests for --close flag (ChatGPT: https://chatgpt.com/share/69376b4e-8440-800f-9d06-535ec1d7a40e)
+
+
 ## [0.5.0] - 2025-12-09
 
 * Add pkgmgr branch close subcommand, extend CLI parser wiring, and add unit tests for branch handling and version version-selection logic (see ChatGPT conversation: https://chatgpt.com/share/693762a3-9ea8-800f-a640-bc78170953d1)
