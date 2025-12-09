@@ -8,6 +8,7 @@ echo "============================================================"
 docker run --rm \
   -v "$(pwd):/src" \
   -v "pkgmgr_nix_cache:/root/.cache/nix" \
+  -v pkgmgr_nix_store:/nix \
   --workdir /src \
   -e PKGMGR_DEV=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \

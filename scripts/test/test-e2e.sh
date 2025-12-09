@@ -8,14 +8,9 @@ for distro in $DISTROS; do
   echo ">>> Running E2E tests: $distro"
   echo "============================================================"
 
-  MOUNT_NIX=""
-  if [[ "$distro" == "arch" ]]; then
-    MOUNT_NIX="-v pkgmgr_nix_store:/nix"
-  fi
-
   docker run --rm \
     -v "$(pwd):/src" \
-    $MOUNT_NIX \
+    -v pkgmgr_nix_store:/nix \
     -v "pkgmgr_nix_cache:/root/.cache/nix" \
     -e PKGMGR_DEV=1 \
     -e TEST_PATTERN="${TEST_PATTERN}" \
