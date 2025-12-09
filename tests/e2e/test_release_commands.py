@@ -133,6 +133,36 @@ class TestIntegrationReleaseCommand(unittest.TestCase):
             "close must be True when --close is given",
         )
 
+    def test_release_help_runs_without_error(self) -> None:
+        """
+        Running `pkgmgr release --help` should succeed without touching the
+        release helper and print a usage message for the release subcommand.
+
+        This test intentionally does not mock anything to exercise the real
+        CLI parser wiring in main.py.
+        """
+        import io
+        import contextlib
+
+        original_argv = list(sys.argv)
+        buf = io.StringIO()
+
+        try:
+            sys.argv = ["pkgmgr", "release", "--help"]
+            # argparse will call sys.exit(), so we expect a SystemExit here.
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_module("main", run_name="__main__")
+        finally:
+            sys.argv = original_argv
+
+        # Help exit code is usually 0 (or sometimes None, which also means "no error")
+        self.assertIn(cm.exception.code, (0, None))
+
+        output = buf.getvalue()
+        # Sanity checks: release help text should be present
+        self.assertIn("usage:", output)
+        self.assertIn("pkgmgr release", output)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,3 +1,8 @@
+## [0.7.0] - 2025-12-09
+
+* Add Git helpers for branch sync and floating 'latest' tag in the release workflow, ensure main/master are updated from origin before tagging, and extend unit/e2e tests including 'pkgmgr release --help' coverage (see ChatGPT conversation: https://chatgpt.com/share/69383024-efa4-800f-a875-129b81fa40ff)
+
+
 ## [0.6.0] - 2025-12-09
 
 * Expose DISTROS and BASE_IMAGE_* variables as exported Makefile environment variables so all build and test commands can consume them dynamically. By exporting these values, every Make target (e.g., build, build-no-cache, build-missing, test-container, test-unit, test-e2e) and every delegated script in scripts/build/ and scripts/test/ now receives a consistent view of the supported distributions and their base container images. This change removes duplicated definitions across scripts, ensures reproducible builds, and allows build tooling to react automatically when new distros or base images are added to the Makefile.

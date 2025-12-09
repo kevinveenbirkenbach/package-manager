@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        0.6.0
+Version:        0.7.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
