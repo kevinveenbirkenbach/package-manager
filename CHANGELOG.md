@@ -1,3 +1,8 @@
+## [0.7.5] - 2025-12-09
+
+* Fixed wrong directory permissions for nix
+
+
 ## [0.7.4] - 2025-12-09
 
 * Fixed missing build in test workflow -> Tests pass now
