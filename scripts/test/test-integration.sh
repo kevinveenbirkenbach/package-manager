@@ -10,6 +10,7 @@ docker run --rm \
   -v "pkgmgr_nix_cache:/root/.cache/nix" \
   --workdir /src \
   -e PKGMGR_DEV=1 \
+  -e TEST_PATTERN="${TEST_PATTERN}" \
   --entrypoint bash \
   "package-manager-test-arch" \
   -c '
@@ -19,5 +20,5 @@ docker run --rm \
       python -m unittest discover \
         -s tests/integration \
         -t /src \
-        -p "test_*.py";
+        -p "$TEST_PATTERN";
   '

@@ -12,7 +12,7 @@ NIX_CACHE_VOLUME := pkgmgr_nix_cache
 # Distro list and base images
 # (kept for documentation/reference; actual build logic is in scripts/build)
 # ------------------------------------------------------------
-DISTROS := arch debian ubuntu fedora centos
+DISTROS 		  := arch debian ubuntu fedora centos
 BASE_IMAGE_ARCH   := archlinux:latest
 BASE_IMAGE_DEBIAN := debian:stable-slim
 BASE_IMAGE_UBUNTU := ubuntu:latest
@@ -26,6 +26,10 @@ export BASE_IMAGE_DEBIAN
 export BASE_IMAGE_UBUNTU
 export BASE_IMAGE_FEDORA
 export BASE_IMAGE_CENTOS
+
+# PYthon Unittest Pattern
+TEST_PATTERN	:= test_*.py
+export TEST_PATTERN
 
 # ------------------------------------------------------------
 # PKGMGR setup (developer wrapper -> scripts/installation/main.sh)

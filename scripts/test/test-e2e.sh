@@ -18,6 +18,7 @@ for distro in $DISTROS; do
     $MOUNT_NIX \
     -v "pkgmgr_nix_cache:/root/.cache/nix" \
     -e PKGMGR_DEV=1 \
+    -e TEST_PATTERN="${TEST_PATTERN}" \
     --workdir /src \
     --entrypoint bash \
     "package-manager-test-$distro" \
@@ -51,6 +52,6 @@ for distro in $DISTROS; do
       nix develop .#default --no-write-lock-file -c \
         python3 -m unittest discover \
           -s /src/tests/e2e \
-          -p "test_*.py";
+          -p "$TEST_PATTERN";
     '
 done
