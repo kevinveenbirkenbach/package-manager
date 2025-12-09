@@ -6,8 +6,14 @@ from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.dir import get_repo_dir
 
 
-def create_ink(repo, repositories_base_dir, bin_dir, all_repos,
-               quiet=False, preview=False):
+def create_ink(
+    repo,
+    repositories_base_dir,
+    bin_dir,
+    all_repos,
+    quiet: bool = False,
+    preview: bool = False,
+) -> None:
     """
     Create a symlink for the repository's command.
 
@@ -18,6 +24,11 @@ def create_ink(repo, repositories_base_dir, bin_dir, all_repos,
     Behavior:
       - If repo["command"] is defined → create a symlink to it.
       - If repo["command"] is missing or None → do NOT create a link.
+
+    Safety:
+      - If the resolved command path is identical to the final link target,
+        we skip symlink creation to avoid self-referential symlinks that
+        would break shell resolution ("too many levels of symbolic links").
     """
 
     repo_identifier = get_repo_identifier(repo, all_repos)
@@ -30,6 +41,27 @@ def create_ink(repo, repositories_base_dir, bin_dir, all_repos,
         return
 
     link_path = os.path.join(bin_dir, repo_identifier)
+
+    # ------------------------------------------------------------------
+    # Safety guard: avoid self-referential symlinks
+    #
+    # Example of a broken situation we must avoid:
+    #   - command        = ~/.local/bin/package-manager
+    #   - link_path      = ~/.local/bin/package-manager
+    #   - create_ink() removes the real binary and creates a symlink
+    #     pointing to itself → zsh: too many levels of symbolic links
+    #
+    # If the resolved command already lives exactly at the target path,
+    # we treat it as "already installed" and skip any modification.
+    # ------------------------------------------------------------------
+    if os.path.abspath(command) == os.path.abspath(link_path):
+        if not quiet:
+            print(
+                f"[pkgmgr] Command for '{repo_identifier}' already lives at "
+                f"'{link_path}'. Skipping symlink creation to avoid a "
+                "self-referential link."
+            )
+        return
 
     if preview:
         print(f"[Preview] Would link {link_path} → {command}")
@@ -65,7 +97,10 @@ def create_ink(repo, repositories_base_dir, bin_dir, all_repos,
 
         if alias_name == repo_identifier:
             if not quiet:
-                print(f"Alias '{alias_name}' equals identifier. Skipping alias creation.")
+                print(
+                    f"Alias '{alias_name}' equals identifier. "
+                    "Skipping alias creation."
+                )
             return
 
         try:
