@@ -46,16 +46,16 @@ build:
 # Test targets (delegated to scripts/test)
 # ------------------------------------------------------------
 
-test-unit:
+test-unit: build-missing
 	@bash scripts/test/test-unit.sh
 
-test-integration:
+test-integration: build-missing
 	@bash scripts/test/test-integration.sh
 
-test-e2e:
+test-e2e: build-missing
 	@bash scripts/test/test-e2e.sh
 
-test-container:
+test-container: build-missing
 	@bash scripts/test/test-container.sh
 
 # ------------------------------------------------------------
@@ -65,7 +65,7 @@ build-missing:
 	@bash scripts/build/build-image-missing.sh
 
 # Combined test target for local + CI (unit + e2e + integration)
-test: build-missing test-container test-unit test-e2e test-integration
+test: test-container test-unit test-e2e test-integration
 
 # ------------------------------------------------------------
 # System install (native packages, calls scripts/installation/run-package.sh)

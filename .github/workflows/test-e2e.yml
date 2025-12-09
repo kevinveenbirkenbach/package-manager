@@ -1,4 +1,4 @@
-name: Test package-manager (e2e)
+name: Test End-To-End
 
 on:
   push:

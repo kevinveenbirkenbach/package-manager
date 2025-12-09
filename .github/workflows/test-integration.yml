@@ -1,4 +1,4 @@
-name: Test package-manager (integration)
+name: Test Code Integration
 
 on:
   push:
@@ -21,9 +21,5 @@ jobs:
       - name: Show Docker version
         run: docker version
 
-      # Build Arch test image (same as used in test-unit and test-e2e)
-      - name: Build test images
-        run: make build
-
       - name: Run integration tests via make (Arch container)
-        run: make test-integration
+        run: make test-integration DISTROS="arch"
