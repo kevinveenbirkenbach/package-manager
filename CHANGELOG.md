@@ -1,3 +1,8 @@
+## [0.7.9] - 2025-12-09
+
+* 'main' and 'master' are now both accepted as branches for branch close merge
+
+
 ## [0.7.8] - 2025-12-09
 
 * Missing pyproject.toml doesn't lead to an error during release
