@@ -1,3 +1,8 @@
+## [0.7.10] - 2025-12-09
+
+* Fixed test_install_pkgmgr_shallow.py
+
+
 ## [0.7.9] - 2025-12-09
 
 * 'main' and 'master' are now both accepted as branches for branch close merge

@@ -13,6 +13,7 @@ dnf -y install \
   bash \
   curl-minimal \
   ca-certificates \
+  sudo \
   xz
 
 dnf clean all

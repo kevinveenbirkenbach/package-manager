@@ -35,8 +35,8 @@ def remove_pkgmgr_from_nix_profile() -> None:
     prints a descriptive format without an index column inside the container.
 
     Instead, we directly try to remove possible names:
-      - 'pkgmgr'          (the actual name shown in `nix profile list`)
-      - 'package-manager' (the name mentioned in Nix's own error hints)
+      - 'pkgmgr'
+      - 'package-manager'
     """
     for spec in ("pkgmgr", "package-manager"):
         subprocess.run(
@@ -45,18 +45,34 @@ def remove_pkgmgr_from_nix_profile() -> None:
         )
 
 
+def configure_git_safe_directory() -> None:
+    """
+    Configure Git to treat /src as a safe directory.
+
+    Needed because /src is a bind-mounted repository in CI, often owned by a
+    different UID. Modern Git aborts with:
+      'fatal: detected dubious ownership in repository at /src/.git'
+
+    This fix applies ONLY inside this test container.
+    """
+    try:
+        subprocess.run(
+            ["git", "config", "--global", "--add", "safe.directory", "/src"],
+            check=False,
+        )
+    except FileNotFoundError:
+        print("[WARN] git not found – skipping safe.directory configuration")
+
+
 def pkgmgr_help_debug() -> None:
     """
     Run `pkgmgr --help` after installation *inside an interactive bash shell*,
     print its output and return code, but never fail the test.
 
-    Reason:
-      - The installer adds venv/alias setup into shell rc files (~/.bashrc, ~/.zshrc)
-      - Those changes are only applied in a new interactive shell session.
+    This ensures the installer’s shell RC changes are actually loaded.
     """
     print("\n--- PKGMGR HELP (after installation, via bash -i) ---")
 
-    # Simulate a fresh interactive bash, so ~/.bashrc gets sourced
     proc = subprocess.run(
         ["bash", "-i", "-c", "pkgmgr --help"],
         capture_output=True,
@@ -76,10 +92,6 @@ def pkgmgr_help_debug() -> None:
     print(f"returncode: {proc.returncode}")
     print("--- END ---\n")
 
-    # Important: this is **debug-only**. Do NOT fail the test here.
-    # If you ever want to hard-assert on this, you can add an explicit
-    # assertion in the test method instead of here.
-
 
 class TestIntegrationInstalPKGMGRShallow(unittest.TestCase):
     def test_install_pkgmgr_self_install(self) -> None:
@@ -87,12 +99,8 @@ class TestIntegrationInstalPKGMGRShallow(unittest.TestCase):
         End-to-end test that runs "python main.py install pkgmgr ..." inside
         the test container.
 
-        We isolate HOME into /tmp/pkgmgr-self-install so that:
-          - ~/.config/pkgmgr points to an isolated test config area
-          - ~/Repositories is owned by the current user inside the container
-            (avoiding Nix's 'repository path is not owned by current user' error)
+        HOME is isolated to avoid permission problems with Nix & repositories.
         """
-        # Use a dedicated HOME for this test to avoid permission/ownership issues
         temp_home = "/tmp/pkgmgr-self-install"
         os.makedirs(temp_home, exist_ok=True)
 
@@ -103,20 +111,24 @@ class TestIntegrationInstalPKGMGRShallow(unittest.TestCase):
             # Isolate HOME so that ~ expands to /tmp/pkgmgr-self-install
             os.environ["HOME"] = temp_home
 
-            # Optional: ensure XDG_* also use the temp HOME for extra isolation
+            # Optional XDG override for a fully isolated environment
             os.environ.setdefault("XDG_CONFIG_HOME", os.path.join(temp_home, ".config"))
             os.environ.setdefault("XDG_CACHE_HOME", os.path.join(temp_home, ".cache"))
             os.environ.setdefault("XDG_DATA_HOME", os.path.join(temp_home, ".local", "share"))
 
+            # 🔧 IMPORTANT FIX: allow Git to access /src safely
+            configure_git_safe_directory()
+
             # Debug before cleanup
             nix_profile_list_debug("BEFORE CLEANUP")
 
-            # Cleanup: aggressively try to drop any pkgmgr/profile entries
+            # Cleanup: drop any pkgmgr entries from nix profile
             remove_pkgmgr_from_nix_profile()
 
             # Debug after cleanup
             nix_profile_list_debug("AFTER CLEANUP")
 
+            # Prepare argv for module execution
             sys.argv = [
                 "python",
                 "install",
@@ -126,15 +138,15 @@ class TestIntegrationInstalPKGMGRShallow(unittest.TestCase):
                 "--no-verification",
             ]
 
-            # Run installation via main.py
+            # Execute installation via main.py
             runpy.run_module("main", run_name="__main__")
 
-            # After successful installation: run `pkgmgr --help` for debug
+            # Debug: interactive shell test
             pkgmgr_help_debug()
 
         finally:
+            # Restore system state
             sys.argv = original_argv
-            # Restore full environment
             os.environ.clear()
             os.environ.update(original_environ)
 

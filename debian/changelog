@@ -1,3 +1,9 @@
+package-manager (0.7.10-1) unstable; urgency=medium
+
+  * Fixed test_install_pkgmgr_shallow.py
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 09 Dec 2025 22:57:08 +0100
+
 package-manager (0.7.9-1) unstable; urgency=medium
 
   * 'main' and 'master' are now both accepted as branches for branch close merge
