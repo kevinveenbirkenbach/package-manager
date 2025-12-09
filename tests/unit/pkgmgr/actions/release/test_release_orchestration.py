@@ -19,6 +19,7 @@ class TestReleaseOrchestration(unittest.TestCase):
             patch("pkgmgr.actions.release.update_pkgbuild_version") as mock_update_pkgbuild, \
             patch("pkgmgr.actions.release.update_spec_version") as mock_update_spec, \
             patch("pkgmgr.actions.release.update_debian_changelog") as mock_update_debian_changelog, \
+            patch("pkgmgr.actions.release.update_spec_changelog") as mock_update_spec_changelog, \
             patch("pkgmgr.actions.release.run_git_command") as mock_run_git_command, \
             patch("pkgmgr.actions.release.sync_branch_with_remote") as mock_sync_branch, \
             patch("pkgmgr.actions.release.update_latest_tag") as mock_update_latest_tag:
@@ -48,7 +49,7 @@ class TestReleaseOrchestration(unittest.TestCase):
             self.assertEqual(args[1], "1.2.4")
             self.assertEqual(kwargs.get("preview"), False)
 
-            # changelog update
+            # changelog update (Projekt)
             mock_update_changelog.assert_called_once()
             args, kwargs = mock_update_changelog.call_args
             self.assertEqual(args[0], "CHANGELOG.md")
@@ -69,6 +70,13 @@ class TestReleaseOrchestration(unittest.TestCase):
             mock_update_debian_changelog.assert_called_once()
             self.assertEqual(
                 mock_update_debian_changelog.call_args[1].get("preview"),
+                False,
+            )
+
+            # Fedora / RPM %changelog helper
+            mock_update_spec_changelog.assert_called_once()
+            self.assertEqual(
+                mock_update_spec_changelog.call_args[1].get("preview"),
                 False,
             )
 
@@ -96,6 +104,7 @@ class TestReleaseOrchestration(unittest.TestCase):
             patch("pkgmgr.actions.release.update_pkgbuild_version") as mock_update_pkgbuild, \
             patch("pkgmgr.actions.release.update_spec_version") as mock_update_spec, \
             patch("pkgmgr.actions.release.update_debian_changelog") as mock_update_debian_changelog, \
+            patch("pkgmgr.actions.release.update_spec_changelog") as mock_update_spec_changelog, \
             patch("pkgmgr.actions.release.run_git_command") as mock_run_git_command, \
             patch("pkgmgr.actions.release.sync_branch_with_remote") as mock_sync_branch, \
             patch("pkgmgr.actions.release.update_latest_tag") as mock_update_latest_tag:
@@ -128,6 +137,10 @@ class TestReleaseOrchestration(unittest.TestCase):
 
             mock_update_debian_changelog.assert_called_once()
             self.assertTrue(mock_update_debian_changelog.call_args[1].get("preview"))
+
+            # Fedora / RPM spec changelog helper in preview mode
+            mock_update_spec_changelog.assert_called_once()
+            self.assertTrue(mock_update_spec_changelog.call_args[1].get("preview"))
 
             # In preview mode no real git commands must be executed
             mock_run_git_command.assert_not_called()

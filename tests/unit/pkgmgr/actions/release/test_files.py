@@ -13,6 +13,7 @@ from pkgmgr.actions.release.files import (
     update_spec_version,
     update_changelog,
     update_debian_changelog,
+    update_spec_changelog,
 )
 
 
@@ -307,6 +308,95 @@ class TestUpdateDebianChangelog(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
+        self.assertEqual(content, original)
+
+
+class TestUpdateSpecChangelog(unittest.TestCase):
+    def test_update_spec_changelog_inserts_stanza_after_changelog_marker(self) -> None:
+        original = textwrap.dedent(
+            """
+            Name: package-manager
+            Version: 0.1.0
+            Release: 5%{?dist}
+
+            %description
+            Some description.
+
+            %changelog
+            * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
+            - Old entry
+            """
+        ).strip() + "\n"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "package-manager.spec")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(original)
+
+            with patch.dict(
+                os.environ,
+                {
+                    "DEBFULLNAME": "Test Maintainer",
+                    "DEBEMAIL": "test@example.com",
+                },
+                clear=False,
+            ):
+                update_spec_changelog(
+                    spec_path=path,
+                    package_name="package-manager",
+                    new_version="1.2.3",
+                    message="Fedora changelog entry",
+                    preview=False,
+                )
+
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+        # Neue Stanza muss nach %changelog stehen
+        self.assertIn("%changelog", content)
+        self.assertIn("Fedora changelog entry", content)
+        self.assertIn("Test Maintainer <test@example.com>", content)
+        # Alte Einträge müssen erhalten bleiben
+        self.assertIn("Old Maintainer <old@example.com>", content)
+
+    def test_update_spec_changelog_preview_does_not_write(self) -> None:
+        original = textwrap.dedent(
+            """
+            Name: package-manager
+            Version: 0.1.0
+            Release: 5%{?dist}
+
+            %changelog
+            * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
+            - Old entry
+            """
+        ).strip() + "\n"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "package-manager.spec")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(original)
+
+            with patch.dict(
+                os.environ,
+                {
+                    "DEBFULLNAME": "Test Maintainer",
+                    "DEBEMAIL": "test@example.com",
+                },
+                clear=False,
+            ):
+                update_spec_changelog(
+                    spec_path=path,
+                    package_name="package-manager",
+                    new_version="1.2.3",
+                    message="Fedora changelog entry",
+                    preview=True,
+                )
+
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+        # Im Preview-Modus darf nichts verändert werden
         self.assertEqual(content, original)
 
 

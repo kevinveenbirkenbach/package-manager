@@ -49,6 +49,7 @@ from .files import (
     update_spec_version,
     update_changelog,
     update_debian_changelog,
+    update_spec_changelog,
 )
 
 
@@ -98,6 +99,8 @@ def _release_impl(
     spec_path = os.path.join(repo_root, "package-manager.spec")
     update_spec_version(spec_path, new_ver_str, preview=preview)
 
+    # Determine a single effective_message to be reused across all
+    # changelog targets (project, Debian, Fedora).
     effective_message: Optional[str] = message
     if effective_message is None and isinstance(changelog_message, str):
         if changelog_message.strip():
@@ -105,8 +108,19 @@ def _release_impl(
 
     debian_changelog_path = os.path.join(repo_root, "debian", "changelog")
     package_name = os.path.basename(repo_root) or "package-manager"
+
+    # Debian changelog
     update_debian_changelog(
         debian_changelog_path,
+        package_name=package_name,
+        new_version=new_ver_str,
+        message=effective_message,
+        preview=preview,
+    )
+
+    # Fedora / RPM %changelog
+    update_spec_changelog(
+        spec_path=spec_path,
         package_name=package_name,
         new_version=new_ver_str,
         message=effective_message,
