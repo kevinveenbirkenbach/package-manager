@@ -97,11 +97,32 @@ if [[ "${IN_CONTAINER}" -eq 1 && "${EUID:-0}" -eq 0 ]]; then
     useradd -m -r -g nixbld -s /usr/bin/bash nix
   fi
 
-  # Create /nix directory and hand it to nix user (prevents installer sudo prompt)
+  # Ensure /nix exists and is writable by the "nix" user.
+  #
+  # In some base images (or previous runs), /nix may already exist and be
+  # owned by root. In that case the Nix single-user installer will abort with:
+  #
+  #   "directory /nix exists, but is not writable by you"
+  #
+  # To keep container runs idempotent and robust, we always enforce
+  # ownership nix:nixbld here.
   if [[ ! -d /nix ]]; then
     echo "[init-nix] Creating /nix with owner nix:nixbld..."
     mkdir -m 0755 /nix
     chown nix:nixbld /nix
+  else
+    current_owner="$(stat -c '%U' /nix 2>/dev/null || echo '?')"
+    current_group="$(stat -c '%G' /nix 2>/dev/null || echo '?')"
+    if [[ "${current_owner}" != "nix" || "${current_group}" != "nixbld" ]]; then
+      echo "[init-nix] /nix already exists with owner ${current_owner}:${current_group} – fixing to nix:nixbld..."
+      chown -R nix:nixbld /nix
+    else
+      echo "[init-nix] /nix already exists with correct owner nix:nixbld."
+    fi
+
+    if [[ ! -w /nix ]]; then
+      echo "[init-nix] WARNING: /nix is still not writable after chown; Nix installer may fail."
+    fi
   fi
 
   # Run Nix single-user installer as "nix"
