@@ -1,7 +1,7 @@
 # Maintainer: Kevin Veen-Birkenbach <info@veen.world>
 
 pkgname=package-manager
-pkgver=0.7.3
+pkgver=0.7.4
 pkgrel=1
 pkgdesc="Local-flake wrapper for Kevin's package-manager (Nix-based)."
 arch=('any')

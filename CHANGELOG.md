@@ -1,3 +1,8 @@
+## [0.7.4] - 2025-12-09
+
+* Fixed missing build in test workflow -> Tests pass now
+
+
 ## [0.7.3] - 2025-12-09
 
 * Fixed bug: Ignored packages are now ignored

@@ -1,3 +1,9 @@
+package-manager (0.7.4-1) unstable; urgency=medium
+
+  * Fixed missing build in test workflow -> Tests pass now
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 09 Dec 2025 16:22:00 +0100
+
 package-manager (0.7.3-1) unstable; urgency=medium
 
   * Fixed bug: Ignored packages are now ignored
