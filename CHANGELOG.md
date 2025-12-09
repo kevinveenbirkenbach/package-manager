@@ -1,3 +1,8 @@
+## [0.7.2] - 2025-12-09
+
+* Implemented Changelog Support for Fedora and Debian
+
+
 ## [0.7.1] - 2025-12-09
 
 * Fix floating 'latest' tag logic: dereference annotated target (vX.Y.Z^{}), add tag message to avoid Git errors, ensure best-effort update without blocking releases, and update unit tests (see ChatGPT conversation: https://chatgpt.com/share/69383024-efa4-800f-a875-129b81fa40ff).

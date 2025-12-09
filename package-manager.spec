@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        0.7.1
+Version:        0.7.2
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -77,5 +77,8 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Dec 09 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.7.2-1
+- Implemented Changelog Support for Fedora and Debian
+
 * Sat Dec 06 2025 Kevin Veen-Birkenbach <info@veen.world> - 0.1.1-1
 - Initial RPM packaging for package-manager
