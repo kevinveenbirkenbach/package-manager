@@ -85,7 +85,6 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
 # File update helpers (pyproject + extra packaging + changelog)
 # ---------------------------------------------------------------------------
 
-
 def update_pyproject_version(
     pyproject_path: str,
     new_version: str,
@@ -99,13 +98,25 @@ def update_pyproject_version(
         version = "X.Y.Z"
 
     and replaces the version part with the given new_version string.
+
+    If the file does not exist, it is skipped without failing the release.
     """
+    if not os.path.exists(pyproject_path):
+        print(
+            f"[INFO] pyproject.toml not found at: {pyproject_path}, "
+            "skipping version update."
+        )
+        return
+
     try:
         with open(pyproject_path, "r", encoding="utf-8") as f:
             content = f.read()
-    except FileNotFoundError:
-        print(f"[ERROR] pyproject.toml not found at: {pyproject_path}")
-        sys.exit(1)
+    except OSError as exc:
+        print(
+            f"[WARN] Could not read pyproject.toml at {pyproject_path}: {exc}. "
+            "Skipping version update."
+        )
+        return
 
     pattern = r'^(version\s*=\s*")([^"]+)(")'
     new_content, count = re.subn(
