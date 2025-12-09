@@ -13,6 +13,13 @@ Behavior:
       * Then install the flake outputs (`pkgmgr`, `default`) via `nix profile install`.
   - Failure installing `pkgmgr` is treated as fatal.
   - Failure installing `default` is logged as an error/warning but does not abort.
+
+Special handling for dev shells / CI:
+  - If IN_NIX_SHELL is set (e.g. inside `nix develop`), the installer is
+    disabled. In that environment the flake outputs are already provided
+    by the dev shell and we must not touch the user profile.
+  - If PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 is set, the installer is
+    globally disabled (useful for CI or debugging).
 """
 
 import os
@@ -36,14 +43,45 @@ class NixFlakeInstaller(BaseInstaller):
     FLAKE_FILE = "flake.nix"
     PROFILE_NAME = "package-manager"
 
+    def _in_nix_shell(self) -> bool:
+        """
+        Return True if we appear to be running inside a Nix dev shell.
+
+        Nix sets IN_NIX_SHELL in `nix develop` environments. In that case
+        the flake outputs are already available, and touching the user
+        profile (nix profile install/remove) is undesirable.
+        """
+        return bool(os.environ.get("IN_NIX_SHELL"))
+
     def supports(self, ctx: "RepoContext") -> bool:
         """
         Only support repositories that:
-          - Have a flake.nix
+          - Are NOT inside a Nix dev shell (IN_NIX_SHELL unset),
+          - Are NOT explicitly disabled via PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1,
+          - Have a flake.nix,
           - And have the `nix` command available.
         """
+        # 1) Skip when running inside a dev shell – flake is already active.
+        if self._in_nix_shell():
+            print(
+                "[INFO] IN_NIX_SHELL detected; skipping NixFlakeInstaller. "
+                "Flake outputs are provided by the development shell."
+            )
+            return False
+
+        # 2) Optional global kill-switch for CI or debugging.
+        if os.environ.get("PKGMGR_DISABLE_NIX_FLAKE_INSTALLER") == "1":
+            print(
+                "[INFO] PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 – "
+                "NixFlakeInstaller is disabled."
+            )
+            return False
+
+        # 3) Nix must be available.
         if shutil.which("nix") is None:
             return False
+
+        # 4) flake.nix must exist in the repository.
         flake_path = os.path.join(ctx.repo_dir, self.FLAKE_FILE)
         return os.path.exists(flake_path)
 
@@ -76,6 +114,14 @@ class NixFlakeInstaller(BaseInstaller):
         Any failure installing `pkgmgr` is treated as fatal (SystemExit).
         A failure installing `default` is logged but does not abort.
         """
+        # Extra guard in case run() is called directly without supports().
+        if self._in_nix_shell():
+            print(
+                "[INFO] IN_NIX_SHELL detected in run(); "
+                "skipping Nix flake profile installation."
+            )
+            return
+
         # Reuse supports() to keep logic in one place
         if not self.supports(ctx):  # type: ignore[arg-type]
             return
@@ -91,7 +137,12 @@ class NixFlakeInstaller(BaseInstaller):
             try:
                 # For 'default' we don't want the process to exit on error
                 allow_failure = output == "default"
-                run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview, allow_failure=allow_failure)
+                run_command(
+                    cmd,
+                    cwd=ctx.repo_dir,
+                    preview=ctx.preview,
+                    allow_failure=allow_failure,
+                )
                 print(f"Nix flake output '{output}' successfully installed.")
             except SystemExit as e:
                 print(f"[Error] Failed to install Nix flake output '{output}': {e}")

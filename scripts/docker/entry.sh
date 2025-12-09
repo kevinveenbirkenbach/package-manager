@@ -2,28 +2,59 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Ensure Nix has access to a valid CA bundle (TLS trust store)
+# Detect and export a valid CA bundle so Nix, Git, curl and Python tooling
+# can successfully perform HTTPS requests on all distros (Debian, Ubuntu,
+# Fedora, RHEL, CentOS, etc.)
 # ---------------------------------------------------------------------------
-if [[ -z "${NIX_SSL_CERT_FILE:-}" ]]; then
-  if [[ -f /etc/ssl/certs/ca-certificates.crt ]]; then
-    # Debian/Ubuntu-style path
-    export NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
-    echo "[docker] Using CA bundle: ${NIX_SSL_CERT_FILE}"
-  elif [[ -f /etc/pki/tls/certs/ca-bundle.crt ]]; then
-    # Fedora/RHEL/CentOS-style path
-    export NIX_SSL_CERT_FILE=/etc/pki/tls/certs/ca-bundle.crt
-    echo "[docker] Using CA bundle: ${NIX_SSL_CERT_FILE}"
-  else
-    echo "[docker] WARNING: No CA bundle found for Nix (NIX_SSL_CERT_FILE not set)."
-    echo "[docker] HTTPS access for Nix flakes may fail."
-  fi
+detect_ca_bundle() {
+  # Common CA bundle locations across major Linux distributions
+  local candidates=(
+    /etc/ssl/certs/ca-certificates.crt                       # Debian/Ubuntu
+    /etc/ssl/cert.pem                                       # Some distros
+    /etc/pki/tls/certs/ca-bundle.crt                        # Fedora/RHEL/CentOS
+    /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem       # CentOS/RHEL extracted bundle
+    /etc/ssl/ca-bundle.pem                                  # Generic fallback
+  )
+
+  for path in "${candidates[@]}"; do
+    if [[ -f "$path" ]]; then
+      echo "$path"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+# Use existing NIX_SSL_CERT_FILE if provided, otherwise auto-detect
+CA_BUNDLE="${NIX_SSL_CERT_FILE:-}"
+
+if [[ -z "${CA_BUNDLE}" ]]; then
+  CA_BUNDLE="$(detect_ca_bundle || true)"
+fi
+
+if [[ -n "${CA_BUNDLE}" ]]; then
+  # Export for Nix (critical)
+  export NIX_SSL_CERT_FILE="${CA_BUNDLE}"
+
+  # Export for Git, Python requests, curl, etc.
+  export SSL_CERT_FILE="${CA_BUNDLE}"
+  export REQUESTS_CA_BUNDLE="${CA_BUNDLE}"
+  export GIT_SSL_CAINFO="${CA_BUNDLE}"
+
+  echo "[docker] Using CA bundle: ${CA_BUNDLE}"
+else
+  echo "[docker] WARNING: No CA certificate bundle found."
+  echo "[docker] HTTPS access for Nix flakes and other tools may fail."
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "[docker] Starting package-manager container"
 
-# Distro info for logging
+# ---------------------------------------------------------------------------
+# Log distribution info
+# ---------------------------------------------------------------------------
 if [[ -f /etc/os-release ]]; then
   # shellcheck disable=SC1091
   . /etc/os-release
@@ -34,9 +65,9 @@ fi
 echo "[docker] Using /src as working directory"
 cd /src
 
-# ------------------------------------------------------------
-# DEV mode: build/install package-manager from current /src
-# ------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# DEV mode: rebuild package-manager from the mounted /src tree
+# ---------------------------------------------------------------------------
 if [[ "${PKGMGR_DEV:-0}" == "1" ]]; then
   echo "[docker] DEV mode enabled (PKGMGR_DEV=1)"
   echo "[docker] Rebuilding package-manager from /src via scripts/installation/run-package.sh..."
@@ -49,9 +80,9 @@ if [[ "${PKGMGR_DEV:-0}" == "1" ]]; then
   fi
 fi
 
-# ------------------------------------------------------------
-# Hand-off to pkgmgr / arbitrary command
-# ------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Hand off to pkgmgr or arbitrary command
+# ---------------------------------------------------------------------------
 if [[ $# -eq 0 ]]; then
   echo "[docker] No arguments provided. Showing pkgmgr help..."
   exec pkgmgr --help

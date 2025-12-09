@@ -17,7 +17,6 @@ apt/dpkg tooling are available.
 import glob
 import os
 import shutil
-
 from typing import List
 
 from pkgmgr.actions.repository.install.context import RepoContext
@@ -68,6 +67,32 @@ class DebianControlInstaller(BaseInstaller):
         pattern = os.path.join(parent, "*.deb")
         return sorted(glob.glob(pattern))
 
+    def _privileged_prefix(self) -> str | None:
+        """
+        Determine how to run privileged commands:
+
+          - If 'sudo' is available, return 'sudo '.
+          - If we are running as root (e.g. inside CI/container), return ''.
+          - Otherwise, return None, meaning we cannot safely elevate.
+
+        Callers are responsible for handling the None case (usually by
+        warning and skipping automatic installation).
+        """
+        sudo_path = shutil.which("sudo")
+
+        is_root = False
+        try:
+            is_root = os.geteuid() == 0
+        except AttributeError:  # pragma: no cover - non-POSIX platforms
+            # On non-POSIX systems, fall back to assuming "not root".
+            is_root = False
+
+        if sudo_path is not None:
+            return "sudo "
+        if is_root:
+            return ""
+        return None
+
     def _install_build_dependencies(self, ctx: RepoContext) -> None:
         """
         Install build dependencies using `apt-get build-dep ./`.
@@ -86,12 +111,25 @@ class DebianControlInstaller(BaseInstaller):
             )
             return
 
+        prefix = self._privileged_prefix()
+        if prefix is None:
+            print(
+                "[Warning] Neither 'sudo' is available nor running as root. "
+                "Skipping automatic build-dep installation for Debian. "
+                "Please install build dependencies from debian/control manually."
+            )
+            return
+
         # Update package lists first for reliable build-dep resolution.
-        run_command("sudo apt-get update", cwd=ctx.repo_dir, preview=ctx.preview)
+        run_command(
+            f"{prefix}apt-get update",
+            cwd=ctx.repo_dir,
+            preview=ctx.preview,
+        )
 
         # Install build dependencies based on debian/control in the current tree.
         # `apt-get build-dep ./` uses the source in the current directory.
-        builddep_cmd = "sudo apt-get build-dep -y ./"
+        builddep_cmd = f"{prefix}apt-get build-dep -y ./"
         run_command(builddep_cmd, cwd=ctx.repo_dir, preview=ctx.preview)
 
     def run(self, ctx: RepoContext) -> None:
@@ -101,7 +139,7 @@ class DebianControlInstaller(BaseInstaller):
         Steps:
           1. apt-get build-dep ./ (automatic build dependency installation)
           2. dpkg-buildpackage -b -us -uc
-          3. sudo dpkg -i ../*.deb
+          3. sudo dpkg -i ../*.deb   (or plain dpkg -i when running as root)
         """
         control_path = self._control_path(ctx)
         if not os.path.exists(control_path):
@@ -123,7 +161,17 @@ class DebianControlInstaller(BaseInstaller):
             )
             return
 
+        prefix = self._privileged_prefix()
+        if prefix is None:
+            print(
+                "[Warning] Neither 'sudo' is available nor running as root. "
+                "Skipping automatic .deb installation. "
+                "You can manually install the following files with dpkg -i:\n  "
+                + "\n  ".join(debs)
+            )
+            return
+
         # 4) Install .deb files
-        install_cmd = "sudo dpkg -i " + " ".join(os.path.basename(d) for d in debs)
+        install_cmd = prefix + "dpkg -i " + " ".join(os.path.basename(d) for d in debs)
         parent = os.path.dirname(ctx.repo_dir)
         run_command(install_cmd, cwd=parent, preview=ctx.preview)
