@@ -15,7 +15,7 @@ venv/
 
 # Build artifacts
 dist/
-build/
+build/*
 *.egg-info/
 
 # Editor files
@@ -32,3 +32,10 @@ Thumbs.db
 # Ignore logs
 *.log
 package-manager-*
+
+# debian 
+debian/package-manager/
+debian/debhelper-build-stamp
+debian/files
+debian/.debhelper/
+debian/package-manager.substvars
