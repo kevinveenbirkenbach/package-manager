@@ -28,14 +28,27 @@ class TestNixFlakeInstaller(unittest.TestCase):
     @patch("shutil.which", return_value="/usr/bin/nix")
     @patch("os.path.exists", return_value=True)
     def test_supports_true_when_nix_and_flake_exist(self, mock_exists, mock_which):
-        self.assertTrue(self.installer.supports(self.ctx))
+        """
+        supports() should return True when:
+        - nix is available,
+        - flake.nix exists in the repo,
+        - and we are not inside a Nix dev shell.
+        """
+        with patch.dict(os.environ, {"IN_NIX_SHELL": ""}, clear=False):
+            self.assertTrue(self.installer.supports(self.ctx))
+
         mock_which.assert_called_with("nix")
         mock_exists.assert_called_with(os.path.join(self.ctx.repo_dir, "flake.nix"))
 
     @patch("shutil.which", return_value=None)
     @patch("os.path.exists", return_value=True)
     def test_supports_false_when_nix_missing(self, mock_exists, mock_which):
-        self.assertFalse(self.installer.supports(self.ctx))
+        """
+        supports() should return False if nix is not available,
+        even if a flake.nix file exists.
+        """
+        with patch.dict(os.environ, {"IN_NIX_SHELL": ""}, clear=False):
+            self.assertFalse(self.installer.supports(self.ctx))
 
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which", return_value="/usr/bin/nix")
@@ -47,10 +60,12 @@ class TestNixFlakeInstaller(unittest.TestCase):
         mock_exists,
     ):
         """
-        Ensure that run():
-          - first tries to remove the old 'package-manager' profile entry
-          - then installs both 'pkgmgr' and 'default' outputs.
+        run() should:
+
+        1. attempt to remove the old 'package-manager' profile entry, and
+        2. install both 'pkgmgr' and 'default' flake outputs.
         """
+
         cmds = []
 
         def side_effect(cmd, cwd=None, preview=False, *args, **kwargs):
@@ -59,18 +74,24 @@ class TestNixFlakeInstaller(unittest.TestCase):
 
         mock_run_command.side_effect = side_effect
 
-        self.installer.run(self.ctx)
+        # Simulate a normal environment (not inside nix develop, installer enabled).
+        with patch.dict(
+            os.environ,
+            {"IN_NIX_SHELL": "", "PKGMGR_DISABLE_NIX_FLAKE_INSTALLER": ""},
+            clear=False,
+        ):
+            self.installer.run(self.ctx)
 
         remove_cmd = f"nix profile remove {self.installer.PROFILE_NAME} || true"
         install_pkgmgr_cmd = f"nix profile install {self.ctx.repo_dir}#pkgmgr"
         install_default_cmd = f"nix profile install {self.ctx.repo_dir}#default"
 
-        # Mindestens diese drei Kommandos müssen aufgerufen worden sein
+        # At least these three commands must have been issued.
         self.assertIn(remove_cmd, cmds)
         self.assertIn(install_pkgmgr_cmd, cmds)
         self.assertIn(install_default_cmd, cmds)
 
-        # Optional: sicherstellen, dass der remove-Aufruf zuerst kam
+        # Optional: ensure the remove call came first.
         self.assertEqual(cmds[0], remove_cmd)
 
     @patch("shutil.which", return_value="/usr/bin/nix")
@@ -90,8 +111,13 @@ class TestNixFlakeInstaller(unittest.TestCase):
 
         mock_run_command.side_effect = side_effect
 
-        # Should not raise, SystemExit is swallowed internally.
-        self.installer._ensure_old_profile_removed(self.ctx)
+        with patch.dict(
+            os.environ,
+            {"IN_NIX_SHELL": "", "PKGMGR_DISABLE_NIX_FLAKE_INSTALLER": ""},
+            clear=False,
+        ):
+            # Should not raise, SystemExit is swallowed internally.
+            self.installer._ensure_old_profile_removed(self.ctx)
 
         remove_cmd = f"nix profile remove {self.installer.PROFILE_NAME} || true"
         mock_run_command.assert_called_with(
