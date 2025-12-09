@@ -1,3 +1,9 @@
+package-manager (0.7.12-1) unstable; urgency=medium
+
+  * Fixed self refering alias during setup
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 09 Dec 2025 23:36:35 +0100
+
 package-manager (0.7.11-1) unstable; urgency=medium
 
   * test: fix installer unit tests for OS packages and Nix dev shell
