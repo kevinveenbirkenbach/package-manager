@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        0.7.10
+Version:        0.7.11
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -77,6 +77,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Dec 09 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.7.11-1
+- test: fix installer unit tests for OS packages and Nix dev shell
+
 * Tue Dec 09 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.7.10-1
 - Fixed test_install_pkgmgr_shallow.py
 

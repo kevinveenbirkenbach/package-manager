@@ -1,3 +1,8 @@
+## [0.7.11] - 2025-12-09
+
+* test: fix installer unit tests for OS packages and Nix dev shell
+
+
 ## [0.7.10] - 2025-12-09
 
 * Fixed test_install_pkgmgr_shallow.py
