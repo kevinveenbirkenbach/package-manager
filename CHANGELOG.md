@@ -1,3 +1,8 @@
+## [0.7.8] - 2025-12-09
+
+* Missing pyproject.toml doesn't lead to an error during release
+
+
 ## [0.7.7] - 2025-12-09
 
 * Added TEST_PATTERN parameter to execute dedicated tests
