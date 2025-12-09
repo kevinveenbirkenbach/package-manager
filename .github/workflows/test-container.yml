@@ -10,7 +10,7 @@ on:
   pull_request:
 
 jobs:
-  test-unit:
+  test-container:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

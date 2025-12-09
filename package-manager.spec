@@ -35,35 +35,36 @@ available on the system.
 %install
 rm -rf %{buildroot}
 install -d %{buildroot}%{_bindir}
-install -d %{buildroot}%{_libdir}/package-manager
+# Install project tree into a fixed, architecture-independent location.
+install -d %{buildroot}/usr/lib/package-manager
 
 # Copy full project source into /usr/lib/package-manager
-cp -a . %{buildroot}%{_libdir}/package-manager/
+cp -a . %{buildroot}/usr/lib/package-manager/
 
 # Wrapper
 install -m0755 scripts/pkgmgr-wrapper.sh %{buildroot}%{_bindir}/pkgmgr
 
 # Shared Nix init script (ensure it is executable in the installed tree)
-install -m0755 scripts/init-nix.sh %{buildroot}%{_libdir}/package-manager/init-nix.sh
+install -m0755 scripts/init-nix.sh %{buildroot}/usr/lib/package-manager/init-nix.sh
 
 # Remove packaging-only and development artefacts from the installed tree
 rm -rf \
-  %{buildroot}%{_libdir}/package-manager/PKGBUILD \
-  %{buildroot}%{_libdir}/package-manager/Dockerfile \
-  %{buildroot}%{_libdir}/package-manager/debian \
-  %{buildroot}%{_libdir}/package-manager/.git \
-  %{buildroot}%{_libdir}/package-manager/.github \
-  %{buildroot}%{_libdir}/package-manager/tests \
-  %{buildroot}%{_libdir}/package-manager/.gitignore \
-  %{buildroot}%{_libdir}/package-manager/__pycache__ \
-  %{buildroot}%{_libdir}/package-manager/.gitkeep || true
+  %{buildroot}/usr/lib/package-manager/PKGBUILD \
+  %{buildroot}/usr/lib/package-manager/Dockerfile \
+  %{buildroot}/usr/lib/package-manager/debian \
+  %{buildroot}/usr/lib/package-manager/.git \
+  %{buildroot}/usr/lib/package-manager/.github \
+  %{buildroot}/usr/lib/package-manager/tests \
+  %{buildroot}/usr/lib/package-manager/.gitignore \
+  %{buildroot}/usr/lib/package-manager/__pycache__ \
+  %{buildroot}/usr/lib/package-manager/.gitkeep || true
 
 %post
 # Initialize Nix (if needed) after installing the package-manager files.
-if [ -x %{_libdir}/package-manager/init-nix.sh ]; then
-    %{_libdir}/package-manager/init-nix.sh || true
+if [ -x /usr/lib/package-manager/init-nix.sh ]; then
+    /usr/lib/package-manager/init-nix.sh || true
 else
-    echo ">>> Warning: %{_libdir}/package-manager/init-nix.sh not found or not executable."
+    echo ">>> Warning: /usr/lib/package-manager/init-nix.sh not found or not executable."
 fi
 
 %postun
@@ -73,7 +74,7 @@ echo ">>> package-manager removed. Nix itself was not removed."
 %doc README.md
 %license LICENSE
 %{_bindir}/pkgmgr
-%{_libdir}/package-manager/
+/usr/lib/package-manager/
 
 %changelog
 * Sat Dec 06 2025 Kevin Veen-Birkenbach <info@veen.world> - 0.1.1-1
