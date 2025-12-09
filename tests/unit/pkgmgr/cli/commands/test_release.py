@@ -6,7 +6,7 @@ Unit tests for pkgmgr.cli.commands.release.
 
 These tests focus on the wiring layer:
   - Argument handling for the release command as defined by the
-    top-level parser (cli_core.parser.create_parser).
+    top-level parser (cli.parser.create_parser).
   - Correct invocation of pkgmgr.actions.release.release(...) for the
     selected repositories.
   - Behaviour of --preview, --list, --close, and -f/--force.

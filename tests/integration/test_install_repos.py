@@ -1,5 +1,3 @@
-# tests/integration/test_install_repos_integration.py
-
 import os
 import tempfile
 import unittest

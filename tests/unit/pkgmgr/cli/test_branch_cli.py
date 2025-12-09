@@ -22,7 +22,7 @@ from pkgmgr.cli.commands.branch import handle_branch
 
 class TestBranchCLI(unittest.TestCase):
     """
-    Tests for the branch subcommands implemented in cli_core.
+    Tests for the branch subcommands implemented in cli.
     """
 
     def _create_parser(self):

@@ -1,4 +1,3 @@
-# pkgmgr/cli_core/commands/branch.py
 from __future__ import annotations
 
 import sys

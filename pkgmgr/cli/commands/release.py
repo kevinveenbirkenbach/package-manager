@@ -1,4 +1,3 @@
-# pkgmgr/cli_core/commands/release.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -6,8 +5,8 @@
 Release command wiring for the pkgmgr CLI.
 
 This module implements the `pkgmgr release` subcommand on top of the
-generic selection logic from cli_core.dispatch. It does not define its
-own subparser; the CLI surface is configured in cli_core.parser.
+generic selection logic from cli.dispatch. It does not define its
+own subparser; the CLI surface is configured in cli.parser.
 
 Responsibilities:
   - Take the parsed argparse.Namespace for the `release` command.
