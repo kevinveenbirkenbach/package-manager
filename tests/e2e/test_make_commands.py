@@ -15,7 +15,7 @@ import runpy
 import sys
 import unittest
 
-from test_integration_version_commands import _load_pkgmgr_repo_dir
+from test_version_commands import _load_pkgmgr_repo_dir
 
 
 class TestIntegrationMakeCommands(unittest.TestCase):

@@ -5,7 +5,7 @@ import runpy
 import sys
 import unittest
 
-from test_integration_version_commands import PROJECT_ROOT
+from test_version_commands import PROJECT_ROOT
 
 
 class TestIntegrationProxyCommands(unittest.TestCase):
