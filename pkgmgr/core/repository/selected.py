@@ -8,6 +8,7 @@ import re
 from typing import Any, Dict, List, Sequence
 
 from pkgmgr.core.repository.resolve import resolve_repos
+from pkgmgr.core.repository.ignored import filter_ignored
 
 Repository = Dict[str, Any]
 
@@ -88,7 +89,7 @@ def _apply_filters(
             if not _match_pattern(ident_str, string_pattern):
                 continue
 
-        # Category filter: nur echte Kategorien, KEINE Tags
+        # Category filter: only real categories, NOT tags
         if category_patterns:
             cats: List[str] = []
             cats.extend(map(str, repo.get("category_files", [])))
@@ -106,7 +107,7 @@ def _apply_filters(
             if not ok:
                 continue
 
-        # Tag filter: ausschließlich YAML-Tags
+        # Tag filter: YAML tags only
         if tag_patterns:
             tags: List[str] = list(map(str, repo.get("tags", [])))
             if not tags:
@@ -124,16 +125,38 @@ def _apply_filters(
 
     return filtered
 
+
+def _maybe_filter_ignored(args, repos: List[Repository]) -> List[Repository]:
+    """
+    Apply ignore filtering unless the caller explicitly opted to include ignored
+    repositories (via args.include_ignored).
+
+    Note: this helper is used only for *implicit* selections (all / filters /
+    by-directory). For *explicit* identifiers we do NOT filter ignored repos,
+    so the user can still target them directly if desired.
+    """
+    include_ignored: bool = bool(getattr(args, "include_ignored", False))
+    if include_ignored:
+        return repos
+    return filter_ignored(repos)
+
+
 def get_selected_repos(args, all_repositories: List[Repository]) -> List[Repository]:
     """
     Compute the list of repositories selected by CLI arguments.
 
     Modes:
       - If identifiers are given: select via resolve_repos() from all_repositories.
-      - Else if any of --category/--string/--tag is used: start from all_repositories
-        and apply filters.
-      - Else if --all is set: select all_repositories.
-      - Else: try to select the repository of the current working directory.
+        Ignored repositories are *not* filtered here, so explicit identifiers
+        always win.
+      - Else if any of --category/--string/--tag is used: start from
+        all_repositories, apply filters and then drop ignored repos.
+      - Else if --all is set: select all_repositories and then drop ignored repos.
+      - Else: try to select the repository of the current working directory
+        and then drop it if it is ignored.
+
+    The ignore filter can be bypassed by setting args.include_ignored = True
+    (e.g. via a CLI flag --include-ignored).
     """
     identifiers: List[str] = getattr(args, "identifiers", []) or []
     use_all: bool = bool(getattr(args, "all", False))
@@ -143,18 +166,25 @@ def get_selected_repos(args, all_repositories: List[Repository]) -> List[Reposit
 
     has_filters = bool(category_patterns or string_pattern or tag_patterns)
 
-    # 1) Explicit identifiers win
+    # 1) Explicit identifiers win and bypass ignore filtering
     if identifiers:
         base = resolve_repos(identifiers, all_repositories)
         return _apply_filters(base, string_pattern, category_patterns, tag_patterns)
 
     # 2) Filter-only mode: start from all repositories
     if has_filters:
-        return _apply_filters(list(all_repositories), string_pattern, category_patterns, tag_patterns)
+        base = _apply_filters(
+            list(all_repositories),
+            string_pattern,
+            category_patterns,
+            tag_patterns,
+        )
+        return _maybe_filter_ignored(args, base)
 
     # 3) --all (no filters): all repos
     if use_all:
-        return list(all_repositories)
+        base = list(all_repositories)
+        return _maybe_filter_ignored(args, base)
 
     # 4) Fallback: try to select repository of current working directory
     cwd = os.path.abspath(os.getcwd())
@@ -164,7 +194,7 @@ def get_selected_repos(args, all_repositories: List[Repository]) -> List[Reposit
         if os.path.abspath(str(repo.get("directory", ""))) == cwd
     ]
     if by_dir:
-        return by_dir
+        return _maybe_filter_ignored(args, by_dir)
 
     # No specific match -> empty list
     return []
