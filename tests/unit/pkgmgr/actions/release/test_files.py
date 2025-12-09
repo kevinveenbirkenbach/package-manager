@@ -80,6 +80,21 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
 
         self.assertNotEqual(cm.exception.code, 0)
 
+    def test_update_pyproject_version_missing_file_is_skipped(self) -> None:
+        """
+        If pyproject.toml does not exist, the function must not raise
+        and must not create the file. It should simply be skipped.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "pyproject.toml")
+            self.assertFalse(os.path.exists(path))
+
+            # Must not raise an exception
+            update_pyproject_version(path, "1.2.3", preview=False)
+
+            # Still no file created
+            self.assertFalse(os.path.exists(path))
+
 
 class TestUpdateFlakeVersion(unittest.TestCase):
     def test_update_flake_version_normal(self) -> None:
@@ -352,11 +367,11 @@ class TestUpdateSpecChangelog(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-        # Neue Stanza muss nach %changelog stehen
+        # New stanza must appear after the %changelog marker
         self.assertIn("%changelog", content)
         self.assertIn("Fedora changelog entry", content)
         self.assertIn("Test Maintainer <test@example.com>", content)
-        # Alte Einträge müssen erhalten bleiben
+        # Old entries must still be present
         self.assertIn("Old Maintainer <old@example.com>", content)
 
     def test_update_spec_changelog_preview_does_not_write(self) -> None:
@@ -396,7 +411,7 @@ class TestUpdateSpecChangelog(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-        # Im Preview-Modus darf nichts verändert werden
+        # In preview mode, the spec file must not change
         self.assertEqual(content, original)
 
 
