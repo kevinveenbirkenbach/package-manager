@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from pkgmgr.clone_repos import clone_repos
+from pkgmgr.actions.repository.clone import clone_repos
 
 
 class TestCloneRepos(unittest.TestCase):
@@ -16,12 +16,12 @@ class TestCloneRepos(unittest.TestCase):
         self.base_dir = "/tmp/repos"
         self.all_repos = self.selected
 
-    @patch("pkgmgr.clone_repos.verify_repository")
-    @patch("pkgmgr.clone_repos.subprocess.run")
-    @patch("pkgmgr.clone_repos.os.makedirs")
-    @patch("pkgmgr.clone_repos.os.path.exists")
-    @patch("pkgmgr.clone_repos.get_repo_dir")
-    @patch("pkgmgr.clone_repos.get_repo_identifier")
+    @patch("pkgmgr.actions.repository.clone.verify_repository")
+    @patch("pkgmgr.actions.repository.clone.subprocess.run")
+    @patch("pkgmgr.actions.repository.clone.os.makedirs")
+    @patch("pkgmgr.actions.repository.clone.os.path.exists")
+    @patch("pkgmgr.actions.repository.clone.get_repo_dir")
+    @patch("pkgmgr.actions.repository.clone.get_repo_identifier")
     def test_clone_ssh_mode_uses_ssh_url(
         self,
         mock_get_repo_identifier,
@@ -55,12 +55,12 @@ class TestCloneRepos(unittest.TestCase):
         self.assertIn("git@github.com:user/repo.git", cmd)
         self.assertEqual(cwd, "/tmp/repos/user")
 
-    @patch("pkgmgr.clone_repos.verify_repository")
-    @patch("pkgmgr.clone_repos.subprocess.run")
-    @patch("pkgmgr.clone_repos.os.makedirs")
-    @patch("pkgmgr.clone_repos.os.path.exists")
-    @patch("pkgmgr.clone_repos.get_repo_dir")
-    @patch("pkgmgr.clone_repos.get_repo_identifier")
+    @patch("pkgmgr.actions.repository.clone.verify_repository")
+    @patch("pkgmgr.actions.repository.clone.subprocess.run")
+    @patch("pkgmgr.actions.repository.clone.os.makedirs")
+    @patch("pkgmgr.actions.repository.clone.os.path.exists")
+    @patch("pkgmgr.actions.repository.clone.get_repo_dir")
+    @patch("pkgmgr.actions.repository.clone.get_repo_identifier")
     def test_clone_https_mode_uses_https_url(
         self,
         mock_get_repo_identifier,
@@ -93,12 +93,12 @@ class TestCloneRepos(unittest.TestCase):
         self.assertIn("https://github.com/user/repo.git", cmd)
         self.assertEqual(cwd, "/tmp/repos/user")
 
-    @patch("pkgmgr.clone_repos.verify_repository")
-    @patch("pkgmgr.clone_repos.subprocess.run")
-    @patch("pkgmgr.clone_repos.os.makedirs")
-    @patch("pkgmgr.clone_repos.os.path.exists")
-    @patch("pkgmgr.clone_repos.get_repo_dir")
-    @patch("pkgmgr.clone_repos.get_repo_identifier")
+    @patch("pkgmgr.actions.repository.clone.verify_repository")
+    @patch("pkgmgr.actions.repository.clone.subprocess.run")
+    @patch("pkgmgr.actions.repository.clone.os.makedirs")
+    @patch("pkgmgr.actions.repository.clone.os.path.exists")
+    @patch("pkgmgr.actions.repository.clone.get_repo_dir")
+    @patch("pkgmgr.actions.repository.clone.get_repo_identifier")
     def test_clone_shallow_mode_uses_https_with_depth(
         self,
         mock_get_repo_identifier,
@@ -131,12 +131,12 @@ class TestCloneRepos(unittest.TestCase):
         self.assertIn("https://github.com/user/repo.git", cmd)
         self.assertEqual(cwd, "/tmp/repos/user")
 
-    @patch("pkgmgr.clone_repos.verify_repository")
-    @patch("pkgmgr.clone_repos.subprocess.run")
-    @patch("pkgmgr.clone_repos.os.makedirs")
-    @patch("pkgmgr.clone_repos.os.path.exists")
-    @patch("pkgmgr.clone_repos.get_repo_dir")
-    @patch("pkgmgr.clone_repos.get_repo_identifier")
+    @patch("pkgmgr.actions.repository.clone.verify_repository")
+    @patch("pkgmgr.actions.repository.clone.subprocess.run")
+    @patch("pkgmgr.actions.repository.clone.os.makedirs")
+    @patch("pkgmgr.actions.repository.clone.os.path.exists")
+    @patch("pkgmgr.actions.repository.clone.get_repo_dir")
+    @patch("pkgmgr.actions.repository.clone.get_repo_identifier")
     def test_preview_mode_does_not_call_subprocess_run(
         self,
         mock_get_repo_identifier,

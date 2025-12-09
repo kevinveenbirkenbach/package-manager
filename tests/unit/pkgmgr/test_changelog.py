@@ -3,13 +3,12 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.changelog import generate_changelog
-from pkgmgr.git_utils import GitError
-from pkgmgr.cli_core.commands.changelog import _find_previous_and_current_tag
-
+from pkgmgr.actions.changelog import generate_changelog
+from pkgmgr.core.git import GitError
+from pkgmgr.cli.commands.changelog import _find_previous_and_current_tag
 
 class TestGenerateChangelog(unittest.TestCase):
-    @patch("pkgmgr.changelog.run_git")
+    @patch("pkgmgr.actions.changelog.run_git")
     def test_generate_changelog_default_range_no_merges(self, mock_run_git) -> None:
         """
         Default behaviour:
@@ -35,7 +34,7 @@ class TestGenerateChangelog(unittest.TestCase):
         self.assertIn("HEAD", args[0])
         self.assertEqual(kwargs.get("cwd"), "/repo")
 
-    @patch("pkgmgr.changelog.run_git")
+    @patch("pkgmgr.actions.changelog.run_git")
     def test_generate_changelog_with_range_and_merges(self, mock_run_git) -> None:
         """
         Explicit range and include_merges=True:
@@ -64,7 +63,7 @@ class TestGenerateChangelog(unittest.TestCase):
         self.assertIn("v1.0.0..v1.1.0", cmd)
         self.assertEqual(kwargs.get("cwd"), "/repo")
 
-    @patch("pkgmgr.changelog.run_git")
+    @patch("pkgmgr.actions.changelog.run_git")
     def test_generate_changelog_giterror_returns_error_message(self, mock_run_git) -> None:
         """
         If Git fails, we do NOT raise; instead we return a human readable error string.
@@ -77,7 +76,7 @@ class TestGenerateChangelog(unittest.TestCase):
         self.assertIn("simulated git failure", result)
         self.assertIn("v0.1.0..v0.2.0", result)
 
-    @patch("pkgmgr.changelog.run_git")
+    @patch("pkgmgr.actions.changelog.run_git")
     def test_generate_changelog_empty_output_returns_info(self, mock_run_git) -> None:
         """
         Empty git log output -> informational message instead of empty string.

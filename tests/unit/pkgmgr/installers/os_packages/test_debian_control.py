@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.context import RepoContext
-from pkgmgr.installers.os_packages.debian_control import DebianControlInstaller
+from pkgmgr.actions.repository.install.context import RepoContext
+from pkgmgr.actions.repository.install.installers.os_packages.debian_control import DebianControlInstaller
 
 
 class TestDebianControlInstaller(unittest.TestCase):
@@ -36,7 +36,7 @@ class TestDebianControlInstaller(unittest.TestCase):
     def test_supports_false_without_dpkg_buildpackage(self, mock_which, mock_exists):
         self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.installers.os_packages.debian_control.run_command")
+    @patch("pkgmgr.actions.repository.install.installers.os_packages.debian_control.run_command")
     @patch("glob.glob", return_value=["/tmp/package-manager_0.1.1_all.deb"])
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which")

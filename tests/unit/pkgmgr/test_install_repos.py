@@ -3,9 +3,9 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from pkgmgr.context import RepoContext
-import pkgmgr.install_repos as install_module
-from pkgmgr.installers.base import BaseInstaller
+from pkgmgr.actions.repository.install.context import RepoContext
+import pkgmgr.actions.repository.install as install_module
+from pkgmgr.actions.repository.install.installers.base import BaseInstaller
 
 
 class DummyInstaller(BaseInstaller):
@@ -25,12 +25,12 @@ class DummyInstaller(BaseInstaller):
 
 
 class TestInstallReposOrchestration(unittest.TestCase):
-    @patch("pkgmgr.install_repos.create_ink")
-    @patch("pkgmgr.install_repos.resolve_command_for_repo")
-    @patch("pkgmgr.install_repos.verify_repository")
-    @patch("pkgmgr.install_repos.get_repo_dir")
-    @patch("pkgmgr.install_repos.get_repo_identifier")
-    @patch("pkgmgr.install_repos.clone_repos")
+    @patch("pkgmgr.actions.repository.install.create_ink")
+    @patch("pkgmgr.actions.repository.install.resolve_command_for_repo")
+    @patch("pkgmgr.actions.repository.install.verify_repository")
+    @patch("pkgmgr.actions.repository.install.get_repo_dir")
+    @patch("pkgmgr.actions.repository.install.get_repo_identifier")
+    @patch("pkgmgr.actions.repository.install.clone_repos")
     def test_install_repos_runs_pipeline_for_each_repo(
         self,
         mock_clone_repos,
@@ -82,10 +82,10 @@ class TestInstallReposOrchestration(unittest.TestCase):
         self.assertEqual(mock_verify_repository.call_count, 2)
         self.assertEqual(mock_resolve_command_for_repo.call_count, 2)
 
-    @patch("pkgmgr.install_repos.verify_repository")
-    @patch("pkgmgr.install_repos.get_repo_dir")
-    @patch("pkgmgr.install_repos.get_repo_identifier")
-    @patch("pkgmgr.install_repos.clone_repos")
+    @patch("pkgmgr.actions.repository.install.verify_repository")
+    @patch("pkgmgr.actions.repository.install.get_repo_dir")
+    @patch("pkgmgr.actions.repository.install.get_repo_identifier")
+    @patch("pkgmgr.actions.repository.install.clone_repos")
     def test_install_repos_skips_on_failed_verification(
         self,
         mock_clone_repos,
@@ -104,10 +104,10 @@ class TestInstallReposOrchestration(unittest.TestCase):
         mock_verify_repository.return_value = (False, ["sig error"], None, None)
 
         dummy_installer = DummyInstaller()
-        with patch("os.path.exists", return_value=True), \
-             patch("pkgmgr.install_repos.create_ink") as mock_create_ink, \
-             patch("pkgmgr.install_repos.resolve_command_for_repo") as mock_resolve_cmd, \
-             patch("builtins.input", return_value="n"):
+        with patch("pkgmgr.actions.repository.install.create_ink") as mock_create_ink, \
+            patch("pkgmgr.actions.repository.install.resolve_command_for_repo") as mock_resolve_cmd, \
+            patch("os.path.exists", return_value=True), \
+            patch("builtins.input", return_value="n"):
             old_installers = install_module.INSTALLERS
             install_module.INSTALLERS = [dummy_installer]
             try:

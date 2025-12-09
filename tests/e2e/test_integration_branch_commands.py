@@ -31,7 +31,7 @@ class TestIntegrationBranchCommands(unittest.TestCase):
         finally:
             sys.argv = original_argv
 
-    @patch("pkgmgr.cli_core.commands.branch.open_branch")
+    @patch("pkgmgr.cli.commands.branch.open_branch")
     def test_branch_open_with_name_and_base(self, mock_open_branch) -> None:
         """
         `pkgmgr branch open feature/test --base develop` must forward
@@ -47,7 +47,7 @@ class TestIntegrationBranchCommands(unittest.TestCase):
         self.assertEqual(kwargs.get("base_branch"), "develop")
         self.assertEqual(kwargs.get("cwd"), ".")
 
-    @patch("pkgmgr.cli_core.commands.branch.open_branch")
+    @patch("pkgmgr.cli.commands.branch.open_branch")
     def test_branch_open_without_name_uses_default_base(
         self,
         mock_open_branch,
@@ -68,7 +68,7 @@ class TestIntegrationBranchCommands(unittest.TestCase):
     # close subcommand
     # ------------------------------------------------------------------
 
-    @patch("pkgmgr.cli_core.commands.branch.close_branch")
+    @patch("pkgmgr.cli.commands.branch.close_branch")
     def test_branch_close_with_name_and_base(self, mock_close_branch) -> None:
         """
         `pkgmgr branch close feature/test --base develop` must forward
@@ -84,7 +84,7 @@ class TestIntegrationBranchCommands(unittest.TestCase):
         self.assertEqual(kwargs.get("base_branch"), "develop")
         self.assertEqual(kwargs.get("cwd"), ".")
 
-    @patch("pkgmgr.cli_core.commands.branch.close_branch")
+    @patch("pkgmgr.cli.commands.branch.close_branch")
     def test_branch_close_without_name_uses_default_base(
         self,
         mock_close_branch,

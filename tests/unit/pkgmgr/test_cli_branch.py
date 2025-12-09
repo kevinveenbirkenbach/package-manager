@@ -4,8 +4,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from pkgmgr.cli_core.commands.branch import handle_branch
-from pkgmgr.cli_core.context import CLIContext
+from pkgmgr.cli.commands.branch import handle_branch
+from pkgmgr.cli.context import CLIContext
 
 
 class TestCliBranch(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestCliBranch(unittest.TestCase):
             user_config_path="/tmp/config.yaml",
         )
 
-    @patch("pkgmgr.cli_core.commands.branch.open_branch")
+    @patch("pkgmgr.cli.commands.branch.open_branch")
     def test_handle_branch_open_forwards_args_to_open_branch(self, mock_open_branch) -> None:
         """
         handle_branch('open') should call open_branch with name, base and cwd='.'.
@@ -44,7 +44,7 @@ class TestCliBranch(unittest.TestCase):
         self.assertEqual(call_kwargs.get("base_branch"), "develop")
         self.assertEqual(call_kwargs.get("cwd"), ".")
 
-    @patch("pkgmgr.cli_core.commands.branch.open_branch")
+    @patch("pkgmgr.cli.commands.branch.open_branch")
     def test_handle_branch_open_uses_default_base_when_not_set(self, mock_open_branch) -> None:
         """
         If --base is not passed, argparse gives base='main' (default),
@@ -70,7 +70,7 @@ class TestCliBranch(unittest.TestCase):
     # close subcommand
     # ------------------------------------------------------------------
 
-    @patch("pkgmgr.cli_core.commands.branch.close_branch")
+    @patch("pkgmgr.cli.commands.branch.close_branch")
     def test_handle_branch_close_forwards_args_to_close_branch(self, mock_close_branch) -> None:
         """
         handle_branch('close') should call close_branch with name, base and cwd='.'.
@@ -92,7 +92,7 @@ class TestCliBranch(unittest.TestCase):
         self.assertEqual(call_kwargs.get("base_branch"), "develop")
         self.assertEqual(call_kwargs.get("cwd"), ".")
 
-    @patch("pkgmgr.cli_core.commands.branch.close_branch")
+    @patch("pkgmgr.cli.commands.branch.close_branch")
     def test_handle_branch_close_uses_default_base_when_not_set(self, mock_close_branch) -> None:
         """
         If --base is not passed for 'close', argparse gives base='main'

@@ -3,8 +3,8 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-from pkgmgr.context import RepoContext
-from pkgmgr.installers.nix_flake import NixFlakeInstaller
+from pkgmgr.actions.repository.install.context import RepoContext
+from pkgmgr.actions.repository.install.installers.nix_flake import NixFlakeInstaller
 
 
 class TestNixFlakeInstaller(unittest.TestCase):
@@ -39,7 +39,7 @@ class TestNixFlakeInstaller(unittest.TestCase):
 
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which", return_value="/usr/bin/nix")
-    @mock.patch("pkgmgr.installers.nix_flake.run_command")
+    @mock.patch("pkgmgr.actions.repository.install.installers.nix_flake.run_command")
     def test_run_removes_old_profile_and_installs_outputs(
         self,
         mock_run_command,
@@ -74,7 +74,7 @@ class TestNixFlakeInstaller(unittest.TestCase):
         self.assertEqual(cmds[0], remove_cmd)
 
     @patch("shutil.which", return_value="/usr/bin/nix")
-    @mock.patch("pkgmgr.installers.nix_flake.run_command")
+    @mock.patch("pkgmgr.actions.repository.install.installers.nix_flake.run_command")
     def test_ensure_old_profile_removed_ignores_systemexit(
         self,
         mock_run_command,

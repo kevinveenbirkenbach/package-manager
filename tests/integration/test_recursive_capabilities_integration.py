@@ -61,12 +61,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import pkgmgr.install_repos as install_mod
-from pkgmgr.install_repos import install_repos
-from pkgmgr.installers.nix_flake import NixFlakeInstaller
-from pkgmgr.installers.python import PythonInstaller
-from pkgmgr.installers.makefile import MakefileInstaller
-from pkgmgr.installers.os_packages.arch_pkgbuild import ArchPkgbuildInstaller
+import pkgmgr.actions.repository.install as install_mod
+from pkgmgr.actions.repository.install import install_repos
+from pkgmgr.actions.repository.install.installers.nix_flake import NixFlakeInstaller
+from pkgmgr.actions.repository.install.installers.python import PythonInstaller
+from pkgmgr.actions.repository.install.installers.makefile import MakefileInstaller
+from pkgmgr.actions.repository.install.installers.os_packages.arch_pkgbuild import ArchPkgbuildInstaller
 
 
 class TestRecursiveCapabilitiesIntegration(unittest.TestCase):

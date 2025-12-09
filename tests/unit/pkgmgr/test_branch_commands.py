@@ -4,12 +4,12 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from pkgmgr.branch_commands import open_branch
-from pkgmgr.git_utils import GitError
+from pkgmgr.actions.branch import open_branch
+from pkgmgr.core.git import GitError
 
 
 class TestOpenBranch(unittest.TestCase):
-    @patch("pkgmgr.branch_commands.run_git")
+    @patch("pkgmgr.actions.branch.run_git")
     def test_open_branch_with_explicit_name_and_default_base(self, mock_run_git) -> None:
         """
         open_branch(name, base='main') should:
@@ -42,7 +42,7 @@ class TestOpenBranch(unittest.TestCase):
             self.assertEqual(kwargs.get("cwd"), cwd_expected)
 
     @patch("builtins.input", return_value="feature/interactive")
-    @patch("pkgmgr.branch_commands.run_git")
+    @patch("pkgmgr.actions.branch.run_git")
     def test_open_branch_prompts_for_name_if_missing(
         self,
         mock_run_git,
@@ -75,7 +75,7 @@ class TestOpenBranch(unittest.TestCase):
             self.assertEqual(args[0], args_expected)
             self.assertEqual(kwargs.get("cwd"), cwd_expected)
 
-    @patch("pkgmgr.branch_commands.run_git")
+    @patch("pkgmgr.actions.branch.run_git")
     def test_open_branch_raises_runtimeerror_on_git_failure(self, mock_run_git) -> None:
         """
         If a GitError occurs (e.g. fetch fails), open_branch should

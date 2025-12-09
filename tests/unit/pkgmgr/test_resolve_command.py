@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 
-import pkgmgr.resolve_command as resolve_command_module
+import pkgmgr.core.command.resolve as resolve_command_module
 
 
 class TestResolveCommandForRepo(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestResolveCommandForRepo(unittest.TestCase):
         )
         self.assertEqual(result, "/custom/cmd")
 
-    @patch("pkgmgr.resolve_command.shutil.which", return_value="/usr/bin/tool")
+    @patch("pkgmgr.core.command.resolve.shutil.which", return_value="/usr/bin/tool")
     def test_system_binary_returns_none_and_no_error(self, mock_which):
         repo = {}
         result = resolve_command_module.resolve_command_for_repo(
@@ -27,10 +27,10 @@ class TestResolveCommandForRepo(unittest.TestCase):
         # System binary → no link
         self.assertIsNone(result)
 
-    @patch("pkgmgr.resolve_command.os.access")
-    @patch("pkgmgr.resolve_command.os.path.exists")
-    @patch("pkgmgr.resolve_command.shutil.which", return_value=None)
-    @patch("pkgmgr.resolve_command.os.path.expanduser", return_value="/fakehome")
+    @patch("pkgmgr.core.command.resolve.os.access")
+    @patch("pkgmgr.core.command.resolve.os.path.exists")
+    @patch("pkgmgr.core.command.resolve.shutil.which", return_value=None)
+    @patch("pkgmgr.core.command.resolve.os.path.expanduser", return_value="/fakehome")
     def test_nix_profile_binary(
         self,
         mock_expanduser,
@@ -64,10 +64,10 @@ class TestResolveCommandForRepo(unittest.TestCase):
         )
         self.assertEqual(result, nix_path)
 
-    @patch("pkgmgr.resolve_command.os.access")
-    @patch("pkgmgr.resolve_command.os.path.exists")
-    @patch("pkgmgr.resolve_command.os.path.expanduser", return_value="/home/user")
-    @patch("pkgmgr.resolve_command.shutil.which", return_value="/home/user/.local/bin/tool")
+    @patch("pkgmgr.core.command.resolve.os.access")
+    @patch("pkgmgr.core.command.resolve.os.path.exists")
+    @patch("pkgmgr.core.command.resolve.os.path.expanduser", return_value="/home/user")
+    @patch("pkgmgr.core.command.resolve.shutil.which", return_value="/home/user/.local/bin/tool")
     def test_non_system_binary_on_path(
         self,
         mock_which,
@@ -102,10 +102,10 @@ class TestResolveCommandForRepo(unittest.TestCase):
         )
         self.assertEqual(result, non_system_path)
 
-    @patch("pkgmgr.resolve_command.os.access")
-    @patch("pkgmgr.resolve_command.os.path.exists")
-    @patch("pkgmgr.resolve_command.shutil.which", return_value=None)
-    @patch("pkgmgr.resolve_command.os.path.expanduser", return_value="/fakehome")
+    @patch("pkgmgr.core.command.resolve.os.access")
+    @patch("pkgmgr.core.command.resolve.os.path.exists")
+    @patch("pkgmgr.core.command.resolve.shutil.which", return_value=None)
+    @patch("pkgmgr.core.command.resolve.os.path.expanduser", return_value="/fakehome")
     def test_fallback_to_main_py(
         self,
         mock_expanduser,
@@ -136,10 +136,10 @@ class TestResolveCommandForRepo(unittest.TestCase):
         )
         self.assertEqual(result, main_py)
 
-    @patch("pkgmgr.resolve_command.os.access", return_value=False)
-    @patch("pkgmgr.resolve_command.os.path.exists", return_value=False)
-    @patch("pkgmgr.resolve_command.shutil.which", return_value=None)
-    @patch("pkgmgr.resolve_command.os.path.expanduser", return_value="/fakehome")
+    @patch("pkgmgr.core.command.resolve.os.access", return_value=False)
+    @patch("pkgmgr.core.command.resolve.os.path.exists", return_value=False)
+    @patch("pkgmgr.core.command.resolve.shutil.which", return_value=None)
+    @patch("pkgmgr.core.command.resolve.os.path.expanduser", return_value="/fakehome")
     def test_no_command_results_in_system_exit(
         self,
         mock_expanduser,

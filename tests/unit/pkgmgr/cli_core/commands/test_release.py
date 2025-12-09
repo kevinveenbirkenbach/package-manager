@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """
-Unit tests for pkgmgr.cli_core.commands.release.
+Unit tests for pkgmgr.cli.commands.release.
 
 These tests focus on the wiring layer:
   - Argument handling for the release command as defined by the
     top-level parser (cli_core.parser.create_parser).
-  - Correct invocation of pkgmgr.release.release(...) for the
+  - Correct invocation of pkgmgr.actions.release.release(...) for the
     selected repositories.
   - Behaviour of --preview, --list, --close, and -f/--force.
 """
@@ -46,19 +46,19 @@ class TestReleaseCommand(unittest.TestCase):
         Build a real top-level parser and parse the given argv list
         to obtain the Namespace for the `release` command.
         """
-        from pkgmgr.cli_core.parser import create_parser
+        from pkgmgr.cli.parser import create_parser
 
         parser = create_parser("test parser")
         args = parser.parse_args(argv)
         self.assertEqual(args.command, "release")
         return args
 
-    @patch("pkgmgr.cli_core.commands.release.os.path.isdir", return_value=True)
-    @patch("pkgmgr.cli_core.commands.release.run_release")
-    @patch("pkgmgr.cli_core.commands.release.get_repo_dir")
-    @patch("pkgmgr.cli_core.commands.release.get_repo_identifier")
-    @patch("pkgmgr.cli_core.commands.release.os.chdir")
-    @patch("pkgmgr.cli_core.commands.release.os.getcwd", return_value="/cwd")
+    @patch("pkgmgr.cli.commands.release.os.path.isdir", return_value=True)
+    @patch("pkgmgr.cli.commands.release.run_release")
+    @patch("pkgmgr.cli.commands.release.get_repo_dir")
+    @patch("pkgmgr.cli.commands.release.get_repo_identifier")
+    @patch("pkgmgr.cli.commands.release.os.chdir")
+    @patch("pkgmgr.cli.commands.release.os.getcwd", return_value="/cwd")
     def test_release_with_close_and_message(
         self,
         mock_getcwd,
@@ -69,7 +69,7 @@ class TestReleaseCommand(unittest.TestCase):
         mock_isdir,
     ) -> None:
         """
-        The release handler should call pkgmgr.release.release() with:
+        The release handler should call pkgmgr.actions.release.release() with:
           - release_type (e.g. minor)
           - provided message
           - preview flag
@@ -78,7 +78,7 @@ class TestReleaseCommand(unittest.TestCase):
 
         It must change into the repository directory and then back.
         """
-        from pkgmgr.cli_core.commands.release import handle_release
+        from pkgmgr.cli.commands.release import handle_release
 
         repo = {"name": "dummy-repo"}
         selected = [repo]
@@ -116,12 +116,12 @@ class TestReleaseCommand(unittest.TestCase):
             close=True,
         )
 
-    @patch("pkgmgr.cli_core.commands.release.os.path.isdir", return_value=True)
-    @patch("pkgmgr.cli_core.commands.release.run_release")
-    @patch("pkgmgr.cli_core.commands.release.get_repo_dir")
-    @patch("pkgmgr.cli_core.commands.release.get_repo_identifier")
-    @patch("pkgmgr.cli_core.commands.release.os.chdir")
-    @patch("pkgmgr.cli_core.commands.release.os.getcwd", return_value="/cwd")
+    @patch("pkgmgr.cli.commands.release.os.path.isdir", return_value=True)
+    @patch("pkgmgr.cli.commands.release.run_release")
+    @patch("pkgmgr.cli.commands.release.get_repo_dir")
+    @patch("pkgmgr.cli.commands.release.get_repo_identifier")
+    @patch("pkgmgr.cli.commands.release.os.chdir")
+    @patch("pkgmgr.cli.commands.release.os.getcwd", return_value="/cwd")
     def test_release_preview_mode(
         self,
         mock_getcwd,
@@ -135,7 +135,7 @@ class TestReleaseCommand(unittest.TestCase):
         In preview mode, the handler should pass preview=True to the
         release helper and force=False by default.
         """
-        from pkgmgr.cli_core.commands.release import handle_release
+        from pkgmgr.cli.commands.release import handle_release
 
         repo = {"name": "dummy-repo"}
         selected = [repo]
@@ -164,9 +164,9 @@ class TestReleaseCommand(unittest.TestCase):
             close=False,
         )
 
-    @patch("pkgmgr.cli_core.commands.release.run_release")
-    @patch("pkgmgr.cli_core.commands.release.get_repo_dir")
-    @patch("pkgmgr.cli_core.commands.release.get_repo_identifier")
+    @patch("pkgmgr.cli.commands.release.run_release")
+    @patch("pkgmgr.cli.commands.release.get_repo_dir")
+    @patch("pkgmgr.cli.commands.release.get_repo_identifier")
     def test_release_list_mode_does_not_invoke_helper(
         self,
         mock_get_repo_identifier,
@@ -177,7 +177,7 @@ class TestReleaseCommand(unittest.TestCase):
         When --list is provided, the handler should print the list of affected
         repositories and must NOT invoke run_release().
         """
-        from pkgmgr.cli_core.commands.release import handle_release
+        from pkgmgr.cli.commands.release import handle_release
 
         repo1 = {"name": "repo-1"}
         repo2 = {"name": "repo-2"}

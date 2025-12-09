@@ -6,7 +6,7 @@ End-to-end style integration tests for the `pkgmgr release` CLI command.
 
 These tests exercise the real top-level entry point (main.py) and mock
 the high-level helper used by the CLI wiring
-(pkgmgr.cli_core.commands.release.run_release) to ensure that argument
+(pkgmgr.cli.commands.release.run_release) to ensure that argument
 parsing and dispatch behave as expected, in particular the new `close`
 flag.
 
@@ -52,8 +52,8 @@ class TestIntegrationReleaseCommand(unittest.TestCase):
     # Behaviour without --close
     # ------------------------------------------------------------------
 
-    @patch("pkgmgr.cli_core.commands.release.run_release")
-    @patch("pkgmgr.cli_core.dispatch._select_repo_for_current_directory")
+    @patch("pkgmgr.cli.commands.release.run_release")
+    @patch("pkgmgr.cli.dispatch._select_repo_for_current_directory")
     def test_release_without_close_flag(
         self,
         mock_select_repo,
@@ -95,8 +95,8 @@ class TestIntegrationReleaseCommand(unittest.TestCase):
     # Behaviour with --close
     # ------------------------------------------------------------------
 
-    @patch("pkgmgr.cli_core.commands.release.run_release")
-    @patch("pkgmgr.cli_core.dispatch._select_repo_for_current_directory")
+    @patch("pkgmgr.cli.commands.release.run_release")
+    @patch("pkgmgr.cli.dispatch._select_repo_for_current_directory")
     def test_release_with_close_flag(
         self,
         mock_select_repo,

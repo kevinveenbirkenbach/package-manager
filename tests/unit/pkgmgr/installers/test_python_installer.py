@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.context import RepoContext
-from pkgmgr.installers.python import PythonInstaller
+from pkgmgr.actions.repository.install.context import RepoContext
+from pkgmgr.actions.repository.install.installers.python import PythonInstaller
 
 
 class TestPythonInstaller(unittest.TestCase):
@@ -34,7 +34,7 @@ class TestPythonInstaller(unittest.TestCase):
     def test_supports_false_when_no_pyproject(self, mock_exists):
         self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.installers.python.run_command")
+    @patch("pkgmgr.actions.repository.install.installers.python.run_command")
     @patch("os.path.exists", side_effect=lambda path: path.endswith("pyproject.toml"))
     def test_run_installs_project_from_pyproject(self, mock_exists, mock_run_command):
         self.installer.run(self.ctx)

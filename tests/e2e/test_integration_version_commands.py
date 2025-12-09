@@ -28,7 +28,7 @@ import sys
 import unittest
 from typing import List
 
-from pkgmgr.load_config import load_config
+from pkgmgr.core.config.load import load_config
 
 # Resolve project root (the repo where main.py lives, e.g. /src)
 PROJECT_ROOT = os.path.abspath(

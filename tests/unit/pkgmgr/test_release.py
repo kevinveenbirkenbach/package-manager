@@ -6,8 +6,8 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.versioning import SemVer
-from pkgmgr.release import (
+from pkgmgr.core.version.semver import SemVer
+from pkgmgr.actions.release import (
     _determine_current_version,
     _bump_semver,
     update_pyproject_version,
@@ -21,7 +21,7 @@ from pkgmgr.release import (
 
 
 class TestDetermineCurrentVersion(unittest.TestCase):
-    @patch("pkgmgr.release.get_tags", return_value=[])
+    @patch("pkgmgr.actions.release.get_tags", return_value=[])
     def test_determine_current_version_no_tags_returns_zero(
         self,
         mock_get_tags,
@@ -31,8 +31,8 @@ class TestDetermineCurrentVersion(unittest.TestCase):
         self.assertEqual((ver.major, ver.minor, ver.patch), (0, 0, 0))
         mock_get_tags.assert_called_once()
 
-    @patch("pkgmgr.release.find_latest_version")
-    @patch("pkgmgr.release.get_tags")
+    @patch("pkgmgr.actions.release.find_latest_version")
+    @patch("pkgmgr.actions.release.get_tags")
     def test_determine_current_version_uses_latest_semver_tag(
         self,
         mock_get_tags,
@@ -365,17 +365,17 @@ class TestUpdateDebianChangelog(unittest.TestCase):
 
 
 class TestReleaseOrchestration(unittest.TestCase):
-    @patch("pkgmgr.release.sys.stdin.isatty", return_value=False)
-    @patch("pkgmgr.release._run_git_command")
-    @patch("pkgmgr.release.update_debian_changelog")
-    @patch("pkgmgr.release.update_spec_version")
-    @patch("pkgmgr.release.update_pkgbuild_version")
-    @patch("pkgmgr.release.update_flake_version")
-    @patch("pkgmgr.release.get_current_branch", return_value="develop")
-    @patch("pkgmgr.release.update_changelog")
-    @patch("pkgmgr.release.update_pyproject_version")
-    @patch("pkgmgr.release._bump_semver")
-    @patch("pkgmgr.release._determine_current_version")
+    @patch("pkgmgr.actions.release.sys.stdin.isatty", return_value=False)
+    @patch("pkgmgr.actions.release._run_git_command")
+    @patch("pkgmgr.actions.release.update_debian_changelog")
+    @patch("pkgmgr.actions.release.update_spec_version")
+    @patch("pkgmgr.actions.release.update_pkgbuild_version")
+    @patch("pkgmgr.actions.release.update_flake_version")
+    @patch("pkgmgr.actions.release.get_current_branch", return_value="develop")
+    @patch("pkgmgr.actions.release.update_changelog")
+    @patch("pkgmgr.actions.release.update_pyproject_version")
+    @patch("pkgmgr.actions.release._bump_semver")
+    @patch("pkgmgr.actions.release._determine_current_version")
     def test_release_happy_path_uses_helpers_and_git(
         self,
         mock_determine_current_version,
@@ -451,17 +451,17 @@ class TestReleaseOrchestration(unittest.TestCase):
         self.assertIn("git push origin develop", git_calls)
         self.assertIn("git push origin --tags", git_calls)
 
-    @patch("pkgmgr.release.sys.stdin.isatty", return_value=False)
-    @patch("pkgmgr.release._run_git_command")
-    @patch("pkgmgr.release.update_debian_changelog")
-    @patch("pkgmgr.release.update_spec_version")
-    @patch("pkgmgr.release.update_pkgbuild_version")
-    @patch("pkgmgr.release.update_flake_version")
-    @patch("pkgmgr.release.get_current_branch", return_value="develop")
-    @patch("pkgmgr.release.update_changelog")
-    @patch("pkgmgr.release.update_pyproject_version")
-    @patch("pkgmgr.release._bump_semver")
-    @patch("pkgmgr.release._determine_current_version")
+    @patch("pkgmgr.actions.release.sys.stdin.isatty", return_value=False)
+    @patch("pkgmgr.actions.release._run_git_command")
+    @patch("pkgmgr.actions.release.update_debian_changelog")
+    @patch("pkgmgr.actions.release.update_spec_version")
+    @patch("pkgmgr.actions.release.update_pkgbuild_version")
+    @patch("pkgmgr.actions.release.update_flake_version")
+    @patch("pkgmgr.actions.release.get_current_branch", return_value="develop")
+    @patch("pkgmgr.actions.release.update_changelog")
+    @patch("pkgmgr.actions.release.update_pyproject_version")
+    @patch("pkgmgr.actions.release._bump_semver")
+    @patch("pkgmgr.actions.release._determine_current_version")
     def test_release_preview_mode_skips_git_and_uses_preview_flag(
         self,
         mock_determine_current_version,

@@ -3,8 +3,8 @@
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.context import RepoContext
-from pkgmgr.installers.os_packages.rpm_spec import RpmSpecInstaller
+from pkgmgr.actions.repository.install.context import RepoContext
+from pkgmgr.actions.repository.install.installers.os_packages.rpm_spec import RpmSpecInstaller
 
 
 class TestRpmSpecInstaller(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestRpmSpecInstaller(unittest.TestCase):
         mock_which.return_value = "/usr/bin/rpmbuild"
         self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.installers.os_packages.rpm_spec.run_command")
+    @patch("pkgmgr.actions.repository.install.installers.os_packages.rpm_spec.run_command")
     @patch("glob.glob")
     @patch("shutil.which")
     def test_run_builds_and_installs_rpms(

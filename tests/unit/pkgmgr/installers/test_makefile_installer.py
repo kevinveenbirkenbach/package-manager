@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest.mock import patch, mock_open
 
-from pkgmgr.context import RepoContext
-from pkgmgr.installers.makefile import MakefileInstaller
+from pkgmgr.actions.repository.install.context import RepoContext
+from pkgmgr.actions.repository.install.installers.makefile import MakefileInstaller
 
 
 class TestMakefileInstaller(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestMakefileInstaller(unittest.TestCase):
     def test_supports_false_when_makefile_missing(self, mock_exists):
         self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.installers.makefile.run_command")
+    @patch("pkgmgr.actions.repository.install.installers.makefile.run_command")
     @patch(
         "builtins.open",
         new_callable=mock_open,
@@ -62,7 +62,7 @@ class TestMakefileInstaller(unittest.TestCase):
             self.ctx.repo_dir,
         )
 
-    @patch("pkgmgr.installers.makefile.run_command")
+    @patch("pkgmgr.actions.repository.install.installers.makefile.run_command")
     @patch(
         "builtins.open",
         new_callable=mock_open,

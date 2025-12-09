@@ -16,8 +16,8 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.cli_core.parser import create_parser
-from pkgmgr.cli_core.commands.branch import handle_branch
+from pkgmgr.cli.parser import create_parser
+from pkgmgr.cli.commands.branch import handle_branch
 
 
 class TestBranchCLI(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestBranchCLI(unittest.TestCase):
         """
         return create_parser("pkgmgr test parser")
 
-    @patch("pkgmgr.cli_core.commands.branch.open_branch")
+    @patch("pkgmgr.cli.commands.branch.open_branch")
     def test_branch_open_with_name_and_base(self, mock_open_branch):
         """
         Ensure that `pkgmgr branch open <name> --base <branch>` calls
@@ -58,7 +58,7 @@ class TestBranchCLI(unittest.TestCase):
         self.assertEqual(kwargs.get("base_branch"), "develop")
         self.assertEqual(kwargs.get("cwd"), ".")
 
-    @patch("pkgmgr.cli_core.commands.branch.close_branch")
+    @patch("pkgmgr.cli.commands.branch.close_branch")
     def test_branch_close_with_name_and_base(self, mock_close_branch):
         """
         Ensure that `pkgmgr branch close <name> --base <branch>` calls
@@ -84,7 +84,7 @@ class TestBranchCLI(unittest.TestCase):
         self.assertEqual(kwargs.get("base_branch"), "main")
         self.assertEqual(kwargs.get("cwd"), ".")
 
-    @patch("pkgmgr.cli_core.commands.branch.close_branch")
+    @patch("pkgmgr.cli.commands.branch.close_branch")
     def test_branch_close_without_name_uses_none(self, mock_close_branch):
         """
         Ensure that `pkgmgr branch close` without a name passes name=None

@@ -3,7 +3,7 @@
 
 import unittest
 
-from pkgmgr.versioning import (
+from pkgmgr.core.version.semver import (
     SemVer,
     is_semver_tag,
     extract_semver_from_tags,

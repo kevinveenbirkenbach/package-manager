@@ -5,9 +5,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import pkgmgr.install_repos as install_module
-from pkgmgr.install_repos import install_repos
-from pkgmgr.installers.base import BaseInstaller
+import pkgmgr.actions.repository.install as install_module
+from pkgmgr.actions.repository.install import install_repos
+from pkgmgr.actions.repository.install.installers.base import BaseInstaller
 
 
 class DummyInstaller(BaseInstaller):
@@ -26,10 +26,10 @@ class DummyInstaller(BaseInstaller):
 
 
 class TestInstallReposIntegration(unittest.TestCase):
-    @patch("pkgmgr.install_repos.verify_repository")
-    @patch("pkgmgr.install_repos.clone_repos")
-    @patch("pkgmgr.install_repos.get_repo_dir")
-    @patch("pkgmgr.install_repos.get_repo_identifier")
+    @patch("pkgmgr.actions.repository.install.verify_repository")
+    @patch("pkgmgr.actions.repository.install.clone_repos")
+    @patch("pkgmgr.actions.repository.install.get_repo_dir")
+    @patch("pkgmgr.actions.repository.install.get_repo_identifier")
     def test_system_binary_vs_nix_binary(
         self,
         mock_get_repo_identifier,
@@ -100,8 +100,8 @@ class TestInstallReposIntegration(unittest.TestCase):
             nix_tool_path = "/nix/profile/bin/repo-nix"
 
             # Patch resolve_command_for_repo at the install_repos module level
-            with patch("pkgmgr.install_repos.resolve_command_for_repo") as mock_resolve, \
-                 patch("pkgmgr.install_repos.os.path.exists") as mock_exists_install:
+            with patch("pkgmgr.actions.repository.install.resolve_command_for_repo") as mock_resolve, \
+                 patch("pkgmgr.actions.repository.install.os.path.exists") as mock_exists_install:
 
                 def fake_resolve_command(repo, repo_identifier: str, repo_dir: str):
                     """

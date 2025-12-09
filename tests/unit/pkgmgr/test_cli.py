@@ -83,7 +83,7 @@ class TestCliVersion(unittest.TestCase):
         # This matches the new behaviour: without explicit identifiers,
         # version uses _select_repo_for_current_directory(ctx).
         self._patch_select_repo_for_current_directory = mock.patch(
-            "pkgmgr.cli_core.dispatch._select_repo_for_current_directory",
+            "pkgmgr.cli.dispatch._select_repo_for_current_directory",
             return_value=[self._fake_repo],
         )
         self.mock_select_repo_for_current_directory = (
@@ -166,7 +166,7 @@ class TestCliVersion(unittest.TestCase):
 
         # Arrange: mock git tags used by handle_version
         with mock.patch(
-            "pkgmgr.cli_core.commands.version.get_tags",
+            "pkgmgr.cli.commands.version.get_tags",
             return_value=["v1.2.0", "v1.2.3", "v1.0.0"],
         ):
             # Act
@@ -198,7 +198,7 @@ class TestCliVersion(unittest.TestCase):
 
         # Arrange: mock git tags (latest is 1.2.3)
         with mock.patch(
-            "pkgmgr.cli_core.commands.version.get_tags",
+            "pkgmgr.cli.commands.version.get_tags",
             return_value=["v1.2.3"],
         ):
             stdout = self._run_cli_version_and_capture()
@@ -226,7 +226,7 @@ class TestCliVersion(unittest.TestCase):
 
         # Arrange: no tags returned
         with mock.patch(
-            "pkgmgr.cli_core.commands.version.get_tags",
+            "pkgmgr.cli.commands.version.get_tags",
             return_value=[],
         ):
             stdout = self._run_cli_version_and_capture()
