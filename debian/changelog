@@ -1,3 +1,9 @@
+package-manager (0.7.1-1) unstable; urgency=medium
+
+  * Fix floating 'latest' tag logic: dereference annotated target (vX.Y.Z^{}), add tag message to avoid Git errors, ensure best-effort update without blocking releases, and update unit tests (see ChatGPT conversation: https://chatgpt.com/share/69383024-efa4-800f-a875-129b81fa40ff).
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 09 Dec 2025 15:26:54 +0100
+
 package-manager (0.7.0-1) unstable; urgency=medium
 
   * Add Git helpers for branch sync and floating 'latest' tag in the release workflow, ensure main/master are updated from origin before tagging, and extend unit/e2e tests including 'pkgmgr release --help' coverage (see ChatGPT conversation: https://chatgpt.com/share/69383024-efa4-800f-a875-129b81fa40ff)

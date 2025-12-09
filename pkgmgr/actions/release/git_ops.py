@@ -71,12 +71,25 @@ def sync_branch_with_remote(branch: str, preview: bool = False) -> None:
 def update_latest_tag(new_tag: str, preview: bool = False) -> None:
     """
     Move the floating 'latest' tag to the newly created release tag.
+
+    Implementation details:
+      - We explicitly dereference the tag object via `<tag>^{}` so that
+        'latest' always points at the underlying commit, not at another tag.
+      - We create/update 'latest' as an annotated tag with a short message so
+        Git configurations that enforce annotated/signed tags do not fail
+        with "no tag message".
     """
-    print(f"[INFO] Updating 'latest' tag to point at {new_tag}...")
+    target_ref = f"{new_tag}^{{}}"
+    print(f"[INFO] Updating 'latest' tag to point at {new_tag} (commit {target_ref})...")
+
     if preview:
-        print(f"[PREVIEW] Would run: git tag -f latest {new_tag}")
+        print(f"[PREVIEW] Would run: git tag -f -a latest {target_ref} "
+              f'-m "Floating latest tag for {new_tag}"')
         print("[PREVIEW] Would run: git push origin latest --force")
         return
 
-    run_git_command(f"git tag -f latest {new_tag}")
+    run_git_command(
+        f'git tag -f -a latest {target_ref} '
+        f'-m "Floating latest tag for {new_tag}"'
+    )
     run_git_command("git push origin latest --force")

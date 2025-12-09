@@ -1,3 +1,8 @@
+## [0.7.1] - 2025-12-09
+
+* Fix floating 'latest' tag logic: dereference annotated target (vX.Y.Z^{}), add tag message to avoid Git errors, ensure best-effort update without blocking releases, and update unit tests (see ChatGPT conversation: https://chatgpt.com/share/69383024-efa4-800f-a875-129b81fa40ff).
+
+
 ## [0.7.0] - 2025-12-09
 
 * Add Git helpers for branch sync and floating 'latest' tag in the release workflow, ensure main/master are updated from origin before tagging, and extend unit/e2e tests including 'pkgmgr release --help' coverage (see ChatGPT conversation: https://chatgpt.com/share/69383024-efa4-800f-a875-129b81fa40ff)

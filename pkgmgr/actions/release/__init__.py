@@ -171,8 +171,15 @@ def _release_impl(
     run_git_command("git push origin --tags")
 
     # Move 'latest' to the new release tag so the newest SemVer is always
-    # marked as latest.
-    update_latest_tag(new_tag, preview=False)
+    # marked as latest. This is best-effort and must not break the release.
+    try:
+        update_latest_tag(new_tag, preview=False)
+    except GitError as exc:  # pragma: no cover
+        print(
+            f"[WARN] Failed to update floating 'latest' tag for {new_tag}: {exc}\n"
+            "[WARN] The release itself completed successfully; only the "
+            "'latest' tag was not updated."
+        )
 
     print(f"Release {new_ver_str} completed.")
 

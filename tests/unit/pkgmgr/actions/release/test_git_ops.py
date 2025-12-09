@@ -75,16 +75,19 @@ class TestUpdateLatestTag(unittest.TestCase):
         mock_run_git_command.assert_not_called()
 
     @patch("pkgmgr.actions.release.git_ops.run_git_command")
-    def test_update_latest_tag_real_calls_git(
+    def test_update_latest_tag_real_calls_git_with_dereference_and_message(
         self,
         mock_run_git_command,
     ) -> None:
         update_latest_tag("v1.2.3", preview=False)
 
         calls = [c.args[0] for c in mock_run_git_command.call_args_list]
-        self.assertIn("git tag -f latest v1.2.3", calls)
+        # Must dereference the tag object and create an annotated tag with message
+        self.assertIn(
+            'git tag -f -a latest v1.2.3^{} -m "Floating latest tag for v1.2.3"',
+            calls,
+        )
         self.assertIn("git push origin latest --force", calls)
-
 
 if __name__ == "__main__":
     unittest.main()
