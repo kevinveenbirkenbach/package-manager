@@ -1,3 +1,8 @@
+## [0.6.0] - 2025-12-09
+
+* Expose DISTROS and BASE_IMAGE_* variables as exported Makefile environment variables so all build and test commands can consume them dynamically. By exporting these values, every Make target (e.g., build, build-no-cache, build-missing, test-container, test-unit, test-e2e) and every delegated script in scripts/build/ and scripts/test/ now receives a consistent view of the supported distributions and their base container images. This change removes duplicated definitions across scripts, ensures reproducible builds, and allows build tooling to react automatically when new distros or base images are added to the Makefile.
+
+
 ## [0.5.1] - 2025-12-09
 
 * Refine pkgmgr release CLI close wiring and integration tests for --close flag (ChatGPT: https://chatgpt.com/share/69376b4e-8440-800f-9d06-535ec1d7a40e)
