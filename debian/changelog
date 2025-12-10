@@ -1,3 +1,9 @@
+package-manager (0.9.0-1) unstable; urgency=medium
+
+  * Introduce a virgin Arch-based Nix flake E2E workflow that validates pkgmgr’s full flake installation path using shared caches for faster and reproducible CI runs.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Wed, 10 Dec 2025 18:38:07 +0100
+
 package-manager (0.8.0-1) unstable; urgency=medium
 
   * **v0.7.15 — Installer & Command Resolution Improvements**

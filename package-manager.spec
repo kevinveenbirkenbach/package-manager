@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        0.8.0
+Version:        0.9.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -77,6 +77,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Wed Dec 10 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.9.0-1
+- Introduce a virgin Arch-based Nix flake E2E workflow that validates pkgmgr’s full flake installation path using shared caches for faster and reproducible CI runs.
+
 * Wed Dec 10 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.8.0-1
 - **v0.7.15 — Installer & Command Resolution Improvements**
 

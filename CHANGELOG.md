@@ -1,3 +1,8 @@
+## [0.9.0] - 2025-12-10
+
+* Introduce a virgin Arch-based Nix flake E2E workflow that validates pkgmgr’s full flake installation path using shared caches for faster and reproducible CI runs.
+
+
 ## [0.8.0] - 2025-12-10
 
 * **v0.7.15 — Installer & Command Resolution Improvements**
