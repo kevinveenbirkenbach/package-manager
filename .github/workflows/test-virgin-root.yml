@@ -1,4 +1,4 @@
-name: Test Virgin
+name: Test Virgin Root
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   pull_request:
 
 jobs:
-  test-virgin:
+  test-virgin-root:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -21,16 +21,14 @@ jobs:
       - name: Show Docker version
         run: docker version
 
-      - name: Virgin Arch pkgmgr flake test
+      - name: Virgin Arch pkgmgr flake test (root)
         run: |
           set -euo pipefail
 
-          echo ">>> Starting virgin ArchLinux container test (with shared caches)..."
+          echo ">>> Starting virgin ArchLinux container test (root, with shared caches)..."
 
           docker run --rm \
             -v "$PWD":/src \
-            -v pkgmgr_nix_store:/nix \
-            -v pkgmgr_nix_cache:/root/.cache/nix \
             -v pkgmgr_repos:/root/Repositories \
             -v pkgmgr_pip_cache:/root/.cache/pip \
             -w /src \
@@ -59,8 +57,8 @@ jobs:
               echo ">>> Running: pkgmgr update pkgmgr --clone-mode shallow --no-verification"
               pkgmgr update pkgmgr --clone-mode shallow --no-verification
 
-              echo ">>> Running: pkgmgr version"
+              echo ">>> Running: pkgmgr version pkgmgr"
               pkgmgr version pkgmgr
 
-              echo ">>> Virgin Arch test completed successfully."
+              echo ">>> Virgin Arch (root) test completed successfully."
             '

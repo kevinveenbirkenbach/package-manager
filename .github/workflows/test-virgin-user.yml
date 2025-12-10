@@ -1,0 +1,79 @@
+name: Test Virgin User
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - "*"
+  pull_request:
+
+jobs:
+  test-virgin-user:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Docker version
+        run: docker version
+
+      - name: Virgin Arch pkgmgr user test (non-root with sudo)
+        run: |
+          set -euo pipefail
+
+          echo ">>> Starting virgin ArchLinux container test (non-root user with sudo)..."
+
+          docker run --rm \
+            -v "$PWD":/src \
+            archlinux:latest \
+            bash -lc '
+              set -euo pipefail
+
+              echo ">>> [root] Updating and upgrading Arch system..."
+              pacman -Syu --noconfirm git python python-pip sudo base-devel debugedit
+
+              echo ">>> [root] Creating non-root user dev..."
+              useradd -m dev
+
+              echo ">>> [root] Allowing passwordless sudo for dev..."
+              echo "dev ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/dev
+              chmod 0440 /etc/sudoers.d/dev
+
+              echo ">>> [root] Adjusting ownership of /src for dev..."
+              chown -R dev:dev /src
+
+              echo ">>> [root] Running pkgmgr flow as non-root user dev..."
+              sudo -u dev env PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 bash -lc "
+                set -euo pipefail
+                cd /src
+
+                echo \">>> [dev] Using user: \$(whoami)\"
+                echo \">>> [dev] Running scripts/installation/main.sh...\"
+                bash scripts/installation/main.sh
+
+                echo \">>> [dev] Activating venv...\"
+                . \"\$HOME/.venvs/pkgmgr/bin/activate\"
+
+                echo \">>> [dev] Installing pkgmgr into venv via pip...\"
+                python -m pip install /src >/dev/null
+
+                echo \">>> [dev] PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=\$PKGMGR_DISABLE_NIX_FLAKE_INSTALLER\"
+                echo \">>> [dev] Updating managed repo package-manager via pkgmgr...\"
+                pkgmgr update pkgmgr --clone-mode shallow --no-verification
+
+                echo \">>> [dev] PATH:\"
+                echo \"\$PATH\"
+
+                echo \">>> [dev] which pkgmgr:\"
+                which pkgmgr || echo \">>> [dev] pkgmgr not found in PATH\"
+
+                echo \">>> [dev] Running: pkgmgr version pkgmgr\"
+                pkgmgr version pkgmgr
+              "
+
+              echo ">>> [root] Container flow finished."
+            '

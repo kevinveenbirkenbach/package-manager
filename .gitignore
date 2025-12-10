@@ -15,7 +15,7 @@ dist/
 build/*
 *.egg-info/
 pkg
-
+src/source
 package-manager-*
 
 # debian 

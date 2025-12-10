@@ -24,6 +24,15 @@
 - **Custom Aliases:**  
   Generate and manage custom aliases for easy command invocation.
 
+## Architecture & Setup Map 🗺️
+
+The following diagram provides a full overview of PKGMGR’s package structure,
+installation layers, and setup controller flow:
+
+![PKGMGR Architecture](assets/map.png)
+
+**Diagram status:** *Stand: 10. Dezember 2025*  
+**Always-up-to-date version:** https://s.veen.world/pkgmgrmp
 
 ## Installation ⚙️
 
@@ -51,55 +60,6 @@ The `make setup` command will:
 - Install required packages from `requirements.txt`.
 - Execute `python main.py install` to complete the installation.
 
-## Docker Quickstart 🐳
-
-Alternatively to installing locally, you can use Docker: build the image with
-
-```bash
-docker build --no-cache -t pkgmgr .
-```
-
-or alternativ pull it via
-
-```bash
-docker pull kevinveenbirkenbach/pkgmgr:latest
-```
-
-and then run
-
-```bash
-docker run --rm pkgmgr --help
-```
-
-## Usage 📖
-
-Run the script with different commands. For example:
-
-- **Install all packages:**
-  ```bash
-  pkgmgr install --all
-  ```
-- **Pull updates for a specific repository:**
-  ```bash
-  pkgmgr pull pkgmgr
-  ```
-- **Commit changes with extra Git parameters:**
-  ```bash
-  pkgmgr commit pkgmgr -- -m "Your commit message"
-  ```
-- **List all configured packages:**
-  ```bash
-  pkgmgr config show
-  ```
-- **Manage configuration:**
-  ```bash
-  pkgmgr config init
-  pkgmgr config add
-  pkgmgr config edit
-  pkgmgr config delete <identifier>
-  pkgmgr config ignore <identifier> --set true
-  ```
-
 ## License 📄
 
 This project is licensed under the MIT License.
@@ -108,9 +68,3 @@ This project is licensed under the MIT License.
 
 Kevin Veen-Birkenbach  
 [https://www.veen.world](https://www.veen.world)
-
----
-
-**Repository:** [github.com/kevinveenbirkenbach/package-manager](https://github.com/kevinveenbirkenbach/package-manager)
-
-*Created with AI 🤖 - [View conversation](https://chatgpt.com/share/67c728c4-92d0-800f-8945-003fa9bf27c6)*
