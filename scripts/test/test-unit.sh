@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+: "${distro:=arch}"
+
 echo "============================================================"
 echo ">>> Running UNIT tests in ${distro} container"
 echo "============================================================"
