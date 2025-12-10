@@ -1,3 +1,15 @@
+## [0.8.0] - 2025-12-10
+
+* **v0.7.15 — Installer & Command Resolution Improvements**
+
+* Introduced a unified **layer-based installer pipeline** with clear precedence (OS-packages, Nix, Python, Makefile).
+* Reworked installer structure and improved Python/Nix/Makefile installers, including isolated Python venvs and refined flake-output handling.
+* Fully rewrote **command resolution** with stronger typing, safer fallbacks, and explicit support for `command: null` to mark library-only repositories.
+* Added extensive **unit and integration tests** for installer capability ordering, command resolution, and Nix/Python installer behavior.
+* Expanded documentation with capability hierarchy diagrams and scenario matrices.
+* Removed deprecated repository entries and obsolete configuration files.
+
+
 ## [0.7.14] - 2025-12-10
 
 * Fixed the clone-all integration test so that `SystemExit(0)` from the proxy is treated as a successful command instead of a failure.
