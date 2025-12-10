@@ -1,3 +1,9 @@
+package-manager (0.7.13-1) unstable; urgency=medium
+
+  * Automated release.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Wed, 10 Dec 2025 10:27:24 +0100
+
 package-manager (0.7.12-1) unstable; urgency=medium
 
   * Fixed self refering alias during setup

@@ -1,3 +1,8 @@
+## [0.7.13] - 2025-12-10
+
+* Automated release.
+
+
 ## [0.7.12] - 2025-12-09
 
 * Fixed self refering alias during setup
