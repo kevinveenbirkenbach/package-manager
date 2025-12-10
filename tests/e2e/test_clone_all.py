@@ -26,6 +26,11 @@ class TestIntegrationCloneAllHttps(unittest.TestCase):
         """
         Helper that runs the CLI command via main.py and provides
         extra diagnostics if the command exits with a non-zero code.
+
+        Note:
+        The pkgmgr CLI may exit via SystemExit(0) on success
+        (e.g. when handled by the proxy layer). In that case we
+        treat the test as successful and do not raise.
         """
         cmd_repr = "pkgmgr clone --all --clone-mode https --no-verification"
         original_argv = sys.argv
@@ -44,19 +49,36 @@ class TestIntegrationCloneAllHttps(unittest.TestCase):
                 # This will run the full clone pipeline inside the container.
                 runpy.run_module("main", run_name="__main__")
             except SystemExit as exc:
-                # Convert SystemExit into a more helpful assertion with debug output.
-                exit_code = exc.code if isinstance(exc.code, int) else str(exc.code)
+                # Determine the exit code (int or string)
+                exit_code = exc.code
+                if isinstance(exit_code, int):
+                    numeric_code = exit_code
+                else:
+                    try:
+                        numeric_code = int(exit_code)
+                    except (TypeError, ValueError):
+                        numeric_code = None
 
+                # Treat SystemExit(0) as success (expected behavior)
+                if numeric_code == 0:
+                    print(
+                        "\n[TEST] pkgmgr clone --all finished with SystemExit(0); "
+                        "treating as success."
+                    )
+                    return
+
+                # For non-zero exit codes: convert SystemExit into a more
+                # helpful assertion with debug output.
                 print("\n[TEST] pkgmgr clone --all failed with SystemExit")
                 print(f"[TEST] Command : {cmd_repr}")
-                print(f"[TEST] Exit code: {exit_code}")
+                print(f"[TEST] Exit code: {exit_code!r}")
 
                 # Additional Nix profile debug on failure (may still be useful
                 # if the clone step interacts with Nix-based tooling).
                 nix_profile_list_debug("ON FAILURE (AFTER SystemExit)")
 
                 raise AssertionError(
-                    f"{cmd_repr!r} failed with exit code {exit_code}. "
+                    f"{cmd_repr!r} failed with exit code {exit_code!r}. "
                     "Scroll up to see the full pkgmgr/make output inside the container."
                 ) from exc
 
