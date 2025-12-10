@@ -1,3 +1,11 @@
+## [0.9.1] - 2025-12-10
+
+* * Refactored installer: new `venv-create.sh`, cleaner root/user setup flow, updated README with architecture map.
+* Split virgin tests into root/user workflows; stabilized Nix installer across distros; improved test scripts with dynamic distro selection and isolated Nix stores.
+* Fixed repository directory resolution; improved `pkgmgr path` and `pkgmgr shell`; added full unit/E2E coverage.
+* Removed deprecated files and updated `.gitignore`.
+
+
 ## [0.9.0] - 2025-12-10
 
 * Introduce a virgin Arch-based Nix flake E2E workflow that validates pkgmgr’s full flake installation path using shared caches for faster and reproducible CI runs.
