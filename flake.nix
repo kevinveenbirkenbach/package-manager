@@ -48,9 +48,7 @@
             # Runtime dependencies (matches [project.dependencies])
             propagatedBuildInputs = [
               pyPkgs.pyyaml
-              # Add more here if needed, e.g.:
-              # pyPkgs.click
-              # pyPkgs.rich
+              pyPkgs.pip
             ];
 
             doCheck = false;
@@ -72,10 +70,16 @@
           ansiblePkg =
             if pkgs ? ansible-core then pkgs.ansible-core
             else pkgs.ansible;
+
+          # Python 3 + pip für alles, was "python3 -m pip" macht
+          pythonWithPip = pkgs.python3.withPackages (ps: [
+            ps.pip
+          ]);
         in
         {
           default = pkgs.mkShell {
             buildInputs = [
+              pythonWithPip
               pkgmgrPkg
               pkgs.git
               ansiblePkg
