@@ -1,6 +1,16 @@
 # Capability Resolution & Installer Shadowing
 
-## Layer Hierarchy
+This document explains how `pkgmgr` decides **which installer should run** when multiple installation mechanisms are available in a repository.
+It reflects the logic shown in the setup-controller diagram:
+
+➡️ **Full graphical schema:** [https://s.veen.world/pkgmgrmp](https://s.veen.world/pkgmgrmp)
+
+---
+
+## Layer Hierarchy (Strength Order)
+
+Installers are evaluated from **strongest to weakest**.
+A stronger layer shadows all layers below it.
 
 ```
 ┌───────────────────────────┐  Highest layer
@@ -22,7 +32,24 @@
 
 ---
 
-## Scenario Matrix
+## Capability Matrix
+
+Each layer provides a set of **capabilities**.
+Layers that provide *all* capabilities of a lower layer **shadow** that layer.
+
+| Capability           | Makefile | Python       | Nix | OS-Pkgs |
+| -------------------- | -------- | ------------ | --- | ------- |
+| `make-install`       | ✔        | (optional) ✔ | ✔   | ✔       |
+| `python-runtime`     | –        | ✔            | ✔   | ✔       |
+| `binary/cli`         | –        | –            | ✔   | ✔       |
+| `system-integration` | –        | –            | –   | ✔       |
+
+✔ = capability available
+– = not provided by this layer
+
+---
+
+## Scenario Matrix (Expected Installer Execution)
 
 | Scenario                   | Makefile | Python | Nix | OS-Pkgs | Test Name                     |
 | -------------------------- | -------- | ------ | --- | ------- | ----------------------------- |
@@ -34,40 +61,41 @@
 
 Legend:
 ✔ = installer runs
-✗ = installer skipped (shadowed by upper layer)
-– = no such layer present
+✗ = installer is skipped (shadowed)
+– = layer not present in this scenario
 
 ---
 
 ## What the Integration Test Confirms
 
-**Goal:** Validate that the capability-shadowing mechanism correctly determines *which installers actually run* for a given repository layout.
+The integration tests ensure that the **actual execution** matches the theoretical capability model.
 
 ### 1) Only Makefile
 
-* Makefile provides `make-install`.
-* No higher layers → MakefileInstaller runs.
+* Only `Makefile` present
+  → MakefileInstaller runs.
 
 ### 2) Python + Makefile
 
-* Python provides `python-runtime`.
-* Makefile additionally provides `make-install`.
-* No capability overlap → both installers run.
+* Python provides `python-runtime`
+* Makefile provides `make-install`
+  → Both run (capabilities are disjoint).
 
 ### 3) Python shadows Makefile
 
-* Python also provides `make-install`.
-* Makefile’s capability is fully covered → MakefileInstaller is skipped.
+* Python additionally advertises `make-install`
+  → MakefileInstaller is skipped.
 
 ### 4) Nix shadows Python & Makefile
 
-* Nix provides all capabilities below it.
-* Only NixInstaller runs.
+* Nix provides: `python-runtime` + `make-install`
+  → PythonInstaller and MakefileInstaller are skipped.
+  → Only NixInstaller runs.
 
-### 5) OS-Packages shadow all
+### 5) OS-Pkg layer shadows all
 
-* PKGBUILD/debian/rpm provide all capabilities.
-* Only the corresponding OS package installer runs.
+* OS packages provide all capabilities
+  → Only OS installer runs.
 
 ---
 
@@ -111,6 +139,14 @@ Legend:
 
 ---
 
-## Core Principle (one sentence)
+## Core Principle
 
-**A layer only executes if it provides at least one capability not already guaranteed by any higher layer.**
+**A layer is executed only if it contributes at least one capability that no stronger layer has already provided.**
+
+---
+
+## Link to the Setup Controller Diagram
+
+The full visual schema is available here:
+
+➡️ **[https://s.veen.world/pkgmgrmp](https://s.veen.world/pkgmgrmp)**

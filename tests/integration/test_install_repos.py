@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import tempfile
 import unittest
@@ -16,10 +19,10 @@ class DummyInstaller(BaseInstaller):
 
     layer = None
 
-    def supports(self, ctx):
+    def supports(self, ctx):  # type: ignore[override]
         return True
 
-    def run(self, ctx):
+    def run(self, ctx):  # type: ignore[override]
         return
 
 
@@ -34,31 +37,34 @@ class TestInstallReposIntegration(unittest.TestCase):
         mock_get_repo_dir,
         mock_clone_repos,
         mock_verify_repository,
-    ):
+    ) -> None:
         """
-        Full integration test for high-level command resolution + symlink creation.
+        Integration test:
 
-        We do NOT re-test all low-level file-system details of
-        resolve_command_for_repo here (that is covered by unit tests).
-        Instead, we assert that:
+        We do NOT re-test the low-level implementation details of
+        resolve_command_for_repo() here (that is covered by unit tests).
 
-          - If resolve_command_for_repo(...) returns None:
-              → install_repos() does NOT create a symlink.
+        Instead, we assert the high-level behavior of install_repos() +
+        InstallationPipeline + create_ink():
 
-          - If resolve_command_for_repo(...) returns a path:
-              → install_repos() creates exactly one symlink in bin_dir
+          * If resolve_command_for_repo(...) returns None:
+              → install_repos() must NOT create a symlink for that repo.
+
+          * If resolve_command_for_repo(...) returns a path:
+              → install_repos() must create exactly one symlink in bin_dir
                 that points to this path.
 
-        Concretely:
+        Concretely in this test:
 
-          - repo-system:
-              resolve_command_for_repo(...) → None
+          * repo-system:
+              fake resolver → returns None
               → no symlink in bin_dir for this repo.
 
-          - repo-nix:
-              resolve_command_for_repo(...) → "/nix/profile/bin/repo-nix"
+          * repo-nix:
+              fake resolver → returns "/nix/profile/bin/repo-nix"
               → exactly one symlink in bin_dir pointing to that path.
         """
+
         # Repositories must have provider/account/repository so that get_repo_dir()
         # does not crash when called from create_ink().
         repo_system = {
@@ -77,9 +83,7 @@ class TestInstallReposIntegration(unittest.TestCase):
         selected_repos = [repo_system, repo_nix]
         all_repos = selected_repos
 
-        with tempfile.TemporaryDirectory() as tmp_base, \
-             tempfile.TemporaryDirectory() as tmp_bin:
-
+        with tempfile.TemporaryDirectory() as tmp_base, tempfile.TemporaryDirectory() as tmp_bin:
             # Fake repo directories (what get_repo_dir will return)
             repo_system_dir = os.path.join(tmp_base, "repo-system")
             repo_nix_dir = os.path.join(tmp_base, "repo-nix")
@@ -97,11 +101,15 @@ class TestInstallReposIntegration(unittest.TestCase):
             # Pretend this is the "Nix binary" path for repo-nix
             nix_tool_path = "/nix/profile/bin/repo-nix"
 
-            # Patch resolve_command_for_repo at the install_repos module level
-            with patch("pkgmgr.actions.repository.install.resolve_command_for_repo") as mock_resolve, \
-                 patch("pkgmgr.actions.repository.install.os.path.exists") as mock_exists_install:
+            # Patch resolve_command_for_repo at the *pipeline* module level,
+            # because InstallationPipeline imports it there.
+            with patch(
+                "pkgmgr.actions.repository.install.pipeline.resolve_command_for_repo"
+            ) as mock_resolve, patch(
+                "pkgmgr.actions.repository.install.os.path.exists"
+            ) as mock_exists_install:
 
-                def fake_resolve_command(repo, repo_identifier: str, repo_dir: str):
+                def fake_resolve(repo, repo_identifier: str, repo_dir: str):
                     """
                     High-level behavior stub:
 
@@ -111,9 +119,10 @@ class TestInstallReposIntegration(unittest.TestCase):
                       - For repo-nix: act as if a Nix profile binary is the entrypoint
                         → return nix_tool_path (symlink should be created).
                     """
-                    if repo_identifier == "repo-system":
+                    name = repo.get("name")
+                    if name == "repo-system":
                         return None
-                    if repo_identifier == "repo-nix":
+                    if name == "repo-nix":
                         return nix_tool_path
                     return None
 
@@ -126,7 +135,7 @@ class TestInstallReposIntegration(unittest.TestCase):
                         return True
                     return False
 
-                mock_resolve.side_effect = fake_resolve_command
+                mock_resolve.side_effect = fake_resolve
                 mock_exists_install.side_effect = fake_exists_install
 
                 # Use only DummyInstaller so we focus on link creation, not installer behavior
