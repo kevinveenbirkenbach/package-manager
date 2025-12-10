@@ -8,8 +8,8 @@ Base interface for all installer components in the pkgmgr installation pipeline.
 from abc import ABC, abstractmethod
 from typing import Set
 
-from pkgmgr.actions.repository.install.context import RepoContext
-from pkgmgr.actions.repository.install.capabilities import CAPABILITY_MATCHERS
+from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.capabilities import CAPABILITY_MATCHERS
 
 
 class BaseInstaller(ABC):

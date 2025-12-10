@@ -23,9 +23,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Sequence, Set
 
-from pkgmgr.actions.repository.install.context import RepoContext
-from pkgmgr.actions.repository.install.installers.base import BaseInstaller
-from pkgmgr.actions.repository.install.layers import (
+from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.installers.base import BaseInstaller
+from pkgmgr.actions.install.layers import (
     CliLayer,
     classify_command_layer,
     layer_priority,

@@ -6,9 +6,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import pkgmgr.actions.repository.install as install_module
-from pkgmgr.actions.repository.install import install_repos
-from pkgmgr.actions.repository.install.installers.base import BaseInstaller
+import pkgmgr.actions.install as install_module
+from pkgmgr.actions.install import install_repos
+from pkgmgr.actions.install.installers.base import BaseInstaller
 
 
 class DummyInstaller(BaseInstaller):
@@ -27,10 +27,10 @@ class DummyInstaller(BaseInstaller):
 
 
 class TestInstallReposIntegration(unittest.TestCase):
-    @patch("pkgmgr.actions.repository.install.verify_repository")
-    @patch("pkgmgr.actions.repository.install.clone_repos")
-    @patch("pkgmgr.actions.repository.install.get_repo_dir")
-    @patch("pkgmgr.actions.repository.install.get_repo_identifier")
+    @patch("pkgmgr.actions.install.verify_repository")
+    @patch("pkgmgr.actions.install.clone_repos")
+    @patch("pkgmgr.actions.install.get_repo_dir")
+    @patch("pkgmgr.actions.install.get_repo_identifier")
     def test_system_binary_vs_nix_binary(
         self,
         mock_get_repo_identifier,
@@ -104,9 +104,9 @@ class TestInstallReposIntegration(unittest.TestCase):
             # Patch resolve_command_for_repo at the *pipeline* module level,
             # because InstallationPipeline imports it there.
             with patch(
-                "pkgmgr.actions.repository.install.pipeline.resolve_command_for_repo"
+                "pkgmgr.actions.install.pipeline.resolve_command_for_repo"
             ) as mock_resolve, patch(
-                "pkgmgr.actions.repository.install.os.path.exists"
+                "pkgmgr.actions.install.os.path.exists"
             ) as mock_exists_install:
 
                 def fake_resolve(repo, repo_identifier: str, repo_dir: str):

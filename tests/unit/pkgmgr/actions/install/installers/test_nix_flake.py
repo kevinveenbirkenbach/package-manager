@@ -6,8 +6,8 @@ import unittest
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
-from pkgmgr.actions.repository.install.context import RepoContext
-from pkgmgr.actions.repository.install.installers.nix_flake import NixFlakeInstaller
+from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.installers.nix_flake import NixFlakeInstaller
 
 
 class TestNixFlakeInstaller(unittest.TestCase):
@@ -29,8 +29,8 @@ class TestNixFlakeInstaller(unittest.TestCase):
         )
         self.installer = NixFlakeInstaller()
 
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.os.path.exists")
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.shutil.which")
+    @patch("pkgmgr.actions.install.installers.nix_flake.os.path.exists")
+    @patch("pkgmgr.actions.install.installers.nix_flake.shutil.which")
     def test_supports_true_when_nix_and_flake_exist(
         self,
         mock_which: MagicMock,
@@ -47,8 +47,8 @@ class TestNixFlakeInstaller(unittest.TestCase):
             os.path.join(self.ctx.repo_dir, self.installer.FLAKE_FILE)
         )
 
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.os.path.exists")
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.shutil.which")
+    @patch("pkgmgr.actions.install.installers.nix_flake.os.path.exists")
+    @patch("pkgmgr.actions.install.installers.nix_flake.shutil.which")
     def test_supports_false_when_nix_missing(
         self,
         mock_which: MagicMock,
@@ -60,8 +60,8 @@ class TestNixFlakeInstaller(unittest.TestCase):
         with patch.dict(os.environ, {"PKGMGR_DISABLE_NIX_FLAKE_INSTALLER": ""}, clear=False):
             self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.os.path.exists")
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.shutil.which")
+    @patch("pkgmgr.actions.install.installers.nix_flake.os.path.exists")
+    @patch("pkgmgr.actions.install.installers.nix_flake.shutil.which")
     def test_supports_false_when_disabled_via_env(
         self,
         mock_which: MagicMock,
@@ -77,8 +77,8 @@ class TestNixFlakeInstaller(unittest.TestCase):
         ):
             self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.NixFlakeInstaller.supports")
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.run_command")
+    @patch("pkgmgr.actions.install.installers.nix_flake.NixFlakeInstaller.supports")
+    @patch("pkgmgr.actions.install.installers.nix_flake.run_command")
     def test_run_removes_old_profile_and_installs_outputs(
         self,
         mock_run_command: MagicMock,
@@ -112,8 +112,8 @@ class TestNixFlakeInstaller(unittest.TestCase):
 
         self.assertEqual(commands[0], remove_cmd)
 
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.shutil.which")
-    @patch("pkgmgr.actions.repository.install.installers.nix_flake.run_command")
+    @patch("pkgmgr.actions.install.installers.nix_flake.shutil.which")
+    @patch("pkgmgr.actions.install.installers.nix_flake.run_command")
     def test_ensure_old_profile_removed_ignores_systemexit(
         self,
         mock_run_command: MagicMock,

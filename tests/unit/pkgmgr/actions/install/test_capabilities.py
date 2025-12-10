@@ -4,7 +4,7 @@ import os
 import unittest
 from unittest.mock import patch, mock_open
 
-from pkgmgr.actions.repository.install.capabilities import (
+from pkgmgr.actions.install.capabilities import (
     PythonRuntimeCapability,
     MakeInstallCapability,
     NixFlakeCapability,
@@ -31,7 +31,7 @@ class TestCapabilitiesDetectors(unittest.TestCase):
     def setUp(self):
         self.ctx = DummyCtx("/tmp/repo")
 
-    @patch("pkgmgr.actions.repository.install.capabilities.os.path.exists")
+    @patch("pkgmgr.actions.install.capabilities.os.path.exists")
     def test_python_runtime_python_layer_pyproject(self, mock_exists):
         """PythonRuntimeCapability: python layer is provided if pyproject.toml exists."""
         cap = PythonRuntimeCapability()
@@ -47,8 +47,8 @@ class TestCapabilitiesDetectors(unittest.TestCase):
         self.assertFalse(cap.is_provided(self.ctx, "nix"))
         self.assertFalse(cap.is_provided(self.ctx, "os-packages"))
 
-    @patch("pkgmgr.actions.repository.install.capabilities._read_text_if_exists")
-    @patch("pkgmgr.actions.repository.install.capabilities.os.path.exists")
+    @patch("pkgmgr.actions.install.capabilities._read_text_if_exists")
+    @patch("pkgmgr.actions.install.capabilities.os.path.exists")
     def test_python_runtime_nix_layer_flake(self, mock_exists, mock_read):
         """
         PythonRuntimeCapability: nix layer is provided if flake.nix contains
@@ -65,7 +65,7 @@ class TestCapabilitiesDetectors(unittest.TestCase):
         self.assertTrue(cap.applies_to_layer("nix"))
         self.assertTrue(cap.is_provided(self.ctx, "nix"))
 
-    @patch("pkgmgr.actions.repository.install.capabilities.os.path.exists", return_value=True)
+    @patch("pkgmgr.actions.install.capabilities.os.path.exists", return_value=True)
     @patch(
         "builtins.open",
         new_callable=mock_open,
@@ -78,7 +78,7 @@ class TestCapabilitiesDetectors(unittest.TestCase):
         self.assertTrue(cap.applies_to_layer("makefile"))
         self.assertTrue(cap.is_provided(self.ctx, "makefile"))
 
-    @patch("pkgmgr.actions.repository.install.capabilities.os.path.exists")
+    @patch("pkgmgr.actions.install.capabilities.os.path.exists")
     def test_nix_flake_capability_on_nix_layer(self, mock_exists):
         """NixFlakeCapability: nix layer is provided if flake.nix exists."""
         cap = NixFlakeCapability()
@@ -153,7 +153,7 @@ class TestDetectCapabilities(unittest.TestCase):
             },
         )
 
-        with patch("pkgmgr.actions.repository.install.capabilities.CAPABILITY_MATCHERS", [dummy1, dummy2]):
+        with patch("pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [dummy1, dummy2]):
             caps = detect_capabilities(self.ctx, layers)
 
         self.assertEqual(
@@ -221,7 +221,7 @@ class TestResolveEffectiveCapabilities(unittest.TestCase):
         )
 
         with patch(
-            "pkgmgr.actions.repository.install.capabilities.CAPABILITY_MATCHERS",
+            "pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS",
             [cap_make_install, cap_python_runtime, cap_nix_flake],
         ):
             effective = resolve_effective_capabilities(self.ctx, layers)
@@ -258,7 +258,7 @@ class TestResolveEffectiveCapabilities(unittest.TestCase):
         )
 
         with patch(
-            "pkgmgr.actions.repository.install.capabilities.CAPABILITY_MATCHERS",
+            "pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS",
             [cap_python_runtime],
         ):
             effective = resolve_effective_capabilities(self.ctx, layers)
@@ -283,7 +283,7 @@ class TestResolveEffectiveCapabilities(unittest.TestCase):
             },
         )
 
-        with patch("pkgmgr.actions.repository.install.capabilities.CAPABILITY_MATCHERS", [cap_only_make]):
+        with patch("pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [cap_only_make]):
             effective = resolve_effective_capabilities(self.ctx, layers)
 
         self.assertEqual(effective["makefile"], {"make-install"})
@@ -306,7 +306,7 @@ class TestResolveEffectiveCapabilities(unittest.TestCase):
             },
         )
 
-        with patch("pkgmgr.actions.repository.install.capabilities.CAPABILITY_MATCHERS", [cap_only_nix]):
+        with patch("pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [cap_only_nix]):
             effective = resolve_effective_capabilities(self.ctx, layers)
 
         self.assertEqual(effective["makefile"], set())
@@ -337,7 +337,7 @@ class TestResolveEffectiveCapabilities(unittest.TestCase):
         )
 
         with patch(
-            "pkgmgr.actions.repository.install.capabilities.CAPABILITY_MATCHERS",
+            "pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS",
             [cap_python_runtime],
         ):
             effective = resolve_effective_capabilities(self.ctx, layers)
@@ -359,7 +359,7 @@ class TestResolveEffectiveCapabilities(unittest.TestCase):
         )
 
         with patch(
-            "pkgmgr.actions.repository.install.capabilities.CAPABILITY_MATCHERS",
+            "pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS",
             [cap_dummy],
         ):
             effective = resolve_effective_capabilities(self.ctx)

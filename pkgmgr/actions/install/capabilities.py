@@ -38,7 +38,7 @@ from abc import ABC, abstractmethod
 from typing import Iterable, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pkgmgr.actions.repository.install.context import RepoContext
+    from pkgmgr.actions.install.context import RepoContext
 
 
 # ---------------------------------------------------------------------------

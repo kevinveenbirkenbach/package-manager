@@ -2,7 +2,7 @@ import sys
 import shutil
 
 from pkgmgr.actions.repository.pull import pull_with_verification
-from pkgmgr.actions.repository.install import install_repos
+from pkgmgr.actions.install import install_repos
 
 
 def update_repos(

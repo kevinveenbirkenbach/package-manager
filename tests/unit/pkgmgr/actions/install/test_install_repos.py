@@ -6,7 +6,7 @@ import unittest
 from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
-from pkgmgr.actions.repository.install import install_repos
+from pkgmgr.actions.install import install_repos
 
 
 Repository = Dict[str, Any]
@@ -31,12 +31,12 @@ class TestInstallReposOrchestration(unittest.TestCase):
         }
         self.all_repos: List[Repository] = [self.repo1, self.repo2]
 
-    @patch("pkgmgr.actions.repository.install.InstallationPipeline")
-    @patch("pkgmgr.actions.repository.install.clone_repos")
-    @patch("pkgmgr.actions.repository.install.get_repo_dir")
-    @patch("pkgmgr.actions.repository.install.os.path.exists", return_value=True)
+    @patch("pkgmgr.actions.install.InstallationPipeline")
+    @patch("pkgmgr.actions.install.clone_repos")
+    @patch("pkgmgr.actions.install.get_repo_dir")
+    @patch("pkgmgr.actions.install.os.path.exists", return_value=True)
     @patch(
-        "pkgmgr.actions.repository.install.verify_repository",
+        "pkgmgr.actions.install.verify_repository",
         return_value=(True, [], "hash", "key"),
     )
     def test_install_repos_runs_pipeline_for_each_repo(
@@ -79,12 +79,12 @@ class TestInstallReposOrchestration(unittest.TestCase):
         pipeline_instance = mock_pipeline_cls.return_value
         self.assertEqual(pipeline_instance.run.call_count, len(selected))
 
-    @patch("pkgmgr.actions.repository.install.InstallationPipeline")
-    @patch("pkgmgr.actions.repository.install.clone_repos")
-    @patch("pkgmgr.actions.repository.install.get_repo_dir")
-    @patch("pkgmgr.actions.repository.install.os.path.exists", return_value=True)
+    @patch("pkgmgr.actions.install.InstallationPipeline")
+    @patch("pkgmgr.actions.install.clone_repos")
+    @patch("pkgmgr.actions.install.get_repo_dir")
+    @patch("pkgmgr.actions.install.os.path.exists", return_value=True)
     @patch(
-        "pkgmgr.actions.repository.install.verify_repository",
+        "pkgmgr.actions.install.verify_repository",
         return_value=(False, ["invalid signature"], None, None),
     )
     @patch("builtins.input", return_value="n")

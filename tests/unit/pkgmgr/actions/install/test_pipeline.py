@@ -4,10 +4,10 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from pkgmgr.actions.repository.install.context import RepoContext
-from pkgmgr.actions.repository.install.installers.base import BaseInstaller
-from pkgmgr.actions.repository.install.layers import CliLayer
-from pkgmgr.actions.repository.install.pipeline import InstallationPipeline
+from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.installers.base import BaseInstaller
+from pkgmgr.actions.install.layers import CliLayer
+from pkgmgr.actions.install.pipeline import InstallationPipeline
 
 
 class DummyInstaller(BaseInstaller):
@@ -61,8 +61,8 @@ def _minimal_context() -> RepoContext:
 
 
 class TestInstallationPipeline(unittest.TestCase):
-    @patch("pkgmgr.actions.repository.install.pipeline.create_ink")
-    @patch("pkgmgr.actions.repository.install.pipeline.resolve_command_for_repo")
+    @patch("pkgmgr.actions.install.pipeline.create_ink")
+    @patch("pkgmgr.actions.install.pipeline.resolve_command_for_repo")
     def test_create_ink_called_when_command_resolved(
         self,
         mock_resolve_command_for_repo: MagicMock,
@@ -86,8 +86,8 @@ class TestInstallationPipeline(unittest.TestCase):
             "/usr/local/bin/test-repo",
         )
 
-    @patch("pkgmgr.actions.repository.install.pipeline.create_ink")
-    @patch("pkgmgr.actions.repository.install.pipeline.resolve_command_for_repo")
+    @patch("pkgmgr.actions.install.pipeline.create_ink")
+    @patch("pkgmgr.actions.install.pipeline.resolve_command_for_repo")
     def test_lower_priority_installers_are_skipped_if_cli_exists(
         self,
         mock_resolve_command_for_repo: MagicMock,
@@ -116,8 +116,8 @@ class TestInstallationPipeline(unittest.TestCase):
         )
         self.assertEqual(ctx.repo.get("command"), "/usr/bin/test-repo")
 
-    @patch("pkgmgr.actions.repository.install.pipeline.create_ink")
-    @patch("pkgmgr.actions.repository.install.pipeline.resolve_command_for_repo")
+    @patch("pkgmgr.actions.install.pipeline.create_ink")
+    @patch("pkgmgr.actions.install.pipeline.resolve_command_for_repo")
     def test_capabilities_prevent_duplicate_installers(
         self,
         mock_resolve_command_for_repo: MagicMock,

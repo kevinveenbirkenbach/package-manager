@@ -20,14 +20,14 @@ import unittest
 from typing import List, Sequence, Tuple
 from unittest.mock import patch
 
-import pkgmgr.actions.repository.install as install_mod
-from pkgmgr.actions.repository.install import install_repos
-from pkgmgr.actions.repository.install.installers.makefile import MakefileInstaller
-from pkgmgr.actions.repository.install.installers.nix_flake import NixFlakeInstaller
-from pkgmgr.actions.repository.install.installers.os_packages.arch_pkgbuild import (
+import pkgmgr.actions.install as install_mod
+from pkgmgr.actions.install import install_repos
+from pkgmgr.actions.install.installers.makefile import MakefileInstaller
+from pkgmgr.actions.install.installers.nix_flake import NixFlakeInstaller
+from pkgmgr.actions.install.installers.os_packages.arch_pkgbuild import (
     ArchPkgbuildInstaller,
 )
-from pkgmgr.actions.repository.install.installers.python import PythonInstaller
+from pkgmgr.actions.install.installers.python import PythonInstaller
 
 
 InstallerSpec = Tuple[str, object]

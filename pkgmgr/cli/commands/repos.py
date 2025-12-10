@@ -7,7 +7,7 @@ import sys
 from typing import Any, Dict, List
 
 from pkgmgr.cli.context import CLIContext
-from pkgmgr.actions.repository.install import install_repos
+from pkgmgr.actions.install import install_repos
 from pkgmgr.actions.repository.deinstall import deinstall_repos
 from pkgmgr.actions.repository.delete import delete_repos
 from pkgmgr.actions.repository.update import update_repos

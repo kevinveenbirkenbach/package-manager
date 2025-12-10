@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.actions.repository.install.context import RepoContext
-from pkgmgr.actions.repository.install.installers.os_packages.debian_control import (
+from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.installers.os_packages.debian_control import (
     DebianControlInstaller,
 )
 
@@ -44,7 +44,7 @@ class TestDebianControlInstaller(unittest.TestCase):
         self.assertFalse(self.installer.supports(self.ctx))
 
     @patch(
-        "pkgmgr.actions.repository.install.installers.os_packages.debian_control.run_command"
+        "pkgmgr.actions.install.installers.os_packages.debian_control.run_command"
     )
     @patch("glob.glob", return_value=["/tmp/package-manager_0.1.1_all.deb"])
     @patch("os.path.exists", return_value=True)

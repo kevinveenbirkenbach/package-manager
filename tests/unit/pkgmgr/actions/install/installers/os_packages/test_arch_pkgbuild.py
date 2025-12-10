@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.actions.repository.install.context import RepoContext
-from pkgmgr.actions.repository.install.installers.os_packages.arch_pkgbuild import ArchPkgbuildInstaller
+from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.installers.os_packages.arch_pkgbuild import ArchPkgbuildInstaller
 
 
 class TestArchPkgbuildInstaller(unittest.TestCase):
@@ -26,7 +26,7 @@ class TestArchPkgbuildInstaller(unittest.TestCase):
         )
         self.installer = ArchPkgbuildInstaller()
 
-    @patch("pkgmgr.actions.repository.install.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
+    @patch("pkgmgr.actions.install.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which")
     def test_supports_true_when_tools_and_pkgbuild_exist(
@@ -46,7 +46,7 @@ class TestArchPkgbuildInstaller(unittest.TestCase):
         self.assertIn("makepkg", calls)
         mock_exists.assert_called_with(os.path.join(self.ctx.repo_dir, "PKGBUILD"))
 
-    @patch("pkgmgr.actions.repository.install.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=0)
+    @patch("pkgmgr.actions.install.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=0)
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which")
     def test_supports_false_when_running_as_root(
@@ -55,7 +55,7 @@ class TestArchPkgbuildInstaller(unittest.TestCase):
         mock_which.return_value = "/usr/bin/pacman"
         self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.actions.repository.install.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
+    @patch("pkgmgr.actions.install.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
     @patch("os.path.exists", return_value=False)
     @patch("shutil.which")
     def test_supports_false_when_pkgbuild_missing(
@@ -64,8 +64,8 @@ class TestArchPkgbuildInstaller(unittest.TestCase):
         mock_which.return_value = "/usr/bin/pacman"
         self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch("pkgmgr.actions.repository.install.installers.os_packages.arch_pkgbuild.run_command")
-    @patch("pkgmgr.actions.repository.install.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
+    @patch("pkgmgr.actions.install.installers.os_packages.arch_pkgbuild.run_command")
+    @patch("pkgmgr.actions.install.installers.os_packages.arch_pkgbuild.os.geteuid", return_value=1000)
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which")
     def test_run_builds_and_installs_with_makepkg(

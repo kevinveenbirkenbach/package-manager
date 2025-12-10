@@ -31,12 +31,12 @@ import sys
 import subprocess
 from typing import TYPE_CHECKING
 
-from pkgmgr.actions.repository.install.installers.base import BaseInstaller
+from pkgmgr.actions.install.installers.base import BaseInstaller
 from pkgmgr.core.command.run import run_command
 
 if TYPE_CHECKING:
-    from pkgmgr.actions.repository.install.context import RepoContext
-    from pkgmgr.actions.repository.install import InstallContext
+    from pkgmgr.actions.install.context import RepoContext
+    from pkgmgr.actions.install import InstallContext
 
 
 class PythonInstaller(BaseInstaller):

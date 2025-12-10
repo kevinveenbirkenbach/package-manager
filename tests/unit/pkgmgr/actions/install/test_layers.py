@@ -4,7 +4,7 @@
 import os
 import unittest
 
-from pkgmgr.actions.repository.install.layers import (
+from pkgmgr.actions.install.layers import (
     CliLayer,
     CLI_LAYERS,
     classify_command_layer,

@@ -1,5 +1,5 @@
 import unittest
-from pkgmgr.actions.repository.install.context import RepoContext
+from pkgmgr.actions.install.context import RepoContext
 
 
 class TestRepoContext(unittest.TestCase):
