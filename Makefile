@@ -68,8 +68,8 @@ test-container: build-missing
 build-missing:
 	@bash scripts/build/build-image-missing.sh
 
-# Combined test target for local + CI (unit + e2e + integration)
-test: test-container test-unit test-e2e test-integration
+# Combined test target for local + CI (unit + integration + e2e)
+test: test-container test-unit test-integration test-e2e
 
 # ------------------------------------------------------------
 # System install (native packages, calls scripts/installation/run-package.sh)

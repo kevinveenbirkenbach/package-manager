@@ -1,134 +1,129 @@
-# tests/unit/pkgmgr/test_install_repos.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+import os
 import unittest
-from unittest.mock import patch, MagicMock
+from typing import Any, Dict, List
+from unittest.mock import MagicMock, patch
 
-from pkgmgr.actions.repository.install.context import RepoContext
-import pkgmgr.actions.repository.install as install_module
-from pkgmgr.actions.repository.install.installers.base import BaseInstaller
+from pkgmgr.actions.repository.install import install_repos
 
 
-class DummyInstaller(BaseInstaller):
-    """Simple installer for testing orchestration."""
-
-    layer = None  # no specific capabilities
-
-    def __init__(self):
-        self.calls = []
-
-    def supports(self, ctx: RepoContext) -> bool:
-        # Always support to verify that the pipeline runs
-        return True
-
-    def run(self, ctx: RepoContext) -> None:
-        self.calls.append(ctx.identifier)
+Repository = Dict[str, Any]
 
 
 class TestInstallReposOrchestration(unittest.TestCase):
-    @patch("pkgmgr.actions.repository.install.create_ink")
-    @patch("pkgmgr.actions.repository.install.resolve_command_for_repo")
-    @patch("pkgmgr.actions.repository.install.verify_repository")
-    @patch("pkgmgr.actions.repository.install.get_repo_dir")
-    @patch("pkgmgr.actions.repository.install.get_repo_identifier")
+    def setUp(self) -> None:
+        self.base_dir = "/fake/base"
+        self.bin_dir = "/fake/bin"
+
+        self.repo1: Repository = {
+            "account": "kevinveenbirkenbach",
+            "repository": "repo-one",
+            "alias": "repo-one",
+            "verified": {"gpg_keys": ["FAKEKEY"]},
+        }
+        self.repo2: Repository = {
+            "account": "kevinveenbirkenbach",
+            "repository": "repo-two",
+            "alias": "repo-two",
+            "verified": {"gpg_keys": ["FAKEKEY"]},
+        }
+        self.all_repos: List[Repository] = [self.repo1, self.repo2]
+
+    @patch("pkgmgr.actions.repository.install.InstallationPipeline")
     @patch("pkgmgr.actions.repository.install.clone_repos")
+    @patch("pkgmgr.actions.repository.install.get_repo_dir")
+    @patch("pkgmgr.actions.repository.install.os.path.exists", return_value=True)
+    @patch(
+        "pkgmgr.actions.repository.install.verify_repository",
+        return_value=(True, [], "hash", "key"),
+    )
     def test_install_repos_runs_pipeline_for_each_repo(
         self,
-        mock_clone_repos,
-        mock_get_repo_identifier,
-        mock_get_repo_dir,
-        mock_verify_repository,
-        mock_resolve_command_for_repo,
-        mock_create_ink,
-    ):
-        repo1 = {"name": "repo1"}
-        repo2 = {"name": "repo2"}
-        selected_repos = [repo1, repo2]
-        all_repos = selected_repos
+        _mock_verify_repository: MagicMock,
+        _mock_exists: MagicMock,
+        mock_get_repo_dir: MagicMock,
+        mock_clone_repos: MagicMock,
+        mock_pipeline_cls: MagicMock,
+    ) -> None:
+        """
+        install_repos() should construct a RepoContext for each repository and
+        run the InstallationPipeline exactly once per selected repo when the
+        repo directory exists and verification passes.
+        """
+        mock_get_repo_dir.side_effect = [
+            os.path.join(self.base_dir, "repo-one"),
+            os.path.join(self.base_dir, "repo-two"),
+        ]
 
-        # Return identifiers and directories
-        mock_get_repo_identifier.side_effect = ["id1", "id2"]
-        mock_get_repo_dir.side_effect = ["/tmp/repo1", "/tmp/repo2"]
+        selected = [self.repo1, self.repo2]
 
-        # Simulate verification success: (ok, errors, commit, key)
-        mock_verify_repository.return_value = (True, [], "commit", "key")
+        install_repos(
+            selected_repos=selected,
+            repositories_base_dir=self.base_dir,
+            bin_dir=self.bin_dir,
+            all_repos=self.all_repos,
+            no_verification=False,
+            preview=False,
+            quiet=False,
+            clone_mode="ssh",
+            update_dependencies=False,
+        )
 
-        # Resolve commands for both repos so create_ink will be called
-        mock_resolve_command_for_repo.side_effect = ["/bin/cmd1", "/bin/cmd2"]
+        # clone_repos must not be called because directories "exist"
+        mock_clone_repos.assert_not_called()
 
-        # Ensure directories exist (no cloning)
-        with patch("os.path.exists", return_value=True):
-            dummy_installer = DummyInstaller()
-            # Monkeypatch INSTALLERS for this test
-            old_installers = install_module.INSTALLERS
-            install_module.INSTALLERS = [dummy_installer]
-            try:
-                install_module.install_repos(
-                    selected_repos=selected_repos,
-                    repositories_base_dir="/tmp",
-                    bin_dir="/bin",
-                    all_repos=all_repos,
-                    no_verification=False,
-                    preview=False,
-                    quiet=False,
-                    clone_mode="ssh",
-                    update_dependencies=False,
-                )
-            finally:
-                install_module.INSTALLERS = old_installers
+        # A pipeline is constructed once, then run() is invoked once per repo
+        self.assertEqual(mock_pipeline_cls.call_count, 1)
+        pipeline_instance = mock_pipeline_cls.return_value
+        self.assertEqual(pipeline_instance.run.call_count, len(selected))
 
-        # Check that installers ran with both identifiers
-        self.assertEqual(dummy_installer.calls, ["id1", "id2"])
-        self.assertEqual(mock_create_ink.call_count, 2)
-        self.assertEqual(mock_verify_repository.call_count, 2)
-        self.assertEqual(mock_resolve_command_for_repo.call_count, 2)
-
-    @patch("pkgmgr.actions.repository.install.verify_repository")
-    @patch("pkgmgr.actions.repository.install.get_repo_dir")
-    @patch("pkgmgr.actions.repository.install.get_repo_identifier")
+    @patch("pkgmgr.actions.repository.install.InstallationPipeline")
     @patch("pkgmgr.actions.repository.install.clone_repos")
+    @patch("pkgmgr.actions.repository.install.get_repo_dir")
+    @patch("pkgmgr.actions.repository.install.os.path.exists", return_value=True)
+    @patch(
+        "pkgmgr.actions.repository.install.verify_repository",
+        return_value=(False, ["invalid signature"], None, None),
+    )
+    @patch("builtins.input", return_value="n")
     def test_install_repos_skips_on_failed_verification(
         self,
-        mock_clone_repos,
-        mock_get_repo_identifier,
-        mock_get_repo_dir,
-        mock_verify_repository,
-    ):
-        repo = {"name": "repo1", "verified": True}
-        selected_repos = [repo]
-        all_repos = selected_repos
+        _mock_input: MagicMock,
+        _mock_verify_repository: MagicMock,
+        _mock_exists: MagicMock,
+        mock_get_repo_dir: MagicMock,
+        mock_clone_repos: MagicMock,
+        mock_pipeline_cls: MagicMock,
+    ) -> None:
+        """
+        When verification fails and the user does NOT confirm installation,
+        the InstallationPipeline must not be run for that repository.
+        """
+        mock_get_repo_dir.return_value = os.path.join(self.base_dir, "repo-one")
 
-        mock_get_repo_identifier.return_value = "id1"
-        mock_get_repo_dir.return_value = "/tmp/repo1"
+        selected = [self.repo1]
 
-        # Verification fails: ok=False, with error list
-        mock_verify_repository.return_value = (False, ["sig error"], None, None)
+        install_repos(
+            selected_repos=selected,
+            repositories_base_dir=self.base_dir,
+            bin_dir=self.bin_dir,
+            all_repos=self.all_repos,
+            no_verification=False,
+            preview=False,
+            quiet=False,
+            clone_mode="ssh",
+            update_dependencies=False,
+        )
 
-        dummy_installer = DummyInstaller()
-        with patch("pkgmgr.actions.repository.install.create_ink") as mock_create_ink, \
-            patch("pkgmgr.actions.repository.install.resolve_command_for_repo") as mock_resolve_cmd, \
-            patch("os.path.exists", return_value=True), \
-            patch("builtins.input", return_value="n"):
-            old_installers = install_module.INSTALLERS
-            install_module.INSTALLERS = [dummy_installer]
-            try:
-                install_module.install_repos(
-                    selected_repos=selected_repos,
-                    repositories_base_dir="/tmp",
-                    bin_dir="/bin",
-                    all_repos=all_repos,
-                    no_verification=False,
-                    preview=False,
-                    quiet=False,
-                    clone_mode="ssh",
-                    update_dependencies=False,
-                )
-            finally:
-                install_module.INSTALLERS = old_installers
+        # clone_repos must not be called because directory "exists"
+        mock_clone_repos.assert_not_called()
 
-        # No installer run and no create_ink when user declines
-        self.assertEqual(dummy_installer.calls, [])
-        mock_create_ink.assert_not_called()
-        mock_resolve_cmd.assert_not_called()
+        # Pipeline is constructed, but run() must not be called
+        mock_pipeline_cls.assert_called_once()
+        pipeline_instance = mock_pipeline_cls.return_value
+        pipeline_instance.run.assert_not_called()
 
 
 if __name__ == "__main__":
