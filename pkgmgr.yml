@@ -1,7 +1,0 @@
-version: 1
-
-author: "Kevin Veen-Birkenbach"
-url: "https://github.com/kevinveenbirkenbach/package-manager"
-description: "A configurable Python-based package manager for managing multiple repositories via Bash."
-
-dependencies: []

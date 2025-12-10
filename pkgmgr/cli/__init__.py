@@ -34,7 +34,6 @@ dependency formats, including:
   • \033[1;33mNix:\033[0m flake.nix  
   • \033[1;33mArch Linux:\033[0m PKGBUILD  
   • \033[1;33mAnsible:\033[0m requirements.yml  
-  • \033[1;33mpkgmgr-native:\033[0m pkgmgr.yml  
 
 This allows pkgmgr to perform installation, updates, verification, dependency
 resolution, and synchronization across complex multi-repo environments — with a
