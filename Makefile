@@ -3,12 +3,6 @@
         test-container
 
 # ------------------------------------------------------------
-# Local Nix cache directories in the repo
-# ------------------------------------------------------------
-NIX_STORE_VOLUME := pkgmgr_nix_store
-NIX_CACHE_VOLUME := pkgmgr_nix_cache
-
-# ------------------------------------------------------------
 # Distro list and base images
 # (kept for documentation/reference; actual build logic is in scripts/build)
 # ------------------------------------------------------------

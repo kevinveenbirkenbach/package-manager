@@ -10,43 +10,46 @@ for distro in $DISTROS; do
 
   docker run --rm \
     -v "$(pwd):/src" \
-    -v pkgmgr_nix_store:/nix \
-    -v "pkgmgr_nix_cache:/root/.cache/nix" \
+    -v pkgmgr_nix_store_${distro}:/nix \
+    -v "pkgmgr_nix_cache_${distro}:/root/.cache/nix" \
     -e PKGMGR_DEV=1 \
     -e TEST_PATTERN="${TEST_PATTERN}" \
     --workdir /src \
     --entrypoint bash \
     "package-manager-test-$distro" \
     -c '
-      set -e;
+      set -e
 
+      # Load distro info
       if [ -f /etc/os-release ]; then
-        . /etc/os-release;
-      fi;
+        . /etc/os-release
+      fi
 
-      echo "Running tests inside distro: $ID";
+      echo "Running tests inside distro: $ID"
 
-      # Try to load nix environment
+      # Load nix environment if available
       if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
-        . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh";
+        . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
       fi
 
       if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-        . "$HOME/.nix-profile/etc/profile.d/nix.sh";
+        . "$HOME/.nix-profile/etc/profile.d/nix.sh"
       fi
 
-      PATH="/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$PATH";
+      PATH="/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$PATH"
 
       command -v nix >/dev/null || {
-        echo "ERROR: nix not found.";
-        exit 1;
+        echo "ERROR: nix not found."
+        exit 1
       }
 
-      git config --global --add safe.directory /src || true;
+      # Mark the mounted repository as safe to avoid Git ownership errors
+      git config --global --add safe.directory /src || true
 
+      # Run the E2E tests inside the Nix development shell
       nix develop .#default --no-write-lock-file -c \
         python3 -m unittest discover \
           -s /src/tests/e2e \
-          -p "$TEST_PATTERN";
+          -p "$TEST_PATTERN"
     '
 done
