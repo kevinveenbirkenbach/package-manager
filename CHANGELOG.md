@@ -1,6 +1,11 @@
 ## [0.7.13] - 2025-12-10
 
-* Automated release.
+### Fix tools path resolution and add tests
+
+- Fixed a crash in `pkgmgr code` caused by missing `directory` metadata by introducing `_resolve_repository_path()` with proper fallbacks to `repositories_base_dir` / `repositories_dir`.
+- Updated `explore`, `terminal` and `code` tool commands to use the new resolver.
+- Improved VS Code workspace generation and path handling.
+- Added unit & E2E tests for tool commands.
 
 
 ## [0.7.12] - 2025-12-09
