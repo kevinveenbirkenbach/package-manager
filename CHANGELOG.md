@@ -1,3 +1,8 @@
+## [0.7.14] - 2025-12-10
+
+* Fixed the clone-all integration test so that `SystemExit(0)` from the proxy is treated as a successful command instead of a failure.
+
+
 ## [0.7.13] - 2025-12-10
 
 ### Fix tools path resolution and add tests

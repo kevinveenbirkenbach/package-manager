@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        0.7.13
+Version:        0.7.14
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -77,6 +77,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Wed Dec 10 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.7.14-1
+- Fixed the clone-all integration test so that `SystemExit(0)` from the proxy is treated as a successful command instead of a failure.
+
 * Wed Dec 10 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 0.7.13-1
 - Automated release.
 

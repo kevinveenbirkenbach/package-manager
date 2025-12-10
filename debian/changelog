@@ -1,3 +1,9 @@
+package-manager (0.7.14-1) unstable; urgency=medium
+
+  * Fixed the clone-all integration test so that `SystemExit(0)` from the proxy is treated as a successful command instead of a failure.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Wed, 10 Dec 2025 10:38:33 +0100
+
 package-manager (0.7.13-1) unstable; urgency=medium
 
   * Automated release.
