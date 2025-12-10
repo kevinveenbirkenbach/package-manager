@@ -1,9 +1,6 @@
 
 # Prevents unwanted files from being committed to version control.
 
-# Custom Config file
-config/config.yaml
-
 # Python bytecode
 __pycache__/
 *.pyc
@@ -17,6 +14,16 @@ venv/
 dist/
 build/*
 *.egg-info/
+pkg
+
+package-manager-*
+
+# debian 
+debian/package-manager/
+debian/debhelper-build-stamp
+debian/files
+debian/.debhelper/
+debian/package-manager.substvars
 
 # Editor files
 .vscode/
@@ -31,11 +38,3 @@ Thumbs.db
 
 # Ignore logs
 *.log
-package-manager-*
-
-# debian 
-debian/package-manager/
-debian/debhelper-build-stamp
-debian/files
-debian/.debhelper/
-debian/package-manager.substvars

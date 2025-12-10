@@ -1,0 +1,66 @@
+name: Test Virgin
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - "*"
+  pull_request:
+
+jobs:
+  test-virgin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Docker version
+        run: docker version
+
+      - name: Virgin Arch pkgmgr flake test
+        run: |
+          set -euo pipefail
+
+          echo ">>> Starting virgin ArchLinux container test (with shared caches)..."
+
+          docker run --rm \
+            -v "$PWD":/src \
+            -v pkgmgr_nix_store:/nix \
+            -v pkgmgr_nix_cache:/root/.cache/nix \
+            -v pkgmgr_repos:/root/Repositories \
+            -v pkgmgr_pip_cache:/root/.cache/pip \
+            -w /src \
+            archlinux:latest \
+            bash -lc '
+              set -euo pipefail
+
+              echo ">>> Updating and upgrading Arch system..."
+              pacman -Syu --noconfirm git python python-pip nix >/dev/null
+
+              echo ">>> Creating isolated virtual environment for pkgmgr..."
+              python -m venv /tmp/pkgmgr-venv
+
+              echo ">>> Activating virtual environment..."
+              source /tmp/pkgmgr-venv/bin/activate
+
+              echo ">>> Upgrading pip (cached)..."
+              python -m pip install --upgrade pip >/dev/null
+
+              echo ">>> Installing pkgmgr from current source tree (cached pip)..."
+              python -m pip install /src >/dev/null
+
+              echo ">>> Enabling Nix experimental features..."
+              export NIX_CONFIG="experimental-features = nix-command flakes"
+
+              echo ">>> Running: pkgmgr update pkgmgr --clone-mode shallow --no-verification"
+              pkgmgr update pkgmgr --clone-mode shallow --no-verification
+
+              echo ">>> Running: pkgmgr version"
+              pkgmgr version pkgmgr
+
+              echo ">>> Virgin Arch test completed successfully."
+            '
