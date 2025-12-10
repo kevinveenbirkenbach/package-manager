@@ -45,10 +45,10 @@ build:
 # ------------------------------------------------------------
 
 test-unit: build-missing
-	@bash scripts/test/test-unit.sh
+	@distro=arch scripts/test/test-unit.sh
 
 test-integration: build-missing
-	@bash scripts/test/test-integration.sh
+	@distro=arch scripts/test/test-integration.sh
 
 test-e2e: build-missing
 	@bash scripts/test/test-e2e.sh

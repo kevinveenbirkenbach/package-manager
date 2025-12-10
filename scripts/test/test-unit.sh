@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "============================================================"
-echo ">>> Running UNIT tests in Arch container"
+echo ">>> Running UNIT tests in ${distro} container"
 echo "============================================================"
 
 docker run --rm \
@@ -13,7 +13,7 @@ docker run --rm \
   -e PKGMGR_DEV=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
   --entrypoint bash \
-  "package-manager-test-arch" \
+  "package-manager-test-${distro}" \
   -c '
     set -e;
     git config --global --add safe.directory /src || true;
