@@ -94,7 +94,15 @@ if [[ "${IN_CONTAINER}" -eq 1 && "${EUID:-0}" -eq 0 ]]; then
   # Ensure "nix" user (home at /home/nix)
   if ! id nix >/dev/null 2>&1; then
     echo "[init-nix] Creating user 'nix'..."
-    useradd -m -r -g nixbld -s /usr/bin/bash nix
+    # Resolve a valid shell path across distros:
+    # - Debian/Ubuntu: /bin/bash
+    # - Arch:          /usr/bin/bash (often symlinked)
+    # Fall back to /bin/sh on ultra-minimal systems.
+    BASH_SHELL="$(command -v bash || true)"
+    if [[ -z "${BASH_SHELL}" ]]; then
+      BASH_SHELL="/bin/sh"
+    fi
+    useradd -m -r -g nixbld -s "${BASH_SHELL}" nix
   fi
 
   # Ensure /nix exists and is writable by the "nix" user.
