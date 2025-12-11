@@ -15,9 +15,8 @@ for distro in $DISTROS; do
     -e PKGMGR_DEV=1 \
     -e TEST_PATTERN="${TEST_PATTERN}" \
     --workdir /src \
-    --entrypoint bash \
     "package-manager-test-${distro}" \
-    -c '
+    bash -lc '
       set -euo pipefail
 
       # Load distro info

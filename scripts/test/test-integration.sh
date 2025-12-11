@@ -14,9 +14,8 @@ docker run --rm \
   --workdir /src \
   -e PKGMGR_DEV=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
-  --entrypoint bash \
   "package-manager-test-${distro}" \
-  -c '
+  bash -lc '
     set -e;
     git config --global --add safe.directory /src || true;
     nix develop .#default --no-write-lock-file -c \
