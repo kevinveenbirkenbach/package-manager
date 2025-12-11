@@ -43,9 +43,17 @@ for distro in $DISTROS; do
         exit 1
       }
 
-      # Mark the mounted repository as safe to avoid Git ownership errors
+      # Mark the mounted repository as safe to avoid Git ownership errors.
+      # Newer Git (e.g. on Ubuntu) complains about the gitdir (/src/.git),
+      # older versions about the worktree (/src). Nix turns "." into the
+      # flake input "git+file:///src", which then uses Git under the hood.
       if command -v git >/dev/null 2>&1; then
+        # Worktree path
         git config --global --add safe.directory /src || true
+        # Gitdir path shown in the "dubious ownership" error
+        git config --global --add safe.directory /src/.git || true
+        # Ephemeral CI containers: allow all paths as a last resort
+        git config --global --add safe.directory '*' || true
       fi
 
       # Run the E2E tests inside the Nix development shell
