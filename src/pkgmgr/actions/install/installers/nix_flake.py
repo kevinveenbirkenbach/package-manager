@@ -139,22 +139,27 @@ class NixFlakeInstaller(BaseInstaller):
 
         for output, allow_failure in outputs:
             cmd = f"nix profile install {ctx.repo_dir}#{output}"
+            print(f"[INFO] Running: {cmd}")
+            ret = os.system(cmd)
 
-            try:
-                run_command(
-                    cmd,
-                    cwd=ctx.repo_dir,
-                    preview=ctx.preview,
-                    allow_failure=allow_failure,
-                )
+            # Extract real exit code from os.system() result
+            if os.WIFEXITED(ret):
+                exit_code = os.WEXITSTATUS(ret)
+            else:
+                # abnormal termination (signal etc.) – keep raw value
+                exit_code = ret
+
+            if exit_code == 0:
                 print(f"Nix flake output '{output}' successfully installed.")
-            except SystemExit as e:
-                print(f"[Error] Failed to install Nix flake output '{output}': {e}")
-                if not allow_failure:
-                    # Mandatory output failed → fatal for the pipeline.
-                    raise
-                # Optional output failed → log and continue.
-                print(
-                    "[Warning] Continuing despite failure to install "
-                    f"optional output '{output}'."
-                )
+                continue
+
+            print(f"[Error] Failed to install Nix flake output '{output}'")
+            print(f"[Error] Command exited with code {exit_code}")
+
+            if not allow_failure:
+                raise SystemExit(exit_code)
+
+            print(
+                "[Warning] Continuing despite failure to install "
+                f"optional output '{output}'."
+            )
