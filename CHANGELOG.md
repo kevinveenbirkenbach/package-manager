@@ -1,3 +1,42 @@
+## [1.0.0] - 2025-12-11
+
+* **1.0.0 – Official Stable Release 🎉**
+*First stable release of PKGMGR, the multi-distro development and package workflow manager.*
+
+---
+
+**Key Features**
+
+**Core Functionality**
+
+* Manage many repositories with one CLI: `clone`, `update`, `install`, `list`, `path`, `config`
+* Proxy wrappers for Git, Docker/Compose and Make
+* Multi-repo execution with safe *preview mode*
+* Mirror management: `mirror list/diff/merge/setup`
+
+**Releases & Versioning**
+
+* Automated SemVer bumps, tagging and changelog generation
+* Supports PKGBUILD, Debian, RPM, pyproject.toml, flake.nix
+
+**Developer Tools**
+
+* Open repositories in VS Code, file manager or terminal
+* Unified workflows across all major Linux distros
+
+**Nix Integration**
+
+* Cross-distro reproducible builds via Nix flakes
+* CI-tested across all supported environments
+
+---
+
+**Summary**
+PKGMGR 1.0.0 unifies repository management, build tooling, release automation and reproducible multi-distro workflows into one cohesive CLI tool.
+
+*This is the first official stable release.*
+
+
 ## [0.10.2] - 2025-12-11
 
 * * Stable tag now updates only when a new highest version is released.
