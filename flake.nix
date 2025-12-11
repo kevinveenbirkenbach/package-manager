@@ -25,11 +25,13 @@
       ##########################################################################
       packages = forAllSystems (system:
         let
-          pkgs   = nixpkgs.legacyPackages.${system};
+          pkgs = nixpkgs.legacyPackages.${system};
 
-          # Single source of truth: "python3" from this nixpkgs revision
-          python = pkgs.python3;
-          pyPkgs = python.pkgs;
+          # Single source of truth for pkgmgr: Python 3.11
+          # - Matches pyproject.toml: requires-python = ">=3.11"
+          # - Uses python311Packages so that PyYAML etc. are available
+          python = pkgs.python311;
+          pyPkgs = pkgs.python311Packages;
         in
         rec {
           pkgmgr = pyPkgs.buildPythonApplication {
@@ -74,7 +76,8 @@
             if pkgs ? ansible-core then pkgs.ansible-core
             else pkgs.ansible;
 
-          python = pkgs.python3;
+          # Use the same Python version as the package (3.11)
+          python = pkgs.python311;
 
           pythonWithDeps = python.withPackages (ps: [
             ps.pip
@@ -90,6 +93,9 @@
             ];
 
             shellHook = ''
+              # Ensure our Python with dependencies is preferred on PATH
+              export PATH=${pythonWithDeps}/bin:$PATH
+
               # Ensure src/ layout is importable:
               #   pkgmgr lives in ./src/pkgmgr
               export PYTHONPATH="$PWD/src:${PYTHONPATH:-}"
