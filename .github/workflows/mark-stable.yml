@@ -14,7 +14,7 @@ on:
 
 jobs:
   mark-stable:
-    # only run if the triggering workflow succeeded AND it ran on main
+    # Only run if the triggering workflow succeeded AND it ran on main
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main'
@@ -23,7 +23,6 @@ jobs:
     permissions:
       contents: write   # required to push tags
       actions: read     # required to query workflow runs via API
-
 
     steps:
       - name: Checkout repository
@@ -39,12 +38,13 @@ jobs:
       - name: Check all required workflow results for this commit
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SHA: ${{ github.event.workflow_run.head_sha }}
-          REPO: ${{ github.repository }}
+          REPO: ${{ github.event.workflow_run.repository.full_name }}
         run: |
           set -euo pipefail
 
-          echo "Checking workflow results for commit: $SHA"
+          echo "Checking workflow results for commit: $SHA in repository: $REPO"
 
           required_workflows=(
             "Test Units"
@@ -69,17 +69,17 @@ jobs:
             ' | head -n1)
 
             if [[ -z "$conclusion" || "$conclusion" == "null" ]]; then
-              echo "Workflow '$wf' has no run for this commit yet. Exiting."
+              echo "Workflow '$wf' has no run for this commit yet. Exiting without tagging."
               exit 0
             fi
 
             if [[ "$conclusion" != "success" ]]; then
-              echo "Workflow '$wf' did not succeed (conclusion='$conclusion'). Exiting."
+              echo "Workflow '$wf' did not succeed (conclusion='$conclusion'). Exiting without tagging."
               exit 0
             fi
           done
 
-          echo "All workflows succeeded for commit $SHA — marking as stable."
+          echo "All required workflows succeeded for commit $SHA — marking as stable."
 
       - name: Move 'stable' tag to this commit
         env:
