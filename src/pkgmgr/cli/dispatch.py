@@ -21,8 +21,8 @@ from pkgmgr.cli.commands import (
     handle_make,
     handle_changelog,
     handle_branch,
+    handle_mirror_command,
 )
-
 
 def _has_explicit_selection(args) -> bool:
     """
@@ -108,6 +108,7 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         "explore",
         "terminal",
         "code",
+        "mirror",
     ]
 
     if getattr(args, "command", None) in commands_with_selection:
@@ -172,6 +173,10 @@ def dispatch_command(args, ctx: CLIContext) -> None:
 
     if args.command == "branch":
         handle_branch(args, ctx)
+        return
+
+    if args.command == "mirror":
+        handle_mirror_command(args, ctx, selected)
         return
 
     print(f"Unknown command: {args.command}")
