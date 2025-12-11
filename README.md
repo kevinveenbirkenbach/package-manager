@@ -31,7 +31,7 @@ installation layers, and setup controller flow:
 
 ![PKGMGR Architecture](assets/map.png)
 
-**Diagram status:** *Stand: 10. Dezember 2025*  
+**Diagram status:** *Stand: 11. Dezember 2025*  
 **Always-up-to-date version:** https://s.veen.world/pkgmgrmp
 
 ## Installation ⚙️

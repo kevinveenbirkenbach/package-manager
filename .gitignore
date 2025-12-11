@@ -15,15 +15,8 @@ dist/
 build/*
 *.egg-info/
 pkg
-src/source
+src/source/
 package-manager-*
-
-# debian 
-debian/package-manager/
-debian/debhelper-build-stamp
-debian/files
-debian/.debhelper/
-debian/package-manager.substvars
 
 # Editor files
 .vscode/

@@ -1,0 +1,6 @@
+# debian 
+package-manager/
+debhelper-build-stamp
+files
+.debhelper/
+package-manager.substvars

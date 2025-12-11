@@ -197,13 +197,8 @@ def _load_layer_dir(
 
 def _load_defaults_from_package_or_project() -> Dict[str, Any]:
     """
-    Fallback: Versuche Defaults aus dem installierten Paket ODER
-    aus dem Projekt-Root zu laden:
-
-      <pkg_root>/config_defaults
-      <pkg_root>/config
-      <project_root>/config_defaults
-      <project_root>/config
+    Fallback: load default configs from various possible install or development
+    layouts (pip-installed, editable install, source repo with src/ layout).
     """
     try:
         import pkgmgr  # type: ignore
@@ -211,14 +206,25 @@ def _load_defaults_from_package_or_project() -> Dict[str, Any]:
         return {"directories": {}, "repositories": []}
 
     pkg_root = Path(pkgmgr.__file__).resolve().parent
-    project_root = pkg_root.parent
+    roots = set()
 
-    candidates = [
-        pkg_root / "config_defaults",
-        pkg_root / "config",
-        project_root / "config_defaults",
-        project_root / "config",
-    ]
+    # Case 1: installed package (site-packages/pkgmgr)
+    roots.add(pkg_root)
+
+    # Case 2: parent directory (site-packages/, src/)
+    roots.add(pkg_root.parent)
+
+    # Case 3: src-layout during development:
+    #   repo_root/src/pkgmgr -> repo_root
+    parent = pkg_root.parent
+    if parent.name == "src":
+        roots.add(parent.parent)
+
+    # Candidate config dirs
+    candidates = []
+    for root in roots:
+        candidates.append(root / "config_defaults")
+        candidates.append(root / "config")
 
     for cand in candidates:
         defaults = _load_layer_dir(cand, skip_filename=None)
@@ -226,7 +232,6 @@ def _load_defaults_from_package_or_project() -> Dict[str, Any]:
             return defaults
 
     return {"directories": {}, "repositories": []}
-
 
 # ---------------------------------------------------------------------------
 # Hauptfunktion

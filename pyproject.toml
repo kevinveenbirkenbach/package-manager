@@ -39,13 +39,14 @@ pkgmgr = "pkgmgr.cli:main"
 # -----------------------------
 # setuptools configuration
 # -----------------------------
-# We use find_packages(), not a fixed list,
-# and explicitly include pkgmgr* and config*
+# Source layout: all packages live under "src/"
+[tool.setuptools]
+package-dir = { "" = "src", "config" = "config" }
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src", "."]
 include = ["pkgmgr*", "config*"]
 
-# Ensure defaults.yaml is shipped inside wheels & nix builds
 [tool.setuptools.package-data]
 "config" = ["defaults.yaml"]
+

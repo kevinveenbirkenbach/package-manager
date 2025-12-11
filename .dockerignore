@@ -28,4 +28,4 @@ Thumbs.db
 # Arch pkg artifacts
 *.pkg.tar.*
 *.log
-package-manager-*
+packaging/arch/package-manager-*
