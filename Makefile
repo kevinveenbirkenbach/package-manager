@@ -69,7 +69,7 @@ build-missing:
 test: test-container test-unit test-integration test-e2e
 
 delete-volumes: 
-	@docker volume rm pkgmgr_nix_store_${distro} pkgmgr_nix_cache_${distro}
+	@docker volume rm pkgmgr_nix_store_${distro} pkgmgr_nix_cache_${distro} || true
 
 purge: delete-volumes build-no-cache
 
