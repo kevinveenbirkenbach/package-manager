@@ -1,3 +1,45 @@
+## [0.10.0] - 2025-12-11
+
+* **Changes since v0.9.1**
+
+**Mirror System**
+
+* Added SSH mirror support including multi-push and remote probing
+* Introduced mirror management commands and refactored the CLI parser into modules
+
+**CI/CD**
+
+* Migrated to reusable workflows with improved debugging instrumentation
+* Made stable-tag automation reliable for workflow_run events and permissions
+* Ensured deterministic test results by rebuilding all test containers with no-cache
+
+**E2E and Container Tests**
+
+* Fixed Git safe.directory handling across all containers
+* Restored Dockerfile ENTRYPOINT to resolve Nix TLS issues
+* Fixed missing volume errors and hardened the E2E runner
+* Added full Nix flake E2E test matrix across all distro containers
+* Disabled Nix sandboxing for cross-distro builds where required
+
+**Nix and Python Environment**
+
+* Unified Nix Python environment and introduced lazy CLI imports
+* Ensured PyYAML availability and improved Python 3.13 compatibility
+* Refactored flake.nix to remove side effects and rely on generic python3
+
+**Packaging**
+
+* Removed Debian’s hard dependency on Nix
+* Restructured packaging layout and refined build paths
+* Excluded assets from Arch PKGBUILD rsync
+* Cleaned up obsolete ignore files
+
+**Repository Layout**
+
+* Restructured repository to align local, Nix-based, and distro-based build workflows
+* Added Arch support and refined build/purge scripts
+
+
 ## [0.9.1] - 2025-12-10
 
 * * Refactored installer: new `venv-create.sh`, cleaner root/user setup flow, updated README with architecture map.
