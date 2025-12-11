@@ -7,6 +7,10 @@ jobs:
   test-container:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [arch, debian, ubuntu, fedora, centos]
 
     steps:
       - name: Checkout repository
@@ -15,5 +19,7 @@ jobs:
       - name: Show Docker version
         run: docker version
 
-      - name: Run container tests
-        run: make test-container
+      - name: Run container tests (${{ matrix.distro }})
+        run: |
+          set -euo pipefail
+          distro="${{ matrix.distro }}" make test-container

@@ -16,4 +16,4 @@ jobs:
         run: docker version
 
       - name: Run integration tests via make (Arch container)
-        run: make test-integration DISTROS="arch"
+        run: make test-integration distro="arch"

@@ -6,7 +6,11 @@ on:
 jobs:
   test-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # E2E + all distros can be heavier
+    timeout-minutes: 60  # E2E can be heavier
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [arch, debian, ubuntu, fedora, centos]
 
     steps:
       - name: Checkout repository
@@ -15,5 +19,7 @@ jobs:
       - name: Show Docker version
         run: docker version
 
-      - name: Run E2E tests via make (all distros)
-        run: make test-e2e
+      - name: Run E2E tests via make (${{ matrix.distro }})
+        run: |
+          set -euo pipefail
+          distro="${{ matrix.distro }}" make test-e2e

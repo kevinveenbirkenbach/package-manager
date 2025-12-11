@@ -2,11 +2,15 @@
         test build build-no-cache test-unit test-e2e test-integration \
         test-container
 
+# Distro
+# Options: arch debian ubuntu fedora centos
+distro ?= arch
+export distro
+
 # ------------------------------------------------------------
-# Distro list and base images
+# Base images
 # (kept for documentation/reference; actual build logic is in scripts/build)
 # ------------------------------------------------------------
-DISTROS 		  := arch debian ubuntu fedora centos
 BASE_IMAGE_ARCH   := archlinux:latest
 BASE_IMAGE_DEBIAN := debian:stable-slim
 BASE_IMAGE_UBUNTU := ubuntu:latest
@@ -14,7 +18,6 @@ BASE_IMAGE_FEDORA := fedora:latest
 BASE_IMAGE_CENTOS := quay.io/centos/centos:stream9
 
 # Make them available in scripts
-export DISTROS
 export BASE_IMAGE_ARCH  
 export BASE_IMAGE_DEBIAN
 export BASE_IMAGE_UBUNTU
