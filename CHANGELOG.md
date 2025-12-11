@@ -1,3 +1,8 @@
+## [0.10.1] - 2025-12-11
+
+* Fixed Debian\Ubuntu to pass container e2e tests
+
+
 ## [0.10.0] - 2025-12-11
 
 * **Changes since v0.9.1**
