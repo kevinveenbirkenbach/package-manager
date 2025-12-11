@@ -26,7 +26,10 @@
       packages = forAllSystems (system:
         let
           pkgs   = nixpkgs.legacyPackages.${system};
-          pyPkgs = pkgs.python311Packages;
+
+          # Single source of truth: "python3" from this nixpkgs revision
+          python = pkgs.python3;
+          pyPkgs = python.pkgs;
         in
         rec {
           pkgmgr = pyPkgs.buildPythonApplication {
@@ -71,8 +74,9 @@
             if pkgs ? ansible-core then pkgs.ansible-core
             else pkgs.ansible;
 
-          # Python 3.11 + pip + PyYAML direkt aus Nix
-          pythonWithDeps = pkgs.python311.withPackages (ps: [
+          python = pkgs.python3;
+
+          pythonWithDeps = python.withPackages (ps: [
             ps.pip
             ps.pyyaml
           ]);
@@ -93,6 +97,8 @@
               export PYTHONPATH="$PWD:$PYTHONPATH"
 
               echo "Entered pkgmgr development shell for ${system}"
+              echo "Python used in this shell:"
+              python --version
               echo "pkgmgr CLI (from source) is available via:"
               echo "  python -m pkgmgr.cli --help"
             '';
