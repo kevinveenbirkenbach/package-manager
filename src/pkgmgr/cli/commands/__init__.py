@@ -6,6 +6,7 @@ from .version import handle_version
 from .make import handle_make
 from .changelog import handle_changelog
 from .branch import handle_branch
+from .mirror import handle_mirror_command
 
 __all__ = [
     "handle_repos_command",
@@ -16,4 +17,5 @@ __all__ = [
     "handle_make",
     "handle_changelog",
     "handle_branch",
+    "handle_mirror_command",
 ]

@@ -7,6 +7,8 @@ echo
 echo "------------------------------------------------------------"
 echo ">>> Testing container: $IMAGE"
 echo "------------------------------------------------------------"
+echo "[test-container] Inspect image metadata:"
+docker image inspect "$IMAGE" | sed -n '1,40p'
 
 echo "[test-container] Running: docker run --rm --entrypoint pkgmgr $IMAGE --help"
 echo
