@@ -28,7 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # required for accessing tags/history
+          fetch-depth: 0  # needed for tag operations
 
       - name: Install jq and gh (if needed)
         run: |
@@ -44,7 +44,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "Checking workflow results for commit: $SHA in repository: $REPO"
+          echo "Checking workflow results for commit: $SHA"
+          echo "Repository: $REPO"
 
           required_workflows=(
             "Test Units"
@@ -55,9 +56,11 @@ jobs:
             "Test Virgin Root"
           )
 
-          # Fetch all workflow runs for this commit
+          echo "Fetching workflow runs via GitHub API…"
+
+          # FIXED: correct absolute API path
           json=$(gh api \
-            repos/"$REPO"/actions/runs \
+            /repos/"$REPO"/actions/runs \
             -F head_sha="$SHA" \
             -F per_page=100)
 
@@ -69,17 +72,19 @@ jobs:
             ' | head -n1)
 
             if [[ -z "$conclusion" || "$conclusion" == "null" ]]; then
-              echo "Workflow '$wf' has no run for this commit yet. Exiting without tagging."
+              echo "❌ Workflow '$wf' has no run for this commit yet. Not tagging."
               exit 0
             fi
 
             if [[ "$conclusion" != "success" ]]; then
-              echo "Workflow '$wf' did not succeed (conclusion='$conclusion'). Exiting without tagging."
+              echo "❌ Workflow '$wf' did not succeed (status: $conclusion). Not tagging."
               exit 0
             fi
+
+            echo "✔ Workflow '$wf' succeeded."
           done
 
-          echo "All required workflows succeeded for commit $SHA — marking as stable."
+          echo "🎉 All required workflows succeeded for commit $SHA — marking as stable."
 
       - name: Move 'stable' tag to this commit
         env:
@@ -90,12 +95,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          echo "Updating 'stable' tag to point to $SHA"
+          echo "Updating 'stable' tag → commit $SHA"
 
+          # remove old tag locally
           if git rev-parse stable >/dev/null 2>&1; then
             git tag -d stable || true
           fi
+
+          # delete remote tag if exists
           git push origin :refs/tags/stable || true
 
+          # create new tag
           git tag stable "$SHA"
           git push origin stable
+
+          echo "✅ Stable tag updated successfully."
