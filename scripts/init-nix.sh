@@ -46,6 +46,26 @@ ensure_nix_on_path() {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: ensure Nix build group and users exist (build-users-group = nixbld)
+# ---------------------------------------------------------------------------
+ensure_nix_build_group() {
+  # Ensure nixbld group (build-users-group for Nix)
+  if ! getent group nixbld >/dev/null 2>&1; then
+    echo "[init-nix] Creating group 'nixbld'..."
+    groupadd -r nixbld
+  fi
+
+  # Ensure Nix build users (nixbld1..nixbld10) as members of nixbld
+  for i in $(seq 1 10); do
+    if ! id "nixbld$i" >/dev/null 2>&1; then
+      echo "[init-nix] Creating build user nixbld$i..."
+      # -r: system account, -g: primary group, -G: supplementary (ensures membership is listed)
+      useradd -r -g nixbld -G nixbld -s /usr/sbin/nologin "nixbld$i"
+    fi
+  done
+}
+
+# ---------------------------------------------------------------------------
 # Fast path: Nix already available
 # ---------------------------------------------------------------------------
 if command -v nix >/dev/null 2>&1; then
@@ -76,20 +96,8 @@ fi
 if [[ "${IN_CONTAINER}" -eq 1 && "${EUID:-0}" -eq 0 ]]; then
   echo "[init-nix] Running as root inside a container – using dedicated 'nix' user."
 
-  # Ensure nixbld group (required by Nix)
-  if ! getent group nixbld >/dev/null 2>&1; then
-    echo "[init-nix] Creating group 'nixbld'..."
-    groupadd -r nixbld
-  fi
-
-  # Ensure Nix build users (nixbld1..nixbld10) as members of nixbld
-  for i in $(seq 1 10); do
-    if ! id "nixbld$i" >/dev/null 2>&1; then
-      echo "[init-nix] Creating build user nixbld$i..."
-      # -r: system account, -g: primary group, -G: supplementary (ensures membership is listed)
-      useradd -r -g nixbld -G nixbld -s /usr/sbin/nologin "nixbld$i"
-    fi
-  done
+  # Ensure build group/users for Nix
+  ensure_nix_build_group
 
   # Ensure "nix" user (home at /home/nix)
   if ! id nix >/dev/null 2>&1; then
@@ -187,14 +195,25 @@ if [[ "${IN_CONTAINER}" -eq 0 ]]; then
   # Real host
   if command -v systemctl >/dev/null 2>&1; then
     echo "[init-nix] Host with systemd – using multi-user install (--daemon)."
+    if [[ "${EUID:-0}" -eq 0 ]]; then
+      # Prepare build-users-group for Nix daemon installs
+      ensure_nix_build_group
+    fi
     sh <(curl -L https://nixos.org/nix/install) --daemon
   else
     if [[ "${EUID:-0}" -eq 0 ]]; then
       echo "[init-nix] WARNING: Running as root without systemd on host."
       echo "[init-nix] Falling back to single-user install (--no-daemon), but this is not recommended."
+
+      # IMPORTANT: This is where Debian/Ubuntu inside your CI end up.
+      # We must ensure 'nixbld' exists before running the installer,
+      # otherwise modern Nix fails with: "the group 'nixbld' ... does not exist".
+      ensure_nix_build_group
+
       sh <(curl -L https://nixos.org/nix/install) --no-daemon
     else
       echo "[init-nix] Non-root host without systemd – using single-user install (--no-daemon)."
+      # Non-root cannot create nixbld group; rely on upstream defaults
       sh <(curl -L https://nixos.org/nix/install) --no-daemon
     fi
   fi
