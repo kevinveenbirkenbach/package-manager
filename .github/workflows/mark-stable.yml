@@ -3,7 +3,9 @@ name: Mark stable commit
 on:
   push:
     branches:
-      - main
+      - main          # still run tests for main
+    tags:
+      - 'v*'          # run tests for version tags (e.g. v0.9.1)
 
 jobs:
   test-unit:
@@ -34,31 +36,63 @@ jobs:
       - test-virgin-root
     runs-on: ubuntu-latest
 
+    # Only run this job if the push is for a version tag (v*)
+    if: startsWith(github.ref, 'refs/tags/v')
+
     permissions:
-      contents: write  # to move the tag
+      contents: write  # Required to move/update the tag
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true  # We need all tags for version comparison
 
-      - name: Move 'stable' tag to this commit
+      - name: Move 'stable' tag only if this version is the highest
         run: |
           set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          echo "Tagging commit $GITHUB_SHA as stable…"
+          echo "Ref: $GITHUB_REF"
+          echo "SHA: $GITHUB_SHA"
 
-          # delete local tag if exists
+          VERSION="${GITHUB_REF#refs/tags/}"
+          echo "Current version tag: ${VERSION}"
+
+          echo "Collecting all version tags..."
+          ALL_V_TAGS="$(git tag --list 'v*' || true)"
+
+          if [[ -z "${ALL_V_TAGS}" ]]; then
+            echo "No version tags found. Skipping stable update."
+            exit 0
+          fi
+
+          echo "All version tags:"
+          echo "${ALL_V_TAGS}"
+
+          # Determine highest version using natural version sorting
+          LATEST_TAG="$(printf '%s\n' ${ALL_V_TAGS} | sort -V | tail -n1)"
+
+          echo "Highest version tag: ${LATEST_TAG}"
+
+          if [[ "${VERSION}" != "${LATEST_TAG}" ]]; then
+            echo "Current version ${VERSION} is NOT the highest version."
+            echo "Stable tag will NOT be updated."
+            exit 0
+          fi
+
+          echo "Current version ${VERSION} IS the highest version."
+          echo "Updating 'stable' tag..."
+
+          # Delete existing stable tag (local + remote)
           git tag -d stable 2>/dev/null || true
-          # delete remote tag if exists
           git push origin :refs/tags/stable || true
 
-          # create new tag on this commit
+          # Create new stable tag
           git tag stable "$GITHUB_SHA"
           git push origin stable
 
-          echo "✅ Stable tag updated."
+          echo "✅ Stable tag updated to ${VERSION}."
