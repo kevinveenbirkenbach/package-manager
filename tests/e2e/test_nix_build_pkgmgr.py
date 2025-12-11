@@ -69,8 +69,13 @@ class TestNixBuildPkgmgrAllDistros(unittest.TestCase):
             _run_cmd(["id"])
 
             # --- nix build .#pkgmgr -L ---
-            proc = _run_cmd(["nix", "build", ".#pkgmgr", "-L"])
-
+            proc = _run_cmd([
+                "nix",
+                "--option", "sandbox", "false",
+                "build", ".#pkgmgr",
+                "-L",
+            ])
+            
             if proc.returncode != 0:
                 raise AssertionError(
                     "nix build .#pkgmgr -L failed inside the test container.\n"
