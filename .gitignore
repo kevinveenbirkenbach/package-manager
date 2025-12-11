@@ -26,6 +26,7 @@ Thumbs.db
 
 # Nix Cache to speed up tests
 .nix/
+.nix-dev-installed
 
 # Ignore logs
 *.log

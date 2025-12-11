@@ -25,7 +25,7 @@
       ##########################################################################
       packages = forAllSystems (system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs   = nixpkgs.legacyPackages.${system};
           pyPkgs = pkgs.python311Packages;
         in
         rec {
@@ -45,7 +45,7 @@
               pyPkgs.wheel
             ];
 
-            # Runtime dependencies (matches [project.dependencies])
+            # Runtime dependencies (matches [project.dependencies] in pyproject.toml)
             propagatedBuildInputs = [
               pyPkgs.pyyaml
               pyPkgs.pip
@@ -55,6 +55,7 @@
 
             pythonImportsCheck = [ "pkgmgr" ];
           };
+
           default = pkgmgr;
         }
       );
@@ -65,29 +66,35 @@
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          pkgmgrPkg = self.packages.${system}.pkgmgr;
 
           ansiblePkg =
             if pkgs ? ansible-core then pkgs.ansible-core
             else pkgs.ansible;
 
-          # Python 3 + pip für alles, was "python3 -m pip" macht
-          pythonWithPip = pkgs.python3.withPackages (ps: [
+          # Python 3.11 + pip + PyYAML direkt aus Nix
+          pythonWithDeps = pkgs.python311.withPackages (ps: [
             ps.pip
+            ps.pyyaml
           ]);
         in
         {
           default = pkgs.mkShell {
             buildInputs = [
-              pythonWithPip
-              pkgmgrPkg
+              pythonWithDeps
               pkgs.git
               ansiblePkg
             ];
 
             shellHook = ''
+              # Ensure src/ layout is importable:
+              #   pkgmgr lives in ./src/pkgmgr
+              export PYTHONPATH="$PWD/src:${PYTHONPATH:-}"
+              # Also add repo root in case tools/tests rely on it
+              export PYTHONPATH="$PWD:$PYTHONPATH"
+
               echo "Entered pkgmgr development shell for ${system}"
-              echo "pkgmgr CLI is available via the flake build"
+              echo "pkgmgr CLI (from source) is available via:"
+              echo "  python -m pkgmgr.cli --help"
             '';
           };
         }

@@ -49,4 +49,3 @@ include = ["pkgmgr*", "config*"]
 
 [tool.setuptools.package-data]
 "config" = ["defaults.yaml"]
-

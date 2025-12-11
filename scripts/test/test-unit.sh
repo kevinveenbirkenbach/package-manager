@@ -20,7 +20,7 @@ docker run --rm \
     set -e;
     git config --global --add safe.directory /src || true;
     nix develop .#default --no-write-lock-file -c \
-      python -m unittest discover \
+      python3 -m unittest discover \
         -s tests/unit \
         -t /src \
         -p "$TEST_PATTERN";
