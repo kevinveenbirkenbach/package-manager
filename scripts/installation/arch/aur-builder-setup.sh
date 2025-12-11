@@ -45,8 +45,42 @@ else
 fi
 
 echo "[aur-builder-setup] Ensuring yay is installed for aur_builder..."
+
 if ! "${RUN_AS_AUR[@]}" 'command -v yay >/dev/null 2>&1'; then
-  "${RUN_AS_AUR[@]}" 'cd ~ && rm -rf yay && git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si --noconfirm'
+  echo "[aur-builder-setup] yay not found – starting retry sequence for download..."
+
+  MAX_TIME=300         # 5 minutes
+  SLEEP_INTERVAL=20    # 20 seconds
+  ELAPSED=0
+
+  while true; do
+    if "${RUN_AS_AUR[@]}" '
+        set -euo pipefail
+        cd ~
+        rm -rf yay || true
+        git clone https://aur.archlinux.org/yay.git yay
+    '; then
+        echo "[aur-builder-setup] yay repository cloned successfully."
+        break
+    fi
+
+    echo "[aur-builder-setup] git clone failed (likely 504). Retrying in ${SLEEP_INTERVAL}s..."
+    sleep "${SLEEP_INTERVAL}"
+    ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
+
+    if (( ELAPSED >= MAX_TIME )); then
+      echo "[aur-builder-setup] ERROR: Aborted after 5 minutes of retry attempts."
+      exit 1
+    fi
+  done
+
+  # Now build yay after successful clone
+  "${RUN_AS_AUR[@]}" '
+      set -euo pipefail
+      cd ~/yay
+      makepkg -si --noconfirm
+  '
+
 else
   echo "[aur-builder-setup] yay already installed."
 fi
