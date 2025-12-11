@@ -1,3 +1,12 @@
+## [0.10.2] - 2025-12-11
+
+* * Debian package now depends on `sudo` for reliable privilege escalation.
+* Nix initialization revamped for robustness: container/host detection, retrying installer download, automatic creation of `nixbld` users, correct `/nix` ownership, and consistent PATH setup.
+* AUR builder setup now retries `yay` cloning to avoid network-related failures.
+* Nix flake installer now uses real exit codes, fails only on mandatory outputs, and treats `default` as optional for `pkgmgr`.
+* Updated unit tests to match new installer behavior.
+
+
 ## [0.10.1] - 2025-12-11
 
 * Fixed Debian\Ubuntu to pass container e2e tests
