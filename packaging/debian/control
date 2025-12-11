@@ -9,7 +9,7 @@ Homepage: https://github.com/kevinveenbirkenbach/package-manager
 
 Package: package-manager
 Architecture: any
-Depends: nix, ${misc:Depends}
+Depends: ${misc:Depends}
 Description: Wrapper that runs Kevin's package-manager via Nix flake
  This package provides the `pkgmgr` command, which runs Kevin's package
  manager via a local Nix flake
