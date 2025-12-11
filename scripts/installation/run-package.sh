@@ -8,6 +8,12 @@ source "${SCRIPT_DIR}/lib.sh"
 
 OS_ID="$(detect_os_id)"
 
+# Map Manjaro to Arch
+if [[ "${OS_ID}" == "manjaro" ]]; then
+  echo "[run-package] Mapping OS 'manjaro' → 'arch'"
+  OS_ID="arch"
+fi
+
 echo "[run-package] Detected OS: ${OS_ID}"
 
 case "${OS_ID}" in
