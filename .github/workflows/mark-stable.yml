@@ -1,0 +1,99 @@
+name: Mark stable commit
+
+on:
+  workflow_run:
+    workflows:
+      - Test Units
+      - Test Code Integration
+      - Test OS Containers
+      - Test End-To-End
+      - Test Virgin User
+      - Test Virgin Root
+    types:
+      - completed
+
+jobs:
+  mark-stable:
+    # only run if the triggering workflow succeeded AND it ran on main
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # required to push tags
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # required for accessing tags/history
+
+      - name: Install jq and gh (if needed)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq gh || true
+
+      - name: Check all required workflow results for this commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "Checking workflow results for commit: $SHA"
+
+          required_workflows=(
+            "Test Units"
+            "Test Code Integration"
+            "Test OS Containers"
+            "Test End-To-End"
+            "Test Virgin User"
+            "Test Virgin Root"
+          )
+
+          # Fetch all workflow runs for this commit
+          json=$(gh api \
+            repos/"$REPO"/actions/runs \
+            -F head_sha="$SHA" \
+            -F per_page=100)
+
+          for wf in "${required_workflows[@]}"; do
+            conclusion=$(printf '%s\n' "$json" | jq -r --arg name "$wf" '
+              .workflow_runs[]
+              | select(.name == $name)
+              | .conclusion
+            ' | head -n1)
+
+            if [[ -z "$conclusion" || "$conclusion" == "null" ]]; then
+              echo "Workflow '$wf' has no run for this commit yet. Exiting."
+              exit 0
+            fi
+
+            if [[ "$conclusion" != "success" ]]; then
+              echo "Workflow '$wf' did not succeed (conclusion='$conclusion'). Exiting."
+              exit 0
+            fi
+          done
+
+          echo "All workflows succeeded for commit $SHA — marking as stable."
+
+      - name: Move 'stable' tag to this commit
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "Updating 'stable' tag to point to $SHA"
+
+          if git rev-parse stable >/dev/null 2>&1; then
+            git tag -d stable || true
+          fi
+          git push origin :refs/tags/stable || true
+
+          git tag stable "$SHA"
+          git push origin stable
