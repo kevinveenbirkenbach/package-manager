@@ -34,6 +34,7 @@ prepare() {
     --exclude="pkg" \
     --exclude="srcpkg" \
     --exclude="packaging" \
+    --exclude="assets" \
     "$project_root/" "$srcdir/$_srcdir_name/"
 }
 
