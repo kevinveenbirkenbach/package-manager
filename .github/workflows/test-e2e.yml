@@ -19,6 +19,11 @@ jobs:
       - name: Show Docker version
         run: docker version
 
+      - name: Build test image with no cache (${{ matrix.distro }})
+        run: |
+          set -euo pipefail
+          distro="${{ matrix.distro }}" make build-no-cache
+
       - name: Run E2E tests via make (${{ matrix.distro }})
         run: |
           set -euo pipefail
