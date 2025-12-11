@@ -16,6 +16,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Show commit SHA
+        run: git rev-parse HEAD
+
       - name: Show Docker version
         run: docker version
 

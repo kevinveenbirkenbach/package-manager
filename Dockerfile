@@ -1,8 +1,11 @@
 # ------------------------------------------------------------
 # Base image selector — overridden by Makefile
 # ------------------------------------------------------------
-ARG BASE_IMAGE=archlinux:latest
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
+
+RUN echo "BASE_IMAGE=${BASE_IMAGE}" && \
+    cat /etc/os-release || true
 
 # ------------------------------------------------------------
 # Nix environment defaults
