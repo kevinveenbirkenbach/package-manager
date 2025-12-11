@@ -10,24 +10,24 @@ for distro in $DISTROS; do
 
   docker run --rm \
     -v "$(pwd):/src" \
-    -v pkgmgr_nix_store_${distro}:/nix \
+    -v "pkgmgr_nix_store_${distro}:/nix" \
     -v "pkgmgr_nix_cache_${distro}:/root/.cache/nix" \
     -e PKGMGR_DEV=1 \
     -e TEST_PATTERN="${TEST_PATTERN}" \
     --workdir /src \
     --entrypoint bash \
-    "package-manager-test-$distro" \
+    "package-manager-test-${distro}" \
     -c '
-      set -e
+      set -euo pipefail
 
       # Load distro info
       if [ -f /etc/os-release ]; then
         . /etc/os-release
       fi
 
-      echo "Running tests inside distro: $ID"
+      echo "Running tests inside distro: ${ID:-unknown}"
 
-      # Load nix environment if available
+      # Load Nix environment if available
       if [ -f "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh" ]; then
         . "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
       fi
@@ -44,7 +44,9 @@ for distro in $DISTROS; do
       }
 
       # Mark the mounted repository as safe to avoid Git ownership errors
-      git config --global --add safe.directory /src || true
+      if command -v git >/dev/null 2>&1; then
+        git config --global --add safe.directory /src || true
+      fi
 
       # Run the E2E tests inside the Nix development shell
       nix develop .#default --no-write-lock-file -c \
