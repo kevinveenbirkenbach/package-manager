@@ -49,8 +49,8 @@ echo "[aur-builder-setup] Ensuring yay is installed for aur_builder..."
 if ! "${RUN_AS_AUR[@]}" 'command -v yay >/dev/null 2>&1'; then
   echo "[aur-builder-setup] yay not found – starting retry sequence for download..."
 
-  MAX_TIME=300         # 5 minutes
-  SLEEP_INTERVAL=20    # 20 seconds
+  MAX_TIME=300
+  SLEEP_INTERVAL=20
   ELAPSED=0
 
   while true; do
