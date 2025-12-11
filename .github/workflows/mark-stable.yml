@@ -1,27 +1,41 @@
 name: Mark stable commit
 
 on:
-  workflow_run:
-    workflows:
-      - Test Units
-      - Test Code Integration
-      - Test OS Containers
-      - Test End-To-End
-      - Test Virgin User
-      - Test Virgin Root
-    types:
-      - completed
+  push:
+    branches:
+      - main
 
 jobs:
+  test-unit:
+    uses: ./.github/workflows/test-unit.yml
+
+  test-integration:
+    uses: ./.github/workflows/test-integration.yml
+
+  test-container:
+    uses: ./.github/workflows/test-container.yml
+
+  test-e2e:
+    uses: ./.github/workflows/test-e2e.yml
+
+  test-virgin-user:
+    uses: ./.github/workflows/test-virgin-user.yml
+
+  test-virgin-root:
+    uses: ./.github/workflows/test-virgin-root.yml
+
   mark-stable:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+    needs:
+      - test-unit
+      - test-integration
+      - test-container
+      - test-e2e
+      - test-virgin-user
+      - test-virgin-root
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
-      actions: read
+      contents: write  # to move the tag
 
     steps:
       - name: Checkout repository
@@ -29,73 +43,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install jq and gh
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y jq gh || true
-
-      - name: Check all required workflow results for this commit
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SHA: ${{ github.event.workflow_run.head_sha }}
-          REPO: ${{ github.event.workflow_run.repository.full_name }}
-        run: |
-          set -euo pipefail
-
-          echo "Commit:     $SHA"
-          echo "Repository: $REPO"
-          echo "Fetching workflow runs…"
-
-          required_workflows=(
-            "Test Units"
-            "Test Code Integration"
-            "Test OS Containers"
-            "Test End-To-End"
-            "Test Virgin User"
-            "Test Virgin Root"
-          )
-
-          # FIX: cannot filter by head_sha — GitHub API bug!
-          json=$(gh api /repos/"$REPO"/actions/runs -F per_page=100 -F event=workflow_run)
-
-          for wf in "${required_workflows[@]}"; do
-            conclusion=$(printf '%s\n' "$json" | jq -r --arg name "$wf" --arg sha "$SHA" '
-              .workflow_runs[]
-              | select(.name == $name and .head_sha == $sha)
-              | .conclusion
-            ' | head -n1)
-
-            if [[ -z "$conclusion" || "$conclusion" == "null" ]]; then
-              echo "❌ Workflow '$wf' has no run for this commit yet."
-              exit 0
-            fi
-
-            if [[ "$conclusion" != "success" ]]; then
-              echo "❌ Workflow '$wf' did not succeed (status: $conclusion)."
-              exit 0
-            fi
-
-            echo "✔ Workflow '$wf' succeeded."
-          done
-
-          echo "🎉 All tests succeeded — this commit is STABLE."
-
-      - name: Move 'stable' tag
-        env:
-          SHA: ${{ github.event.workflow_run.head_sha }}
+      - name: Move 'stable' tag to this commit
         run: |
           set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          echo "Tagging commit $SHA as stable…"
+          echo "Tagging commit $GITHUB_SHA as stable…"
 
+          # delete local tag if exists
           git tag -d stable 2>/dev/null || true
+          # delete remote tag if exists
           git push origin :refs/tags/stable || true
 
-          git tag stable "$SHA"
+          # create new tag on this commit
+          git tag stable "$GITHUB_SHA"
           git push origin stable
 
-          echo "✅ Done."
+          echo "✅ Stable tag updated."

@@ -1,13 +1,7 @@
 name: Test Units
 
 on:
-  push:
-    branches:
-      - main
-      - master
-      - develop
-      - "*"
-  pull_request:
+  workflow_call:
 
 jobs:
   test-unit:
