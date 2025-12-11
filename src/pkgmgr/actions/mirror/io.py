@@ -1,61 +1,38 @@
 from __future__ import annotations
 
 import os
+from urllib.parse import urlparse
 from typing import List, Mapping
 
 from .types import MirrorMap, Repository
 
 
 def load_config_mirrors(repo: Repository) -> MirrorMap:
-    """
-    Load mirrors from the repository configuration entry.
-
-    Supported shapes:
-
-      repo["mirrors"] = {
-          "origin": "ssh://git@example.com/...",
-          "backup": "ssh://git@backup/...",
-      }
-
-      or
-
-      repo["mirrors"] = [
-          {"name": "origin", "url": "ssh://git@example.com/..."},
-          {"name": "backup", "url": "ssh://git@backup/..."},
-      ]
-    """
     mirrors = repo.get("mirrors") or {}
     result: MirrorMap = {}
 
     if isinstance(mirrors, dict):
         for name, url in mirrors.items():
-            if not url:
-                continue
-            result[str(name)] = str(url)
+            if url:
+                result[str(name)] = str(url)
         return result
 
     if isinstance(mirrors, list):
         for entry in mirrors:
-            if not isinstance(entry, dict):
-                continue
-            name = entry.get("name")
-            url = entry.get("url")
-            if not name or not url:
-                continue
-            result[str(name)] = str(url)
+            if isinstance(entry, dict):
+                name = entry.get("name")
+                url = entry.get("url")
+                if name and url:
+                    result[str(name)] = str(url)
 
     return result
 
 
 def read_mirrors_file(repo_dir: str, filename: str = "MIRRORS") -> MirrorMap:
     """
-    Read mirrors from the MIRRORS file in the repository directory.
-
-    Simple text format:
-
-        # comment
-        origin  ssh://git@example.com/account/repo.git
-        backup  ssh://git@backup/account/repo.git
+    Supports:
+        NAME URL
+        URL  → auto name = hostname
     """
     path = os.path.join(repo_dir, filename)
     mirrors: MirrorMap = {}
@@ -71,10 +48,24 @@ def read_mirrors_file(repo_dir: str, filename: str = "MIRRORS") -> MirrorMap:
                     continue
 
                 parts = stripped.split(None, 1)
-                if len(parts) != 2:
-                    # Ignore malformed lines silently
+
+                # Case 1: "name url"
+                if len(parts) == 2:
+                    name, url = parts
+                # Case 2: "url" → auto-generate name
+                elif len(parts) == 1:
+                    url = parts[0]
+                    parsed = urlparse(url)
+                    host = (parsed.netloc or "").split(":")[0]
+                    base = host or "mirror"
+                    name = base
+                    i = 2
+                    while name in mirrors:
+                        name = f"{base}{i}"
+                        i += 1
+                else:
                     continue
-                name, url = parts
+
                 mirrors[name] = url
     except OSError as exc:
         print(f"[WARN] Could not read MIRRORS file at {path}: {exc}")
@@ -88,22 +79,14 @@ def write_mirrors_file(
     filename: str = "MIRRORS",
     preview: bool = False,
 ) -> None:
-    """
-    Write mirrors to MIRRORS file.
 
-    Existing file is overwritten. In preview mode we only print what would
-    be written.
-    """
     path = os.path.join(repo_dir, filename)
-    lines: List[str] = [f"{name} {url}" for name, url in sorted(mirrors.items())]
+    lines = [f"{name} {url}" for name, url in sorted(mirrors.items())]
     content = "\n".join(lines) + ("\n" if lines else "")
 
     if preview:
         print(f"[PREVIEW] Would write MIRRORS file at {path}:")
-        if content:
-            print(content.rstrip())
-        else:
-            print("(empty)")
+        print(content or "(empty)")
         return
 
     try:

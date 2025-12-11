@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from pkgmgr.core.command.run import run_command
 from pkgmgr.core.git import GitError, run_git
@@ -87,18 +87,41 @@ def has_origin_remote(repo_dir: str) -> bool:
     return "origin" in names
 
 
+def _ensure_push_urls_for_origin(
+    repo_dir: str,
+    mirrors: MirrorMap,
+    preview: bool,
+) -> None:
+    """
+    Ensure that all mirror URLs are present as push URLs on 'origin'.
+    """
+    desired: Set[str] = {url for url in mirrors.values() if url}
+    if not desired:
+        return
+
+    existing_output = _safe_git_output(
+        ["remote", "get-url", "--push", "--all", "origin"],
+        cwd=repo_dir,
+    )
+    existing = set(existing_output.splitlines()) if existing_output else set()
+
+    missing = sorted(desired - existing)
+    for url in missing:
+        cmd = f"git remote set-url --add --push origin {url}"
+        if preview:
+            print(f"[PREVIEW] Would run in {repo_dir!r}: {cmd}")
+        else:
+            print(f"[INFO] Adding push URL to 'origin': {url}")
+            run_command(cmd, cwd=repo_dir, preview=False)
+
+
 def ensure_origin_remote(
     repo: Repository,
     ctx: RepoMirrorContext,
     preview: bool,
 ) -> None:
     """
-    Ensure that a usable 'origin' remote exists.
-
-    Priority for choosing URL:
-      1. resolved_mirrors["origin"]
-      2. any resolved mirror (first by name)
-      3. default SSH URL derived from provider/account/repository
+    Ensure that a usable 'origin' remote exists and has all push URLs.
     """
     repo_dir = ctx.repo_dir
     resolved_mirrors = ctx.resolved_mirrors
@@ -109,33 +132,48 @@ def ensure_origin_remote(
 
     url = determine_primary_remote_url(repo, resolved_mirrors)
 
-    if not url:
-        print(
-            "[WARN] Could not determine URL for 'origin' remote. "
-            "Please configure mirrors or provider/account/repository."
-        )
-        return
-
     if not has_origin_remote(repo_dir):
+        if not url:
+            print(
+                "[WARN] Could not determine URL for 'origin' remote. "
+                "Please configure mirrors or provider/account/repository."
+            )
+            return
+
         cmd = f"git remote add origin {url}"
         if preview:
             print(f"[PREVIEW] Would run in {repo_dir!r}: {cmd}")
         else:
             print(f"[INFO] Adding 'origin' remote in {repo_dir}: {url}")
             run_command(cmd, cwd=repo_dir, preview=False)
-        return
-
-    current = current_origin_url(repo_dir)
-    if current == url:
-        print(f"[INFO] 'origin' already points to {url} (no change needed).")
-        return
-
-    cmd = f"git remote set-url origin {url}"
-    if preview:
-        print(f"[PREVIEW] Would run in {repo_dir!r}: {cmd}")
     else:
-        print(
-            f"[INFO] Updating 'origin' remote in {repo_dir} "
-            f"from {current or '<unknown>'} to {url}"
-        )
-        run_command(cmd, cwd=repo_dir, preview=False)
+        current = current_origin_url(repo_dir)
+        if current == url or not url:
+            print(
+                f"[INFO] 'origin' already points to "
+                f"{current or '<unknown>'} (no change needed)."
+            )
+        else:
+            # We do not auto-change origin here, only log the mismatch.
+            print(
+                "[INFO] 'origin' exists with URL "
+                f"{current or '<unknown>'}; not changing to {url}."
+            )
+
+    # Ensure all mirrors are present as push URLs
+    _ensure_push_urls_for_origin(repo_dir, resolved_mirrors, preview)
+
+
+def is_remote_reachable(url: str, cwd: Optional[str] = None) -> bool:
+    """
+    Check whether a remote repository is reachable via `git ls-remote`.
+
+    This does NOT modify anything; it only probes the remote.
+    """
+    workdir = cwd or os.getcwd()
+    try:
+        # --exit-code → non-zero exit code if the remote does not exist
+        run_git(["ls-remote", "--exit-code", url], cwd=workdir)
+        return True
+    except GitError:
+        return False
