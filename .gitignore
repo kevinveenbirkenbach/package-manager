@@ -14,8 +14,6 @@ venv/
 dist/
 build/*
 *.egg-info/
-pkg
-src/source/
 package-manager-*
 
 # Editor files

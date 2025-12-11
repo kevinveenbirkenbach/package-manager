@@ -5,7 +5,7 @@ echo "[fedora/package] Setting up rpmbuild directories..."
 mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SPEC_PATH="${PROJECT_ROOT}/packaging/fedora/package-manager.spec"
 
 if [[ ! -f "${SPEC_PATH}" ]]; then

@@ -4,7 +4,7 @@ set -euo pipefail
 echo "[ubuntu/package] Building Ubuntu (Debian-style) package..."
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 BUILD_ROOT="/tmp/package-manager-ubuntu-build"
 rm -rf "${BUILD_ROOT}"

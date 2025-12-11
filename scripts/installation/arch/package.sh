@@ -4,7 +4,7 @@ set -euo pipefail
 echo "[arch/package] Building Arch package (makepkg --nodeps)..."
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 PKG_DIR="${PROJECT_ROOT}/packaging/arch"
 
 if [[ ! -f "${PKG_DIR}/PKGBUILD" ]]; then

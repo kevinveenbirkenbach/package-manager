@@ -1,0 +1,11 @@
+post_install() {
+  /usr/lib/package-manager/init-nix.sh || true
+}
+
+post_upgrade() {
+  /usr/lib/package-manager/init-nix.sh || true
+}
+
+post_remove() {
+  echo ">>> package-manager removed. Nix itself was not removed."
+}

@@ -15,7 +15,7 @@ makedepends=('rsync')
 install=${pkgname}.install
 
 # Local source checkout — avoids the tarball requirement.
-# We build from the project root (two levels above packaging/arch/).
+# This assumes you build the package from inside the main project repository.
 source=()
 sha256sums=()
 
@@ -24,17 +24,12 @@ _srcdir_name="source"
 
 prepare() {
   mkdir -p "$srcdir/$_srcdir_name"
-
-  local project_root
-  project_root="$(cd "$startdir/../.." && pwd)"
-
   rsync -a \
     --exclude=".git" \
     --exclude=".github" \
     --exclude="pkg" \
     --exclude="srcpkg" \
-    --exclude="packaging" \
-    "$project_root/" "$srcdir/$_srcdir_name/"
+    "$startdir/" "$srcdir/$_srcdir_name/"
 }
 
 build() {
@@ -67,8 +62,7 @@ package() {
     "$pkgdir/usr/lib/package-manager/PKGBUILD" \
     "$pkgdir/usr/lib/package-manager/Dockerfile" \
     "$pkgdir/usr/lib/package-manager/debian" \
-    "$pkgdir/usr/lib/package-manager/packaging" \
     "$pkgdir/usr/lib/package-manager/.gitignore" \
     "$pkgdir/usr/lib/package-manager/__pycache__" \
-    "$pkgdir/usr/lib/package-manager/.gitkeep" || true
+    "$pkgdir/usr/lib/package-manager/.gitkeep"
 }

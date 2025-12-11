@@ -4,7 +4,7 @@ set -euo pipefail
 echo "[debian/package] Building Debian package..."
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 BUILD_ROOT="/tmp/package-manager-debian-build"
 rm -rf "${BUILD_ROOT}"

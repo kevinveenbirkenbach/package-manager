@@ -25,7 +25,5 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Arch pkg artifacts
-*.pkg.tar.*
+# Logs
 *.log
-packaging/arch/package-manager-*
