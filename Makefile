@@ -68,6 +68,11 @@ build-missing:
 # Combined test target for local + CI (unit + integration + e2e)
 test: test-container test-unit test-integration test-e2e
 
+delete-volumes: 
+	@docker volume rm pkgmgr_nix_store_${distro} pkgmgr_nix_cache_${distro}
+
+purge: delete-volumes build-no-cache
+
 # ------------------------------------------------------------
 # System install (native packages, calls scripts/installation/run-package.sh)
 # ------------------------------------------------------------
