@@ -1,10 +1,10 @@
 ## [0.10.2] - 2025-12-11
 
-* * Debian package now depends on `sudo` for reliable privilege escalation.
-* Nix initialization revamped for robustness: container/host detection, retrying installer download, automatic creation of `nixbld` users, correct `/nix` ownership, and consistent PATH setup.
-* AUR builder setup now retries `yay` cloning to avoid network-related failures.
-* Nix flake installer now uses real exit codes, fails only on mandatory outputs, and treats `default` as optional for `pkgmgr`.
-* Updated unit tests to match new installer behavior.
+* * Stable tag now updates only when a new highest version is released.
+* Debian package now includes sudo to ensure privilege escalation works reliably.
+* Nix setup is significantly more resilient with retries, correct permissions, and better environment handling.
+* AUR builder setup uses retries so yay installs succeed even under network instability.
+* Nix flake installation now fails only on mandatory parts; optional outputs no longer block installation.
 
 
 ## [0.10.1] - 2025-12-11
@@ -13,8 +13,6 @@
 
 
 ## [0.10.0] - 2025-12-11
-
-* **Changes since v0.9.1**
 
 **Mirror System**
 
