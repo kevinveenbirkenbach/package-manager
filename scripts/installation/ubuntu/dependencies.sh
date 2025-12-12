@@ -14,6 +14,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   rsync \
   bash \
   curl \
+  make \
   ca-certificates \
   xz-utils
 
