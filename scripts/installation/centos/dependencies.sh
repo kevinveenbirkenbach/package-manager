@@ -13,6 +13,7 @@ dnf -y install \
   bash \
   curl-minimal \
   ca-certificates \
+  python3 \
   sudo \
   xz
 

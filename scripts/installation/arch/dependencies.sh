@@ -12,6 +12,7 @@ pacman -S --noconfirm --needed \
   rsync \
   curl \
   ca-certificates \
+  python \
   xz
 
 pacman -Scc --noconfirm
