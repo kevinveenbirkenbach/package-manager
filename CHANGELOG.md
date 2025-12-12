@@ -1,3 +1,8 @@
+## [1.3.1] - 2025-12-12
+
+* Updated documentation with better run and installation instructions
+
+
 ## [1.3.0] - 2025-12-12
 
 * **Minor release – Stability & CI hardening**

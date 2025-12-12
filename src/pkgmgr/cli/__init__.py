@@ -19,7 +19,7 @@ USER_CONFIG_PATH = os.path.expanduser("~/.config/pkgmgr/config.yaml")
 DESCRIPTION_TEXT = """\
 \033[1;32mPackage Manager 🤖📦\033[0m
 \033[3mKevin's multi-distro package and workflow manager.\033[0m
-  \033[1;34mKevin Veen-Birkenbach\033[0m – \033[4mhttps://www.veen.world/\033[0m
+\033[1;34mKevin Veen-Birkenbach\033[0m – \033[4mhttps://s.veen.world/pkgmgr\033[0m
 
 Built in \033[1;33mPython\033[0m on top of \033[1;33mNix flakes\033[0m to manage many
 repositories and packaging formats (pyproject.toml, flake.nix,

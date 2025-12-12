@@ -8,8 +8,9 @@
 [![PayPal](https://img.shields.io/badge/Donate-PayPal-blue?logo=paypal)](https://s.veen.world/paypaldonate)
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub repo size](https://img.shields.io/github/repo-size/kevinveenbirkenbach/package-manager)](https://github.com/kevinveenbirkenbach/package-manager)
+[![Mark stable commit](https://github.com/kevinveenbirkenbach/package-manager/actions/workflows/mark-stable.yml/badge.svg)](https://github.com/kevinveenbirkenbach/package-manager/actions/workflows/mark-stable.yml)
 
-**Kevin's Package Manager (PKGMGR)** is a *multi-distro* package manager and workflow orchestrator.
+[**Kevin's Package Manager (PKGMGR)**](https://s.veen.world/pkgmgr) is a *multi-distro* package manager and workflow orchestrator.
 It helps you **develop, package, release and manage projects across multiple Linux-based
 operating systems** (Arch, Debian, Ubuntu, Fedora, CentOS, …).
 
@@ -103,50 +104,75 @@ The following diagram gives a full overview of:
 
 ---
 
+Perfekt, dann hier die **noch kompaktere und korrekt differenzierte Version**, die **nur** zwischen
+**`make setup`** und **`make setup-venv`** unterscheidet und exakt deinem Verhalten entspricht.
+
+README-ready, ohne Over-Engineering.
+
+---
+
 ## Installation ⚙️
 
-### 1. Get the latest stable version
+PKGMGR can be installed using `make`.
+The setup mode defines **which runtime layers are prepared**.
 
-For a stable setup, use the **latest tagged release** (the tag pointed to by
-`latest`):
+---
+
+### Setup modes
+
+| Command             | Prepares                | Use case              |
+| ------------------- | ----------------------- | --------------------- |
+| **make setup**      | Python venv **and** Nix | Full development & CI |
+| **make setup-venv** | Python venv only        | Local user setup      |
+
+---
+
+### Install & setup
 
 ```bash
 git clone https://github.com/kevinveenbirkenbach/package-manager.git
 cd package-manager
-
-# Optional but recommended: checkout the latest stable tag
-git fetch --tags
-git checkout "$(git describe --tags --abbrev=0)"
-```
-
-### 2. Install via Make
-
-The project ships with a Makefile that encapsulates the typical installation
-flow. On most systems you only need:
-
-```bash
-# Ensure make, Python and pip are installed via your distro package manager
-# (e.g. pacman -S make python python-pip, apt install make python3-pip, ...)
-
 make install
 ```
 
-This will:
-
-* create or reuse a Python virtual environment,
-* install PKGMGR (and its Python dependencies) into that environment,
-* expose the `pkgmgr` executable on your PATH (usually via `~/.local/bin`),
-* prepare Nix-based integration where available so PKGMGR can build and manage
-  packages distribution-independently.
-
-For development use, you can also run:
+#### Full setup (venv + Nix)
 
 ```bash
 make setup
 ```
 
-which prepares the environment and leaves you with a fully wired development
-workspace (including Nix, tests and scripts).
+Use this for CI, servers, containers and full development workflows.
+
+#### Venv-only setup
+
+```bash
+make setup-venv
+source ~/.venvs/pkgmgr/bin/activate
+```
+
+Use this if you want PKGMGR isolated without Nix integration.
+
+---
+
+## Run without installation (Nix)
+
+Run PKGMGR directly via Nix Flakes.
+
+```bash
+nix run github:kevinveenbirkenbach/package-manager#pkgmgr -- --help
+```
+
+Example:
+
+```bash
+nix run github:kevinveenbirkenbach/package-manager#pkgmgr -- version pkgmgr
+```
+
+Notes:
+
+* full flake URL required
+* `--` separates Nix and PKGMGR arguments
+* can be used alongside any setup mode
 
 ---
 
@@ -158,20 +184,8 @@ After installation, the main entry point is:
 pkgmgr --help
 ```
 
-This prints a list of all available subcommands, for example:
-
-* `pkgmgr list --all` – show all repositories in the config
-* `pkgmgr update --all --clone-mode https` – update every repository
-* `pkgmgr release patch --preview` – simulate a patch release
-* `pkgmgr version --all` – show version information for all repositories
-* `pkgmgr mirror setup --preview --all` – prepare Git mirrors (no changes in preview)
-* `pkgmgr make install --preview pkgmgr` – preview make install for the pkgmgr repo
-
+This prints a list of all available subcommands.
 The help for each command is available via:
-
-```bash
-pkgmgr <command> --help
-```
 
 ---
 
