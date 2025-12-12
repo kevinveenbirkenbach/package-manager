@@ -10,7 +10,7 @@ name = "package-manager"
 version = "1.2.1"
 description = "Kevin's package-manager tool (pkgmgr)"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 license = { text = "MIT" }
 
 authors = [
