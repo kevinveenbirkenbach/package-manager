@@ -44,6 +44,81 @@ ensure_nix_on_path() {
 }
 
 # ---------------------------------------------------------------------------
+# Resolve nix binary path robustly (works in CI/non-login shells)
+# ---------------------------------------------------------------------------
+resolve_nix_bin() {
+  local nix_cmd=""
+
+  nix_cmd="$(command -v nix 2>/dev/null || true)"
+  if [[ -n "${nix_cmd}" ]]; then
+    echo "${nix_cmd}"
+    return 0
+  fi
+
+  # Common fallback locations
+  if [[ -x /usr/local/bin/nix ]]; then
+    echo "/usr/local/bin/nix"
+    return 0
+  fi
+  if [[ -x /usr/bin/nix ]]; then
+    echo "/usr/bin/nix"
+    return 0
+  fi
+  if [[ -x /bin/nix ]]; then
+    echo "/bin/nix"
+    return 0
+  fi
+  if [[ -x /nix/var/nix/profiles/default/bin/nix ]]; then
+    echo "/nix/var/nix/profiles/default/bin/nix"
+    return 0
+  fi
+  if [[ -x "${HOME}/.nix-profile/bin/nix" ]]; then
+    echo "${HOME}/.nix-profile/bin/nix"
+    return 0
+  fi
+  if [[ -x /home/nix/.nix-profile/bin/nix ]]; then
+    echo "/home/nix/.nix-profile/bin/nix"
+    return 0
+  fi
+
+  return 1
+}
+
+# ---------------------------------------------------------------------------
+# Ensure globally reachable nix symlinks for non-login shells (CI safe)
+# ---------------------------------------------------------------------------
+ensure_global_nix_symlinks() {
+  local nix_bin="${1:-}"
+
+  if [[ -z "${nix_bin}" ]]; then
+    nix_bin="$(resolve_nix_bin 2>/dev/null || true)"
+  fi
+
+  if [[ -z "${nix_bin}" || ! -x "${nix_bin}" ]]; then
+    echo "[init-nix] WARNING: Cannot create global nix symlinks (nix binary not found)."
+    return 0
+  fi
+
+  # Ensure the target directories exist
+  mkdir -p /usr/local/bin 2>/dev/null || true
+
+  # Use -f so reruns are idempotent; use best-effort for /usr/bin and /bin
+  if ln -sf "${nix_bin}" /usr/local/bin/nix 2>/dev/null; then
+    echo "[init-nix] Ensured /usr/local/bin/nix -> ${nix_bin}"
+  else
+    echo "[init-nix] WARNING: Failed to ensure /usr/local/bin/nix symlink."
+  fi
+
+  if ln -sf "${nix_bin}" /usr/bin/nix 2>/dev/null; then
+    echo "[init-nix] Ensured /usr/bin/nix -> ${nix_bin}"
+  fi
+
+  if ln -sf "${nix_bin}" /bin/nix 2>/dev/null; then
+    echo "[init-nix] Ensured /bin/nix -> ${nix_bin}"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Ensure Nix build group and users exist (build-users-group = nixbld)
 # ---------------------------------------------------------------------------
 ensure_nix_build_group() {
@@ -134,6 +209,10 @@ main() {
   # Fast path: Nix already available
   if command -v nix >/dev/null 2>&1; then
     echo "[init-nix] Nix already available on PATH: $(command -v nix)"
+    # Ensure stable symlinks for CI/non-login shells
+    if [[ "${EUID:-0}" -eq 0 ]]; then
+      ensure_global_nix_symlinks "$(command -v nix)"
+    fi
     return 0
   fi
 
@@ -141,6 +220,10 @@ main() {
 
   if command -v nix >/dev/null 2>&1; then
     echo "[init-nix] Nix found after adjusting PATH: $(command -v nix)"
+    # Ensure stable symlinks for CI/non-login shells
+    if [[ "${EUID:-0}" -eq 0 ]]; then
+      ensure_global_nix_symlinks "$(command -v nix)"
+    fi
     return 0
   fi
 
@@ -191,13 +274,8 @@ main() {
 
     ensure_nix_on_path
 
-    if [[ -x /home/nix/.nix-profile/bin/nix && ! -e /usr/local/bin/nix ]]; then
-      echo "[init-nix] Creating /usr/local/bin/nix symlink -> /home/nix/.nix-profile/bin/nix"
-      if ! ln -s /home/nix/.nix-profile/bin/nix /usr/local/bin/nix; then
-        echo "[init-nix][ERROR] Failed to create /usr/local/bin/nix symlink."
-        exit 9
-      fi
-    fi
+    # Always ensure global symlinks (CI/non-login shells)
+    ensure_global_nix_symlinks "/home/nix/.nix-profile/bin/nix"
 
     # Always ensure perms once Nix exists (not only when symlink was created)
     if [[ -x /home/nix/.nix-profile/bin/nix ]]; then
@@ -248,6 +326,13 @@ main() {
       install_nix_with_retry "no-daemon"
     fi
 
+    # Ensure global symlinks if we are root (CI/non-login shells)
+    if [[ "${EUID:-0}" -eq 0 ]]; then
+      local nix_bin
+      nix_bin="$(resolve_nix_bin 2>/dev/null || true)"
+      ensure_global_nix_symlinks "${nix_bin}"
+    fi
+
   # -------------------------------------------------------------------------
   # Container, but not root (rare)
   # -------------------------------------------------------------------------
@@ -261,8 +346,24 @@ main() {
   # -------------------------------------------------------------------------
   ensure_nix_on_path
 
+  # Ensure global symlinks if we are root (CI/non-login shells)
+  if [[ "${EUID:-0}" -eq 0 ]]; then
+    local nix_bin_post
+    nix_bin_post="$(resolve_nix_bin 2>/dev/null || true)"
+    ensure_global_nix_symlinks "${nix_bin_post}"
+  fi
+
   if ! command -v nix >/dev/null 2>&1; then
-    echo "[init-nix] WARNING: Nix installation finished, but 'nix' is still not on PATH."
+    # As a last resort: if symlink exists but PATH is odd, still warn clearly
+    if [[ -x /usr/local/bin/nix ]]; then
+      echo "[init-nix] WARNING: 'nix' not on PATH, but /usr/local/bin/nix exists."
+    elif [[ -x /usr/bin/nix ]]; then
+      echo "[init-nix] WARNING: 'nix' not on PATH, but /usr/bin/nix exists."
+    elif [[ -x /bin/nix ]]; then
+      echo "[init-nix] WARNING: 'nix' not on PATH, but /bin/nix exists."
+    else
+      echo "[init-nix] WARNING: Nix installation finished, but 'nix' is still not on PATH."
+    fi
     echo "[init-nix] You may need to source your shell profile manually."
   else
     echo "[init-nix] Nix successfully installed at: $(command -v nix)"
