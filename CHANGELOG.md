@@ -1,3 +1,15 @@
+## [1.2.0] - 2025-12-12
+
+* **Release workflow overhaul**
+
+* Introduced a fully structured release workflow with clear phases and safeguards
+* Added preview-first releases with explicit confirmation before execution
+* Automatic handling of *latest* tag when a release is the newest version
+* Optional branch closing after successful releases with interactive confirmation
+* Improved safety by syncing with remote before any changes
+* Clear separation of concerns (workflow, git handling, prompts, versioning)
+
+
 ## [1.1.0] - 2025-12-12
 
 * Added *branch drop* for destructive branch deletion and introduced *--force/-f* flags for branch close and branch drop to skip confirmation prompts.
