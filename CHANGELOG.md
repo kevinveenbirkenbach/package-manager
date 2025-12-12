@@ -1,3 +1,8 @@
+## [1.4.1] - 2025-12-12
+
+* Fixed (#1) stable release container publishing
+
+
 ## [1.4.0] - 2025-12-12
 
 * **Docker Container Building**
