@@ -1,28 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unified docker image builder for all distros.
-#
-# Supports:
-#   --missing     Build only if image does not exist
-#   --no-cache    Disable docker layer cache
-#   --target      Dockerfile target (e.g. virgin|full)
-#   --tag         Override image tag (default: pkgmgr-$distro[-$target])
-#
-# Requires:
-#   - env var: distro (arch|debian|ubuntu|fedora|centos)
-#   - base.sh in same dir
-#
-# Examples:
-#   distro=arch   bash scripts/build/image.sh
-#   distro=arch   bash scripts/build/image.sh --no-cache
-#   distro=arch   bash scripts/build/image.sh --missing
-#   distro=arch   bash scripts/build/image.sh --target virgin
-#   distro=arch   bash scripts/build/image.sh --target virgin --missing
-#   distro=arch   bash scripts/build/image.sh --tag myimg:arch
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=/dev/null
 source "${SCRIPT_DIR}/base.sh"
 
 : "${distro:?Environment variable 'distro' must be set (arch|debian|ubuntu|fedora|centos)}"
@@ -30,7 +9,15 @@ source "${SCRIPT_DIR}/base.sh"
 NO_CACHE=0
 MISSING_ONLY=0
 TARGET=""
-IMAGE_TAG="" # derive later unless --tag is provided
+IMAGE_TAG=""         # local image name or base tag (without registry)
+PUSH=0               # if 1 -> use buildx and push (requires docker buildx)
+PUBLISH=0            # if 1 -> push with semantic tags (latest/version/stable + arch aliases)
+REGISTRY=""          # e.g. ghcr.io
+OWNER=""             # e.g. github org/user
+REPO_PREFIX="pkgmgr" # image base name (pkgmgr)
+VERSION=""           # X.Y.Z (required for --publish)
+IS_STABLE="false"    # "true" -> publish stable tags
+DEFAULT_DISTRO="arch"
 
 usage() {
   local default_tag="pkgmgr-${distro}"
@@ -39,14 +26,26 @@ usage() {
   fi
 
   cat <<EOF
-Usage: distro=<distro> $0 [--missing] [--no-cache] [--target <name>] [--tag <image>]
+Usage: distro=<distro> $0 [options]
 
-Options:
-  --missing         Build only if the image does not already exist
-  --no-cache        Build with --no-cache
-  --target <name>   Build a specific Dockerfile target (e.g. virgin|full)
-  --tag <image>     Override the output image tag (default: ${default_tag})
-  -h, --help        Show help
+Build options:
+  --missing             Build only if the image does not already exist (local build only)
+  --no-cache            Build with --no-cache
+  --target <name>       Build a specific Dockerfile target (e.g. virgin)
+  --tag <image>         Override the output image tag (default: ${default_tag})
+
+Publish options:
+  --push                Push the built image (uses docker buildx build --push)
+  --publish             Publish semantic tags (latest, <version>, optional stable) + arch aliases
+  --registry <reg>      Registry (e.g. ghcr.io)
+  --owner <owner>       Registry namespace (e.g. \${GITHUB_REPOSITORY_OWNER})
+  --repo-prefix <name>  Image base name (default: pkgmgr)
+  --version <X.Y.Z>     Version for --publish
+  --stable <true|false> Whether to publish :stable tags (default: false)
+
+Notes:
+- --publish implies --push and requires --registry, --owner, and --version.
+- Local build (no --push) uses "docker build" and creates local images like "pkgmgr-arch" / "pkgmgr-arch-virgin".
 EOF
 }
 
@@ -56,18 +55,39 @@ while [[ $# -gt 0 ]]; do
     --missing)  MISSING_ONLY=1; shift ;;
     --target)
       TARGET="${2:-}"
-      if [[ -z "${TARGET}" ]]; then
-        echo "ERROR: --target requires a value (e.g. virgin|full)" >&2
-        exit 2
-      fi
+      [[ -n "${TARGET}" ]] || { echo "ERROR: --target requires a value (e.g. virgin)"; exit 2; }
       shift 2
       ;;
     --tag)
       IMAGE_TAG="${2:-}"
-      if [[ -z "${IMAGE_TAG}" ]]; then
-        echo "ERROR: --tag requires a value" >&2
-        exit 2
-      fi
+      [[ -n "${IMAGE_TAG}" ]] || { echo "ERROR: --tag requires a value"; exit 2; }
+      shift 2
+      ;;
+    --push) PUSH=1; shift ;;
+    --publish) PUBLISH=1; PUSH=1; shift ;;
+    --registry)
+      REGISTRY="${2:-}"
+      [[ -n "${REGISTRY}" ]] || { echo "ERROR: --registry requires a value"; exit 2; }
+      shift 2
+      ;;
+    --owner)
+      OWNER="${2:-}"
+      [[ -n "${OWNER}" ]] || { echo "ERROR: --owner requires a value"; exit 2; }
+      shift 2
+      ;;
+    --repo-prefix)
+      REPO_PREFIX="${2:-}"
+      [[ -n "${REPO_PREFIX}" ]] || { echo "ERROR: --repo-prefix requires a value"; exit 2; }
+      shift 2
+      ;;
+    --version)
+      VERSION="${2:-}"
+      [[ -n "${VERSION}" ]] || { echo "ERROR: --version requires a value"; exit 2; }
+      shift 2
+      ;;
+    --stable)
+      IS_STABLE="${2:-}"
+      [[ -n "${IS_STABLE}" ]] || { echo "ERROR: --stable requires a value (true|false)"; exit 2; }
       shift 2
       ;;
     -h|--help) usage; exit 0 ;;
@@ -79,9 +99,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Auto-tag: if --tag not provided, derive from distro (+ target suffix)
+# Derive default local tag if not provided
 if [[ -z "${IMAGE_TAG}" ]]; then
-  IMAGE_TAG="pkgmgr-${distro}"
+  IMAGE_TAG="${REPO_PREFIX}-${distro}"
   if [[ -n "${TARGET}" ]]; then
     IMAGE_TAG="${IMAGE_TAG}-${TARGET}"
   fi
@@ -89,22 +109,51 @@ fi
 
 BASE_IMAGE="$(resolve_base_image "$distro")"
 
+# Local-only "missing" shortcut
 if [[ "${MISSING_ONLY}" == "1" ]]; then
+  if [[ "${PUSH}" == "1" ]]; then
+    echo "ERROR: --missing is only supported for local builds (without --push/--publish)" >&2
+    exit 2
+  fi
   if docker image inspect "${IMAGE_TAG}" >/dev/null 2>&1; then
     echo "[build] Image already exists: ${IMAGE_TAG} (skipping due to --missing)"
     exit 0
   fi
 fi
 
+# Validate publish parameters
+if [[ "${PUBLISH}" == "1" ]]; then
+  [[ -n "${REGISTRY}" ]] || { echo "ERROR: --publish requires --registry"; exit 2; }
+  [[ -n "${OWNER}" ]]    || { echo "ERROR: --publish requires --owner"; exit 2; }
+  [[ -n "${VERSION}" ]]  || { echo "ERROR: --publish requires --version"; exit 2; }
+fi
+
+# Guard: --push without --publish requires fully-qualified --tag
+if [[ "${PUSH}" == "1" && "${PUBLISH}" != "1" ]]; then
+  if [[ "${IMAGE_TAG}" != */* ]]; then
+    echo "ERROR: --push requires --tag with a fully-qualified name (e.g. ghcr.io/<owner>/<image>:tag), or use --publish" >&2
+    exit 2
+  fi
+fi
+
 echo
 echo "------------------------------------------------------------"
-echo "[build] Building image: ${IMAGE_TAG}"
+echo "[build] Building image"
 echo "distro     = ${distro}"
 echo "BASE_IMAGE = ${BASE_IMAGE}"
 if [[ -n "${TARGET}" ]]; then echo "target    = ${TARGET}"; fi
 if [[ "${NO_CACHE}" == "1" ]]; then echo "cache     = disabled"; fi
+if [[ "${PUSH}" == "1" ]]; then echo "push      = enabled"; fi
+if [[ "${PUBLISH}" == "1" ]]; then
+  echo "publish   = enabled"
+  echo "registry  = ${REGISTRY}"
+  echo "owner     = ${OWNER}"
+  echo "version   = ${VERSION}"
+  echo "stable    = ${IS_STABLE}"
+fi
 echo "------------------------------------------------------------"
 
+# Common build args
 build_args=(--build-arg "BASE_IMAGE=${BASE_IMAGE}")
 
 if [[ "${NO_CACHE}" == "1" ]]; then
@@ -115,6 +164,62 @@ if [[ -n "${TARGET}" ]]; then
   build_args+=(--target "${TARGET}")
 fi
 
-build_args+=(-t "${IMAGE_TAG}" .)
+compute_publish_tags() {
+  local distro_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}-${distro}"
+  local alias_tag_base=""
 
-docker build "${build_args[@]}"
+  if [[ -n "${TARGET}" ]]; then
+    distro_tag_base="${distro_tag_base}-${TARGET}"
+  fi
+
+  if [[ "${distro}" == "${DEFAULT_DISTRO}" ]]; then
+    alias_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}"
+    if [[ -n "${TARGET}" ]]; then
+      alias_tag_base="${alias_tag_base}-${TARGET}"
+    fi
+  fi
+
+  local tags=()
+  tags+=("${distro_tag_base}:latest")
+  tags+=("${distro_tag_base}:${VERSION}")
+
+  if [[ "${IS_STABLE}" == "true" ]]; then
+    tags+=("${distro_tag_base}:stable")
+  fi
+
+  if [[ -n "${alias_tag_base}" ]]; then
+    tags+=("${alias_tag_base}:latest")
+    tags+=("${alias_tag_base}:${VERSION}")
+    if [[ "${IS_STABLE}" == "true" ]]; then
+      tags+=("${alias_tag_base}:stable")
+    fi
+  fi
+
+  printf '%s\n' "${tags[@]}"
+}
+
+if [[ "${PUSH}" == "1" ]]; then
+  bx_args=(docker buildx build --push)
+
+  if [[ "${PUBLISH}" == "1" ]]; then
+    while IFS= read -r t; do
+      bx_args+=(-t "$t")
+    done < <(compute_publish_tags)
+  else
+    bx_args+=(-t "${IMAGE_TAG}")
+  fi
+
+  bx_args+=("${build_args[@]}")
+  bx_args+=(.)
+
+  echo "[build] Running: ${bx_args[*]}"
+  "${bx_args[@]}"
+else
+  local_args=(docker build)
+  local_args+=("${build_args[@]}")
+  local_args+=(-t "${IMAGE_TAG}")
+  local_args+=(.)
+
+  echo "[build] Running: ${local_args[*]}"
+  "${local_args[@]}"
+fi
