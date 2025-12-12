@@ -1,9 +1,10 @@
 .PHONY: install setup uninstall \
-        test build build-no-cache test-unit test-e2e test-integration \
-        test-container
+        test build build-no-cache build-no-cache-all build-missing delete-volumes purge \
+        test-unit test-e2e test-integration test-env-virtual test-env-nix
 
 # Distro
 # Options: arch debian ubuntu fedora centos
+DISTROS ?= arch debian ubuntu fedora centos
 distro ?= arch
 export distro
 
@@ -37,11 +38,18 @@ setup:
 # ------------------------------------------------------------
 # Docker build targets (delegated to scripts/build)
 # ------------------------------------------------------------
+build:
+	@bash scripts/build/build-image.sh
+
 build-no-cache:
 	@bash scripts/build/build-image-no-cache.sh
 
-build:
-	@bash scripts/build/build-image.sh
+build-no-cache-all:
+	@set -e; \
+	for d in $(DISTROS); do \
+	  echo "=== build-no-cache: $$d ==="; \
+	  distro="$$d" $(MAKE) build-no-cache; \
+	done
 
 # ------------------------------------------------------------
 # Test targets (delegated to scripts/test)
@@ -56,8 +64,12 @@ test-integration: build-missing
 test-e2e: build-missing
 	@bash scripts/test/test-e2e.sh
 
-test-container: build-missing
-	@bash scripts/test/test-container.sh
+test-env-virtual: build-missing
+	@bash scripts/test/test-env-virtual.sh
+
+test-env-nix: build-missing
+	@bash scripts/test/test-env-nix.sh
+
 
 # ------------------------------------------------------------
 # Build only missing container images
@@ -66,7 +78,7 @@ build-missing:
 	@bash scripts/build/build-image-missing.sh
 
 # Combined test target for local + CI (unit + integration + e2e)
-test: test-container test-unit test-integration test-e2e
+test: test-env-virtual test-unit test-integration test-e2e
 
 delete-volumes: 
 	@docker volume rm pkgmgr_nix_store_${distro} pkgmgr_nix_cache_${distro} || true

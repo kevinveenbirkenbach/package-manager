@@ -5,12 +5,12 @@ IMAGE="package-manager-test-$distro"
 
 echo
 echo "------------------------------------------------------------"
-echo ">>> Testing container: $IMAGE"
+echo ">>> Testing VENV: $IMAGE"
 echo "------------------------------------------------------------"
-echo "[test-container] Inspect image metadata:"
+echo "[test-env-virtual] Inspect image metadata:"
 docker image inspect "$IMAGE" | sed -n '1,40p'
 
-echo "[test-container] Running: docker run --rm --entrypoint pkgmgr $IMAGE --help"
+echo "[test-env-virtual] Running: docker run --rm --entrypoint pkgmgr $IMAGE --help"
 echo
 
 # Run the command and capture the output
@@ -22,11 +22,11 @@ if OUTPUT=$(docker run --rm \
         "$IMAGE" 2>&1); then
     echo "$OUTPUT"
     echo
-    echo "[test-container] SUCCESS: $IMAGE responded to 'pkgmgr --help'"
+    echo "[test-env-virtual] SUCCESS: $IMAGE responded to 'pkgmgr --help'"
 
 else
     echo "$OUTPUT"
     echo
-    echo "[test-container] ERROR: $IMAGE failed to run 'pkgmgr --help'"
+    echo "[test-env-virtual] ERROR: $IMAGE failed to run 'pkgmgr --help'"
     exit 1
 fi

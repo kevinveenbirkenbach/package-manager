@@ -80,6 +80,13 @@ install_nix_with_retry() {
 
   installer="$(mktemp -t nix-installer.XXXXXX)"
 
+  # -------------------------------------------------------------------------
+  # FIX: mktemp creates files with 0600 by default, which breaks when we later
+  #      run the installer as a different user (e.g., 'nix' in container+root).
+  #      Make it readable and (best-effort) owned by the target user.
+  # -------------------------------------------------------------------------
+  chmod 0644 "${installer}"
+
   echo "[init-nix] Downloading Nix installer from ${NIX_INSTALL_URL} with retry (max ${NIX_DOWNLOAD_MAX_TIME}s)..."
 
   while true; do
@@ -103,6 +110,9 @@ install_nix_with_retry() {
   done
 
   if [[ -n "${run_as}" ]]; then
+    # Best-effort: ensure the target user can read the downloaded installer
+    chown "${run_as}:${run_as}" "${installer}" 2>/dev/null || true
+
     echo "[init-nix] Running installer as user '${run_as}' with mode '${mode}'..."
     if command -v sudo >/dev/null 2>&1; then
       sudo -u "${run_as}" bash -lc "sh '${installer}' ${mode_flag}"

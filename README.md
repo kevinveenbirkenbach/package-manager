@@ -98,7 +98,7 @@ The following diagram gives a full overview of:
 
 ![PKGMGR Architecture](assets/map.png)
 
-**Diagram status:** 11 December 2025
+**Diagram status:** 12 December 2025
 **Always-up-to-date version:** [https://s.veen.world/pkgmgrmp](https://s.veen.world/pkgmgrmp)
 
 ---

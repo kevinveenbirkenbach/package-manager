@@ -1,9 +1,9 @@
 post_install() {
-  /usr/lib/package-manager/init-nix.sh || true
+  /usr/lib/package-manager/init-nix.sh || echo ">>> ERROR: /usr/lib/package-manager/init-nix.sh not found or not executable."
 }
 
 post_upgrade() {
-  /usr/lib/package-manager/init-nix.sh || true
+  /usr/lib/package-manager/init-nix.sh || echo ">>> ERROR: /usr/lib/package-manager/init-nix.sh not found or not executable."
 }
 
 post_remove() {

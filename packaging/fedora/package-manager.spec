@@ -60,12 +60,7 @@ rm -rf \
   %{buildroot}/usr/lib/package-manager/.gitkeep || true
 
 %post
-# Initialize Nix (if needed) after installing the package-manager files.
-if [ -x /usr/lib/package-manager/init-nix.sh ]; then
-    /usr/lib/package-manager/init-nix.sh || true
-else
-    echo ">>> Warning: /usr/lib/package-manager/init-nix.sh not found or not executable."
-fi
+/usr/lib/package-manager/init-nix.sh || echo ">>> ERROR: /usr/lib/package-manager/init-nix.sh not found or not executable."
 
 %postun
 echo ">>> package-manager removed. Nix itself was not removed."

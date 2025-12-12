@@ -13,8 +13,11 @@ jobs:
   test-integration:
     uses: ./.github/workflows/test-integration.yml
 
-  test-container:
-    uses: ./.github/workflows/test-container.yml
+  test-env-virtual:
+    uses: ./.github/workflows/test-env-virtual.yml
+
+  test-env-nix:
+    uses: ./.github/workflows/test-env-nix.yml
 
   test-e2e:
     uses: ./.github/workflows/test-e2e.yml
