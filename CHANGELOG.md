@@ -1,3 +1,8 @@
+## [1.1.0] - 2025-12-12
+
+* Added *branch drop* for destructive branch deletion and introduced *--force/-f* flags for branch close and branch drop to skip confirmation prompts.
+
+
 ## [1.0.0] - 2025-12-11
 
 * **1.0.0 – Official Stable Release 🎉**
