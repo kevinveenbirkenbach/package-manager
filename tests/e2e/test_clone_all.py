@@ -47,7 +47,7 @@ class TestIntegrationCloneAllHttps(unittest.TestCase):
             try:
                 # Execute main.py as if it was called from CLI.
                 # This will run the full clone pipeline inside the container.
-                runpy.run_module("main", run_name="__main__")
+                runpy.run_module("pkgmgr", run_name="__main__")
             except SystemExit as exc:
                 # Determine the exit code (int or string)
                 exit_code = exc.code

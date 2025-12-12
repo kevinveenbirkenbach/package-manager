@@ -50,7 +50,7 @@ class TestPathCommandsE2E(unittest.TestCase):
             try:
                 # Capture stdout while running the CLI entry point.
                 with redirect_stdout(buffer):
-                    runpy.run_module("main", run_name="__main__")
+                    runpy.run_module("pkgmgr", run_name="__main__")
             except SystemExit as exc:
                 # Determine the exit code (int or string)
                 exit_code = exc.code

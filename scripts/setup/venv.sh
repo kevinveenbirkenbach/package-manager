@@ -15,9 +15,6 @@ RC_LINE='if [ -d "${HOME}/.venvs/pkgmgr" ]; then . "${HOME}/.venvs/pkgmgr/bin/ac
 
 echo "[setup] Running in normal user mode (developer setup)."
 
-echo "[setup] Ensuring main.py is executable..."
-chmod +x main.py || true
-
 echo "[setup] Ensuring global virtualenv root: ${HOME}/.venvs"
 mkdir -p "${HOME}/.venvs"
 
@@ -90,8 +87,8 @@ for rc in "${HOME}/.bashrc" "${HOME}/.zshrc"; do
     fi
 done
 
-echo "[setup] Running main.py install via venv Python..."
-"${VENV_DIR}/bin/python" main.py install
+echo "[setup] Running install via venv Python..."
+"${VENV_DIR}/bin/python" -m pkgmgr install
 
 echo
 echo "[setup] Developer setup complete."

@@ -27,7 +27,7 @@ class TestIntegrationBranchCommands(unittest.TestCase):
         try:
             # argv[0] is the program name; the rest are CLI arguments.
             sys.argv = ["pkgmgr"] + list(extra_args)
-            runpy.run_module("main", run_name="__main__")
+            runpy.run_module("pkgmgr", run_name="__main__")
         finally:
             sys.argv = original_argv
 

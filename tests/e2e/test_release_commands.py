@@ -44,7 +44,7 @@ class TestIntegrationReleaseCommand(unittest.TestCase):
         try:
             # argv[0] is the program name; the rest are CLI arguments.
             sys.argv = ["pkgmgr"] + list(extra_args)
-            runpy.run_module("main", run_name="__main__")
+            runpy.run_module("pkgmgr", run_name="__main__")
         finally:
             sys.argv = original_argv
 
@@ -152,7 +152,7 @@ class TestIntegrationReleaseCommand(unittest.TestCase):
             # argparse will call sys.exit(), so we expect a SystemExit here.
             with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
                 with self.assertRaises(SystemExit) as cm:
-                    runpy.run_module("main", run_name="__main__")
+                    runpy.run_module("pkgmgr", run_name="__main__")
         finally:
             sys.argv = original_argv
 

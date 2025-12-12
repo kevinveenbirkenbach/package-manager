@@ -130,7 +130,7 @@ class TestIntegrationVersionCommands(unittest.TestCase):
             sys.argv = ["pkgmgr", "version"] + extra_args
 
             try:
-                runpy.run_module("main", run_name="__main__")
+                runpy.run_module("pkgmgr", run_name="__main__")
             except SystemExit as exc:
                 code = exc.code if isinstance(exc.code, int) else str(exc.code)
                 if code != 0:

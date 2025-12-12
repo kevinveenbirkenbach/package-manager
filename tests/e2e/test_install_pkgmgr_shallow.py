@@ -139,7 +139,7 @@ class TestIntegrationInstalPKGMGRShallow(unittest.TestCase):
             ]
 
             # Execute installation via main.py
-            runpy.run_module("main", run_name="__main__")
+            runpy.run_module("pkgmgr", run_name="__main__")
 
             # Debug: interactive shell test
             pkgmgr_help_debug()

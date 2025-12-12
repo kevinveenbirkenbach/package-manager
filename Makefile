@@ -30,6 +30,7 @@ export BASE_IMAGE_CENTOS
 # PYthon Unittest Pattern
 TEST_PATTERN	:= test_*.py
 export TEST_PATTERN
+export PYTHONPATH := src
 
 # ------------------------------------------------------------
 # System install
@@ -45,7 +46,7 @@ install:
 # Default: keep current auto-detection behavior
 setup: setup-nix setup-venv
 
-# Explicit: developer setup (Python venv + shell RC + main.py install)
+# Explicit: developer setup (Python venv + shell RC + install)
 setup-venv: setup-nix
 	@bash scripts/setup/venv.sh
 

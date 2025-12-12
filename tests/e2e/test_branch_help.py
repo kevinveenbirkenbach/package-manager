@@ -24,7 +24,7 @@ def _run_pkgmgr_help(argv_tail: list[str]) -> str:
 
         try:
             with redirect_stdout(buffer), redirect_stderr(buffer):
-                runpy.run_module("main", run_name="__main__")
+                runpy.run_module("pkgmgr", run_name="__main__")
         except SystemExit as exc:
             code = exc.code if isinstance(exc.code, int) else None
             if code not in (0, None):

@@ -18,14 +18,6 @@ import sys
 import unittest
 from typing import List
 
-
-# Resolve project root (the repo where main.py lives, e.g. /src)
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..")
-)
-MAIN_PATH = os.path.join(PROJECT_ROOT, "main.py")
-
-
 def _run_main(argv: List[str]) -> None:
     """
     Helper to run main.py with the given argv.
@@ -40,7 +32,7 @@ def _run_main(argv: List[str]) -> None:
     try:
         sys.argv = ["pkgmgr"] + argv
         try:
-            runpy.run_path(MAIN_PATH, run_name="__main__")
+            runpy.run_module("pkgmgr", run_name="__main__")
         except SystemExit as exc:  # argparse uses this for --help
             # SystemExit.code can be int, str or None; for our purposes:
             code = exc.code
