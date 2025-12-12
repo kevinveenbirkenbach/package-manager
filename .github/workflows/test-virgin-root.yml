@@ -23,7 +23,7 @@ jobs:
       - name: Build virgin container (${{ matrix.distro }})
         run: |
           set -euo pipefail
-          distro="${{ matrix.distro }}" make build-missing
+          distro="${{ matrix.distro }}" make build-missing-virgin
 
       # 🔹 RUN test inside virgin image
       - name: Virgin ${{ matrix.distro }} pkgmgr test (root)

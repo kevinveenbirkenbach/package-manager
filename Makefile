@@ -46,7 +46,7 @@ install:
 setup: setup-nix setup-venv
 
 # Explicit: developer setup (Python venv + shell RC + main.py install)
-setup-venv:
+setup-venv: setup-nix
 	@bash scripts/setup/venv.sh
 
 # Explicit: Nix shell mode (no venv, no RC changes)
@@ -60,8 +60,10 @@ build:
 	@bash scripts/build/image.sh --target virgin
 	@bash scripts/build/image.sh
 
-build-missing:
+build-missing-virgin:
 	@bash scripts/build/image.sh --target virgin --missing
+
+build-missing: build-missing-virgin
 	@bash scripts/build/image.sh --missing
 
 build-no-cache:
