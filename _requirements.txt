@@ -1,4 +1,0 @@
-# Legacy file used only if pip still installs from requirements.txt.
-# You may delete this file once you switch entirely to pyproject.toml.
-
-PyYAML
