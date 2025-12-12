@@ -109,8 +109,9 @@ class TestEnsureCleanAndSynced(unittest.TestCase):
         ensure_clean_and_synced(preview=False)
 
         called_cmds = [c.args[0] for c in mock_run.call_args_list]
-        self.assertIn("git fetch --prune --tags", called_cmds)
+        self.assertIn("git fetch origin --prune --tags --force", called_cmds)
         self.assertIn("git pull --ff-only", called_cmds)
+
 
 
 class TestIsHighestVersionTag(unittest.TestCase):

@@ -42,14 +42,13 @@ def ensure_clean_and_synced(preview: bool = False) -> None:
         return
 
     if preview:
-        print("[PREVIEW] Would run: git fetch --prune --tags")
+        print("[PREVIEW] Would run: git fetch origin --prune --tags --force")
         print("[PREVIEW] Would run: git pull --ff-only")
         return
 
     print("[INFO] Syncing with remote before making any changes...")
-    run_git_command("git fetch --prune --tags")
+    run_git_command("git fetch origin --prune --tags --force")
     run_git_command("git pull --ff-only")
-
 
 def is_highest_version_tag(tag: str) -> bool:
     """
