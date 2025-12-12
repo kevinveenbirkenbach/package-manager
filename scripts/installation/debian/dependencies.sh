@@ -14,6 +14,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   curl \
   ca-certificates \
   python3 \
+  python3-venv \
   xz-utils
 
 rm -rf /var/lib/apt/lists/*
