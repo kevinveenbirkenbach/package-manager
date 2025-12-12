@@ -7,11 +7,13 @@ This test is intended to be run inside the Docker container where:
   - the config/config.yaml is present,
   - and it is safe to perform real git operations.
 
-It passes if the command completes without raising an exception.
+It passes if BOTH commands complete successfully (in separate tests):
+  1) pkgmgr update --all --clone-mode https --no-verification
+  2) nix run .#pkgmgr -- update --all --clone-mode https --no-verification
 """
 
-import runpy
-import sys
+import os
+import subprocess
 import unittest
 
 from test_install_pkgmgr_shallow import (
@@ -22,55 +24,35 @@ from test_install_pkgmgr_shallow import (
 
 
 class TestIntegrationUpdateAllHttps(unittest.TestCase):
-    def _run_pkgmgr_update_all_https(self) -> None:
+    def _run_cmd(self, cmd: list[str], label: str) -> None:
         """
-        Helper that runs the CLI command via main.py and provides
-        extra diagnostics if the command exits with a non-zero code.
+        Run a real CLI command and raise a helpful assertion on failure.
         """
-        cmd_repr = "pkgmgr update --all --clone-mode https --no-verification"
-        original_argv = sys.argv
+        cmd_repr = " ".join(cmd)
+        env = os.environ.copy()
+
         try:
-            sys.argv = [
-                "pkgmgr",
-                "update",
-                "--all",
-                "--clone-mode",
-                "https",
-                "--no-verification",
-            ]
+            print(f"\n[TEST] Running ({label}): {cmd_repr}")
+            subprocess.run(
+                cmd,
+                check=True,
+                cwd=os.getcwd(),
+                env=env,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            print(f"\n[TEST] Command failed ({label})")
+            print(f"[TEST] Command : {cmd_repr}")
+            print(f"[TEST] Exit code: {exc.returncode}")
 
-            try:
-                # Execute main.py as if it was called from CLI.
-                # This will run the full update pipeline inside the container.
-                runpy.run_module("main", run_name="__main__")
-            except SystemExit as exc:
-                # Convert SystemExit into a more helpful assertion with debug output.
-                exit_code = exc.code if isinstance(exc.code, int) else str(exc.code)
+            nix_profile_list_debug(f"ON FAILURE ({label})")
 
-                print("\n[TEST] pkgmgr update --all failed with SystemExit")
-                print(f"[TEST] Command : {cmd_repr}")
-                print(f"[TEST] Exit code: {exit_code}")
+            raise AssertionError(
+                f"({label}) {cmd_repr!r} failed with exit code {exc.returncode}. "
+                "Scroll up to see the full pkgmgr/nix output inside the container."
+            ) from exc
 
-                # Additional Nix profile debug on failure (useful if any update
-                # step interacts with Nix-based tooling).
-                nix_profile_list_debug("ON FAILURE (AFTER SystemExit)")
-
-                raise AssertionError(
-                    f"{cmd_repr!r} failed with exit code {exit_code}. "
-                    "Scroll up to see the full pkgmgr/make output inside the container."
-                ) from exc
-
-        finally:
-            sys.argv = original_argv
-
-    def test_update_all_repositories_https(self) -> None:
-        """
-        Run: pkgmgr update --all --clone-mode https --no-verification
-
-        This will perform real git update operations inside the container.
-        The test succeeds if no exception is raised and `pkgmgr --help`
-        works in a fresh interactive bash session afterwards.
-        """
+    def _common_setup(self) -> None:
         # Debug before cleanup
         nix_profile_list_debug("BEFORE CLEANUP")
 
@@ -81,11 +63,28 @@ class TestIntegrationUpdateAllHttps(unittest.TestCase):
         # Debug after cleanup
         nix_profile_list_debug("AFTER CLEANUP")
 
-        # Run the actual update with extended diagnostics
-        self._run_pkgmgr_update_all_https()
+    def test_update_all_repositories_https_pkgmgr(self) -> None:
+        """
+        Run: pkgmgr update --all --clone-mode https --no-verification
+        """
+        self._common_setup()
 
-        # After successful update: show `pkgmgr --help`
-        # via interactive bash (same helper as in the other integration tests).
+        args = ["update", "--all", "--clone-mode", "https", "--no-verification"]
+        self._run_cmd(["pkgmgr", *args], label="pkgmgr")
+
+        # After successful update: show `pkgmgr --help` via interactive bash
+        pkgmgr_help_debug()
+
+    def test_update_all_repositories_https_nix_pkgmgr(self) -> None:
+        """
+        Run: nix run .#pkgmgr -- update --all --clone-mode https --no-verification
+        """
+        self._common_setup()
+
+        args = ["update", "--all", "--clone-mode", "https", "--no-verification"]
+        self._run_cmd(["nix", "run", ".#pkgmgr", "--", *args], label="nix run .#pkgmgr")
+
+        # After successful update: show `pkgmgr --help` via interactive bash
         pkgmgr_help_debug()
 
 
