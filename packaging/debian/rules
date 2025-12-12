@@ -32,8 +32,9 @@ override_dh_auto_install:
 		debian/package-manager/usr/bin/pkgmgr
 
 	# Install shared Nix init script
-	install -m0755 scripts/init-nix.sh \
-		debian/package-manager/usr/lib/package-manager/init-nix.sh
+	install -d debian/package-manager/usr/lib/package-manager/nix
+	install -m0755 scripts/nix/init.sh \
+		debian/package-manager/usr/lib/package-manager/nix/init.sh
 
 	# Copy full project source into /usr/lib/package-manager,
 	# but do not include the debian/ directory itself.

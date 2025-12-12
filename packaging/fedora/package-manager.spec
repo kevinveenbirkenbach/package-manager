@@ -12,7 +12,7 @@ BuildArch:      noarch
 # NOTE:
 # Nix is a runtime requirement, but it is *not* declared here as a hard
 # RPM dependency, because many distributions do not ship a "nix" RPM.
-# Instead, Nix is installed and initialized by init-nix.sh, which is
+# Instead, Nix is installed and initialized by nix/init.sh, which is
 # called in the %post scriptlet below.
 
 %description
@@ -22,7 +22,7 @@ manager via a local Nix flake:
   nix run /usr/lib/package-manager#pkgmgr -- ...
 
 Nix is a runtime requirement and is installed/initialized by the
-init-nix.sh helper during package installation if it is not yet
+nix/init.sh helper during package installation if it is not yet
 available on the system.
 
 %prep
@@ -45,7 +45,8 @@ cp -a . %{buildroot}/usr/lib/package-manager/
 install -m0755 scripts/pkgmgr-wrapper.sh %{buildroot}%{_bindir}/pkgmgr
 
 # Shared Nix init script (ensure it is executable in the installed tree)
-install -m0755 scripts/init-nix.sh %{buildroot}/usr/lib/package-manager/init-nix.sh
+install -d %{buildroot}/usr/lib/package-manager/nix
+install -m0755 scripts/nix/init.sh %{buildroot}/usr/lib/package-manager/nix/init.sh
 
 # Remove packaging-only and development artefacts from the installed tree
 rm -rf \
@@ -60,7 +61,7 @@ rm -rf \
   %{buildroot}/usr/lib/package-manager/.gitkeep || true
 
 %post
-/usr/lib/package-manager/init-nix.sh || echo ">>> ERROR: /usr/lib/package-manager/init-nix.sh not found or not executable."
+/usr/lib/package-manager/nix/init.sh || echo ">>> ERROR: /usr/lib/package-manager/nix/init.sh not found or not executable."
 
 %postun
 echo ">>> package-manager removed. Nix itself was not removed."

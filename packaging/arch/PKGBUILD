@@ -51,8 +51,8 @@ package() {
     "$pkgdir/usr/bin/pkgmgr"
 
   # Install Nix init helper
-  install -Dm0755 "scripts/init-nix.sh" \
-    "$pkgdir/usr/lib/package-manager/init-nix.sh"
+  install -Dm0755 "scripts/nix/init.sh" \
+    "$pkgdir/usr/lib/package-manager/nix/init.sh"
 
   # Install the full repository into /usr/lib/package-manager
   mkdir -p "$pkgdir/usr/lib/package-manager"

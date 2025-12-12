@@ -28,11 +28,11 @@ if ! command -v nix >/dev/null 2>&1; then
 fi
 
 # ---------------------------------------------------------------------------
-# If nix is still missing, try to run init-nix.sh once
+# If nix is still missing, try to run nix/init.sh once
 # ---------------------------------------------------------------------------
 if ! command -v nix >/dev/null 2>&1; then
-  if [[ -x "${FLAKE_DIR}/init-nix.sh" ]]; then
-    "${FLAKE_DIR}/init-nix.sh" || true
+  if [[ -x "${FLAKE_DIR}/nix/init.sh" ]]; then
+    "${FLAKE_DIR}/nix/init.sh" || true
   fi
 fi
 

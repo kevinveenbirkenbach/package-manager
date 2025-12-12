@@ -3,7 +3,7 @@ set -e
 
 case "$1" in
     configure)
-        /usr/lib/package-manager/init-nix.sh || echo ">>> ERROR: /usr/lib/package-manager/init-nix.sh not found or not executable."
+        /usr/lib/package-manager/nix/init.sh || echo ">>> ERROR: /usr/lib/package-manager/nix/init.sh not found or not executable."
         ;;
 esac
 
