@@ -193,7 +193,39 @@ main() {
 
     if [[ -x /home/nix/.nix-profile/bin/nix && ! -e /usr/local/bin/nix ]]; then
       echo "[init-nix] Creating /usr/local/bin/nix symlink -> /home/nix/.nix-profile/bin/nix"
-      ln -s /home/nix/.nix-profile/bin/nix /usr/local/bin/nix
+      if ! ln -s /home/nix/.nix-profile/bin/nix /usr/local/bin/nix; then
+        echo "[init-nix][ERROR] Failed to create /usr/local/bin/nix symlink."
+        exit 9
+      fi
+    fi
+
+    # Always ensure perms once Nix exists (not only when symlink was created)
+    if [[ -x /home/nix/.nix-profile/bin/nix ]]; then
+      echo "[nix] Ensuring non-root users can access Nix installation..."
+
+      if [[ ! -d /home/nix ]]; then
+        echo "[nix][ERROR] /home/nix does not exist – Nix user home missing."
+        exit 10
+      fi
+
+      if ! chmod o+rx /home/nix; then
+        echo "[nix][ERROR] Failed to set o+rx on /home/nix"
+        echo "[nix][HINT] Non-root users cannot traverse the Nix home directory."
+        exit 11
+      fi
+
+      if [[ ! -d /home/nix/.nix-profile ]]; then
+        echo "[nix][ERROR] /home/nix/.nix-profile does not exist – Nix profile missing."
+        exit 12
+      fi
+
+      if ! chmod -R o+rx /home/nix/.nix-profile; then
+        echo "[nix][ERROR] Failed to set o+rx recursively on /home/nix/.nix-profile"
+        echo "[nix][HINT] Nix binaries and profiles will not be executable for non-root users."
+        exit 13
+      fi
+
+      echo "[nix] Permissions for /home/nix and .nix-profile successfully adjusted."
     fi
 
   # -------------------------------------------------------------------------
