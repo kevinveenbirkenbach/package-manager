@@ -3,28 +3,19 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# shellcheck source=/dev/null
-source "${SCRIPT_DIR}/lib.sh"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/os_resolver.sh"
 
-OS_ID="$(detect_os_id)"
-
-# Map Manjaro to Arch
-if [[ "${OS_ID}" == "manjaro" ]]; then
-  echo "[package] Mapping OS 'manjaro' → 'arch'"
-  OS_ID="arch"
-fi
+OS_ID="$(osr_get_os_id)"
 
 echo "[package] Detected OS: ${OS_ID}"
 
-case "${OS_ID}" in
-  arch|debian|ubuntu|fedora|centos)
-    PKG_SCRIPT="${SCRIPT_DIR}/${OS_ID}/package.sh"
-    ;;
-  *)
-    echo "[package] Unsupported OS: ${OS_ID}"
-    exit 1
-    ;;
-esac
+if ! osr_is_supported "${OS_ID}"; then
+  echo "[package] Unsupported OS: ${OS_ID}"
+  exit 1
+fi
+
+PKG_SCRIPT="$(osr_script_path_for "${SCRIPT_DIR}" "${OS_ID}" "package")"
 
 if [[ ! -f "${PKG_SCRIPT}" ]]; then
   echo "[package] Package script not found: ${PKG_SCRIPT}"

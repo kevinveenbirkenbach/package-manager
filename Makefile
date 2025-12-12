@@ -36,7 +36,7 @@ export TEST_PATTERN
 # ------------------------------------------------------------
 install:
 	@echo "Building and installing distro-native package-manager for this system..."
-	@bash scripts/installation/main.sh
+	@bash scripts/installation/init.sh
 
 # ------------------------------------------------------------
 # PKGMGR setup
