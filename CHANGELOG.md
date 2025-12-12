@@ -1,3 +1,15 @@
+## [1.3.0] - 2025-12-12
+
+* **Minor release – Stability & CI hardening**
+
+* Stabilized Nix resolution and global symlink handling across Arch, CentOS, Debian, and Ubuntu
+* Ensured Nix works reliably in CI, sudo, login, and non-login shells without overriding distro-managed paths
+* Improved error handling and deterministic behavior for non-root environments
+* Refactored Docker and CI workflows for reproducible multi-distro virgin tests
+* Made E2E tests more realistic by executing real CLI commands
+* Fixed Python compatibility and missing dependencies on affected distros
+
+
 ## [1.2.1] - 2025-12-12
 
 * **Changed**
