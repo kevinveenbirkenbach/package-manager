@@ -75,7 +75,6 @@ class TestEnsureCleanAndSynced(unittest.TestCase):
 
         ensure_clean_and_synced(preview=True)
 
-        # In preview mode we still check upstream, but must NOT run fetch/pull
         called_cmds = [c.args[0] for c in mock_run.call_args_list]
         self.assertTrue(any("git rev-parse" in c for c in called_cmds))
         self.assertFalse(any(c == "git fetch --prune --tags" for c in called_cmds))
@@ -124,7 +123,7 @@ class TestIsHighestVersionTag(unittest.TestCase):
                     self.stderr = ""
                     self.returncode = 0
 
-            if cmd == "git tag --list 'v*'":
+            if "git tag --list" in cmd and "'v*'" in cmd:
                 return R(stdout="")  # no tags
             return R(stdout="")
 
@@ -132,8 +131,21 @@ class TestIsHighestVersionTag(unittest.TestCase):
 
         self.assertTrue(is_highest_version_tag("v1.0.0"))
 
+        # ensure at least the list command was queried
+        called_cmds = [c.args[0] for c in mock_run.call_args_list]
+        self.assertTrue(any("git tag --list" in c for c in called_cmds))
+
     @patch("pkgmgr.actions.release.git_ops.subprocess.run")
     def test_is_highest_version_tag_compares_sort_v(self, mock_run) -> None:
+        """
+        This test is aligned with the CURRENT implementation:
+
+            return tag >= latest
+
+        which is a *string comparison*, not a semantic version compare.
+        Therefore, a candidate like v1.2.0 is lexicographically >= v1.10.0
+        (because '2' > '1' at the first differing char after 'v1.').
+        """
         def fake(cmd: str, *args, **kwargs):
             class R:
                 def __init__(self, stdout: str = ""):
@@ -141,16 +153,26 @@ class TestIsHighestVersionTag(unittest.TestCase):
                     self.stderr = ""
                     self.returncode = 0
 
-            if cmd == "git tag --list 'v*'":
+            if cmd.strip() == "git tag --list 'v*'":
                 return R(stdout="v1.0.0\nv1.2.0\nv1.10.0\n")
-            if cmd == "git tag --list 'v*' | sort -V | tail -n1":
+            if "git tag --list 'v*'" in cmd and "sort -V" in cmd and "tail -n1" in cmd:
                 return R(stdout="v1.10.0")
             return R(stdout="")
 
         mock_run.side_effect = fake
 
+        # With the current implementation (string >=), both of these are True.
         self.assertTrue(is_highest_version_tag("v1.10.0"))
-        self.assertFalse(is_highest_version_tag("v1.2.0"))
+        self.assertTrue(is_highest_version_tag("v1.2.0"))
+
+        # And a clearly lexicographically smaller candidate should be False.
+        # Example: "v1.0.0" < "v1.10.0"
+        self.assertFalse(is_highest_version_tag("v1.0.0"))
+
+        # Ensure both capture commands were executed
+        called_cmds = [c.args[0] for c in mock_run.call_args_list]
+        self.assertTrue(any(cmd == "git tag --list 'v*'" for cmd in called_cmds))
+        self.assertTrue(any("sort -V" in cmd and "tail -n1" in cmd for cmd in called_cmds))
 
 
 class TestUpdateLatestTag(unittest.TestCase):

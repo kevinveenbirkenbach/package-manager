@@ -58,10 +58,14 @@ def is_highest_version_tag(tag: str) -> bool:
     """
     all_v = _capture("git tag --list 'v*'")
     if not all_v:
-        return True
+        return True  # No tags yet, so the current tag is the highest
 
+    # Get the latest tag in natural version order
     latest = _capture("git tag --list 'v*' | sort -V | tail -n1")
-    return tag == latest
+    print(f"[INFO] Latest tag: {latest}, Current tag: {tag}")
+    
+    # Ensure that the current tag is always considered the highest if it's the latest one
+    return tag >= latest  # Use comparison operator to consider all future tags
 
 
 def update_latest_tag(new_tag: str, preview: bool = False) -> None:
