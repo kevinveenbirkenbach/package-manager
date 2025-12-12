@@ -22,6 +22,10 @@ class TestCliBranch(unittest.TestCase):
             user_config_path="/tmp/config.yaml",
         )
 
+    # ------------------------------------------------------------------
+    # open subcommand
+    # ------------------------------------------------------------------
+
     @patch("pkgmgr.cli.commands.branch.open_branch")
     def test_handle_branch_open_forwards_args_to_open_branch(self, mock_open_branch) -> None:
         """
@@ -73,13 +77,15 @@ class TestCliBranch(unittest.TestCase):
     @patch("pkgmgr.cli.commands.branch.close_branch")
     def test_handle_branch_close_forwards_args_to_close_branch(self, mock_close_branch) -> None:
         """
-        handle_branch('close') should call close_branch with name, base and cwd='.'.
+        handle_branch('close') should call close_branch with name, base,
+        cwd='.' and force=False by default.
         """
         args = SimpleNamespace(
             command="branch",
             subcommand="close",
             name="feature/cli-close",
             base="develop",
+            force=False,
         )
 
         ctx = self._dummy_ctx()
@@ -91,6 +97,7 @@ class TestCliBranch(unittest.TestCase):
         self.assertEqual(call_kwargs.get("name"), "feature/cli-close")
         self.assertEqual(call_kwargs.get("base_branch"), "develop")
         self.assertEqual(call_kwargs.get("cwd"), ".")
+        self.assertFalse(call_kwargs.get("force"))
 
     @patch("pkgmgr.cli.commands.branch.close_branch")
     def test_handle_branch_close_uses_default_base_when_not_set(self, mock_close_branch) -> None:
@@ -103,6 +110,7 @@ class TestCliBranch(unittest.TestCase):
             subcommand="close",
             name=None,
             base="main",
+            force=False,
         )
 
         ctx = self._dummy_ctx()
@@ -114,6 +122,113 @@ class TestCliBranch(unittest.TestCase):
         self.assertIsNone(call_kwargs.get("name"))
         self.assertEqual(call_kwargs.get("base_branch"), "main")
         self.assertEqual(call_kwargs.get("cwd"), ".")
+        self.assertFalse(call_kwargs.get("force"))
+
+    @patch("pkgmgr.cli.commands.branch.close_branch")
+    def test_handle_branch_close_with_force_true(self, mock_close_branch) -> None:
+        """
+        handle_branch('close') should pass force=True when the args specify it.
+        """
+        args = SimpleNamespace(
+            command="branch",
+            subcommand="close",
+            name="feature/cli-close-force",
+            base="main",
+            force=True,
+        )
+
+        ctx = self._dummy_ctx()
+
+        handle_branch(args, ctx)
+
+        mock_close_branch.assert_called_once()
+        _, call_kwargs = mock_close_branch.call_args
+        self.assertEqual(call_kwargs.get("name"), "feature/cli-close-force")
+        self.assertEqual(call_kwargs.get("base_branch"), "main")
+        self.assertEqual(call_kwargs.get("cwd"), ".")
+        self.assertTrue(call_kwargs.get("force"))
+
+    # ------------------------------------------------------------------
+    # drop subcommand
+    # ------------------------------------------------------------------
+
+    @patch("pkgmgr.cli.commands.branch.drop_branch")
+    def test_handle_branch_drop_forwards_args_to_drop_branch(self, mock_drop_branch) -> None:
+        """
+        handle_branch('drop') should call drop_branch with name, base,
+        cwd='.' and force=False by default.
+        """
+        args = SimpleNamespace(
+            command="branch",
+            subcommand="drop",
+            name="feature/cli-drop",
+            base="develop",
+            force=False,
+        )
+
+        ctx = self._dummy_ctx()
+
+        handle_branch(args, ctx)
+
+        mock_drop_branch.assert_called_once()
+        _, call_kwargs = mock_drop_branch.call_args
+        self.assertEqual(call_kwargs.get("name"), "feature/cli-drop")
+        self.assertEqual(call_kwargs.get("base_branch"), "develop")
+        self.assertEqual(call_kwargs.get("cwd"), ".")
+        self.assertFalse(call_kwargs.get("force"))
+
+    @patch("pkgmgr.cli.commands.branch.drop_branch")
+    def test_handle_branch_drop_uses_default_base_when_not_set(self, mock_drop_branch) -> None:
+        """
+        If --base is not passed for 'drop', argparse gives base='main'
+        (default), and handle_branch should propagate that to drop_branch.
+        """
+        args = SimpleNamespace(
+            command="branch",
+            subcommand="drop",
+            name=None,
+            base="main",
+            force=False,
+        )
+
+        ctx = self._dummy_ctx()
+
+        handle_branch(args, ctx)
+
+        mock_drop_branch.assert_called_once()
+        _, call_kwargs = mock_drop_branch.call_args
+        self.assertIsNone(call_kwargs.get("name"))
+        self.assertEqual(call_kwargs.get("base_branch"), "main")
+        self.assertEqual(call_kwargs.get("cwd"), ".")
+        self.assertFalse(call_kwargs.get("force"))
+
+    @patch("pkgmgr.cli.commands.branch.drop_branch")
+    def test_handle_branch_drop_with_force_true(self, mock_drop_branch) -> None:
+        """
+        handle_branch('drop') should pass force=True when the args specify it.
+        """
+        args = SimpleNamespace(
+            command="branch",
+            subcommand="drop",
+            name="feature/cli-drop-force",
+            base="main",
+            force=True,
+        )
+
+        ctx = self._dummy_ctx()
+
+        handle_branch(args, ctx)
+
+        mock_drop_branch.assert_called_once()
+        _, call_kwargs = mock_drop_branch.call_args
+        self.assertEqual(call_kwargs.get("name"), "feature/cli-drop-force")
+        self.assertEqual(call_kwargs.get("base_branch"), "main")
+        self.assertEqual(call_kwargs.get("cwd"), ".")
+        self.assertTrue(call_kwargs.get("force"))
+
+    # ------------------------------------------------------------------
+    # unknown subcommand
+    # ------------------------------------------------------------------
 
     def test_handle_branch_unknown_subcommand_exits_with_code_2(self) -> None:
         """
