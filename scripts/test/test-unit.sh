@@ -12,7 +12,7 @@ docker run --rm \
   --workdir /src \
   -e REINSTALL_PKGMGR=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
-  "package-manager-test-${distro}" \
+  "pkgmgr-${distro}" \
   bash -lc '
     set -e;
     git config --global --add safe.directory /src || true;

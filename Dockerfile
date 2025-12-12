@@ -1,54 +1,57 @@
+# syntax=docker/dockerfile:1
+
 # ------------------------------------------------------------
-# Base image selector — overridden by Makefile
+# Base image selector — overridden by build args / Makefile
 # ------------------------------------------------------------
 ARG BASE_IMAGE
-FROM ${BASE_IMAGE}
 
-RUN echo "BASE_IMAGE=${BASE_IMAGE}" && \
-    cat /etc/os-release || true
+# ============================================================
+# Target: virgin
+# - installs distro deps (incl. make)
+# - no pkgmgr build
+# - no entrypoint
+# ============================================================
+FROM ${BASE_IMAGE} AS virgin
 
-# ------------------------------------------------------------
-# Nix environment defaults
-#
-# Nix itself is installed by your system packages (via init-nix.sh).
-# Here we only define default configuration options.
-# ------------------------------------------------------------
-ENV NIX_CONFIG="experimental-features = nix-command flakes"
+RUN echo "BASE_IMAGE=${BASE_IMAGE}" && cat /etc/os-release || true
 
-
-# ------------------------------------------------------------
-# Copy scripts and install distro dependencies
-# ------------------------------------------------------------
 WORKDIR /build
 
-# Copy only scripts first so dependency installation can run early
-COPY scripts/ scripts/
-RUN find scripts -type f -name '*.sh' -exec chmod +x {} \;
+# Copy scripts first so dependency installation can be cached
+COPY scripts/installation/ scripts/installation/
 
-# ------------------------------------------------------------
-# Select distro-specific Docker entrypoint
-# ------------------------------------------------------------
-# Docker entrypoint (distro-agnostic, nutzt package.sh)
-# ------------------------------------------------------------
-COPY scripts/docker/entry.sh /usr/local/bin/docker-entry.sh
-RUN chmod +x /usr/local/bin/docker-entry.sh
+# Install distro-specific build dependencies (including make)
+RUN bash scripts/installation/dependencies.sh
 
-# ------------------------------------------------------------
-# Build and install distro-native package-manager package
-# via Makefile `install` target
-# ------------------------------------------------------------
+# Virgin default
+CMD ["bash"]
+
+
+# ============================================================
+# Target: full
+# - inherits from virgin
+# - builds + installs pkgmgr
+# - sets entrypoint + default cmd
+# ============================================================
+FROM virgin AS full
+
+# Nix environment defaults (only config; nix itself comes from deps/install flow)
+ENV NIX_CONFIG="experimental-features = nix-command flakes"
+
+WORKDIR /build
+
+# Copy full repository for build
 COPY . .
-RUN find scripts -type f -name '*.sh' -exec chmod +x {} \;
 
-RUN set -e; \
-    echo "Building and installing package-manager via make install..."; \
-    make install; \
-    rm -rf /build
+# Build and install distro-native package-manager package
+RUN set -euo pipefail; \
+  echo "Building and installing package-manager via make install..."; \
+  make install; \
+  cd /; rm -rf /build
 
-# ------------------------------------------------------------
-# Runtime working directory and dev entrypoint
-# ------------------------------------------------------------
+# Entry point
+COPY scripts/docker/entry.sh /usr/local/bin/docker-entry.sh
+
 WORKDIR /src
-
 ENTRYPOINT ["/usr/local/bin/docker-entry.sh"]
 CMD ["pkgmgr", "--help"]

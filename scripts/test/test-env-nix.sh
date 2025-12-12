@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="package-manager-test-${distro}"
+IMAGE="pkgmgr-${distro}"
 
 echo "============================================================"
 echo ">>> Running Nix flake-only test in ${distro} container"

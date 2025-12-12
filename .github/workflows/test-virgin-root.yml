@@ -7,6 +7,10 @@ jobs:
   test-virgin-root:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [arch, debian, ubuntu, fedora, centos]
 
     steps:
       - name: Checkout repository
@@ -15,7 +19,14 @@ jobs:
       - name: Show Docker version
         run: docker version
 
-      - name: Virgin Arch pkgmgr flake test (root)
+      # 🔹 BUILD virgin image if missing
+      - name: Build virgin container (${{ matrix.distro }})
+        run: |
+          set -euo pipefail
+          distro="${{ matrix.distro }}" make build-missing
+
+      # 🔹 RUN test inside virgin image
+      - name: Virgin ${{ matrix.distro }} pkgmgr test (root)
         run: |
           set -euo pipefail
 
@@ -24,13 +35,10 @@ jobs:
             -v pkgmgr_repos:/root/Repositories \
             -v pkgmgr_pip_cache:/root/.cache/pip \
             -w /src \
-            archlinux:latest \
+            "pkgmgr-${{ matrix.distro }}-virgin" \
             bash -lc '
               set -euo pipefail
 
-              pacman -Syu --noconfirm git python python-pip nix make
-
-              # Fix: allow git operations on mounted repo path
               git config --global --add safe.directory /src
 
               make install
@@ -46,4 +54,3 @@ jobs:
               echo ">>> Running Nix-based: nix run .#pkgmgr -- version pkgmgr"
               nix run /src#pkgmgr -- version pkgmgr
             '
-

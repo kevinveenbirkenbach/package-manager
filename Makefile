@@ -57,10 +57,16 @@ setup-nix:
 # Docker build targets (delegated to scripts/build)
 # ------------------------------------------------------------
 build:
-	@bash scripts/build/build-image.sh
+	@bash scripts/build/image.sh --target virgin
+	@bash scripts/build/image.sh
+
+build-missing:
+	@bash scripts/build/image.sh --target virgin --missing
+	@bash scripts/build/image.sh --missing
 
 build-no-cache:
-	@bash scripts/build/build-image-no-cache.sh
+	@bash scripts/build/image.sh --target virgin --no-cache
+	@bash scripts/build/image.sh --no-cache
 
 build-no-cache-all:
 	@set -e; \
@@ -87,13 +93,6 @@ test-env-virtual: build-missing
 
 test-env-nix: build-missing
 	@bash scripts/test/test-env-nix.sh
-
-
-# ------------------------------------------------------------
-# Build only missing container images
-# ------------------------------------------------------------
-build-missing:
-	@bash scripts/build/build-image-missing.sh
 
 # Combined test target for local + CI (unit + integration + e2e)
 test: test-env-virtual test-unit test-integration test-e2e

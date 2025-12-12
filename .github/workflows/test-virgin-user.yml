@@ -7,6 +7,10 @@ jobs:
   test-virgin-user:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [arch, debian, ubuntu, fedora, centos]
 
     steps:
       - name: Checkout repository
@@ -15,18 +19,23 @@ jobs:
       - name: Show Docker version
         run: docker version
 
-      - name: Virgin Arch pkgmgr user test (non-root with sudo)
+      # 🔹 BUILD virgin image if missing
+      - name: Build virgin container (${{ matrix.distro }})
+        run: |
+          set -euo pipefail
+          distro="${{ matrix.distro }}" make build-missing
+
+      # 🔹 RUN test inside virgin image as non-root
+      - name: Virgin ${{ matrix.distro }} pkgmgr test (user)
         run: |
           set -euo pipefail
 
           docker run --rm \
             -v "$PWD":/src \
             -w /src \
-            archlinux:latest \
+            "pkgmgr-${{ matrix.distro }}-virgin" \
             bash -lc '
               set -euo pipefail
-
-              pacman -Syu --noconfirm git python python-pip sudo base-devel debugedit nix make
 
               make install
 
@@ -35,7 +44,6 @@ jobs:
               chmod 0440 /etc/sudoers.d/dev
               chown -R dev:dev /src
 
-              # --- make Nix usable for non-root inside this container ---
               mkdir -p /nix/store /nix/var/nix /nix/var/log/nix /nix/var/nix/profiles
               chown -R dev:dev /nix
               chmod 0755 /nix
@@ -45,21 +53,13 @@ jobs:
                 set -euo pipefail
                 cd /src
 
-                echo \">>> [dev] Using user: \$(whoami)\"
-
-                echo \">>> [dev] Running make setup-venv...\"
                 make setup-venv
-
-                echo \">>> [dev] Activating venv...\"
                 . \"\$HOME/.venvs/pkgmgr/bin/activate\"
 
-                echo \">>> [dev] Running: pkgmgr version pkgmgr\"
                 pkgmgr version pkgmgr
 
-                echo \">>> [dev] Running Nix-based pkgmgr version...\"
                 export NIX_REMOTE=local
                 export NIX_CONFIG=\"experimental-features = nix-command flakes\"
                 nix run /src#pkgmgr -- version pkgmgr
               "
             '
-

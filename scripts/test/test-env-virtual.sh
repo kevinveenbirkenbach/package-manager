@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="package-manager-test-$distro"
+IMAGE="pkgmgr-$distro"
 
 echo
 echo "------------------------------------------------------------"

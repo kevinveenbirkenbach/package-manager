@@ -12,7 +12,7 @@ docker run --rm \
   -e REINSTALL_PKGMGR=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
   --workdir /src \
-  "package-manager-test-${distro}" \
+  "pkgmgr-${distro}" \
   bash -lc '
     set -euo pipefail
 
