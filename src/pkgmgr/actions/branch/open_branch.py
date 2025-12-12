@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from typing import Optional
 from pkgmgr.core.git import run_git, GitError
 from .utils import _resolve_base_branch

@@ -15,7 +15,7 @@ Responsibilities:
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.dir import get_repo_dir
@@ -63,7 +63,7 @@ def _ensure_repo_dir(
     no_verification: bool,
     clone_mode: str,
     identifier: str,
-) -> str | None:
+) -> Optional[str]:
     """
     Compute and, if necessary, clone the repository directory.
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional, Set
 
 from pkgmgr.core.command.run import run_command
 from pkgmgr.core.git import GitError, run_git
+from typing import List, Optional, Set
 
 from .types import MirrorMap, RepoMirrorContext, Repository
 

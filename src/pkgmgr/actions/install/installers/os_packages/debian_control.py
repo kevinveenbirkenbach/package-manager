@@ -17,7 +17,7 @@ apt/dpkg tooling are available.
 import glob
 import os
 import shutil
-from typing import List
+from typing import List, Optional
 
 from pkgmgr.actions.install.context import RepoContext
 from pkgmgr.actions.install.installers.base import BaseInstaller
@@ -67,7 +67,7 @@ class DebianControlInstaller(BaseInstaller):
         pattern = os.path.join(parent, "*.deb")
         return sorted(glob.glob(pattern))
 
-    def _privileged_prefix(self) -> str | None:
+    def _privileged_prefix(self) -> Optional[str]:
         """
         Determine how to run privileged commands:
 

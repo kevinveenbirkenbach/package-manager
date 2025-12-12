@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import yaml
 
@@ -83,7 +83,7 @@ def _repo_key(repo: Repo) -> Tuple[str, str, str]:
 def _merge_repo_lists(
     base_list: List[Repo],
     new_list: List[Repo],
-    category_name: str | None = None,
+    category_name: Optional[str] = None,
 ) -> List[Repo]:
     """
     Merge two repository lists, matching by (provider, account, repository).
@@ -143,7 +143,7 @@ def _load_yaml_file(path: Path) -> Dict[str, Any]:
 
 def _load_layer_dir(
     config_dir: Path,
-    skip_filename: str | None = None,
+    skip_filename: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Load all *.yml/*.yaml from a directory as layered defaults.

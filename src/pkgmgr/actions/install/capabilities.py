@@ -35,7 +35,7 @@ from __future__ import annotations
 import glob
 import os
 from abc import ABC, abstractmethod
-from typing import Iterable, TYPE_CHECKING
+from typing import Iterable, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from pkgmgr.actions.install.context import RepoContext
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-def _read_text_if_exists(path: str) -> str | None:
+def _read_text_if_exists(path: str) -> Optional[str]:
     """Read a file as UTF-8 text, returning None if it does not exist or fails."""
     if not os.path.exists(path):
         return None
@@ -75,7 +75,7 @@ def _scan_files_for_patterns(files: Iterable[str], patterns: Iterable[str]) -> b
     return False
 
 
-def _first_spec_file(repo_dir: str) -> str | None:
+def _first_spec_file(repo_dir: str) -> Optional[str]:
     """Return the first *.spec file in repo_dir, if any."""
     matches = glob.glob(os.path.join(repo_dir, "*.spec"))
     if not matches:
@@ -360,7 +360,7 @@ def detect_capabilities(
 
 def resolve_effective_capabilities(
     ctx: "RepoContext",
-    layers: Iterable[str] | None = None,
+    layers: Optional[Iterable[str]] = None,
 ) -> dict[str, set[str]]:
     """
     Resolve *effective* capabilities for each layer using a bottom-up strategy.

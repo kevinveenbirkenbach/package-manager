@@ -7,7 +7,7 @@ import os
 import sys
 import shutil
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import yaml
 
@@ -36,7 +36,7 @@ def _load_user_config(user_config_path: str) -> Dict[str, Any]:
     return {"repositories": []}
 
 
-def _find_defaults_source_dir() -> str | None:
+def _find_defaults_source_dir() -> Optional[str]:
     """
     Find the directory inside the installed pkgmgr package OR the
     project root that contains default config files.

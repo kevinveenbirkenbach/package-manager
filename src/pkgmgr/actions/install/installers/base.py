@@ -6,7 +6,7 @@ Base interface for all installer components in the pkgmgr installation pipeline.
 """
 
 from abc import ABC, abstractmethod
-from typing import Set
+from typing import Set, Optional
 
 from pkgmgr.actions.install.context import RepoContext
 from pkgmgr.actions.install.capabilities import CAPABILITY_MATCHERS
@@ -24,7 +24,7 @@ class BaseInstaller(ABC):
     #   Examples: "nix", "python", "makefile".
     #   This is used by capability matchers to decide which patterns to
     #   search for in the repository.
-    layer: str | None = None
+    layer: Optional[str] = None
 
     def discover_capabilities(self, ctx: RepoContext) -> Set[str]:
         """
