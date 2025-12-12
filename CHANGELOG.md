@@ -1,3 +1,20 @@
+## [1.2.1] - 2025-12-12
+
+* **Changed**
+
+* Split container tests into *virtualenv* and *Nix flake* environments to clearly separate Python and Nix responsibilities.
+
+**Fixed**
+
+* Fixed Nix installer permission issues when running under a different user in containers.
+* Improved reliability of post-install Nix initialization across all distro packages.
+
+**CI**
+
+* Replaced generic container tests with explicit environment checks.
+* Validate Nix availability via *nix flake* tests instead of Docker build-time side effects.
+
+
 ## [1.2.0] - 2025-12-12
 
 * **Release workflow overhaul**
