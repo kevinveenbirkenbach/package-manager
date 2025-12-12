@@ -15,10 +15,6 @@ RUN echo "BASE_IMAGE=${BASE_IMAGE}" && \
 # ------------------------------------------------------------
 ENV NIX_CONFIG="experimental-features = nix-command flakes"
 
-# ------------------------------------------------------------
-# Unprivileged user for Arch package build (makepkg)
-# ------------------------------------------------------------
-RUN useradd -m aur_builder || true
 
 # ------------------------------------------------------------
 # Copy scripts and install distro dependencies
@@ -29,20 +25,17 @@ WORKDIR /build
 COPY scripts/ scripts/
 RUN find scripts -type f -name '*.sh' -exec chmod +x {} \;
 
-# Install distro-specific build dependencies (and AUR builder on Arch)
-RUN scripts/installation/run-dependencies.sh
-
 # ------------------------------------------------------------
 # Select distro-specific Docker entrypoint
 # ------------------------------------------------------------
-# Docker entrypoint (distro-agnostic, nutzt run-package.sh)
+# Docker entrypoint (distro-agnostic, nutzt package.sh)
 # ------------------------------------------------------------
 COPY scripts/docker/entry.sh /usr/local/bin/docker-entry.sh
 RUN chmod +x /usr/local/bin/docker-entry.sh
 
 # ------------------------------------------------------------
 # Build and install distro-native package-manager package
-# via Makefile `install` target (calls scripts/installation/run-package.sh)
+# via Makefile `install` target
 # ------------------------------------------------------------
 COPY . .
 RUN find scripts -type f -name '*.sh' -exec chmod +x {} \;

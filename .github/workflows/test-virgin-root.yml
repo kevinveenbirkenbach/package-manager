@@ -19,8 +19,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo ">>> Starting virgin ArchLinux container test (root, with shared caches)..."
-
           docker run --rm \
             -v "$PWD":/src \
             -v pkgmgr_repos:/root/Repositories \
@@ -30,29 +28,22 @@ jobs:
             bash -lc '
               set -euo pipefail
 
-              echo ">>> Updating and upgrading Arch system..."
-              pacman -Syu --noconfirm git python python-pip nix >/dev/null
+              pacman -Syu --noconfirm git python python-pip nix make
 
-              echo ">>> Creating isolated virtual environment for pkgmgr..."
-              python -m venv /tmp/pkgmgr-venv
+              # Fix: allow git operations on mounted repo path
+              git config --global --add safe.directory /src
 
-              echo ">>> Activating virtual environment..."
-              source /tmp/pkgmgr-venv/bin/activate
+              make install
+              make setup
 
-              echo ">>> Upgrading pip (cached)..."
-              python -m pip install --upgrade pip >/dev/null
+              . "$HOME/.venvs/pkgmgr/bin/activate"
 
-              echo ">>> Installing pkgmgr from current source tree (cached pip)..."
-              python -m pip install /src >/dev/null
-
-              echo ">>> Enabling Nix experimental features..."
               export NIX_CONFIG="experimental-features = nix-command flakes"
 
-              echo ">>> Running: pkgmgr update pkgmgr --clone-mode shallow --no-verification"
               pkgmgr update pkgmgr --clone-mode shallow --no-verification
-
-              echo ">>> Running: pkgmgr version pkgmgr"
               pkgmgr version pkgmgr
 
-              echo ">>> Virgin Arch (root) test completed successfully."
+              echo ">>> Running Nix-based: nix run .#pkgmgr -- version pkgmgr"
+              nix run /src#pkgmgr -- version pkgmgr
             '
+

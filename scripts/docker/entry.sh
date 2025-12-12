@@ -68,16 +68,10 @@ cd /src
 # ---------------------------------------------------------------------------
 # DEV mode: rebuild package-manager from the mounted /src tree
 # ---------------------------------------------------------------------------
-if [[ "${PKGMGR_DEV:-0}" == "1" ]]; then
-  echo "[docker] DEV mode enabled (PKGMGR_DEV=1)"
-  echo "[docker] Rebuilding package-manager from /src via scripts/installation/run-package.sh..."
-
-  if [[ -x scripts/installation/run-package.sh ]]; then
-    bash scripts/installation/run-package.sh
-  else
-    echo "[docker] ERROR: scripts/installation/run-package.sh not found or not executable"
-    exit 1
-  fi
+if [[ "${REINSTALL_PKGMGR:-0}" == "1" ]]; then
+  echo "[docker] DEV mode enabled (REINSTALL_PKGMGR=1)"
+  echo "[docker] Rebuilding package-manager from /src via scripts/installation/package.sh..."
+  bash scripts/installation/package.sh || exit 1
 fi
 
 # ---------------------------------------------------------------------------

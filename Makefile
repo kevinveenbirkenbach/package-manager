@@ -1,6 +1,8 @@
-.PHONY: install setup uninstall \
-        test build build-no-cache build-no-cache-all build-missing delete-volumes purge \
-        test-unit test-e2e test-integration test-env-virtual test-env-nix
+.PHONY: install uninstall \
+        build build-no-cache build-no-cache-all build-missing \
+		delete-volumes purge \
+        test test-unit test-e2e test-integration test-env-virtual test-env-nix \
+		setup setup-venv setup-nix
 
 # Distro
 # Options: arch debian ubuntu fedora centos
@@ -30,10 +32,26 @@ TEST_PATTERN	:= test_*.py
 export TEST_PATTERN
 
 # ------------------------------------------------------------
-# PKGMGR setup (developer wrapper -> scripts/installation/main.sh)
+# System install
 # ------------------------------------------------------------
-setup:
+install:
+	@echo "Building and installing distro-native package-manager for this system..."
 	@bash scripts/installation/main.sh
+
+# ------------------------------------------------------------
+# PKGMGR setup
+# ------------------------------------------------------------
+
+# Default: keep current auto-detection behavior
+setup: setup-nix setup-venv
+
+# Explicit: developer setup (Python venv + shell RC + main.py install)
+setup-venv:
+	@bash scripts/setup/venv.sh
+
+# Explicit: Nix shell mode (no venv, no RC changes)
+setup-nix:
+	@bash scripts/setup/nix.sh
 
 # ------------------------------------------------------------
 # Docker build targets (delegated to scripts/build)
@@ -84,13 +102,6 @@ delete-volumes:
 	@docker volume rm pkgmgr_nix_store_${distro} pkgmgr_nix_cache_${distro} || true
 
 purge: delete-volumes build-no-cache
-
-# ------------------------------------------------------------
-# System install (native packages, calls scripts/installation/run-package.sh)
-# ------------------------------------------------------------
-install:
-	@echo "Building and installing distro-native package-manager for this system..."
-	@bash scripts/installation/run-package.sh
 
 # ------------------------------------------------------------
 # Uninstall target

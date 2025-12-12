@@ -9,7 +9,7 @@ docker run --rm \
   -v "$(pwd):/src" \
   -v "pkgmgr_nix_store_${distro}:/nix" \
   -v "pkgmgr_nix_cache_${distro}:/root/.cache/nix" \
-  -e PKGMGR_DEV=1 \
+  -e REINSTALL_PKGMGR=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
   --workdir /src \
   "package-manager-test-${distro}" \

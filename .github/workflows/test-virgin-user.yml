@@ -19,55 +19,47 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo ">>> Starting virgin ArchLinux container test (non-root user with sudo)..."
-
           docker run --rm \
             -v "$PWD":/src \
+            -w /src \
             archlinux:latest \
             bash -lc '
               set -euo pipefail
 
-              echo ">>> [root] Updating and upgrading Arch system..."
-              pacman -Syu --noconfirm git python python-pip sudo base-devel debugedit
+              pacman -Syu --noconfirm git python python-pip sudo base-devel debugedit nix make
 
-              echo ">>> [root] Creating non-root user dev..."
+              make install
+
               useradd -m dev
-
-              echo ">>> [root] Allowing passwordless sudo for dev..."
               echo "dev ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/dev
               chmod 0440 /etc/sudoers.d/dev
-
-              echo ">>> [root] Adjusting ownership of /src for dev..."
               chown -R dev:dev /src
 
-              echo ">>> [root] Running pkgmgr flow as non-root user dev..."
-              sudo -u dev env PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 bash -lc "
+              # --- make Nix usable for non-root inside this container ---
+              mkdir -p /nix/store /nix/var/nix /nix/var/log/nix /nix/var/nix/profiles
+              chown -R dev:dev /nix
+              chmod 0755 /nix
+              chmod 1777 /nix/store
+
+              sudo -H -u dev env HOME=/home/dev PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 bash -lc "
                 set -euo pipefail
                 cd /src
 
                 echo \">>> [dev] Using user: \$(whoami)\"
-                echo \">>> [dev] Running scripts/installation/main.sh...\"
-                bash scripts/installation/main.sh
+
+                echo \">>> [dev] Running make setup-venv...\"
+                make setup-venv
 
                 echo \">>> [dev] Activating venv...\"
                 . \"\$HOME/.venvs/pkgmgr/bin/activate\"
 
-                echo \">>> [dev] Installing pkgmgr into venv via pip...\"
-                python -m pip install /src >/dev/null
-
-                echo \">>> [dev] PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=\$PKGMGR_DISABLE_NIX_FLAKE_INSTALLER\"
-                echo \">>> [dev] Updating managed repo package-manager via pkgmgr...\"
-                pkgmgr update pkgmgr --clone-mode shallow --no-verification
-
-                echo \">>> [dev] PATH:\"
-                echo \"\$PATH\"
-
-                echo \">>> [dev] which pkgmgr:\"
-                which pkgmgr || echo \">>> [dev] pkgmgr not found in PATH\"
-
                 echo \">>> [dev] Running: pkgmgr version pkgmgr\"
                 pkgmgr version pkgmgr
-              "
 
-              echo ">>> [root] Container flow finished."
+                echo \">>> [dev] Running Nix-based pkgmgr version...\"
+                export NIX_REMOTE=local
+                export NIX_CONFIG=\"experimental-features = nix-command flakes\"
+                nix run /src#pkgmgr -- version pkgmgr
+              "
             '
+

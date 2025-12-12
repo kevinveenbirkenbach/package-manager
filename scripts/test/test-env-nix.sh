@@ -13,7 +13,7 @@ docker run --rm \
   -v "pkgmgr_nix_store_${distro}:/nix" \
   -v "pkgmgr_nix_cache_${distro}:/root/.cache/nix" \
   --workdir /src \
-  -e PKGMGR_DEV=0 \
+  -e REINSTALL_PKGMGR=1 \
   "${IMAGE}" \
   bash -lc '
     set -euo pipefail

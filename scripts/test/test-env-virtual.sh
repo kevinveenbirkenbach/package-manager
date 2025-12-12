@@ -15,7 +15,7 @@ echo
 
 # Run the command and capture the output
 if OUTPUT=$(docker run --rm \
-        -e PKGMGR_DEV=1 \
+        -e REINSTALL_PKGMGR=1 \
         -v pkgmgr_nix_store_${distro}:/nix \
         -v "$(pwd):/src" \
         -v "pkgmgr_nix_cache_${distro}:/root/.cache/nix" \
