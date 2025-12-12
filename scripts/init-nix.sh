@@ -43,7 +43,6 @@ real_exe() {
   local p="${1:-}"
   [[ -z "$p" ]] && return 1
 
-  # readlink -f may fail on some minimal systems; fall back to the given path
   local r
   r="$(readlink -f "$p" 2>/dev/null || echo "$p")"
 
@@ -87,7 +86,12 @@ resolve_nix_bin() {
 }
 
 # ---------------------------------------------------------------------------
-# Ensure globally reachable nix symlink (CI / non-login shells) - root only
+# Ensure globally reachable nix symlink(s) (CI / non-login shells) - root only
+#
+# Key rule:
+# - Never overwrite distro-managed nix locations (Arch may ship nix in /usr/sbin).
+# - But for sudo secure_path (CentOS), /usr/local/bin is often NOT included.
+#   Therefore: also create /usr/bin/nix (and /usr/sbin/nix) ONLY if they do not exist.
 # ---------------------------------------------------------------------------
 ensure_global_nix_symlinks() {
   local nix_bin="${1:-}"
@@ -95,34 +99,51 @@ ensure_global_nix_symlinks() {
   [[ -z "$nix_bin" ]] && nix_bin="$(resolve_nix_bin 2>/dev/null || true)"
 
   if [[ -z "$nix_bin" || ! -x "$nix_bin" ]]; then
-    echo "[init-nix] WARNING: nix binary not found, cannot create global symlink."
+    echo "[init-nix] WARNING: nix binary not found, cannot create global symlink(s)."
     return 0
   fi
 
   # Always link to the real executable to avoid /usr/local/bin/nix -> /usr/local/bin/nix
   nix_bin="$(real_exe "$nix_bin" 2>/dev/null || echo "$nix_bin")"
 
+  local targets=()
+
+  # Always provide /usr/local/bin/nix for CI shells
   mkdir -p /usr/local/bin 2>/dev/null || true
+  targets+=("/usr/local/bin/nix")
 
-  # Do NOT touch /usr/bin/nix or /bin/nix (distro-managed paths).
-  # Only provide a convenient /usr/local/bin/nix for CI shells.
-  local target="/usr/local/bin/nix"
-  local current_real=""
-  if [[ -e "$target" ]]; then
-    current_real="$(real_exe "$target" 2>/dev/null || true)"
+  # Provide sudo-friendly locations only if they are NOT present (do not override distro paths)
+  if [[ ! -e /usr/bin/nix ]]; then
+    targets+=("/usr/bin/nix")
+  fi
+  if [[ ! -e /usr/sbin/nix ]]; then
+    targets+=("/usr/sbin/nix")
   fi
 
-  # If it already points to the same real binary, do nothing
-  if [[ -n "$current_real" && "$current_real" == "$nix_bin" ]]; then
-    echo "[init-nix] /usr/local/bin/nix already points to: $nix_bin"
-    return 0
-  fi
+  local target current_real
+  for target in "${targets[@]}"; do
+    current_real=""
+    if [[ -e "$target" ]]; then
+      current_real="$(real_exe "$target" 2>/dev/null || true)"
+    fi
 
-  if ln -sf "$nix_bin" "$target" 2>/dev/null; then
-    echo "[init-nix] Ensured $target -> $nix_bin"
-  else
-    echo "[init-nix] WARNING: Failed to ensure /usr/local/bin/nix symlink."
-  fi
+    if [[ -n "$current_real" && "$current_real" == "$nix_bin" ]]; then
+      echo "[init-nix] $target already points to: $nix_bin"
+      continue
+    fi
+
+    # If something exists but is not the same (and we promised not to override), skip.
+    if [[ -e "$target" && "$target" != "/usr/local/bin/nix" ]]; then
+      echo "[init-nix] WARNING: $target exists; not overwriting."
+      continue
+    fi
+
+    if ln -sf "$nix_bin" "$target" 2>/dev/null; then
+      echo "[init-nix] Ensured $target -> $nix_bin"
+    else
+      echo "[init-nix] WARNING: Failed to ensure $target symlink."
+    fi
+  done
 }
 
 # ---------------------------------------------------------------------------
@@ -145,11 +166,9 @@ ensure_user_nix_symlink() {
 
   echo "[init-nix] Ensured $HOME/.local/bin/nix -> $nix_bin"
 
-  # Make current process work immediately
   PATH="$HOME/.local/bin:$PATH"
   export PATH
 
-  # Best-effort persist (helps interactive, harmless for CI)
   if [[ -w "$HOME/.profile" ]] && ! grep -q 'init-nix.sh' "$HOME/.profile" 2>/dev/null; then
     cat >>"$HOME/.profile" <<'EOF'
 
@@ -197,7 +216,6 @@ install_nix_with_retry() {
   esac
 
   installer="$(mktemp -t nix-installer.XXXXXX)"
-  # mktemp creates 0600; if we run as another user, it must be readable
   chmod 0644 "$installer"
 
   echo "[init-nix] Downloading Nix installer from $NIX_INSTALL_URL (max ${NIX_DOWNLOAD_MAX_TIME}s)..."
@@ -245,11 +263,9 @@ main() {
     echo "[init-nix] Nix already available on PATH: $(command -v nix)"
     ensure_nix_on_path
 
-    # Root: ensure global symlink for CI/non-login shells
     if [[ "${EUID:-0}" -eq 0 ]]; then
       ensure_global_nix_symlinks "$(resolve_nix_bin 2>/dev/null || true)"
     else
-      # User: ensure we have a stable path too
       ensure_user_nix_symlink "$(resolve_nix_bin 2>/dev/null || true)"
     fi
 
@@ -310,7 +326,7 @@ main() {
 
     ensure_nix_on_path
 
-    # Ensure stable global symlink (so non-login shells find nix)
+    # Ensure stable global symlink(s) (sudo secure_path friendly)
     ensure_global_nix_symlinks "/home/nix/.nix-profile/bin/nix"
 
     # Ensure non-root users can traverse and execute nix user profile
@@ -334,7 +350,6 @@ main() {
     else
       echo "[init-nix] No systemd detected: using single-user install (--no-daemon)."
       if [[ "${EUID:-0}" -eq 0 ]]; then
-        # Root on a minimal host still benefits from nixbld users
         ensure_nix_build_group
       fi
       install_nix_with_retry "no-daemon"
