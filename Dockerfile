@@ -12,6 +12,7 @@ ARG BASE_IMAGE
 # - no entrypoint
 # ============================================================
 FROM ${BASE_IMAGE} AS virgin
+SHELL ["/bin/bash", "-lc"]
 
 RUN echo "BASE_IMAGE=${BASE_IMAGE}" && cat /etc/os-release || true
 
