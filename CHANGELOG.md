@@ -1,3 +1,12 @@
+## [1.4.0] - 2025-12-12
+
+* **Docker Container Building**
+
+* New official container images are automatically published on each release.
+* Images are available per distribution and as a default Arch-based image.
+* Stable releases now provide an additional `stable` container tag.
+
+
 ## [1.3.1] - 2025-12-12
 
 * Updated documentation with better run and installation instructions
