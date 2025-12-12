@@ -20,7 +20,7 @@ override_dh_auto_test:
 	:
 
 # ---------------------------------------------------------------------------
-# Install phase: copy wrapper + init script + full project source
+# Install phase: copy wrapper + Nix bootstrap (init + lib) + full project source
 # ---------------------------------------------------------------------------
 override_dh_auto_install:
 	# Create target directories
@@ -31,10 +31,11 @@ override_dh_auto_install:
 	install -m0755 scripts/pkgmgr-wrapper.sh \
 		debian/package-manager/usr/bin/pkgmgr
 
-	# Install shared Nix init script
+	# Install Nix bootstrap (init + lib)
 	install -d debian/package-manager/usr/lib/package-manager/nix
-	install -m0755 scripts/nix/init.sh \
-		debian/package-manager/usr/lib/package-manager/nix/init.sh
+	cp -a scripts/nix/* \
+		debian/package-manager/usr/lib/package-manager/nix/
+	chmod 0755 debian/package-manager/usr/lib/package-manager/nix/init.sh
 
 	# Copy full project source into /usr/lib/package-manager,
 	# but do not include the debian/ directory itself.

@@ -34,8 +34,8 @@ available on the system.
 
 %install
 rm -rf %{buildroot}
+
 install -d %{buildroot}%{_bindir}
-# Install project tree into a fixed, architecture-independent location.
 install -d %{buildroot}/usr/lib/package-manager
 
 # Copy full project source into /usr/lib/package-manager
@@ -44,9 +44,10 @@ cp -a . %{buildroot}/usr/lib/package-manager/
 # Wrapper
 install -m0755 scripts/pkgmgr-wrapper.sh %{buildroot}%{_bindir}/pkgmgr
 
-# Shared Nix init script (ensure it is executable in the installed tree)
+# Nix bootstrap (init + lib)
 install -d %{buildroot}/usr/lib/package-manager/nix
-install -m0755 scripts/nix/init.sh %{buildroot}/usr/lib/package-manager/nix/init.sh
+cp -a scripts/nix/* %{buildroot}/usr/lib/package-manager/nix/
+chmod 0755 %{buildroot}/usr/lib/package-manager/nix/init.sh
 
 # Remove packaging-only and development artefacts from the installed tree
 rm -rf \
