@@ -1,12 +1,13 @@
 name: Publish container images (GHCR)
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_run:
+    workflows: ["Mark stable commit"]
+    types: [completed]
 
 jobs:
   publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     permissions:
@@ -20,13 +21,22 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Checkout workflow_run commit and refresh tags
+        run: |
+          set -euo pipefail
+          git checkout -f "${{ github.event.workflow_run.head_sha }}"
+          git fetch --tags --force
+          git tag --list 'stable' 'v*' --sort=version:refname | tail -n 20
+
       - name: Compute version and stable flag
         id: info
         run: |
           set -euo pipefail
-
           SHA="$(git rev-parse HEAD)"
-          VERSION="${GITHUB_REF_NAME#v}"
+
+          V_TAG="$(git tag --points-at "${SHA}" --list 'v*' | sort -V | tail -n1)"
+          [[ -n "$V_TAG" ]] || { echo "No version tag found"; exit 1; }
+          VERSION="${V_TAG#v}"
 
           STABLE_SHA="$(git rev-parse -q --verify refs/tags/stable^{commit} 2>/dev/null || true)"
           IS_STABLE=false
