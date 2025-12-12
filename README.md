@@ -118,6 +118,19 @@ The setup mode defines **which runtime layers are prepared**.
 
 ---
 
+### Dependency installation (optional)
+
+System dependencies required **before running any *make* commands** are installed via:
+
+```
+scripts/installation/dependencies.sh
+```
+
+The script detects and normalizes the OS and installs the required **system-level dependencies** accordingly.
+
+
+---
+
 ### Setup modes
 
 | Command             | Prepares                | Use case              |
