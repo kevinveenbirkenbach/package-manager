@@ -4,386 +4,189 @@ set -euo pipefail
 echo "[init-nix] Starting Nix initialization..."
 
 NIX_INSTALL_URL="${NIX_INSTALL_URL:-https://nixos.org/nix/install}"
-NIX_DOWNLOAD_MAX_TIME=300      # 5 minutes
-NIX_DOWNLOAD_SLEEP_INTERVAL=20 # 20 seconds
+NIX_DOWNLOAD_MAX_TIME=300
+NIX_DOWNLOAD_SLEEP_INTERVAL=20
 
 # ---------------------------------------------------------------------------
 # Detect whether we are inside a container (Docker/Podman/etc.)
 # ---------------------------------------------------------------------------
 is_container() {
-  if [[ -f /.dockerenv ]] || [[ -f /run/.containerenv ]]; then
-    return 0
-  fi
-
-  if grep -qiE 'docker|container|podman|lxc' /proc/1/cgroup 2>/dev/null; then
-    return 0
-  fi
-
-  if [[ -n "${container:-}" ]]; then
-    return 0
-  fi
-
+  [[ -f /.dockerenv || -f /run/.containerenv ]] && return 0
+  grep -qiE 'docker|container|podman|lxc' /proc/1/cgroup 2>/dev/null && return 0
+  [[ -n "${container:-}" ]] && return 0
   return 1
 }
 
 # ---------------------------------------------------------------------------
-# Ensure Nix binaries are on PATH (multi-user or single-user)
+# Ensure Nix binaries are on PATH (additive, never destructive)
 # ---------------------------------------------------------------------------
 ensure_nix_on_path() {
-  if [[ -x /nix/var/nix/profiles/default/bin/nix ]]; then
-    export PATH="/nix/var/nix/profiles/default/bin:${PATH}"
-  fi
+  [[ -x /nix/var/nix/profiles/default/bin/nix ]] && \
+    PATH="/nix/var/nix/profiles/default/bin:$PATH"
 
-  if [[ -x "${HOME}/.nix-profile/bin/nix" ]]; then
-    export PATH="${HOME}/.nix-profile/bin:${PATH}"
-  fi
+  [[ -x "$HOME/.nix-profile/bin/nix" ]] && \
+    PATH="$HOME/.nix-profile/bin:$PATH"
 
-  if [[ -x /home/nix/.nix-profile/bin/nix ]]; then
-    export PATH="/home/nix/.nix-profile/bin:${PATH}"
-  fi
+  [[ -x /home/nix/.nix-profile/bin/nix ]] && \
+    PATH="/home/nix/.nix-profile/bin:$PATH"
+
+  export PATH
 }
 
 # ---------------------------------------------------------------------------
-# Resolve nix binary path robustly (works in CI/non-login shells)
+# Resolve nix binary path robustly (Arch-safe)
 # ---------------------------------------------------------------------------
 resolve_nix_bin() {
-  local nix_cmd=""
+  local nix_cmd
 
   nix_cmd="$(command -v nix 2>/dev/null || true)"
-  if [[ -n "${nix_cmd}" ]]; then
-    echo "${nix_cmd}"
-    return 0
-  fi
+  [[ -n "$nix_cmd" ]] && { echo "$nix_cmd"; return 0; }
 
-  # Common fallback locations
-  if [[ -x /usr/local/bin/nix ]]; then
-    echo "/usr/local/bin/nix"
-    return 0
-  fi
-  if [[ -x /usr/bin/nix ]]; then
-    echo "/usr/bin/nix"
-    return 0
-  fi
-  if [[ -x /bin/nix ]]; then
-    echo "/bin/nix"
-    return 0
-  fi
-  if [[ -x /nix/var/nix/profiles/default/bin/nix ]]; then
-    echo "/nix/var/nix/profiles/default/bin/nix"
-    return 0
-  fi
-  if [[ -x "${HOME}/.nix-profile/bin/nix" ]]; then
-    echo "${HOME}/.nix-profile/bin/nix"
-    return 0
-  fi
-  if [[ -x /home/nix/.nix-profile/bin/nix ]]; then
-    echo "/home/nix/.nix-profile/bin/nix"
-    return 0
-  fi
+  # Prefer canonical locations
+  [[ -x /usr/local/bin/nix ]] && { echo "/usr/local/bin/nix"; return 0; }
+  [[ -x /usr/bin/nix ]]       && { echo "/usr/bin/nix"; return 0; }
+  [[ -x /usr/sbin/nix ]]      && { echo "/usr/sbin/nix"; return 0; }
+  [[ -x /bin/nix ]]           && { echo "/bin/nix"; return 0; }
+
+  [[ -x /nix/var/nix/profiles/default/bin/nix ]] && {
+    echo "/nix/var/nix/profiles/default/bin/nix"; return 0;
+  }
+
+  [[ -x "$HOME/.nix-profile/bin/nix" ]] && {
+    echo "$HOME/.nix-profile/bin/nix"; return 0;
+  }
+
+  [[ -x /home/nix/.nix-profile/bin/nix ]] && {
+    echo "/home/nix/.nix-profile/bin/nix"; return 0;
+  }
 
   return 1
 }
 
 # ---------------------------------------------------------------------------
-# Ensure globally reachable nix symlinks for non-login shells (CI safe)
+# Ensure globally reachable nix symlinks (CI / non-login shells)
 # ---------------------------------------------------------------------------
 ensure_global_nix_symlinks() {
   local nix_bin="${1:-}"
 
-  if [[ -z "${nix_bin}" ]]; then
-    nix_bin="$(resolve_nix_bin 2>/dev/null || true)"
-  fi
+  [[ -z "$nix_bin" ]] && nix_bin="$(resolve_nix_bin 2>/dev/null || true)"
 
-  if [[ -z "${nix_bin}" || ! -x "${nix_bin}" ]]; then
-    echo "[init-nix] WARNING: Cannot create global nix symlinks (nix binary not found)."
+  if [[ -z "$nix_bin" || ! -x "$nix_bin" ]]; then
+    echo "[init-nix] WARNING: nix binary not found, cannot create symlinks."
     return 0
   fi
 
-  # Ensure the target directories exist
-  mkdir -p /usr/local/bin 2>/dev/null || true
+  mkdir -p /usr/local/bin || true
 
-  # Use -f so reruns are idempotent; use best-effort for /usr/bin and /bin
-  if ln -sf "${nix_bin}" /usr/local/bin/nix 2>/dev/null; then
-    echo "[init-nix] Ensured /usr/local/bin/nix -> ${nix_bin}"
-  else
-    echo "[init-nix] WARNING: Failed to ensure /usr/local/bin/nix symlink."
-  fi
+  ln -sf "$nix_bin" /usr/local/bin/nix && \
+    echo "[init-nix] Ensured /usr/local/bin/nix -> $nix_bin"
 
-  if ln -sf "${nix_bin}" /usr/bin/nix 2>/dev/null; then
-    echo "[init-nix] Ensured /usr/bin/nix -> ${nix_bin}"
-  fi
-
-  if ln -sf "${nix_bin}" /bin/nix 2>/dev/null; then
-    echo "[init-nix] Ensured /bin/nix -> ${nix_bin}"
-  fi
+  ln -sf "$nix_bin" /usr/bin/nix 2>/dev/null || true
+  ln -sf "$nix_bin" /bin/nix      2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------
-# Ensure Nix build group and users exist (build-users-group = nixbld)
+# Ensure Nix build group and users exist
 # ---------------------------------------------------------------------------
 ensure_nix_build_group() {
-  if ! getent group nixbld >/dev/null 2>&1; then
-    echo "[init-nix] Creating group 'nixbld'..."
-    groupadd -r nixbld
-  fi
+  getent group nixbld >/dev/null 2>&1 || groupadd -r nixbld
 
   for i in $(seq 1 10); do
-    if ! id "nixbld$i" >/dev/null 2>&1; then
-      echo "[init-nix] Creating build user nixbld$i..."
+    id "nixbld$i" >/dev/null 2>&1 || \
       useradd -r -g nixbld -G nixbld -s /usr/sbin/nologin "nixbld$i"
-    fi
   done
 }
 
 # ---------------------------------------------------------------------------
 # Download and run Nix installer with retry
-#   Usage: install_nix_with_retry daemon|no-daemon [run_as_user]
 # ---------------------------------------------------------------------------
 install_nix_with_retry() {
   local mode="$1"
   local run_as="${2:-}"
   local installer elapsed=0 mode_flag
 
-  case "${mode}" in
+  case "$mode" in
     daemon)    mode_flag="--daemon" ;;
     no-daemon) mode_flag="--no-daemon" ;;
-    *)
-      echo "[init-nix] ERROR: Invalid mode '${mode}', expected 'daemon' or 'no-daemon'."
-      exit 1
-      ;;
+    *) echo "[init-nix] ERROR: invalid mode $mode"; exit 1 ;;
   esac
 
   installer="$(mktemp -t nix-installer.XXXXXX)"
-
-  # -------------------------------------------------------------------------
-  # FIX: mktemp creates files with 0600 by default, which breaks when we later
-  #      run the installer as a different user (e.g., 'nix' in container+root).
-  #      Make it readable and (best-effort) owned by the target user.
-  # -------------------------------------------------------------------------
-  chmod 0644 "${installer}"
-
-  echo "[init-nix] Downloading Nix installer from ${NIX_INSTALL_URL} with retry (max ${NIX_DOWNLOAD_MAX_TIME}s)..."
+  chmod 0644 "$installer"
 
   while true; do
-    if curl -fL "${NIX_INSTALL_URL}" -o "${installer}"; then
-      echo "[init-nix] Successfully downloaded Nix installer to ${installer}"
+    if curl -fL "$NIX_INSTALL_URL" -o "$installer"; then
       break
     fi
-
-    local curl_exit=$?
-    echo "[init-nix] WARNING: Failed to download Nix installer (curl exit code ${curl_exit})."
-
     elapsed=$((elapsed + NIX_DOWNLOAD_SLEEP_INTERVAL))
-    if (( elapsed >= NIX_DOWNLOAD_MAX_TIME )); then
-      echo "[init-nix] ERROR: Giving up after ${elapsed}s trying to download Nix installer."
-      rm -f "${installer}"
+    (( elapsed >= NIX_DOWNLOAD_MAX_TIME )) && {
+      echo "[init-nix] ERROR: failed to download installer"
       exit 1
-    fi
-
-    echo "[init-nix] Retrying in ${NIX_DOWNLOAD_SLEEP_INTERVAL}s (elapsed: ${elapsed}s/${NIX_DOWNLOAD_MAX_TIME}s)..."
-    sleep "${NIX_DOWNLOAD_SLEEP_INTERVAL}"
+    }
+    sleep "$NIX_DOWNLOAD_SLEEP_INTERVAL"
   done
 
-  if [[ -n "${run_as}" ]]; then
-    # Best-effort: ensure the target user can read the downloaded installer
-    chown "${run_as}:${run_as}" "${installer}" 2>/dev/null || true
-
-    echo "[init-nix] Running installer as user '${run_as}' with mode '${mode}'..."
-    if command -v sudo >/dev/null 2>&1; then
-      sudo -u "${run_as}" bash -lc "sh '${installer}' ${mode_flag}"
+  if [[ -n "$run_as" ]]; then
+    chown "$run_as:$run_as" "$installer" 2>/dev/null || true
+    if command -v sudo >/dev/null; then
+      sudo -u "$run_as" bash -lc "sh '$installer' $mode_flag"
     else
-      su - "${run_as}" -c "sh '${installer}' ${mode_flag}"
+      su - "$run_as" -c "sh '$installer' $mode_flag"
     fi
   else
-    echo "[init-nix] Running installer as current user with mode '${mode}'..."
-    sh "${installer}" "${mode_flag}"
+    sh "$installer" "$mode_flag"
   fi
 
-  rm -f "${installer}"
+  rm -f "$installer"
 }
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 main() {
-  # Fast path: Nix already available
   if command -v nix >/dev/null 2>&1; then
     echo "[init-nix] Nix already available on PATH: $(command -v nix)"
-    # Ensure stable symlinks for CI/non-login shells
-    if [[ "${EUID:-0}" -eq 0 ]]; then
-      ensure_global_nix_symlinks "$(command -v nix)"
-    fi
+    [[ "${EUID:-0}" -eq 0 ]] && ensure_global_nix_symlinks "$(resolve_nix_bin)"
     return 0
   fi
 
   ensure_nix_on_path
 
   if command -v nix >/dev/null 2>&1; then
-    echo "[init-nix] Nix found after adjusting PATH: $(command -v nix)"
-    # Ensure stable symlinks for CI/non-login shells
-    if [[ "${EUID:-0}" -eq 0 ]]; then
-      ensure_global_nix_symlinks "$(command -v nix)"
-    fi
+    echo "[init-nix] Nix found after PATH adjustment: $(command -v nix)"
+    [[ "${EUID:-0}" -eq 0 ]] && ensure_global_nix_symlinks "$(resolve_nix_bin)"
     return 0
   fi
 
-  echo "[init-nix] Nix not found, starting installation logic..."
-
   local IN_CONTAINER=0
-  if is_container; then
-    IN_CONTAINER=1
-    echo "[init-nix] Detected container environment."
-  else
-    echo "[init-nix] No container detected."
-  fi
+  is_container && IN_CONTAINER=1
 
-  # -------------------------------------------------------------------------
-  # Container + root: dedicated "nix" user, single-user install
-  # -------------------------------------------------------------------------
-  if [[ "${IN_CONTAINER}" -eq 1 && "${EUID:-0}" -eq 0 ]]; then
-    echo "[init-nix] Container + root – installing as 'nix' user (single-user)."
-
+  if [[ "$IN_CONTAINER" -eq 1 && "${EUID:-0}" -eq 0 ]]; then
     ensure_nix_build_group
-
-    if ! id nix >/dev/null 2>&1; then
-      echo "[init-nix] Creating user 'nix'..."
-      local BASH_SHELL
-      BASH_SHELL="$(command -v bash || true)"
-      [[ -z "${BASH_SHELL}" ]] && BASH_SHELL="/bin/sh"
-      useradd -m -r -g nixbld -s "${BASH_SHELL}" nix
-    fi
-
-    if [[ ! -d /nix ]]; then
-      echo "[init-nix] Creating /nix with owner nix:nixbld..."
-      mkdir -m 0755 /nix
-      chown nix:nixbld /nix
-    else
-      local current_owner current_group
-      current_owner="$(stat -c '%U' /nix 2>/dev/null || echo '?')"
-      current_group="$(stat -c '%G' /nix 2>/dev/null || echo '?')"
-      if [[ "${current_owner}" != "nix" || "${current_group}" != "nixbld" ]]; then
-        echo "[init-nix] Fixing /nix ownership from ${current_owner}:${current_group} to nix:nixbld..."
-        chown -R nix:nixbld /nix
-      fi
-      if [[ ! -w /nix ]]; then
-        echo "[init-nix] WARNING: /nix is not writable after chown; Nix installer may fail."
-      fi
-    fi
-
-    install_nix_with_retry "no-daemon" "nix"
-
-    ensure_nix_on_path
-
-    # Always ensure global symlinks (CI/non-login shells)
-    ensure_global_nix_symlinks "/home/nix/.nix-profile/bin/nix"
-
-    # Always ensure perms once Nix exists (not only when symlink was created)
-    if [[ -x /home/nix/.nix-profile/bin/nix ]]; then
-      echo "[nix] Ensuring non-root users can access Nix installation..."
-
-      if [[ ! -d /home/nix ]]; then
-        echo "[nix][ERROR] /home/nix does not exist – Nix user home missing."
-        exit 10
-      fi
-
-      if ! chmod o+rx /home/nix; then
-        echo "[nix][ERROR] Failed to set o+rx on /home/nix"
-        echo "[nix][HINT] Non-root users cannot traverse the Nix home directory."
-        exit 11
-      fi
-
-      if [[ ! -d /home/nix/.nix-profile ]]; then
-        echo "[nix][ERROR] /home/nix/.nix-profile does not exist – Nix profile missing."
-        exit 12
-      fi
-
-      if ! chmod -R o+rx /home/nix/.nix-profile; then
-        echo "[nix][ERROR] Failed to set o+rx recursively on /home/nix/.nix-profile"
-        echo "[nix][HINT] Nix binaries and profiles will not be executable for non-root users."
-        exit 13
-      fi
-
-      echo "[nix] Permissions for /home/nix and .nix-profile successfully adjusted."
-    fi
-
-  # -------------------------------------------------------------------------
-  # Host (no container)
-  # -------------------------------------------------------------------------
-  elif [[ "${IN_CONTAINER}" -eq 0 ]]; then
-    if command -v systemctl >/dev/null 2>&1; then
-      echo "[init-nix] Host with systemd – using multi-user install (--daemon)."
-      if [[ "${EUID:-0}" -eq 0 ]]; then
-        ensure_nix_build_group
-      fi
-      install_nix_with_retry "daemon"
-    else
-      if [[ "${EUID:-0}" -eq 0 ]]; then
-        echo "[init-nix] Host without systemd as root – using single-user install (--no-daemon)."
-        ensure_nix_build_group
-      else
-        echo "[init-nix] Host without systemd as non-root – using single-user install (--no-daemon)."
-      fi
-      install_nix_with_retry "no-daemon"
-    fi
-
-    # Ensure global symlinks if we are root (CI/non-login shells)
-    if [[ "${EUID:-0}" -eq 0 ]]; then
-      local nix_bin
-      nix_bin="$(resolve_nix_bin 2>/dev/null || true)"
-      ensure_global_nix_symlinks "${nix_bin}"
-    fi
-
-  # -------------------------------------------------------------------------
-  # Container, but not root (rare)
-  # -------------------------------------------------------------------------
+    id nix >/dev/null 2>&1 || useradd -m -r -g nixbld -s /bin/bash nix
+    mkdir -p /nix && chown nix:nixbld /nix
+    install_nix_with_retry no-daemon nix
   else
-    echo "[init-nix] Container as non-root – using single-user install (--no-daemon)."
-    install_nix_with_retry "no-daemon"
+    if command -v systemctl >/dev/null 2>&1; then
+      [[ "${EUID:-0}" -eq 0 ]] && ensure_nix_build_group
+      install_nix_with_retry daemon
+    else
+      install_nix_with_retry no-daemon
+    fi
   fi
 
-  # -------------------------------------------------------------------------
-  # After installation: PATH + /etc/profile
-  # -------------------------------------------------------------------------
   ensure_nix_on_path
 
-  # Ensure global symlinks if we are root (CI/non-login shells)
   if [[ "${EUID:-0}" -eq 0 ]]; then
-    local nix_bin_post
-    nix_bin_post="$(resolve_nix_bin 2>/dev/null || true)"
-    ensure_global_nix_symlinks "${nix_bin_post}"
+    ensure_global_nix_symlinks "$(resolve_nix_bin)"
   fi
 
-  if ! command -v nix >/dev/null 2>&1; then
-    # As a last resort: if symlink exists but PATH is odd, still warn clearly
-    if [[ -x /usr/local/bin/nix ]]; then
-      echo "[init-nix] WARNING: 'nix' not on PATH, but /usr/local/bin/nix exists."
-    elif [[ -x /usr/bin/nix ]]; then
-      echo "[init-nix] WARNING: 'nix' not on PATH, but /usr/bin/nix exists."
-    elif [[ -x /bin/nix ]]; then
-      echo "[init-nix] WARNING: 'nix' not on PATH, but /bin/nix exists."
-    else
-      echo "[init-nix] WARNING: Nix installation finished, but 'nix' is still not on PATH."
-    fi
-    echo "[init-nix] You may need to source your shell profile manually."
-  else
-    echo "[init-nix] Nix successfully installed at: $(command -v nix)"
-  fi
+  command -v nix >/dev/null 2>&1 || {
+    echo "[init-nix] ERROR: nix not found after installation"
+    exit 1
+  }
 
-  if [[ -w /etc/profile ]] && ! grep -q 'Nix profiles' /etc/profile 2>/dev/null; then
-    cat <<'EOF' >> /etc/profile
-
-# Nix profiles (added by package-manager init-nix.sh)
-if [ -d /nix/var/nix/profiles/default/bin ]; then
-  PATH="/nix/var/nix/profiles/default/bin:$PATH"
-fi
-if [ -d "$HOME/.nix-profile/bin" ]; then
-  PATH="$HOME/.nix-profile/bin:$PATH"
-fi
-EOF
-    echo "[init-nix] Appended Nix PATH setup to /etc/profile"
-  fi
-
-  echo "[init-nix] Nix initialization complete."
+  echo "[init-nix] Nix successfully installed at: $(command -v nix)"
 }
 
 main "$@"
