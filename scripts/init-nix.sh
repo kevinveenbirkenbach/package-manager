@@ -37,18 +37,35 @@ ensure_nix_on_path() {
 }
 
 # ---------------------------------------------------------------------------
+# Resolve a path to a real executable (follows symlinks)
+# ---------------------------------------------------------------------------
+real_exe() {
+  local p="${1:-}"
+  [[ -z "$p" ]] && return 1
+
+  # readlink -f may fail on some minimal systems; fall back to the given path
+  local r
+  r="$(readlink -f "$p" 2>/dev/null || echo "$p")"
+
+  [[ -x "$r" ]] && { echo "$r"; return 0; }
+  return 1
+}
+
+# ---------------------------------------------------------------------------
 # Resolve nix binary path robustly (works across distros + Arch /usr/sbin)
 # ---------------------------------------------------------------------------
 resolve_nix_bin() {
   local nix_cmd=""
   nix_cmd="$(command -v nix 2>/dev/null || true)"
-  [[ -n "$nix_cmd" ]] && { echo "$nix_cmd"; return 0; }
+  [[ -n "$nix_cmd" ]] && real_exe "$nix_cmd" && return 0
 
-  # Prefer canonical locations
-  [[ -x /usr/local/bin/nix ]] && { echo "/usr/local/bin/nix"; return 0; }
-  [[ -x /usr/bin/nix ]]       && { echo "/usr/bin/nix"; return 0; }
+  # IMPORTANT: prefer system locations before /usr/local to avoid self-symlink traps
   [[ -x /usr/sbin/nix ]]      && { echo "/usr/sbin/nix"; return 0; } # Arch package can land here
+  [[ -x /usr/bin/nix ]]       && { echo "/usr/bin/nix"; return 0; }
   [[ -x /bin/nix ]]           && { echo "/bin/nix"; return 0; }
+
+  # /usr/local last, and only if it resolves to a real executable
+  [[ -e /usr/local/bin/nix ]] && real_exe "/usr/local/bin/nix" && return 0
 
   [[ -x /nix/var/nix/profiles/default/bin/nix ]] && {
     echo "/nix/var/nix/profiles/default/bin/nix"; return 0;
@@ -70,7 +87,7 @@ resolve_nix_bin() {
 }
 
 # ---------------------------------------------------------------------------
-# Ensure globally reachable nix symlinks (CI / non-login shells) - root only
+# Ensure globally reachable nix symlink (CI / non-login shells) - root only
 # ---------------------------------------------------------------------------
 ensure_global_nix_symlinks() {
   local nix_bin="${1:-}"
@@ -78,21 +95,34 @@ ensure_global_nix_symlinks() {
   [[ -z "$nix_bin" ]] && nix_bin="$(resolve_nix_bin 2>/dev/null || true)"
 
   if [[ -z "$nix_bin" || ! -x "$nix_bin" ]]; then
-    echo "[init-nix] WARNING: nix binary not found, cannot create global symlinks."
+    echo "[init-nix] WARNING: nix binary not found, cannot create global symlink."
     return 0
   fi
 
+  # Always link to the real executable to avoid /usr/local/bin/nix -> /usr/local/bin/nix
+  nix_bin="$(real_exe "$nix_bin" 2>/dev/null || echo "$nix_bin")"
+
   mkdir -p /usr/local/bin 2>/dev/null || true
 
-  if ln -sf "$nix_bin" /usr/local/bin/nix 2>/dev/null; then
-    echo "[init-nix] Ensured /usr/local/bin/nix -> $nix_bin"
+  # Do NOT touch /usr/bin/nix or /bin/nix (distro-managed paths).
+  # Only provide a convenient /usr/local/bin/nix for CI shells.
+  local target="/usr/local/bin/nix"
+  local current_real=""
+  if [[ -e "$target" ]]; then
+    current_real="$(real_exe "$target" 2>/dev/null || true)"
+  fi
+
+  # If it already points to the same real binary, do nothing
+  if [[ -n "$current_real" && "$current_real" == "$nix_bin" ]]; then
+    echo "[init-nix] /usr/local/bin/nix already points to: $nix_bin"
+    return 0
+  fi
+
+  if ln -sf "$nix_bin" "$target" 2>/dev/null; then
+    echo "[init-nix] Ensured $target -> $nix_bin"
   else
     echo "[init-nix] WARNING: Failed to ensure /usr/local/bin/nix symlink."
   fi
-
-  # Best-effort for these locations
-  ln -sf "$nix_bin" /usr/bin/nix 2>/dev/null || true
-  ln -sf "$nix_bin" /bin/nix      2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------
@@ -107,6 +137,8 @@ ensure_user_nix_symlink() {
     echo "[init-nix] WARNING: nix binary not found, cannot create user symlink."
     return 0
   fi
+
+  nix_bin="$(real_exe "$nix_bin" 2>/dev/null || echo "$nix_bin")"
 
   mkdir -p "$HOME/.local/bin" 2>/dev/null || true
   ln -sf "$nix_bin" "$HOME/.local/bin/nix"
@@ -213,12 +245,12 @@ main() {
     echo "[init-nix] Nix already available on PATH: $(command -v nix)"
     ensure_nix_on_path
 
-    # Root: ensure global symlinks for CI/non-login shells
+    # Root: ensure global symlink for CI/non-login shells
     if [[ "${EUID:-0}" -eq 0 ]]; then
-      ensure_global_nix_symlinks "$(resolve_nix_bin)"
+      ensure_global_nix_symlinks "$(resolve_nix_bin 2>/dev/null || true)"
     else
       # User: ensure we have a stable path too
-      ensure_user_nix_symlink "$(resolve_nix_bin)"
+      ensure_user_nix_symlink "$(resolve_nix_bin 2>/dev/null || true)"
     fi
 
     return 0
@@ -229,9 +261,9 @@ main() {
   if command -v nix >/dev/null 2>&1; then
     echo "[init-nix] Nix found after PATH adjustment: $(command -v nix)"
     if [[ "${EUID:-0}" -eq 0 ]]; then
-      ensure_global_nix_symlinks "$(resolve_nix_bin)"
+      ensure_global_nix_symlinks "$(resolve_nix_bin 2>/dev/null || true)"
     else
-      ensure_user_nix_symlink "$(resolve_nix_bin)"
+      ensure_user_nix_symlink "$(resolve_nix_bin 2>/dev/null || true)"
     fi
     return 0
   fi
@@ -310,7 +342,7 @@ main() {
   fi
 
   # -------------------------------------------------------------------------
-  # After install: PATH + symlinks
+  # After install: PATH + symlink(s)
   # -------------------------------------------------------------------------
   ensure_nix_on_path
 
