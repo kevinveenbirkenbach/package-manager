@@ -272,7 +272,7 @@ def list_repositories(
         f"{'STATUS'.ljust(status_width)}  "
         f"{'CATEGORIES'.ljust(cat_width)}  "
         f"{'TAGS'.ljust(tag_width)}  "
-        f"DIR"
+        "DIR"
         f"{RESET}"
     )
     print(header)

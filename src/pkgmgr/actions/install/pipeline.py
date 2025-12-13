@@ -160,7 +160,7 @@ class InstallationPipeline:
                     # so we skip this installer entirely.
                     if not quiet:
                         print(
-                            f"[pkgmgr] Skipping installer "
+                            "[pkgmgr] Skipping installer "
                             f"{installer.__class__.__name__} for {identifier} – "
                             f"CLI already provided by layer {state.layer.value!r}."
                         )
@@ -171,7 +171,7 @@ class InstallationPipeline:
                     # need to run another installer on top of it.
                     if not quiet:
                         print(
-                            f"[pkgmgr] Skipping installer "
+                            "[pkgmgr] Skipping installer "
                             f"{installer.__class__.__name__} for {identifier} – "
                             f"layer {installer_layer.value!r} is already loaded."
                         )

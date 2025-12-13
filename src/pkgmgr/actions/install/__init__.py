@@ -74,7 +74,7 @@ def _ensure_repo_dir(
     if not os.path.exists(repo_dir):
         print(
             f"Repository directory '{repo_dir}' does not exist. "
-            f"Cloning it now..."
+            "Cloning it now..."
         )
         clone_repos(
             [repo],
@@ -87,7 +87,7 @@ def _ensure_repo_dir(
         if not os.path.exists(repo_dir):
             print(
                 f"Cloning failed for repository {identifier}. "
-                f"Skipping installation."
+                "Skipping installation."
             )
             return None
 

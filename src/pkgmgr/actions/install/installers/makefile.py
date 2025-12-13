@@ -90,7 +90,7 @@ class MakefileInstaller(BaseInstaller):
         if not ctx.quiet:
             print(
                 f"[pkgmgr] Running 'make install' in {ctx.repo_dir} "
-                f"(MakefileInstaller)"
+                "(MakefileInstaller)"
             )
 
         cmd = "make install"

@@ -289,7 +289,7 @@ def update_spec_version(
 
     if preview:
         print(
-            f"[PREVIEW] Would update spec file "
+            "[PREVIEW] Would update spec file "
             f"{os.path.basename(spec_path)} to Version: {new_version}, Release: 1..."
         )
         return

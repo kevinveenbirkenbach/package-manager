@@ -45,7 +45,7 @@ def config_init(
     # Announce where we will write the result
     # ------------------------------------------------------------
     print("============================================================")
-    print(f"[INIT] Writing user configuration to:")
+    print("[INIT] Writing user configuration to:")
     print(f"       {user_config_path}")
     print("============================================================")
 
@@ -53,7 +53,7 @@ def config_init(
         defaults_config["directories"]["repositories"]
     )
 
-    print(f"[INIT] Scanning repository base directory:")
+    print("[INIT] Scanning repository base directory:")
     print(f"       {repositories_base_dir}")
     print("")
 
@@ -173,7 +173,7 @@ def config_init(
     if new_entries:
         user_config.setdefault("repositories", []).extend(new_entries)
         save_user_config(user_config, user_config_path)
-        print(f"[SAVE] Wrote user configuration to:")
+        print("[SAVE] Wrote user configuration to:")
         print(f"       {user_config_path}")
     else:
         print("[INFO] No new repositories were added.")

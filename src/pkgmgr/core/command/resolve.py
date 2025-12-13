@@ -200,8 +200,8 @@ def resolve_command_for_repo(
         print(
             f"[INFO] Repository '{repo_identifier}' appears to be a Python "
             f"package at '{python_package_root}' but no CLI entry point was "
-            f"found (PATH, Nix, main.sh/main.py). Treating it as a "
-            f"library-only repository with no command."
+            "found (PATH, Nix, main.sh/main.py). Treating it as a "
+            "library-only repository with no command."
         )
 
     return None

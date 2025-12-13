@@ -150,7 +150,7 @@ def ensure_origin_remote(
         current = current_origin_url(repo_dir)
         if current == url or not url:
             print(
-                f"[INFO] 'origin' already points to "
+                "[INFO] 'origin' already points to "
                 f"{current or '<unknown>'} (no change needed)."
             )
         else:
