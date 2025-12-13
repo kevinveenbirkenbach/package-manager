@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/kevinveenbirkenbach/package-manager"
+Homepage = "https://s.veen.world/pkgmgr"
 Source   = "https://github.com/kevinveenbirkenbach/package-manager"
 
 [project.optional-dependencies]
