@@ -27,7 +27,7 @@ docker run --rm \
     echo ">>> preflight: nix must exist in image"
     if ! command -v nix >/dev/null 2>&1; then
       echo "NO_NIX"
-      echo "ERROR: nix not found in image '\'''"${IMAGE}"''\'' (PKGMGR_DISTRO='"${PKGMGR_DISTRO}"')"
+      echo "ERROR: nix not found in image '"${IMAGE}"' (PKGMGR_DISTRO='"${PKGMGR_DISTRO}"')"
       echo "HINT: Ensure Nix is installed during image build for this distro."
       exit 1
     fi
@@ -35,14 +35,28 @@ docker run --rm \
     echo ">>> nix version"
     nix --version
 
+    # ------------------------------------------------------------
+    # Retry helper for GitHub API rate-limit (HTTP 403)
+    # ------------------------------------------------------------
+    if [[ -f /src/scripts/nix/lib/retry_403.sh ]]; then
+      # shellcheck source=./scripts/nix/lib/retry_403.sh
+      source /src/scripts/nix/lib/retry_403.sh
+    elif [[ -f ./scripts/nix/lib/retry_403.sh ]]; then
+      # shellcheck source=./scripts/nix/lib/retry_403.sh
+      source ./scripts/nix/lib/retry_403.sh
+    else
+      echo "ERROR: retry helper not found: scripts/nix/lib/retry_403.sh"
+      exit 1
+    fi
+
     echo ">>> nix flake show"
-    nix flake show . --no-write-lock-file >/dev/null
+    run_with_github_403_retry nix flake show . --no-write-lock-file >/dev/null
 
     echo ">>> nix build .#default"
-    nix build .#default --no-link --no-write-lock-file
+    run_with_github_403_retry nix build .#default --no-link --no-write-lock-file
 
     echo ">>> nix run .#pkgmgr -- --help"
-    nix run .#pkgmgr -- --help --no-write-lock-file
+    run_with_github_403_retry nix run .#pkgmgr -- --help --no-write-lock-file
 
     echo ">>> OK: Nix flake-only test succeeded."
   '
