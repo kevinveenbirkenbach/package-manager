@@ -1,8 +1,7 @@
 name: ShellCheck
 
 on:
-  push:
-  pull_request:
+  workflow_call:
 
 jobs:
   codesniffer-shellcheck:

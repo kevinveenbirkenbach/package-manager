@@ -1,8 +1,7 @@
 name: Ruff (Python code sniffer)
 
 on:
-  push:
-  pull_request:
+  workflow_call:
 
 jobs:
   codesniffer-ruff:
