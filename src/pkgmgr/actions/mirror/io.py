@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from urllib.parse import urlparse
-from typing import List, Mapping
+from typing import Mapping
 
 from .types import MirrorMap, Repository
 

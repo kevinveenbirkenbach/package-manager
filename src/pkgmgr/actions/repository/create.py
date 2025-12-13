@@ -1,6 +1,5 @@
 import os
 import subprocess
-import sys
 import yaml
 from pkgmgr.core.command.alias import generate_alias
 from pkgmgr.core.config.save import save_user_config

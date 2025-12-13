@@ -1,4 +1,3 @@
-import sys
 import shutil
 
 from pkgmgr.actions.repository.pull import pull_with_verification

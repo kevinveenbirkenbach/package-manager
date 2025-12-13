@@ -12,7 +12,6 @@ which we treat as success and suppress in the helper.
 
 from __future__ import annotations
 
-import os
 import runpy
 import sys
 import unittest

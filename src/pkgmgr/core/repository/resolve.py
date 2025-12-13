@@ -1,4 +1,3 @@
-import os
 
 def resolve_repos(identifiers:[], all_repos:[]):
     """

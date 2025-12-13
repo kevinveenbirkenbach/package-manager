@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from pkgmgr.actions.branch.drop_branch import drop_branch
 from pkgmgr.core.git import GitError

@@ -24,12 +24,11 @@ Goals:
 from __future__ import annotations
 
 import io
-import sys
 import unittest
 from contextlib import redirect_stdout
 from types import SimpleNamespace
 from typing import Any, Dict, List
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.cli.commands.repos import handle_repos_command

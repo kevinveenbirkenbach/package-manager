@@ -15,7 +15,6 @@ from pkgmgr.actions.repository.status import status_repos
 from pkgmgr.actions.repository.list import list_repositories
 from pkgmgr.core.command.run import run_command
 from pkgmgr.actions.repository.create import create_repo
-from pkgmgr.core.repository.selected import get_selected_repos
 from pkgmgr.core.repository.dir import get_repo_dir
 
 Repository = Dict[str, Any]

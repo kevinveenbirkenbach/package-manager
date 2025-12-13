@@ -1,7 +1,5 @@
 import os
-import sys
 from pkgmgr.core.repository.identifier import get_repo_identifier
-from pkgmgr.core.repository.dir import get_repo_dir
 
 def deinstall_repos(selected_repos, repositories_base_dir, bin_dir, all_repos, preview=False):
     for repo in selected_repos:

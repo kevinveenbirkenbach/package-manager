@@ -1,4 +1,3 @@
-import sys
 import shutil
 
 from pkgmgr.actions.proxy import exec_proxy_command

@@ -1,6 +1,5 @@
 # tests/unit/pkgmgr/test_capabilities.py
 
-import os
 import unittest
 from unittest.mock import patch, mock_open
 
