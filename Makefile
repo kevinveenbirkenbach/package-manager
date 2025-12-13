@@ -7,8 +7,8 @@
 # Distro
 # Options: arch debian ubuntu fedora centos
 DISTROS ?= arch debian ubuntu fedora centos
-distro ?= arch
-export distro
+PKGMGR_DISTRO ?= arch
+export PKGMGR_DISTRO
 
 # ------------------------------------------------------------
 # Base images
