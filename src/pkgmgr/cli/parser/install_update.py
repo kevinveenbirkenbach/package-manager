@@ -33,11 +33,11 @@ def add_install_update_subparsers(
     )
     add_install_update_arguments(update_parser)
     update_parser.add_argument(
-        "--system",
+    "--system-update",
+        dest="system_update",
         action="store_true",
         help="Include system update commands",
     )
-    # KEIN --update hier nötig → update impliziert force_update=True
 
     deinstall_parser = subparsers.add_parser(
         "deinstall",
