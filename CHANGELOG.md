@@ -1,11 +1,11 @@
 ## [1.4.1] - 2025-12-12
 
-* Fixed (#1) stable release container publishing
+* Fixed stable release container publishing
 
 
 ## [1.4.0] - 2025-12-12
 
-* **Docker Container Building**
+**Docker Container Building**
 
 * New official container images are automatically published on each release.
 * Images are available per distribution and as a default Arch-based image.
@@ -19,7 +19,7 @@
 
 ## [1.3.0] - 2025-12-12
 
-* **Minor release – Stability & CI hardening**
+**Stability & CI hardening**
 
 * Stabilized Nix resolution and global symlink handling across Arch, CentOS, Debian, and Ubuntu
 * Ensured Nix works reliably in CI, sudo, login, and non-login shells without overriding distro-managed paths
@@ -31,7 +31,7 @@
 
 ## [1.2.1] - 2025-12-12
 
-* **Changed**
+**Changed**
 
 * Split container tests into *virtualenv* and *Nix flake* environments to clearly separate Python and Nix responsibilities.
 
@@ -48,7 +48,7 @@
 
 ## [1.2.0] - 2025-12-12
 
-* **Release workflow overhaul**
+**Release workflow overhaul**
 
 * Introduced a fully structured release workflow with clear phases and safeguards
 * Added preview-first releases with explicit confirmation before execution
@@ -65,7 +65,8 @@
 
 ## [1.0.0] - 2025-12-11
 
-* **1.0.0 – Official Stable Release 🎉**
+**Official Stable Release 🎉**
+
 *First stable release of PKGMGR, the multi-distro development and package workflow manager.*
 
 ---
@@ -158,7 +159,7 @@ PKGMGR 1.0.0 unifies repository management, build tooling, release automation an
 
 ## [0.9.1] - 2025-12-10
 
-* * Refactored installer: new `venv-create.sh`, cleaner root/user setup flow, updated README with architecture map.
+* Refactored installer: new `venv-create.sh`, cleaner root/user setup flow, updated README with architecture map.
 * Split virgin tests into root/user workflows; stabilized Nix installer across distros; improved test scripts with dynamic distro selection and isolated Nix stores.
 * Fixed repository directory resolution; improved `pkgmgr path` and `pkgmgr shell`; added full unit/E2E coverage.
 * Removed deprecated files and updated `.gitignore`.
@@ -253,47 +254,45 @@ PKGMGR 1.0.0 unifies repository management, build tooling, release automation an
 
 ## [0.7.1] - 2025-12-09
 
-* Fix floating 'latest' tag logic: dereference annotated target (vX.Y.Z^{}), add tag message to avoid Git errors, ensure best-effort update without blocking releases, and update unit tests (see ChatGPT conversation: https://chatgpt.com/share/69383024-efa4-800f-a875-129b81fa40ff).
-
+* Fix floating 'latest' tag logic
+* dereference annotated target (vX.Y.Z^{})
+* add tag message to avoid Git errors
+* ensure best-effort update without blocking releases
 
 ## [0.7.0] - 2025-12-09
 
-* Add Git helpers for branch sync and floating 'latest' tag in the release workflow, ensure main/master are updated from origin before tagging, and extend unit/e2e tests including 'pkgmgr release --help' coverage (see ChatGPT conversation: https://chatgpt.com/share/69383024-efa4-800f-a875-129b81fa40ff)
-
+* Add Git helpers for branch sync and floating 'latest' tag in the release workflow
+* ensure main/master are updated from origin before tagging
 
 ## [0.6.0] - 2025-12-09
 
-* Expose DISTROS and BASE_IMAGE_* variables as exported Makefile environment variables so all build and test commands can consume them dynamically. By exporting these values, every Make target (e.g., build, build-no-cache, build-missing, test-container, test-unit, test-e2e) and every delegated script in scripts/build/ and scripts/test/ now receives a consistent view of the supported distributions and their base container images. This change removes duplicated definitions across scripts, ensures reproducible builds, and allows build tooling to react automatically when new distros or base images are added to the Makefile.
-
+* Consistent view of the supported distributions and their base container images. 
 
 ## [0.5.1] - 2025-12-09
 
-* Refine pkgmgr release CLI close wiring and integration tests for --close flag (ChatGPT: https://chatgpt.com/share/69376b4e-8440-800f-9d06-535ec1d7a40e)
+* Refine pkgmgr release CLI close wiring and integration tests for --close flag
 
 
 ## [0.5.0] - 2025-12-09
 
-* Add pkgmgr branch close subcommand, extend CLI parser wiring, and add unit tests for branch handling and version version-selection logic (see ChatGPT conversation: https://chatgpt.com/share/693762a3-9ea8-800f-a640-bc78170953d1)
-
+* Add pkgmgr branch close subcommand, extend CLI parser wiring
 
 ## [0.4.3] - 2025-12-09
 
-* Implement current-directory repository selection for release and proxy commands, unify selection semantics across CLI layers, extend release workflow with --close, integrate branch closing logic, fix wiring for get_repo_identifier/get_repo_dir, update packaging files (PKGBUILD, spec, flake.nix, pyproject), and add comprehensive unit/e2e tests for release and branch commands (see ChatGPT conversation: https://chatgpt.com/share/69375cfe-9e00-800f-bd65-1bd5937e1696)
-
+* Implement current-directory repository selection for release and proxy commands, unify selection semantics across CLI layers, extend release workflow with --close, integrate branch closing logic, fix wiring for get_repo_identifier/get_repo_dir, update packaging files (PKGBUILD, spec, flake.nix, pyproject)
 
 ## [0.4.2] - 2025-12-09
 
-* Wire pkgmgr release CLI to new helper and add unit tests (see ChatGPT conversation: https://chatgpt.com/share/69374f09-c760-800f-92e4-5b44a4510b62)
+* Wire pkgmgr release CLI to new helpe
 
 
 ## [0.4.1] - 2025-12-08
 
-* Add branch close subcommand and integrate release close/editor flow (ChatGPT: https://chatgpt.com/share/69374f09-c760-800f-92e4-5b44a4510b62)
-
+* Add branch close subcommand and integrate release close/editor flow
 
 ## [0.4.0] - 2025-12-08
 
-* Add branch closing helper and --close flag to release command, including CLI wiring and tests (see https://chatgpt.com/share/69374aec-74ec-800f-bde3-5d91dfdb9b91)
+* Add branch closing helper and --close flag to release command
 
 ## [0.3.0] - 2025-12-08
 
@@ -304,13 +303,10 @@ PKGMGR 1.0.0 unifies repository management, build tooling, release automation an
 - New config update logic + default YAML sync
 - Improved proxy command handling
 - Full CLI routing refactor
-- Expanded E2E tests for list, proxy, and selection logic
-Konversation: https://chatgpt.com/share/693745c3-b8d8-800f-aa29-c8481a2ffae1
 
 ## [0.2.0] - 2025-12-08
 
-* Add preview-first release workflow and extended packaging support (see ChatGPT conversation: https://chatgpt.com/share/693722b4-af9c-800f-bccc-8a4036e99630)
-
+* Add preview-first release workflow and extended packaging support
 
 ## [0.1.0] - 2025-12-08
 
@@ -319,5 +315,4 @@ Konversation: https://chatgpt.com/share/693745c3-b8d8-800f-aa29-c8481a2ffae1
 
 ## [0.1.0] - 2025-12-08
 
-* Implement unified release helper with preview mode, multi-packaging version bumps, and new integration/unit tests (see ChatGPT conversation 2025-12-08: https://chatgpt.com/share/693722b4-af9c-800f-bccc-8a4036e99630)
-
+* Implement unified release helper with preview mode, multi-packaging version bumps
