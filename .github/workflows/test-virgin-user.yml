@@ -59,7 +59,6 @@ jobs:
                 pkgmgr version pkgmgr
 
                 export NIX_REMOTE=local
-                export NIX_CONFIG=\"experimental-features = nix-command flakes\"
                 nix run /src#pkgmgr -- version pkgmgr
               "
             '

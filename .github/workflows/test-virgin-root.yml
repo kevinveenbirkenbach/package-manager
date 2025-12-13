@@ -46,8 +46,6 @@ jobs:
 
               . "$HOME/.venvs/pkgmgr/bin/activate"
 
-              export NIX_CONFIG="experimental-features = nix-command flakes"
-
               pkgmgr update pkgmgr --clone-mode shallow --no-verification
               pkgmgr version pkgmgr
 

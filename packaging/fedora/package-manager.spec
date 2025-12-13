@@ -42,7 +42,7 @@ install -d %{buildroot}/usr/lib/package-manager
 cp -a . %{buildroot}/usr/lib/package-manager/
 
 # Wrapper
-install -m0755 scripts/pkgmgr-wrapper.sh %{buildroot}%{_bindir}/pkgmgr
+install -m0755 scripts/launcher.sh %{buildroot}%{_bindir}/pkgmgr
 
 # Nix bootstrap (init + lib)
 install -d %{buildroot}/usr/lib/package-manager/nix

@@ -36,9 +36,6 @@ CMD ["bash"]
 # ============================================================
 FROM virgin AS full
 
-# Nix environment defaults (only config; nix itself comes from deps/install flow)
-ENV NIX_CONFIG="experimental-features = nix-command flakes"
-
 WORKDIR /build
 
 # Copy full repository for build

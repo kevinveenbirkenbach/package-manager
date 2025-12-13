@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Ensure NIX_CONFIG has our defaults if not already set
-if [[ -z "${NIX_CONFIG:-}" ]]; then
-  export NIX_CONFIG="experimental-features = nix-command flakes"
-fi
-
 FLAKE_DIR="/usr/lib/package-manager"
 
 # ---------------------------------------------------------------------------
@@ -43,6 +38,6 @@ if command -v nix >/dev/null 2>&1; then
   exec nix run "${FLAKE_DIR}#pkgmgr" -- "$@"
 fi
 
-echo "[pkgmgr-wrapper] ERROR: 'nix' binary not found on PATH after init."
-echo "[pkgmgr-wrapper] Nix is required to run pkgmgr (no Python fallback)."
+echo "[launcher] ERROR: 'nix' binary not found on PATH after init."
+echo "[launcher] Nix is required to run pkgmgr (no Python fallback)."
 exit 1

@@ -47,7 +47,7 @@ package() {
   cd "$srcdir/$_srcdir_name"
 
   # Install the wrapper into /usr/bin
-  install -Dm0755 "scripts/pkgmgr-wrapper.sh" \
+  install -Dm0755 "scripts/launcher.sh" \
     "$pkgdir/usr/bin/pkgmgr"
 
   # Install Nix bootstrap (init + lib)
