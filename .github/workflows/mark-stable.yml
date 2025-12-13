@@ -29,8 +29,16 @@ jobs:
   test-virgin-root:
     uses: ./.github/workflows/test-virgin-root.yml
 
+  codesniffer-shellcheck:
+    uses: ./.github/workflows/codesniffer-shellcheck.yml
+
+  codesniffer-ruff:
+    uses: ./.github/workflows/codesniffer-ruff.yml
+
   mark-stable:
     needs:
+      - codesniffer-shellcheck
+      - codesniffer-ruff
       - test-unit
       - test-integration
       - test-env-nix

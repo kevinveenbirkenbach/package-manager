@@ -27,3 +27,9 @@ jobs:
 
   test-virgin-root:
     uses: ./.github/workflows/test-virgin-root.yml
+
+  codesniffer-shellcheck:
+    uses: ./.github/workflows/codesniffer-shellcheck.yml
+
+  codesniffer-ruff:
+    uses: ./.github/workflows/codesniffer-ruff.yml
