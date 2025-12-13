@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import subprocess
 import sys
 
-from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.dir import get_repo_dir
+from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.verify import verify_repository
 
 
@@ -17,13 +20,6 @@ def pull_with_verification(
 ) -> None:
     """
     Execute `git pull` for each repository with verification.
-
-    - Uses verify_repository() in "pull" mode.
-    - If verification fails (and verification info is set) and
-      --no-verification is not enabled, the user is prompted to confirm
-      the pull.
-    - In preview mode, no interactive prompts are performed and no
-      Git commands are executed; only the would-be command is printed.
     """
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
@@ -34,18 +30,13 @@ def pull_with_verification(
             continue
 
         verified_info = repo.get("verified")
-        verified_ok, errors, commit_hash, signing_key = verify_repository(
+        verified_ok, errors, _commit_hash, _signing_key = verify_repository(
             repo,
             repo_dir,
             mode="pull",
             no_verification=no_verification,
         )
 
-        # Only prompt the user if:
-        #   - we are NOT in preview mode
-        #   - verification is enabled
-        #   - the repo has verification info configured
-        #   - verification failed
         if (
             not preview
             and not no_verification
@@ -59,16 +50,14 @@ def pull_with_verification(
             if choice != "y":
                 continue
 
-        # Build the git pull command (include extra args if present)
         args_part = " ".join(extra_args) if extra_args else ""
         full_cmd = f"git pull{(' ' + args_part) if args_part else ''}"
 
         if preview:
-            # Preview mode: only show the command, do not execute or prompt.
             print(f"[Preview] In '{repo_dir}': {full_cmd}")
         else:
             print(f"Running in '{repo_dir}': {full_cmd}")
-            result = subprocess.run(full_cmd, cwd=repo_dir, shell=True)
+            result = subprocess.run(full_cmd, cwd=repo_dir, shell=True, check=False)
             if result.returncode != 0:
                 print(
                     f"'git pull' for {repo_identifier} failed "

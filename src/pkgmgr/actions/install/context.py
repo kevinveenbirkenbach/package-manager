@@ -1,3 +1,4 @@
+# src/pkgmgr/actions/install/context.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -28,3 +29,6 @@ class RepoContext:
     quiet: bool
     clone_mode: str
     update_dependencies: bool
+
+    # If True, allow re-running installers of the currently active layer.
+    force_update: bool = False

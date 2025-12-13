@@ -1,3 +1,4 @@
+# src/pkgmgr/actions/install/__init__.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -36,10 +37,8 @@ from pkgmgr.actions.install.installers.makefile import (
 )
 from pkgmgr.actions.install.pipeline import InstallationPipeline
 
-
 Repository = Dict[str, Any]
 
-# All available installers, in the order they should be considered.
 INSTALLERS = [
     ArchPkgbuildInstaller(),
     DebianControlInstaller(),
@@ -48,11 +47,6 @@ INSTALLERS = [
     PythonInstaller(),
     MakefileInstaller(),
 ]
-
-
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
 
 
 def _ensure_repo_dir(
@@ -137,6 +131,7 @@ def _create_context(
     quiet: bool,
     clone_mode: str,
     update_dependencies: bool,
+    force_update: bool,
 ) -> RepoContext:
     """
     Build a RepoContext instance for the given repository.
@@ -153,12 +148,8 @@ def _create_context(
         quiet=quiet,
         clone_mode=clone_mode,
         update_dependencies=update_dependencies,
+        force_update=force_update,
     )
-
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
 
 
 def install_repos(
@@ -171,10 +162,14 @@ def install_repos(
     quiet: bool,
     clone_mode: str,
     update_dependencies: bool,
+    force_update: bool = False,
 ) -> None:
     """
     Install one or more repositories according to the configured installers
     and the CLI layer precedence rules.
+
+    If force_update=True, installers of the currently active layer are allowed
+    to run again (upgrade/refresh), even if that layer is already loaded.
     """
     pipeline = InstallationPipeline(INSTALLERS)
 
@@ -213,6 +208,7 @@ def install_repos(
             quiet=quiet,
             clone_mode=clone_mode,
             update_dependencies=update_dependencies,
+            force_update=force_update,
         )
 
         pipeline.run(ctx)

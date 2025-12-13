@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from __future__ import annotations
-
 import argparse
 
-from .common import add_install_update_arguments, add_identifier_arguments
+from pkgmgr.cli.parser.common import (
+    add_install_update_arguments,
+    add_identifier_arguments,
+)
 
 
 def add_install_update_subparsers(
@@ -14,11 +15,17 @@ def add_install_update_subparsers(
     """
     Register install / update / deinstall / delete commands.
     """
+
     install_parser = subparsers.add_parser(
         "install",
         help="Setup repository/repositories alias links to executables",
     )
     add_install_update_arguments(install_parser)
+    install_parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Force re-run installers (upgrade/refresh) even if the CLI layer is already loaded",
+    )
 
     update_parser = subparsers.add_parser(
         "update",
@@ -30,6 +37,7 @@ def add_install_update_subparsers(
         action="store_true",
         help="Include system update commands",
     )
+    # KEIN --update hier nötig → update impliziert force_update=True
 
     deinstall_parser = subparsers.add_parser(
         "deinstall",

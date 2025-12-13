@@ -8,13 +8,13 @@ from typing import Any, Dict, List
 
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.actions.install import install_repos
+from pkgmgr.actions.repository.update import update_repos
 from pkgmgr.actions.repository.deinstall import deinstall_repos
 from pkgmgr.actions.repository.delete import delete_repos
-from pkgmgr.actions.repository.update import update_repos
 from pkgmgr.actions.repository.status import status_repos
 from pkgmgr.actions.repository.list import list_repositories
-from pkgmgr.core.command.run import run_command
 from pkgmgr.actions.repository.create import create_repo
+from pkgmgr.core.command.run import run_command
 from pkgmgr.core.repository.dir import get_repo_dir
 
 Repository = Dict[str, Any]
@@ -51,7 +51,7 @@ def handle_repos_command(
     selected: List[Repository],
 ) -> None:
     """
-    Handle core repository commands (install/update/deinstall/delete/.../list).
+    Handle core repository commands (install/update/deinstall/delete/status/list/path/shell/create).
     """
 
     # ------------------------------------------------------------
@@ -68,6 +68,7 @@ def handle_repos_command(
             args.quiet,
             args.clone_mode,
             args.dependencies,
+            force_update=getattr(args, "update", False),
         )
         return
 
@@ -81,11 +82,12 @@ def handle_repos_command(
             ctx.binaries_dir,
             ctx.all_repositories,
             args.no_verification,
-            args.system,
+            args.system_update,
             args.preview,
             args.quiet,
             args.dependencies,
             args.clone_mode,
+            force_update=True,
         )
         return
 
@@ -146,9 +148,7 @@ def handle_repos_command(
                     f"{repository.get('account', '?')}/"
                     f"{repository.get('repository', '?')}"
                 )
-                print(
-                    f"[WARN] Could not resolve directory for {ident}: {exc}"
-                )
+                print(f"[WARN] Could not resolve directory for {ident}: {exc}")
                 continue
 
             print(repo_dir)
