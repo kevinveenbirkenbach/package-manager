@@ -1,5 +1,6 @@
 import yaml
 import os
+from pkgmgr.core.config.save import save_user_config 
 
 def interactive_add(config,USER_CONFIG_PATH:str):
     """Interactively prompt the user to add a new repository entry to the user config."""
