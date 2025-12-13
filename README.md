@@ -25,52 +25,37 @@ together into repeatable development workflows.
 
 Traditional distro package managers like `apt`, `pacman` or `dnf` focus on a
 single operating system. PKGMGR instead focuses on **your repositories and
-development lifecycle**:
+development lifecycle**. It provides one configuration for all repositories,
+one unified CLI to interact with them, and a Nix-based foundation that keeps
+tooling reproducible across distributions.
 
-* one configuration for all your repos,
-* one CLI to interact with them,
-* one Nix-based layer to keep tooling reproducible across distros.
+Native package managers are still used where they make sense. PKGMGR coordinates
+the surrounding development, build and release workflows in a consistent way.
 
-You keep using your native package manager where it makes sense – PKGMGR
-coordinates the *development and release flow* around it.
+In addition, PKGMGR provides Docker images that can serve as a **reproducible
+system baseline**. These images bundle the complete PKGMGR toolchain and are
+designed to be reused as a stable execution environment across machines,
+pipelines and teams. This approach is specifically used within
+[**Infinito.Nexus**](https://s.infinito.nexus/code) to make complex systems
+distribution-independent while remaining fully reproducible.
 
 ---
 
 ## Features 🚀
 
-### Multi-distro development & packaging
+PKGMGR enables multi-distro development and packaging by managing multiple
+repositories from a single configuration file. It drives complete release
+pipelines across Linux distributions using Nix flakes, Python build metadata,
+native OS packages such as Arch, Debian and RPM formats, and additional ecosystem
+integrations like Ansible.
 
-* Manage **many repositories at once** from a single `config/config.yaml`.
-* Drive full **release pipelines** across Linux distributions using:
+All functionality is exposed through a unified `pkgmgr` command-line interface
+that works identically on every supported distribution. It combines repository
+management, Git operations, Docker and Compose orchestration, as well as
+versioning, release and changelog workflows. Many commands support a preview
+mode, allowing you to inspect the underlying actions before they are executed.
 
-  * Nix flakes (`flake.nix`)
-  * PyPI style builds (`pyproject.toml`)
-  * OS packages (PKGBUILD, Debian control/changelog, RPM spec)
-  * Ansible Galaxy metadata and more.
-
-### Rich CLI for daily work
-
-All commands are exposed via the `pkgmgr` CLI and are available on every distro:
-
-* **Repository management**
-
-  * `clone`, `update`, `install`, `delete`, `deinstall`, `path`, `list`, `config`
-* **Git proxies**
-
-  * `pull`, `push`, `status`, `diff`, `add`, `show`, `checkout`,
-    `reset`, `revert`, `rebase`, `commit`, `branch`
-* **Docker & Compose orchestration**
-
-  * `build`, `up`, `down`, `exec`, `ps`, `start`, `stop`, `restart`
-* **Release toolchain**
-
-  * `version`, `release`, `changelog`, `make`
-* **Mirror & workflow helpers**
-
-  * `mirror` (list/diff/merge/setup), `shell`, `terminal`, `code`, `explore`
-
-Many of these commands support `--preview` mode so you can inspect the
-underlying Git or Docker calls without executing them.
+---
 
 ### Full development workflows
 
@@ -82,10 +67,6 @@ versioning features it can drive **end-to-end workflows**:
 3. Bump versions, update changelogs and tags.
 4. Build distro-specific packages.
 5. Keep all mirrors and working copies in sync.
-
-The extensive E2E tests (`tests/e2e/`) and GitHub Actions workflows (including
-“virgin user” and “virgin root” Arch tests) validate these flows across
-different Linux environments.
 
 ---
 
@@ -99,15 +80,10 @@ The following diagram gives a full overview of:
 
 ![PKGMGR Architecture](assets/map.png)
 
+
 **Diagram status:** 12 December 2025
+
 **Always-up-to-date version:** [https://s.veen.world/pkgmgrmp](https://s.veen.world/pkgmgrmp)
-
----
-
-Perfekt, dann hier die **noch kompaktere und korrekt differenzierte Version**, die **nur** zwischen
-**`make setup`** und **`make setup-venv`** unterscheidet und exakt deinem Verhalten entspricht.
-
-README-ready, ohne Over-Engineering.
 
 ---
 
@@ -115,8 +91,14 @@ README-ready, ohne Over-Engineering.
 
 PKGMGR can be installed using `make`.
 The setup mode defines **which runtime layers are prepared**.
-
 ---
+
+### Download
+
+```bash
+git clone https://github.com/kevinveenbirkenbach/package-manager.git
+cd package-manager
+```
 
 ### Dependency installation (optional)
 
@@ -128,8 +110,13 @@ scripts/installation/dependencies.sh
 
 The script detects and normalizes the OS and installs the required **system-level dependencies** accordingly.
 
+### Install
 
----
+```bash
+git clone https://github.com/kevinveenbirkenbach/package-manager.git
+cd package-manager
+make install
+```
 
 ### Setup modes
 
@@ -138,17 +125,8 @@ The script detects and normalizes the OS and installs the required **system-leve
 | **make setup**      | Python venv **and** Nix | Full development & CI |
 | **make setup-venv** | Python venv only        | Local user setup      |
 
----
 
-### Install & setup
-
-```bash
-git clone https://github.com/kevinveenbirkenbach/package-manager.git
-cd package-manager
-make install
-```
-
-#### Full setup (venv + Nix)
+##### Full setup (venv + Nix)
 
 ```bash
 make setup
@@ -156,7 +134,7 @@ make setup
 
 Use this for CI, servers, containers and full development workflows.
 
-#### Venv-only setup
+##### Venv-only setup
 
 ```bash
 make setup-venv
@@ -167,38 +145,77 @@ Use this if you want PKGMGR isolated without Nix integration.
 
 ---
 
-## Run without installation (Nix)
+Alles klar 🙂
+Hier ist der **RUN-Abschnitt ohne Gedankenstriche**, klar nach **Nix, Docker und venv** getrennt:
 
-Run PKGMGR directly via Nix Flakes.
+---
+
+## Run PKGMGR 🧰
+
+PKGMGR can be executed in different environments.
+All modes expose the same CLI and commands.
+
+---
+
+### Run via Nix (no installation)
 
 ```bash
 nix run github:kevinveenbirkenbach/package-manager#pkgmgr -- --help
 ```
 
-Example:
+---
 
-```bash
-nix run github:kevinveenbirkenbach/package-manager#pkgmgr -- version pkgmgr
-```
+### Run via Docker 🐳
 
-Notes:
+PKGMGR can be executed **inside Docker containers** for CI, testing and isolated
+workflows.
+---
 
-* full flake URL required
-* `--` separates Nix and PKGMGR arguments
-* can be used alongside any setup mode
+#### Container types
+
+Two container types are available.
+
+
+| Image type | Contains                      | Typical use             |
+| ---------- | ----------------------------- | ----------------------- |
+| **Virgin** | Base OS + system dependencies | Clean test environments |
+| **Stable** | PKGMGR + Nix (flakes enabled) | Ready-to-use workflows  |
+
+Example images:
+
+* Virgin: `pkgmgr-arch-virgin`
+* Stable: `ghcr.io/kevinveenbirkenbach/pkgmgr:stable`
+
+
+Use **virgin images** for isolated test runs,
+use the **stable image** for fast, reproducible execution.
 
 ---
 
-## Usage 🧰
+#### Run examples
 
-After installation, the main entry point is:
+```bash
+docker run --rm -it \
+  -v "$PWD":/src \
+  -w /src \
+  ghcr.io/kevinveenbirkenbach/pkgmgr:stable \
+  pkgmgr --help
+```
+
+---
+
+### Run via virtual environment (venv)
+
+After activating the venv:
 
 ```bash
 pkgmgr --help
 ```
 
-This prints a list of all available subcommands.
-The help for each command is available via:
+---
+
+This allows you to choose between zero install execution using Nix, fully prebuilt
+Docker environments or local isolated venv setups with identical command behavior.
 
 ---
 
