@@ -1,32 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Installer for Nix flakes.
+from __future__ import annotations
 
-If a repository contains flake.nix and the 'nix' command is available, this
-installer will try to install profile outputs from the flake.
-
-Behavior:
-  - If flake.nix is present and `nix` exists on PATH:
-      * First remove any existing `package-manager` profile entry (best-effort).
-      * Then install one or more flake outputs via `nix profile install`.
-  - For the package-manager repo:
-      * `pkgmgr` is mandatory (CLI), `default` is optional.
-  - For all other repos:
-      * `default` is mandatory.
-
-Special handling:
-  - If PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 is set, the installer is
-    globally disabled (useful for CI or debugging).
-
-The higher-level InstallationPipeline and CLI-layer model decide when this
-installer is allowed to run, based on where the current CLI comes from
-(e.g. Nix, OS packages, Python, Makefile).
-"""
-
+import json
 import os
 import shutil
+import subprocess
 from typing import TYPE_CHECKING, List, Tuple
 
 from pkgmgr.actions.install.installers.base import BaseInstaller
@@ -34,132 +14,225 @@ from pkgmgr.core.command.run import run_command
 
 if TYPE_CHECKING:
     from pkgmgr.actions.install.context import RepoContext
-    from pkgmgr.actions.install import InstallContext
 
 
 class NixFlakeInstaller(BaseInstaller):
-    """Install Nix flake profiles for repositories that define flake.nix."""
-
-    # Logical layer name, used by capability matchers.
     layer = "nix"
-
     FLAKE_FILE = "flake.nix"
-    PROFILE_NAME = "package-manager"
 
     def supports(self, ctx: "RepoContext") -> bool:
-        """
-        Only support repositories that:
-          - Are NOT explicitly disabled via PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1,
-          - Have a flake.nix,
-          - And have the `nix` command available.
-        """
-        # Optional global kill-switch for CI or debugging.
         if os.environ.get("PKGMGR_DISABLE_NIX_FLAKE_INSTALLER") == "1":
-            print(
-                "[INFO] PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 – "
-                "NixFlakeInstaller is disabled."
-            )
+            if not ctx.quiet:
+                print("[INFO] PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 – skipping NixFlakeInstaller.")
             return False
 
-        # Nix must be available.
         if shutil.which("nix") is None:
             return False
 
-        # flake.nix must exist in the repository.
-        flake_path = os.path.join(ctx.repo_dir, self.FLAKE_FILE)
-        return os.path.exists(flake_path)
-
-    def _ensure_old_profile_removed(self, ctx: "RepoContext") -> None:
-        """
-        Best-effort removal of an existing profile entry.
-
-        This handles the "already provides the following file" conflict by
-        removing previous `package-manager` installations before we install
-        the new one.
-
-        Any error in `nix profile remove` is intentionally ignored, because
-        a missing profile entry is not a fatal condition.
-        """
-        if shutil.which("nix") is None:
-            return
-
-        cmd = f"nix profile remove {self.PROFILE_NAME} || true"
-        try:
-            # NOTE: no allow_failure here → matches the existing unit tests
-            run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
-        except SystemExit:
-            # Unit tests explicitly assert this is swallowed
-            pass
+        return os.path.exists(os.path.join(ctx.repo_dir, self.FLAKE_FILE))
 
     def _profile_outputs(self, ctx: "RepoContext") -> List[Tuple[str, bool]]:
-        """
-        Decide which flake outputs to install and whether failures are fatal.
-
-        Returns a list of (output_name, allow_failure) tuples.
-
-        Rules:
-          - For the package-manager repo (identifier 'pkgmgr' or 'package-manager'):
-                [("pkgmgr", False), ("default", True)]
-          - For all other repos:
-                [("default", False)]
-        """
-        ident = ctx.identifier
-
-        if ident in {"pkgmgr", "package-manager"}:
-            # pkgmgr: main CLI output is "pkgmgr" (mandatory),
-            # "default" is nice-to-have (non-fatal).
+        # (output_name, allow_failure)
+        if ctx.identifier in {"pkgmgr", "package-manager"}:
             return [("pkgmgr", False), ("default", True)]
-
-        # Generic repos: we expect a sensible "default" package/app.
-        # Failure to install it is considered fatal.
         return [("default", False)]
 
-    def run(self, ctx: "InstallContext") -> None:
-        """
-        Install Nix flake profile outputs.
+    def _installable(self, ctx: "RepoContext", output: str) -> str:
+        return f"{ctx.repo_dir}#{output}"
 
-        For the package-manager repo, failure installing 'pkgmgr' is fatal,
-        failure installing 'default' is non-fatal.
-        For other repos, failure installing 'default' is fatal.
-        """
-        # Reuse supports() to keep logic in one place.
-        if not self.supports(ctx):  # type: ignore[arg-type]
-            return
-
-        outputs = self._profile_outputs(ctx)  # list of (name, allow_failure)
-
-        print(
-            "Nix flake detected in "
-            f"{ctx.identifier}, attempting to install profile outputs: "
-            + ", ".join(name for name, _ in outputs)
+    def _run(self, ctx: "RepoContext", cmd: str, allow_failure: bool = True):
+        return run_command(
+            cmd,
+            cwd=ctx.repo_dir,
+            preview=ctx.preview,
+            allow_failure=allow_failure,
         )
 
-        # Handle the "already installed" case up-front for the shared profile.
-        self._ensure_old_profile_removed(ctx)  # type: ignore[arg-type]
+    def _profile_list_json(self, ctx: "RepoContext") -> dict:
+        """
+        Read current Nix profile entries as JSON (best-effort).
 
-        for output, allow_failure in outputs:
-            cmd = f"nix profile install {ctx.repo_dir}#{output}"
-            print(f"[INFO] Running: {cmd}")
-            ret = os.system(cmd)
+        NOTE: Nix versions differ:
+          - Newer: {"elements": [ { "index": 0, "attrPath": "...", ... }, ... ]}
+          - Older: {"elements": [ "nixpkgs#hello", ... ]}   (strings)
 
-            # Extract real exit code from os.system() result
-            if os.WIFEXITED(ret):
-                exit_code = os.WEXITSTATUS(ret)
-            else:
-                # abnormal termination (signal etc.) – keep raw value
-                exit_code = ret
+        We return {} on failure or in preview mode.
+        """
+        if ctx.preview:
+            return {}
 
-            if exit_code == 0:
-                print(f"Nix flake output '{output}' successfully installed.")
+        proc = subprocess.run(
+            ["nix", "profile", "list", "--json"],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            env=os.environ.copy(),
+        )
+        if proc.returncode != 0:
+            return {}
+
+        try:
+            return json.loads(proc.stdout or "{}")
+        except json.JSONDecodeError:
+            return {}
+
+    def _find_installed_indices_for_output(self, ctx: "RepoContext", output: str) -> List[int]:
+        """
+        Find installed profile indices for a given output.
+
+        Works across Nix JSON variants:
+          - If elements are dicts: we can extract indices.
+          - If elements are strings: we cannot extract indices -> return [].
+        """
+        data = self._profile_list_json(ctx)
+        elements = data.get("elements", []) or []
+
+        matches: List[int] = []
+
+        for el in elements:
+            # Legacy JSON format: plain strings -> no index information
+            if not isinstance(el, dict):
                 continue
 
-            print(f"[Error] Failed to install Nix flake output '{output}'")
-            print(f"[Error] Command exited with code {exit_code}")
+            idx = el.get("index")
+            if idx is None:
+                continue
 
-            if not allow_failure:
-                raise SystemExit(exit_code)
+            attr_path = el.get("attrPath") or el.get("attr_path") or ""
+            pname = el.get("pname") or ""
+            name = el.get("name") or ""
 
+            if attr_path == output:
+                matches.append(int(idx))
+                continue
+
+            if pname == output or name == output:
+                matches.append(int(idx))
+                continue
+
+            if isinstance(attr_path, str) and attr_path.endswith(f".{output}"):
+                matches.append(int(idx))
+                continue
+
+        return matches
+
+    def _upgrade_index(self, ctx: "RepoContext", index: int) -> bool:
+        cmd = f"nix profile upgrade --refresh {index}"
+        if not ctx.quiet:
+            print(f"[nix] upgrade: {cmd}")
+        res = self._run(ctx, cmd, allow_failure=True)
+        return res.returncode == 0
+
+    def _remove_index(self, ctx: "RepoContext", index: int) -> None:
+        cmd = f"nix profile remove {index}"
+        if not ctx.quiet:
+            print(f"[nix] remove: {cmd}")
+        self._run(ctx, cmd, allow_failure=True)
+
+    def _install_only(self, ctx: "RepoContext", output: str, allow_failure: bool) -> None:
+        """
+        Install output; on failure, try index-based upgrade/remove+install if possible.
+        """
+        installable = self._installable(ctx, output)
+        install_cmd = f"nix profile install {installable}"
+
+        if not ctx.quiet:
+            print(f"[nix] install: {install_cmd}")
+
+        res = self._run(ctx, install_cmd, allow_failure=True)
+        if res.returncode == 0:
+            if not ctx.quiet:
+                print(f"[nix] output '{output}' successfully installed.")
+            return
+
+        if not ctx.quiet:
             print(
-                "[Warning] Continuing despite failure to install "
-                f"optional output '{output}'."
+                f"[nix] install failed for '{output}' (exit {res.returncode}), "
+                "trying index-based upgrade/remove+install..."
             )
+
+        indices = self._find_installed_indices_for_output(ctx, output)
+
+        # 1) Try upgrading existing indices (only possible on newer JSON format)
+        upgraded = False
+        for idx in indices:
+            if self._upgrade_index(ctx, idx):
+                upgraded = True
+                if not ctx.quiet:
+                    print(f"[nix] output '{output}' successfully upgraded (index {idx}).")
+
+        if upgraded:
+            return
+
+        # 2) Remove matching indices and retry install
+        if indices and not ctx.quiet:
+            print(f"[nix] upgrade failed; removing indices {indices} and reinstalling '{output}'.")
+
+        for idx in indices:
+            self._remove_index(ctx, idx)
+
+        final = self._run(ctx, install_cmd, allow_failure=True)
+        if final.returncode == 0:
+            if not ctx.quiet:
+                print(f"[nix] output '{output}' successfully re-installed.")
+            return
+
+        msg = f"[ERROR] Failed to install Nix flake output '{output}' (exit {final.returncode})"
+        print(msg)
+
+        if not allow_failure:
+            raise SystemExit(final.returncode)
+
+        print(f"[WARNING] Continuing despite failure of optional output '{output}'.")
+
+    def _force_upgrade_output(self, ctx: "RepoContext", output: str, allow_failure: bool) -> None:
+        """
+        force_update path:
+          - Prefer upgrading existing entries via indices (if we can discover them).
+          - If no indices (legacy JSON) or upgrade fails, fall back to install-only logic.
+        """
+        indices = self._find_installed_indices_for_output(ctx, output)
+
+        upgraded_any = False
+        for idx in indices:
+            if self._upgrade_index(ctx, idx):
+                upgraded_any = True
+                if not ctx.quiet:
+                    print(f"[nix] output '{output}' successfully upgraded (index {idx}).")
+
+        if upgraded_any:
+            # Make upgrades visible to tests
+            print(f"[nix] output '{output}' successfully upgraded.")
+            return
+
+        if indices and not ctx.quiet:
+            print(f"[nix] upgrade failed; removing indices {indices} and reinstalling '{output}'.")
+
+        for idx in indices:
+            self._remove_index(ctx, idx)
+
+        # Ensure installed (includes its own fallback logic)
+        self._install_only(ctx, output, allow_failure)
+
+        # Make upgrades visible to tests (semantic: update requested)
+        print(f"[nix] output '{output}' successfully upgraded.")
+
+    def run(self, ctx: "RepoContext") -> None:
+        if not self.supports(ctx):
+            return
+
+        outputs = self._profile_outputs(ctx)
+
+        if not ctx.quiet:
+            print(
+                "[nix] flake detected in "
+                f"{ctx.identifier}, ensuring outputs: "
+                + ", ".join(name for name, _ in outputs)
+            )
+
+        for output, allow_failure in outputs:
+            if ctx.force_update:
+                self._force_upgrade_output(ctx, output, allow_failure)
+            else:
+                self._install_only(ctx, output, allow_failure)

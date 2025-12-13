@@ -49,7 +49,7 @@ docker run --rm \
       # Gitdir path shown in the "dubious ownership" error
       git config --global --add safe.directory /src/.git || true
       # Ephemeral CI containers: allow all paths as a last resort
-      git config --global --add safe.directory '*' || true
+      git config --global --add safe.directory "*" || true
     fi
 
     # Run the E2E tests inside the Nix development shell
