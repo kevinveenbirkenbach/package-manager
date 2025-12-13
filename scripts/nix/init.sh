@@ -1,22 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# shellcheck source=lib/bootstrap_config.sh
-# shellcheck source=lib/detect.sh
-# shellcheck source=lib/path.sh
-# shellcheck source=lib/symlinks.sh
-# shellcheck source=lib/users.sh
-# shellcheck source=lib/install.sh
-# shellcheck source=lib/nix_conf_file.sh
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# shellcheck source=./scripts/nix/lib/bootstrap_config.sh
 source "${SCRIPT_DIR}/lib/bootstrap_config.sh"
+
+# shellcheck source=./scripts/nix/lib/detect.sh
 source "${SCRIPT_DIR}/lib/detect.sh"
+
+# shellcheck source=./scripts/nix/lib/path.sh
 source "${SCRIPT_DIR}/lib/path.sh"
+
+# shellcheck source=./scripts/nix/lib/symlinks.sh
 source "${SCRIPT_DIR}/lib/symlinks.sh"
+
+# shellcheck source=./scripts/nix/lib/users.sh
 source "${SCRIPT_DIR}/lib/users.sh"
+
+# shellcheck source=./scripts/nix/lib/install.sh
 source "${SCRIPT_DIR}/lib/install.sh"
+
+# shellcheck source=./scripts/nix/lib/nix_conf_file.sh
 source "${SCRIPT_DIR}/lib/nix_conf_file.sh"
 
 echo "[init-nix] Starting Nix initialization..."

@@ -7,6 +7,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${PROJECT_ROOT}"
 
 VENV_DIR="${HOME}/.venvs/pkgmgr"
+# shellcheck disable=SC2016
 RC_LINE='if [ -d "${HOME}/.venvs/pkgmgr" ]; then . "${HOME}/.venvs/pkgmgr/bin/activate"; if [ -n "${PS1:-}" ]; then echo "Global Python virtual environment '\''~/.venvs/pkgmgr'\'' activated."; fi; fi'
 
 # ------------------------------------------------------------

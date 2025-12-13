@@ -2,6 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# shellcheck source=./scripts/build/base.sh
 source "${SCRIPT_DIR}/base.sh"
 
 : "${distro:?Environment variable 'distro' must be set (arch|debian|ubuntu|fedora|centos)}"

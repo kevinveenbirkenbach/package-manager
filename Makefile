@@ -101,7 +101,7 @@ test-env-nix: build-missing
 test: test-env-virtual test-unit test-integration test-e2e
 
 delete-volumes: 
-	@docker volume rm pkgmgr_nix_store_${distro} pkgmgr_nix_cache_${distro} || true
+	@docker volume rm "pkgmgr_nix_store_${distro}" "pkgmgr_nix_cache_${distro}" || echo "No volumes to delete."
 
 purge: delete-volumes build-no-cache
 
