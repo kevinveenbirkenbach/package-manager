@@ -28,6 +28,7 @@ PROXY_COMMANDS: Dict[str, List[str]] = {
         "reset",
         "revert",
         "rebase",
+        "status",
         "commit",
     ],
     "docker": [
