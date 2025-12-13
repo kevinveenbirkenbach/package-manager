@@ -1,3 +1,16 @@
+## [1.5.0] - 2025-12-13
+
+* - Commands now show live output while running, making long operations easier to follow
+- Error messages include full command output, making failures easier to understand and debug
+- Deinstallation is more complete and predictable, removing CLI links and properly cleaning up repositories
+- Preview mode is more trustworthy, clearly showing what would happen without making changes
+- Repository configuration problems are detected earlier with clear, user-friendly explanations
+- More consistent behavior across different Linux distributions
+- More reliable execution in Docker containers and CI environments
+- Nix-based execution works more smoothly, especially when running as root or inside containers
+- Existing commands, scripts, and workflows continue to work without any breaking changes
+
+
 ## [1.4.1] - 2025-12-12
 
 * Fixed stable release container publishing
