@@ -1,9 +1,7 @@
 from __future__ import annotations
 from typing import Optional
-
 import os
 import sys
-from typing import Optional
 
 from pkgmgr.actions.branch import close_branch
 from pkgmgr.core.git import get_current_branch, GitError

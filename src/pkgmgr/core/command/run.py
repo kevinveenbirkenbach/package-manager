@@ -1,5 +1,3 @@
-from typing import Optional
-# pkgmgr/run_command.py
 import subprocess
 import sys
 from typing import List, Optional, Union
