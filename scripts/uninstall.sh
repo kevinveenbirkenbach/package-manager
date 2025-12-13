@@ -19,12 +19,20 @@ fi
 # ------------------------------------------------------------
 # Remove auto-activation lines from shell RC files
 # ------------------------------------------------------------
-RC_PATTERN='\.venvs\/pkgmgr\/bin\/activate"; if \[ -n "\$${PS1:-}" \]; then echo "Global Python virtual environment '\''~\/\.venvs\/pkgmgr'\'' activated."; fi; fi'
+# Matches:
+#   ~/.venvs/pkgmgr/bin/activate
+#   ./.venvs/pkgmgr/bin/activate
+RC_PATTERN='(\./)?\.venvs/pkgmgr/bin/activate'
 
 echo "[uninstall] Cleaning up ~/.bashrc and ~/.zshrc entries..."
 for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
     if [[ -f "$rc" ]]; then
-        sed -i "/$RC_PATTERN/d" "$rc"
+        # Remove activation lines (functional)
+        sed -E -i "/$RC_PATTERN/d" "$rc"
+
+        # Remove leftover echo / cosmetic lines referencing pkgmgr venv
+        sed -i '/\.venvs\/pkgmgr/d' "$rc"
+
         echo "[uninstall] Cleaned $rc"
     else
         echo "[uninstall] File not found: $rc (skipped)"
