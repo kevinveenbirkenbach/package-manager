@@ -4,20 +4,20 @@
 """
 E2E integration tests for the `pkgmgr mirror` command family.
 
-This test class covers:
+Covered commands:
 
   - pkgmgr mirror --help
   - pkgmgr mirror list --preview --all
   - pkgmgr mirror diff --preview --all
   - pkgmgr mirror merge config file --preview --all
   - pkgmgr mirror setup --preview --all
+  - pkgmgr mirror check --preview --all
+  - pkgmgr mirror provision --preview --all
 
-All of these subcommands are fully wired at CLI level and do not
-require mocks. With --preview, merge and setup do not perform
-destructive actions, making them safe for CI execution.
+All commands are executed via the real CLI entry point (main module).
+With --preview enabled, all operations are non-destructive and safe
+to run inside CI containers.
 """
-
-from __future__ import annotations
 
 import io
 import runpy
@@ -28,25 +28,25 @@ from contextlib import redirect_stdout, redirect_stderr
 
 class TestIntegrationMirrorCommands(unittest.TestCase):
     """
-    E2E tests for `pkgmgr mirror` commands.
+    End-to-end tests for `pkgmgr mirror` commands.
     """
 
     # ------------------------------------------------------------
     # Helper
     # ------------------------------------------------------------
-    def _run_pkgmgr(self, args: list[str]) -> str:
+    def _run_pkgmgr(self, args):
         """
-        Execute pkgmgr with the given arguments and return captured stdout+stderr.
+        Execute pkgmgr with the given arguments and return captured output.
 
         - Treat SystemExit(0) or SystemExit(None) as success.
-        - Convert non-zero exit codes into AssertionError.
+        - Any other exit code is considered a test failure.
         """
         original_argv = list(sys.argv)
         buffer = io.StringIO()
         cmd_repr = "pkgmgr " + " ".join(args)
 
         try:
-            sys.argv = ["pkgmgr"] + args
+            sys.argv = ["pkgmgr"] + list(args)
 
             try:
                 with redirect_stdout(buffer), redirect_stderr(buffer):
@@ -55,9 +55,9 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
                 code = exc.code if isinstance(exc.code, int) else None
                 if code not in (0, None):
                     raise AssertionError(
-                        f"{cmd_repr!r} failed with exit code {exc.code}. "
-                        "Scroll up to inspect the pkgmgr output."
-                    ) from exc
+                        "%r failed with exit code %r.\n\nOutput:\n%s"
+                        % (cmd_repr, exc.code, buffer.getvalue())
+                    )
 
             return buffer.getvalue()
 
@@ -68,44 +68,41 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
     # Tests
     # ------------------------------------------------------------
 
-    def test_mirror_help(self) -> None:
+    def test_mirror_help(self):
         """
-        Ensure `pkgmgr mirror --help` runs successfully
-        and prints a usage message for the mirror command.
+        `pkgmgr mirror --help` should run without error and print usage info.
         """
         output = self._run_pkgmgr(["mirror", "--help"])
         self.assertIn("usage:", output)
         self.assertIn("pkgmgr mirror", output)
 
-    def test_mirror_list_preview_all(self) -> None:
+    def test_mirror_list_preview_all(self):
         """
-        `pkgmgr mirror list --preview --all` should run without error
-        and produce some output for the selected repositories.
+        `pkgmgr mirror list --preview --all`
         """
-        output = self._run_pkgmgr(["mirror", "list", "--preview", "--all"])
-        # Do not assert specific wording; just ensure something was printed.
+        output = self._run_pkgmgr(
+            ["mirror", "list", "--preview", "--all"]
+        )
         self.assertTrue(
             output.strip(),
-            msg="Expected `pkgmgr mirror list --preview --all` to produce output.",
+            "Expected output from mirror list",
         )
 
-    def test_mirror_diff_preview_all(self) -> None:
+    def test_mirror_diff_preview_all(self):
         """
-        `pkgmgr mirror diff --preview --all` should run without error
-        and produce some diagnostic output (diff header, etc.).
+        `pkgmgr mirror diff --preview --all`
         """
-        output = self._run_pkgmgr(["mirror", "diff", "--preview", "--all"])
+        output = self._run_pkgmgr(
+            ["mirror", "diff", "--preview", "--all"]
+        )
         self.assertTrue(
             output.strip(),
-            msg="Expected `pkgmgr mirror diff --preview --all` to produce output.",
+            "Expected output from mirror diff",
         )
 
-    def test_mirror_merge_config_to_file_preview_all(self) -> None:
+    def test_mirror_merge_config_to_file_preview_all(self):
         """
-        `pkgmgr mirror merge config file --preview --all` should run without error.
-
-        In preview mode this does not change either config or MIRRORS files;
-        it only prints what would be merged.
+        `pkgmgr mirror merge config file --preview --all`
         """
         output = self._run_pkgmgr(
             [
@@ -119,23 +116,47 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
         )
         self.assertTrue(
             output.strip(),
-            msg=(
-                "Expected `pkgmgr mirror merge config file --preview --all` "
-                "to produce output."
-            ),
+            "Expected output from mirror merge (config -> file)",
         )
 
-    def test_mirror_setup_preview_all(self) -> None:
+    def test_mirror_setup_preview_all(self):
         """
-        `pkgmgr mirror setup --preview --all` should run without error.
-
-        In preview mode only the intended Git operations and remote
-        suggestions are printed; no real changes are made.
+        `pkgmgr mirror setup --preview --all`
         """
-        output = self._run_pkgmgr(["mirror", "setup", "--preview", "--all"])
+        output = self._run_pkgmgr(
+            ["mirror", "setup", "--preview", "--all"]
+        )
         self.assertTrue(
             output.strip(),
-            msg="Expected `pkgmgr mirror setup --preview --all` to produce output.",
+            "Expected output from mirror setup",
+        )
+
+    def test_mirror_check_preview_all(self):
+        """
+        `pkgmgr mirror check --preview --all`
+
+        Performs non-destructive remote checks (git ls-remote).
+        """
+        output = self._run_pkgmgr(
+            ["mirror", "check", "--preview", "--all"]
+        )
+        self.assertTrue(
+            output.strip(),
+            "Expected output from mirror check",
+        )
+
+    def test_mirror_provision_preview_all(self):
+        """
+        `pkgmgr mirror provision --preview --all`
+
+        In preview mode this MUST NOT create remote repositories.
+        """
+        output = self._run_pkgmgr(
+            ["mirror", "provision", "--preview", "--all"]
+        )
+        self.assertTrue(
+            output.strip(),
+            "Expected output from mirror provision (preview)",
         )
 
 
