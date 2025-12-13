@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=./scripts/build/base.sh
 source "${SCRIPT_DIR}/base.sh"
 
-: "${distro:?Environment variable 'distro' must be set (arch|debian|ubuntu|fedora|centos)}"
+: "${PKGMGR_DISTRO:?Environment variable 'PKGMGR_DISTRO' must be set (arch|debian|ubuntu|fedora|centos)}"
 
 NO_CACHE=0
 MISSING_ONLY=0

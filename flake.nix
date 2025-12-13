@@ -26,10 +26,6 @@
       packages = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-
-          # Single source of truth for pkgmgr: Python 3.11
-          # - Matches pyproject.toml: requires-python = ">=3.11"
-          # - Uses python311Packages so that PyYAML etc. are available
           python = pkgs.python311;
           pyPkgs = pkgs.python311Packages;
         in
