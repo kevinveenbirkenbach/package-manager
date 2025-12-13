@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        PKGMGR_DISTRO: [arch, debian, ubuntu, fedora, centos]
+        distro: [arch, debian, ubuntu, fedora, centos]
 
     steps:
       - name: Checkout repository
