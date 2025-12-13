@@ -79,7 +79,6 @@ class TestCreateInk(unittest.TestCase):
              patch("pkgmgr.core.command.ink.os.chmod") as mock_chmod, \
              patch("pkgmgr.core.command.ink.os.path.exists", return_value=False), \
              patch("pkgmgr.core.command.ink.os.path.islink", return_value=False), \
-             patch("pkgmgr.core.command.ink.os.remove") as mock_remove, \
              patch("pkgmgr.core.command.ink.os.path.realpath", side_effect=lambda p: p):
             create_ink_module.create_ink(
                 repo=repo,
