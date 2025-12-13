@@ -22,7 +22,7 @@ It is invoked during package installation (Arch/Debian/Fedora scriptlets) and ca
 
 The entry point sources small, focused modules from *scripts/nix/lib/*:
 
-- *config.sh* — configuration defaults (installer URL, retry timing)
+- *bootstrap_config.sh* — configuration defaults (installer URL, retry timing)
 - *detect.sh* — container detection helpers
 - *path.sh* — PATH adjustments and `nix` binary resolution helpers
 - *symlinks.sh* — user/global symlink helpers for stable `nix` discovery

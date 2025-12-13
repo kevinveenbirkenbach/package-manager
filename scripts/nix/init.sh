@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# shellcheck source=lib/config.sh
+# shellcheck source=lib/bootstrap_config.sh
 # shellcheck source=lib/detect.sh
 # shellcheck source=lib/path.sh
 # shellcheck source=lib/symlinks.sh
 # shellcheck source=lib/users.sh
 # shellcheck source=lib/install.sh
+# shellcheck source=lib/nix_conf_file.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-source "${SCRIPT_DIR}/lib/config.sh"
+source "${SCRIPT_DIR}/lib/bootstrap_config.sh"
 source "${SCRIPT_DIR}/lib/detect.sh"
 source "${SCRIPT_DIR}/lib/path.sh"
 source "${SCRIPT_DIR}/lib/symlinks.sh"
 source "${SCRIPT_DIR}/lib/users.sh"
 source "${SCRIPT_DIR}/lib/install.sh"
+source "${SCRIPT_DIR}/lib/nix_conf_file.sh"
 
 echo "[init-nix] Starting Nix initialization..."
 
@@ -26,6 +28,7 @@ main() {
     ensure_nix_on_path
 
     if [[ "${EUID:-0}" -eq 0 ]]; then
+      nixconf_ensure_experimental_features
       ensure_global_nix_symlinks "$(resolve_nix_bin 2>/dev/null || true)"
     else
       ensure_user_nix_symlink "$(resolve_nix_bin 2>/dev/null || true)"
@@ -105,6 +108,10 @@ main() {
   # After install: PATH + symlink(s)
   # -------------------------------------------------------------------------
   ensure_nix_on_path
+
+  if [[ "${EUID:-0}" -eq 0 ]]; then
+    nixconf_ensure_experimental_features
+  fi
 
   local nix_bin_post
   nix_bin_post="$(resolve_nix_bin 2>/dev/null || true)"
