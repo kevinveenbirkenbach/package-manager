@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 High-level mirror actions.
 
@@ -10,6 +8,7 @@ Public API:
     - setup_mirrors
 """
 
+from __future__ import annotations
 from .types import Repository, MirrorMap
 from .list_cmd import list_mirrors
 from .diff_cmd import diff_mirrors
