@@ -22,13 +22,13 @@ IS_STABLE="false"    # "true" -> publish stable tags
 DEFAULT_DISTRO="arch"
 
 usage() {
-  local default_tag="pkgmgr-${distro}"
+  local default_tag="pkgmgr-${PKGMGR_DISTRO}"
   if [[ -n "${TARGET:-}" ]]; then
     default_tag="${default_tag}-${TARGET}"
   fi
 
   cat <<EOF
-Usage: distro=<distro> $0 [options]
+Usage: PKGMGR_DISTRO=<distro> $0 [options]
 
 Build options:
   --missing             Build only if the image does not already exist (local build only)
@@ -103,13 +103,13 @@ done
 
 # Derive default local tag if not provided
 if [[ -z "${IMAGE_TAG}" ]]; then
-  IMAGE_TAG="${REPO_PREFIX}-${distro}"
+  IMAGE_TAG="${REPO_PREFIX}-${PKGMGR_DISTRO}"
   if [[ -n "${TARGET}" ]]; then
     IMAGE_TAG="${IMAGE_TAG}-${TARGET}"
   fi
 fi
 
-BASE_IMAGE="$(resolve_base_image "$distro")"
+BASE_IMAGE="$(resolve_base_image "$PKGMGR_DISTRO")"
 
 # Local-only "missing" shortcut
 if [[ "${MISSING_ONLY}" == "1" ]]; then
@@ -141,7 +141,7 @@ fi
 echo
 echo "------------------------------------------------------------"
 echo "[build] Building image"
-echo "distro     = ${distro}"
+echo "distro     = ${PKGMGR_DISTRO}"
 echo "BASE_IMAGE = ${BASE_IMAGE}"
 if [[ -n "${TARGET}" ]]; then echo "target    = ${TARGET}"; fi
 if [[ "${NO_CACHE}" == "1" ]]; then echo "cache     = disabled"; fi
@@ -167,14 +167,14 @@ if [[ -n "${TARGET}" ]]; then
 fi
 
 compute_publish_tags() {
-  local distro_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}-${distro}"
+  local distro_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}-${PKGMGR_DISTRO}"
   local alias_tag_base=""
 
   if [[ -n "${TARGET}" ]]; then
     distro_tag_base="${distro_tag_base}-${TARGET}"
   fi
 
-  if [[ "${distro}" == "${DEFAULT_DISTRO}" ]]; then
+  if [[ "${PKGMGR_DISTRO}" == "${DEFAULT_DISTRO}" ]]; then
     alias_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}"
     if [[ -n "${TARGET}" ]]; then
       alias_tag_base="${alias_tag_base}-${TARGET}"

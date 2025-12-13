@@ -22,4 +22,4 @@ jobs:
       - name: Run E2E tests via make (${{ matrix.distro }})
         run: |
           set -euo pipefail
-          distro="${{ matrix.distro }}" make test-e2e
+          PKGMGR_DISTRO="${{ matrix.distro }}" make test-e2e

@@ -30,11 +30,11 @@ echo "[publish] DISTROS=${DISTROS}"
 for d in ${DISTROS}; do
   echo
   echo "============================================================"
-  echo "[publish] distro=${d}"
+  echo "[publish] PKGMGR_DISTRO=${d}"
   echo "============================================================"
 
   # virgin
-  distro="${d}" bash "${SCRIPT_DIR}/image.sh" \
+  PKGMGR_DISTRO="${d}" bash "${SCRIPT_DIR}/image.sh" \
     --publish \
     --registry "${REGISTRY}" \
     --owner "${OWNER}" \
@@ -43,7 +43,7 @@ for d in ${DISTROS}; do
     --target virgin
 
   # full (default target)
-  distro="${d}" bash "${SCRIPT_DIR}/image.sh" \
+  PKGMGR_DISTRO="${d}" bash "${SCRIPT_DIR}/image.sh" \
     --publish \
     --registry "${REGISTRY}" \
     --owner "${OWNER}" \

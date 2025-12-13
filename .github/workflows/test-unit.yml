@@ -16,4 +16,4 @@ jobs:
         run: docker version
 
       - name: Run unit tests via make (Arch container)
-        run: make test-unit distro="arch"
+        run: make test-unit PKGMGR_DISTRO="arch"

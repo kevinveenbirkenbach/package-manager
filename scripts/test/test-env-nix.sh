@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="pkgmgr-${distro}"
+IMAGE="pkgmgr-${PKGMGR_DISTRO}"
 
 echo "============================================================"
-echo ">>> Running Nix flake-only test in ${distro} container"
+echo ">>> Running Nix flake-only test in ${PKGMGR_DISTRO} container"
 echo ">>> Image: ${IMAGE}"
 echo "============================================================"
 
 docker run --rm \
   -v "$(pwd):/src" \
-  -v "pkgmgr_nix_store_${distro}:/nix" \
-  -v "pkgmgr_nix_cache_${distro}:/root/.cache/nix" \
+  -v "pkgmgr_nix_store_${PKGMGR_DISTRO}:/nix" \
+  -v "pkgmgr_nix_cache_${PKGMGR_DISTRO}:/root/.cache/nix" \
   --workdir /src \
   -e REINSTALL_PKGMGR=1 \
   "${IMAGE}" \
@@ -27,7 +27,7 @@ docker run --rm \
     echo ">>> preflight: nix must exist in image"
     if ! command -v nix >/dev/null 2>&1; then
       echo "NO_NIX"
-      echo "ERROR: nix not found in image '\'''"${IMAGE}"''\'' (distro='"${distro}"')"
+      echo "ERROR: nix not found in image '\'''"${IMAGE}"''\'' (PKGMGR_DISTRO='"${PKGMGR_DISTRO}"')"
       echo "HINT: Ensure Nix is installed during image build for this distro."
       exit 1
     fi

@@ -2,17 +2,17 @@
 set -euo pipefail
 
 echo "============================================================"
-echo ">>> Running INTEGRATION tests in ${distro} container"
+echo ">>> Running INTEGRATION tests in ${PKGMGR_DISTRO} container"
 echo "============================================================"
 
 docker run --rm \
   -v "$(pwd):/src" \
-  -v pkgmgr_nix_store_${distro}:/nix \
-  -v "pkgmgr_nix_cache_${distro}:/root/.cache/nix" \
+  -v pkgmgr_nix_store_${PKGMGR_DISTRO}:/nix \
+  -v "pkgmgr_nix_cache_${PKGMGR_DISTRO}:/root/.cache/nix" \
   --workdir /src \
   -e REINSTALL_PKGMGR=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
-  "pkgmgr-${distro}" \
+  "pkgmgr-${PKGMGR_DISTRO}" \
   bash -lc '
     set -e;
     git config --global --add safe.directory /src || true;

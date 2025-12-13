@@ -25,4 +25,4 @@ jobs:
       - name: Run container tests (${{ matrix.distro }})
         run: |
           set -euo pipefail
-          distro="${{ matrix.distro }}" make test-env-virtual
+          PKGMGR_DISTRO="${{ matrix.distro }}" make test-env-virtual

@@ -75,7 +75,7 @@ build-no-cache-all:
 	@set -e; \
 	for d in $(DISTROS); do \
 	  echo "=== build-no-cache: $$d ==="; \
-	  distro="$$d" $(MAKE) build-no-cache; \
+	  PKGMGR_DISTRO="$$d" $(MAKE) build-no-cache; \
 	done
 
 # ------------------------------------------------------------
@@ -101,7 +101,7 @@ test-env-nix: build-missing
 test: test-env-virtual test-unit test-integration test-e2e
 
 delete-volumes: 
-	@docker volume rm "pkgmgr_nix_store_${distro}" "pkgmgr_nix_cache_${distro}" || echo "No volumes to delete."
+	@docker volume rm "pkgmgr_nix_store_${PKGMGR_DISTRO}" "pkgmgr_nix_cache_${PKGMGR_DISTRO}" || echo "No volumes to delete."
 
 purge: delete-volumes build-no-cache
 

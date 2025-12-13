@@ -16,4 +16,4 @@ jobs:
         run: docker version
 
       - name: Run integration tests via make (Arch container)
-        run: make test-integration distro="arch"
+        run: make test-integration PKGMGR_DISTRO="arch"

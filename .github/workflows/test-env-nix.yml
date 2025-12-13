@@ -23,4 +23,4 @@ jobs:
       - name: Nix flake-only test (${{ matrix.distro }})
         run: |
           set -euo pipefail
-          distro="${{ matrix.distro }}" make test-env-nix
+          PKGMGR_DISTRO="${{ matrix.distro }}" make test-env-nix
