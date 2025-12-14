@@ -64,10 +64,12 @@ def ensure_remote_repo(
     provider = reg.resolve(spec.host)
     if provider_hint and provider_hint.kind:
         forced = provider_hint.kind.strip().lower()
-        provider = next(
+        forced_provider = next(
             (p for p in reg.providers if getattr(p, "kind", "").lower() == forced),
             None,
         )
+        if forced_provider is not None:
+            provider = forced_provider
 
     if provider is None:
         raise UnsupportedProviderError(f"No provider matched host: {spec.host}")
