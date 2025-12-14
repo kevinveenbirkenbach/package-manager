@@ -1,6 +1,6 @@
 """
 Integration test: update all configured repositories using
---clone-mode https and --no-verification.
+--clone-mode shallow and --no-verification, WITHOUT system updates.
 
 This test is intended to be run inside the Docker container where:
   - network access is available,
@@ -8,8 +8,8 @@ This test is intended to be run inside the Docker container where:
   - and it is safe to perform real git operations.
 
 It passes if BOTH commands complete successfully (in separate tests):
-  1) pkgmgr update --all --clone-mode https --no-verification --system-update
-  2) nix run .#pkgmgr -- update --all --clone-mode https --no-verification --system-update
+  1) pkgmgr update --all --clone-mode shallow --no-verification
+  2) nix run .#pkgmgr -- update --all --clone-mode shallow --no-verification
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ def _make_temp_gitconfig_with_safe_dirs(home: Path) -> Path:
     return gitconfig
 
 
-class TestIntegrationUpdateAllHttps(unittest.TestCase):
+class TestIntegrationUpdateAllshallowNoSystem(unittest.TestCase):
     def _common_env(self, home_dir: str) -> dict[str, str]:
         env = os.environ.copy()
         env["HOME"] = home_dir
@@ -86,32 +86,30 @@ class TestIntegrationUpdateAllHttps(unittest.TestCase):
         remove_pkgmgr_from_nix_profile()
         nix_profile_list_debug("AFTER CLEANUP")
 
-    def test_update_all_repositories_https_pkgmgr(self) -> None:
+    def test_update_all_repositories_shallow_pkgmgr_no_system(self) -> None:
         self._common_setup()
-        with tempfile.TemporaryDirectory(prefix="pkgmgr-updateall-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="pkgmgr-updateall-nosys-") as tmp:
             env = self._common_env(tmp)
             args = [
                 "update",
                 "--all",
                 "--clone-mode",
-                "https",
+                "shallow",
                 "--no-verification",
-                "--system-update",
             ]
             self._run_cmd(["pkgmgr", *args], label="pkgmgr", env=env)
             pkgmgr_help_debug()
 
-    def test_update_all_repositories_https_nix_pkgmgr(self) -> None:
+    def test_update_all_repositories_shallow_nix_pkgmgr_no_system(self) -> None:
         self._common_setup()
-        with tempfile.TemporaryDirectory(prefix="pkgmgr-updateall-nix-") as tmp:
+        with tempfile.TemporaryDirectory(prefix="pkgmgr-updateall-nosys-nix-") as tmp:
             env = self._common_env(tmp)
             args = [
                 "update",
                 "--all",
                 "--clone-mode",
-                "https",
+                "shallow",
                 "--no-verification",
-                "--system-update",
             ]
             self._run_cmd(
                 ["nix", "run", ".#pkgmgr", "--", *args],
