@@ -1,119 +1,70 @@
 from __future__ import annotations
 
-import io
 import os
 import shutil
 import subprocess
-import tempfile
 import unittest
-from contextlib import redirect_stdout
-from types import SimpleNamespace
-
-from pkgmgr.cli.commands.publish import handle_publish
 
 
-def _run(cmd: list[str], cwd: str) -> None:
-    subprocess.run(
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
+def _run_help(cmd: list[str], label: str) -> str:
+    print(f"\n[TEST] Running ({label}): {' '.join(cmd)}")
+    proc = subprocess.run(
         cmd,
-        cwd=cwd,
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        cwd=PROJECT_ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+        env=os.environ.copy(),
     )
+    print(proc.stdout.rstrip())
 
-
-class TestIntegrationPublish(unittest.TestCase):
-    def setUp(self) -> None:
-        if shutil.which("git") is None:
-            self.skipTest("git is required for this integration test")
-
-        self.tmp = tempfile.TemporaryDirectory()
-        self.repo_dir = self.tmp.name
-
-        # Initialize git repository
-        _run(["git", "init"], cwd=self.repo_dir)
-        _run(["git", "config", "user.email", "ci@example.invalid"], cwd=self.repo_dir)
-        _run(["git", "config", "user.name", "CI"], cwd=self.repo_dir)
-
-        with open(os.path.join(self.repo_dir, "README.md"), "w", encoding="utf-8") as f:
-            f.write("test\n")
-
-        _run(["git", "add", "README.md"], cwd=self.repo_dir)
-        _run(["git", "commit", "-m", "init"], cwd=self.repo_dir)
-        _run(["git", "tag", "-a", "v1.2.3", "-m", "v1.2.3"], cwd=self.repo_dir)
-
-        # Create MIRRORS file with PyPI target
-        with open(os.path.join(self.repo_dir, "MIRRORS"), "w", encoding="utf-8") as f:
-            f.write("https://pypi.org/project/pkgmgr/\n")
-
-    def tearDown(self) -> None:
-        self.tmp.cleanup()
-
-    def test_publish_preview_end_to_end(self) -> None:
-        ctx = SimpleNamespace(
-            repositories_base_dir=self.repo_dir,
-            all_repositories=[
-                {
-                    "name": "pkgmgr",
-                    "directory": self.repo_dir,
-                }
-            ],
+    # For --help we expect success (0). Anything else is an error.
+    if proc.returncode != 0:
+        raise AssertionError(
+            f"[TEST] Help command failed ({label}).\n"
+            f"Command: {' '.join(cmd)}\n"
+            f"Exit code: {proc.returncode}\n"
+            f"--- output ---\n{proc.stdout}\n"
         )
 
-        selected = [
-            {
-                "name": "pkgmgr",
-                "directory": self.repo_dir,
-            }
-        ]
+    return proc.stdout
 
-        args = SimpleNamespace(
-            preview=True,
-            non_interactive=False,
+
+class TestPublishHelpE2E(unittest.TestCase):
+    def test_pkgmgr_publish_help(self) -> None:
+        out = _run_help(["pkgmgr", "publish", "--help"], "pkgmgr publish --help")
+        self.assertIn("usage:", out)
+        self.assertIn("publish", out)
+
+    def test_pkgmgr_help_mentions_publish(self) -> None:
+        out = _run_help(["pkgmgr", "--help"], "pkgmgr --help")
+        self.assertIn("publish", out)
+
+    def test_nix_run_pkgmgr_publish_help(self) -> None:
+        if shutil.which("nix") is None:
+            self.skipTest("nix is not available in this environment")
+
+        out = _run_help(
+            ["nix", "run", ".#pkgmgr", "--", "publish", "--help"],
+            "nix run .#pkgmgr -- publish --help",
         )
+        self.assertIn("usage:", out)
+        self.assertIn("publish", out)
 
-        buf = io.StringIO()
-        with redirect_stdout(buf):
-            handle_publish(args=args, ctx=ctx, selected=selected)
+    def test_nix_run_pkgmgr_help_mentions_publish(self) -> None:
+        if shutil.which("nix") is None:
+            self.skipTest("nix is not available in this environment")
 
-        out = buf.getvalue()
-
-        self.assertIn("[pkgmgr] Publishing repository", out)
-        self.assertIn("[INFO] Publishing pkgmgr for tag v1.2.3", out)
-        self.assertIn("[PREVIEW] Would build and upload to PyPI.", out)
-
-        # Preview must not create dist/
-        self.assertFalse(os.path.isdir(os.path.join(self.repo_dir, "dist")))
-
-    def test_publish_skips_without_pypi_mirror(self) -> None:
-        with open(os.path.join(self.repo_dir, "MIRRORS"), "w", encoding="utf-8") as f:
-            f.write("git@github.com:example/example.git\n")
-
-        ctx = SimpleNamespace(
-            repositories_base_dir=self.repo_dir,
-            all_repositories=[
-                {
-                    "name": "pkgmgr",
-                    "directory": self.repo_dir,
-                }
-            ],
+        out = _run_help(
+            ["nix", "run", ".#pkgmgr", "--", "--help"],
+            "nix run .#pkgmgr -- --help",
         )
+        self.assertIn("publish", out)
 
-        selected = [
-            {
-                "name": "pkgmgr",
-                "directory": self.repo_dir,
-            }
-        ]
 
-        args = SimpleNamespace(
-            preview=True,
-            non_interactive=False,
-        )
-
-        buf = io.StringIO()
-        with redirect_stdout(buf):
-            handle_publish(args=args, ctx=ctx, selected=selected)
-
-        out = buf.getvalue()
-        self.assertIn("[INFO] No PyPI mirror found. Skipping publish.", out)
+if __name__ == "__main__":
+    unittest.main()

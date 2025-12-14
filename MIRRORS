@@ -1,3 +1,4 @@
 git@github.com:kevinveenbirkenbach/package-manager.git
 ssh://git@git.veen.world:2201/kevinveenbirkenbach/pkgmgr.git
 ssh://git@code.infinito.nexus:2201/kevinveenbirkenbach/pkgmgr.git
+https://pypi.org/project/kpmx/
