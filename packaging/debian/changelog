@@ -1,3 +1,9 @@
+package-manager (1.6.3-1) unstable; urgency=medium
+
+  * ***Fixed:*** Corrected repository path resolution so release and version logic consistently use the canonical packaging/* layout, preventing changelog and packaging files from being read or updated from incorrect locations.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Sun, 14 Dec 2025 13:39:52 +0100
+
 package-manager (0.9.1-1) unstable; urgency=medium
 
   * * Refactored installer: new `venv-create.sh`, cleaner root/user setup flow, updated README with architecture map.

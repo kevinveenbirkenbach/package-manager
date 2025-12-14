@@ -1,3 +1,8 @@
+## [1.6.3] - 2025-12-14
+
+* ***Fixed:*** Corrected repository path resolution so release and version logic consistently use the canonical packaging/* layout, preventing changelog and packaging files from being read or updated from incorrect locations.
+
+
 ## [1.6.2] - 2025-12-14
 
 * **pkgmgr version** now also shows the installed pkgmgr version when run outside a repository.
