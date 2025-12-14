@@ -1,3 +1,23 @@
+## [1.6.0] - 2025-12-14
+
+* *** Changed ***
+- Unified update handling via a single top-level `pkgmgr update` command, removing ambiguous update paths.
+- Improved update reliability by routing all update logic through a central UpdateManager.
+- Renamed system update flag from `--system-update` to `--system` for clarity and consistency.
+- Made mirror handling explicit and safer by separating setup, check, and provision responsibilities.
+- Improved credential resolution for remote providers (environment → keyring → interactive).
+
+*** Added ***
+- Optional system updates via `pkgmgr update --system` (Arch, Debian/Ubuntu, Fedora/RHEL).
+- `pkgmgr install --update` to force re-running installers and refresh existing installations.
+- Remote repository provisioning for mirrors on supported providers.
+- Extended end-to-end test coverage for update and mirror workflows.
+
+*** Fixed ***
+- Resolved “Unknown repos command: update” errors after CLI refactoring.
+- Improved Nix update stability and reduced CI failures caused by transient rate limits.
+
+
 ## [1.5.0] - 2025-12-13
 
 * - Commands now show live output while running, making long operations easier to follow
