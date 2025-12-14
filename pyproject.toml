@@ -19,7 +19,8 @@ authors = [
 
 # Base runtime dependencies
 dependencies = [
-  "PyYAML>=6.0"
+  "PyYAML>=6.0",
+  "tomli; python_version < \"3.11\"",
 ]
 
 [project.urls]
