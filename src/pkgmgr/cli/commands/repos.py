@@ -8,7 +8,6 @@ from typing import Any, Dict, List
 
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.actions.install import install_repos
-from pkgmgr.actions.repository.update import update_repos
 from pkgmgr.actions.repository.deinstall import deinstall_repos
 from pkgmgr.actions.repository.delete import delete_repos
 from pkgmgr.actions.repository.status import status_repos
@@ -69,25 +68,6 @@ def handle_repos_command(
             args.clone_mode,
             args.dependencies,
             force_update=getattr(args, "update", False),
-        )
-        return
-
-    # ------------------------------------------------------------
-    # update
-    # ------------------------------------------------------------
-    if args.command == "update":
-        update_repos(
-            selected,
-            ctx.repositories_base_dir,
-            ctx.binaries_dir,
-            ctx.all_repositories,
-            args.no_verification,
-            args.system_update,
-            args.preview,
-            args.quiet,
-            args.dependencies,
-            args.clone_mode,
-            force_update=True,
         )
         return
 

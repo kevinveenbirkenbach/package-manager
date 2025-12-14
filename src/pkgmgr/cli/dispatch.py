@@ -129,7 +129,6 @@ def dispatch_command(args, ctx: CLIContext) -> None:
     # ------------------------------------------------------------------ #
     if args.command in (
         "install",
-        "update",
         "deinstall",
         "delete",
         "status",
@@ -140,6 +139,27 @@ def dispatch_command(args, ctx: CLIContext) -> None:
     ):
         handle_repos_command(args, ctx, selected)
         return
+
+    # ------------------------------------------------------------
+    # update
+    # ------------------------------------------------------------
+    if args.command == "update":
+        from pkgmgr.actions.update import UpdateManager
+        UpdateManager().run(
+            selected_repos=selected,
+            repositories_base_dir=ctx.repositories_base_dir,
+            bin_dir=ctx.binaries_dir,
+            all_repos=ctx.all_repositories,
+            no_verification=args.no_verification,
+            system_update=args.system,
+            preview=args.preview,
+            quiet=args.quiet,
+            update_dependencies=args.dependencies,
+            clone_mode=args.clone_mode,
+            force_update=True,
+        )
+        return
+
 
     # ------------------------------------------------------------------ #
     # Tools (explore / terminal / code)
@@ -176,7 +196,7 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         return
 
     if args.command == "mirror":
-        handle_mirror_command(args, ctx, selected)
+        handle_mirror_command(ctx, args, selected)
         return
 
     print(f"Unknown command: {args.command}")

@@ -27,8 +27,8 @@ Homepage = "https://s.veen.world/pkgmgr"
 Source   = "https://github.com/kevinveenbirkenbach/package-manager"
 
 [project.optional-dependencies]
+keyring = ["keyring>=24.0.0"]
 dev = [
-  "pytest",
   "mypy"
 ]
 

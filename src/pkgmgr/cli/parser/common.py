@@ -1,96 +1,134 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+# src/pkgmgr/cli/parser/common.py
 from __future__ import annotations
 
 import argparse
+from typing import Optional, Tuple
 
 
 class SortedSubParsersAction(argparse._SubParsersAction):
     """
-    Subparsers action that keeps choices sorted alphabetically.
+    Subparsers action that keeps subcommands sorted alphabetically.
     """
 
     def add_parser(self, name, **kwargs):
         parser = super().add_parser(name, **kwargs)
-        # Sort choices alphabetically by dest (subcommand name)
         self._choices_actions.sort(key=lambda a: a.dest)
         return parser
+
+
+def _has_action(
+    parser: argparse.ArgumentParser,
+    *,
+    positional: Optional[str] = None,
+    options: Tuple[str, ...] = (),
+) -> bool:
+    """
+    Check whether the parser already has an action.
+
+    - positional: name of a positional argument (e.g. "identifiers")
+    - options: option strings (e.g. "--preview", "-q")
+    """
+    for action in parser._actions:
+        if positional and action.dest == positional:
+            return True
+        if options and any(opt in action.option_strings for opt in options):
+            return True
+    return False
+
+
+def _add_positional_if_missing(
+    parser: argparse.ArgumentParser,
+    name: str,
+    **kwargs,
+) -> None:
+    """Safely add a positional argument."""
+    if _has_action(parser, positional=name):
+        return
+    parser.add_argument(name, **kwargs)
+
+
+def _add_option_if_missing(
+    parser: argparse.ArgumentParser,
+    *option_strings: str,
+    **kwargs,
+) -> None:
+    """Safely add an optional argument."""
+    if _has_action(parser, options=tuple(option_strings)):
+        return
+    parser.add_argument(*option_strings, **kwargs)
 
 
 def add_identifier_arguments(subparser: argparse.ArgumentParser) -> None:
     """
     Common identifier / selection arguments for many subcommands.
-
-    Selection modes (mutual intent, not hard-enforced):
-      - identifiers (positional): select by alias / provider/account/repo
-      - --all: select all repositories
-      - --category / --string / --tag: filter-based selection on top
-        of the full repository set
     """
-    subparser.add_argument(
+    _add_positional_if_missing(
+        subparser,
         "identifiers",
         nargs="*",
         help=(
             "Identifier(s) for repositories. "
-            "Default: Repository of current folder."
+            "Default: repository of the current working directory."
         ),
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--all",
         action="store_true",
         default=False,
         help=(
             "Apply the subcommand to all repositories in the config. "
-            "Some subcommands ask for confirmation. If you want to give this "
-            "confirmation for all repositories, pipe 'yes'. E.g: "
-            "yes | pkgmgr {subcommand} --all"
+            "Pipe 'yes' to auto-confirm. Example:\n"
+            "  yes | pkgmgr <command> --all"
         ),
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--category",
         nargs="+",
         default=[],
-        help=(
-            "Filter repositories by category patterns derived from config "
-            "filenames or repo metadata (use filename without .yml/.yaml, "
-            "or /regex/ to use a regular expression)."
-        ),
+        help="Filter repositories by category (supports /regex/).",
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--string",
         default="",
-        help=(
-            "Filter repositories whose identifier / name / path contains this "
-            "substring (case-insensitive). Use /regex/ for regular expressions."
-        ),
+        help="Filter repositories by substring or /regex/.",
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--tag",
         action="append",
         default=[],
-        help=(
-            "Filter repositories by tag. Matches tags from the repository "
-            "collector and category tags. Use /regex/ for regular expressions."
-        ),
+        help="Filter repositories by tag (supports /regex/).",
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--preview",
         action="store_true",
-        help="Preview changes without executing commands",
+        help="Preview changes without executing commands.",
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--list",
         action="store_true",
-        help="List affected repositories (with preview or status)",
+        help="List affected repositories.",
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "-a",
         "--args",
-        nargs=argparse.REMAINDER,
         dest="extra_args",
-        help="Additional parameters to be attached.",
+        nargs=argparse.REMAINDER,
         default=[],
+        help="Additional parameters to be attached.",
     )
 
 
@@ -99,29 +137,34 @@ def add_install_update_arguments(subparser: argparse.ArgumentParser) -> None:
     Common arguments for install/update commands.
     """
     add_identifier_arguments(subparser)
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "-q",
         "--quiet",
         action="store_true",
-        help="Suppress warnings and info messages",
+        help="Suppress warnings and info messages.",
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--no-verification",
         action="store_true",
         default=False,
-        help="Disable verification via commit/gpg",
+        help="Disable verification via commit / GPG.",
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--dependencies",
         action="store_true",
-        help="Also pull and update dependencies",
+        help="Also pull and update dependencies.",
     )
-    subparser.add_argument(
+
+    _add_option_if_missing(
+        subparser,
         "--clone-mode",
         choices=["ssh", "https", "shallow"],
         default="ssh",
-        help=(
-            "Specify the clone mode: ssh, https, or shallow "
-            "(HTTPS shallow clone; default: ssh)"
-        ),
+        help="Specify clone mode (default: ssh).",
     )
