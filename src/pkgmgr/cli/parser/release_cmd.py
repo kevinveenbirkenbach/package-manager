@@ -21,22 +21,22 @@ def add_release_subparser(
             "and updating the changelog."
         ),
     )
+
     release_parser.add_argument(
         "release_type",
         choices=["major", "minor", "patch"],
         help="Type of version increment for the release (major, minor, patch).",
     )
+
     release_parser.add_argument(
         "-m",
         "--message",
         default=None,
-        help=(
-            "Optional release message to add to the changelog and tag."
-        ),
+        help="Optional release message to add to the changelog and tag.",
     )
-    # Generic selection / preview / list / extra_args
+
     add_identifier_arguments(release_parser)
-    # Close current branch after successful release
+
     release_parser.add_argument(
         "--close",
         action="store_true",
@@ -45,7 +45,7 @@ def add_release_subparser(
             "repository, if it is not main/master."
         ),
     )
-    # Force: skip preview+confirmation and run release directly
+
     release_parser.add_argument(
         "-f",
         "--force",
@@ -54,4 +54,10 @@ def add_release_subparser(
             "Skip the interactive preview+confirmation step and run the "
             "release directly."
         ),
+    )
+
+    release_parser.add_argument(
+        "--no-publish",
+        action="store_true",
+        help="Do not run publish automatically after a successful release.",
     )
