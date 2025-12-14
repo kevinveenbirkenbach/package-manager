@@ -59,8 +59,6 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
 
         # Helper: patch with create=True so missing symbols don't explode.
         # IMPORTANT: patch() does not auto-import submodules when resolving dotted names.
-        # Example failure: AttributeError: pkgmgr.actions.mirror has no attribute 'check_cmd'
-        # → so we import the parent module first (if it exists).
         def _p(target: str, **kwargs):
             module_name = target.rsplit(".", 1)[0]
             try:
@@ -75,7 +73,9 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
         def _fake_ensure_remote_repo(spec, provider_hint=None, options=None):
             # Safety: E2E should only ever call this in preview mode
             if options is not None and getattr(options, "preview", False) is not True:
-                raise AssertionError(f"{cmd_repr} attempted ensure_remote_repo without preview=True in E2E.")
+                raise AssertionError(
+                    f"{cmd_repr} attempted ensure_remote_repo without preview=True in E2E."
+                )
             r = MagicMock()
             r.status = "preview"
             r.message = "Preview mode (E2E patched): no remote provisioning performed."
@@ -94,14 +94,16 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
                 stack.enter_context(_p("pkgmgr.actions.mirror.merge_cmd.build_context", return_value=dummy_ctx))
                 stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.build_context", return_value=dummy_ctx))
                 stack.enter_context(_p("pkgmgr.actions.mirror.remote_provision.build_context", return_value=dummy_ctx))
-                stack.enter_context(_p("pkgmgr.actions.mirror.check_cmd.build_context", return_value=dummy_ctx))
 
-                # setup_cmd imports ensure_origin_remote and probe_mirror directly:
-                stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.ensure_origin_remote", return_value=None))
+                # Deterministic remote probing (covers setup + likely check implementations)
+                stack.enter_context(_p("pkgmgr.actions.mirror.remote_check.probe_mirror", return_value=(True, "")))
                 stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.probe_mirror", return_value=(True, "")))
+                stack.enter_context(_p("pkgmgr.actions.mirror.git_remote.is_remote_reachable", return_value=True))
 
-                # check_cmd likely imports probe_mirror directly too (make it deterministic)
-                stack.enter_context(_p("pkgmgr.actions.mirror.check_cmd.probe_mirror", return_value=(True, "")))
+                # setup_cmd imports ensure_origin_remote directly:
+                stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.ensure_origin_remote", return_value=None))
+                # Extra safety: if any code calls git_remote.ensure_origin_remote directly
+                stack.enter_context(_p("pkgmgr.actions.mirror.git_remote.ensure_origin_remote", return_value=None))
 
                 # remote provisioning: remote_provision imports ensure_remote_repo directly from core:
                 stack.enter_context(
