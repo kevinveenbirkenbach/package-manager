@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.7.0
+Version:        1.7.1
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sun Dec 14 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.7.1-1
+- Patched package-manager to kpmx to publish on pypi
+
 * Sun Dec 14 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.7.0-1
 - * New *pkgmgr publish* command to publish repository artifacts to PyPI based on the *MIRRORS* file.
 * Automatically selects the current repository when no explicit selection is given.

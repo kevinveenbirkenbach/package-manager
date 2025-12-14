@@ -6,8 +6,8 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "package-manager"
-version = "1.7.0"
+name = "kpmx"
+version = "1.7.1"
 description = "Kevin's package-manager tool (pkgmgr)"
 readme = "README.md"
 requires-python = ">=3.9"

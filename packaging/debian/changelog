@@ -1,3 +1,9 @@
+package-manager (1.7.1-1) unstable; urgency=medium
+
+  * Patched package-manager to kpmx to publish on pypi
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Sun, 14 Dec 2025 21:19:11 +0100
+
 package-manager (1.7.0-1) unstable; urgency=medium
 
   * * New *pkgmgr publish* command to publish repository artifacts to PyPI based on the *MIRRORS* file.

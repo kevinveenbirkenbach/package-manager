@@ -1,3 +1,8 @@
+## [1.7.1] - 2025-12-14
+
+* Patched package-manager to kpmx to publish on pypi
+
+
 ## [1.7.0] - 2025-12-14
 
 * * New *pkgmgr publish* command to publish repository artifacts to PyPI based on the *MIRRORS* file.
