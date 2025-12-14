@@ -1,3 +1,12 @@
+## [1.7.2] - 2025-12-15
+
+* * Git mirrors are now resolved consistently (origin → MIRRORS file → config → default).
+* The `origin` remote is always enforced to use the primary URL for both fetch and push.
+* Additional mirrors are added as extra push targets without duplication.
+* Local and remote mirror setup behaves more predictably and consistently.
+* Improved test coverage ensures stable origin and push URL handling.
+
+
 ## [1.7.1] - 2025-12-14
 
 * Patched package-manager to kpmx to publish on pypi

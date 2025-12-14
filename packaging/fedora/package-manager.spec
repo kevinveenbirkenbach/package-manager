@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.7.1
+Version:        1.7.2
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,13 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Mon Dec 15 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.7.2-1
+- * Git mirrors are now resolved consistently (origin → MIRRORS file → config → default).
+* The `origin` remote is always enforced to use the primary URL for both fetch and push.
+* Additional mirrors are added as extra push targets without duplication.
+* Local and remote mirror setup behaves more predictably and consistently.
+* Improved test coverage ensures stable origin and push URL handling.
+
 * Sun Dec 14 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.7.1-1
 - Patched package-manager to kpmx to publish on pypi
 
