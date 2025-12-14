@@ -1,3 +1,8 @@
+## [1.6.1] - 2025-12-14
+
+* * Added automatic retry handling for GitHub 403 / rate-limit errors during Nix flake installs (Fibonacci backoff with jitter).
+
+
 ## [1.6.0] - 2025-12-14
 
 * *** Changed ***
