@@ -1,4 +1,3 @@
-# src/pkgmgr/actions/mirror/remote_provision.py
 from __future__ import annotations
 
 from typing import List
@@ -19,36 +18,28 @@ def ensure_remote_repository(
     preview: bool,
 ) -> None:
     ctx = build_context(repo, repositories_base_dir, all_repos)
-    resolved_mirrors = ctx.resolved_mirrors
 
-    primary_url = determine_primary_remote_url(repo, resolved_mirrors)
+    primary_url = determine_primary_remote_url(repo, ctx)
     if not primary_url:
-        print("[INFO] No remote URL could be derived; skipping remote provisioning.")
+        print("[INFO] No primary URL found; skipping remote provisioning.")
         return
 
-    host_raw, owner_from_url, name_from_url = parse_repo_from_git_url(primary_url)
+    host_raw, owner, name = parse_repo_from_git_url(primary_url)
     host = normalize_provider_host(host_raw)
 
-    if not host or not owner_from_url or not name_from_url:
-        print("[WARN] Could not derive host/owner/repository from URL; cannot ensure remote repo.")
-        print(f"       url={primary_url!r}")
-        print(f"       host={host!r}, owner={owner_from_url!r}, repository={name_from_url!r}")
+    if not host or not owner or not name:
+        print("[WARN] Could not parse remote URL:", primary_url)
         return
 
-    print("------------------------------------------------------------")
-    print(f"[REMOTE ENSURE] {ctx.identifier}")
-    print(f"[REMOTE ENSURE] host: {host}")
-    print("------------------------------------------------------------")
-
     spec = RepoSpec(
-        host=str(host),
-        owner=str(owner_from_url),
-        name=str(name_from_url),
+        host=host,
+        owner=owner,
+        name=name,
         private=bool(repo.get("private", True)),
         description=str(repo.get("description", "")),
     )
 
-    provider_kind = str(repo.get("provider", "")).strip().lower() or None
+    provider_kind = str(repo.get("provider", "")).lower() or None
 
     try:
         result = ensure_remote_repo(
@@ -66,5 +57,3 @@ def ensure_remote_repository(
             print(f"[REMOTE ENSURE] URL: {result.url}")
     except Exception as exc:  # noqa: BLE001
         print(f"[ERROR] Remote provisioning failed: {exc}")
-
-    print()
