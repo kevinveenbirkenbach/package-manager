@@ -1,13 +1,15 @@
-# src/pkgmgr/actions/install/installers/nix/retry.py
 from __future__ import annotations
 
 import random
 import time
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, TYPE_CHECKING
 
 from .types import RunResult
 
+if TYPE_CHECKING:
+    from pkgmgr.actions.install.context import RepoContext
+    from .runner import CommandRunner
 
 @dataclass(frozen=True)
 class RetryPolicy:

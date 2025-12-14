@@ -20,6 +20,7 @@ import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from typing import List
 from unittest.mock import patch
 
 from pkgmgr.actions.install.installers.nix import NixFlakeInstaller
@@ -60,41 +61,50 @@ class TestNixFlakeInstaller(unittest.TestCase):
             shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     @staticmethod
-    def _cp(code: int) -> subprocess.CompletedProcess:
-        # stdout/stderr are irrelevant here, but keep shape realistic
-        return subprocess.CompletedProcess(args=["nix"], returncode=code, stdout="", stderr="")
+    def _cp(code: int, stdout: str = "", stderr: str = "") -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(args=["nix"], returncode=code, stdout=stdout, stderr=stderr)
 
     @staticmethod
     def _enable_nix_in_module(which_patch) -> None:
-        """Ensure shutil.which('nix') in nix module returns a path."""
+        """Ensure shutil.which('nix') in nix installer module returns a path."""
         which_patch.return_value = "/usr/bin/nix"
+
+    @staticmethod
+    def _install_cmds_from_calls(call_args_list) -> List[str]:
+        cmds: List[str] = []
+        for c in call_args_list:
+            if not c.args:
+                continue
+            cmd = c.args[0]
+            if isinstance(cmd, str) and cmd.startswith("nix profile install "):
+                cmds.append(cmd)
+        return cmds
 
     def test_nix_flake_run_success(self) -> None:
         """
-        When run_command returns success (returncode 0), installer
+        When install returns success (returncode 0), installer
         should report success and not raise.
         """
         ctx = DummyCtx(identifier="some-lib", repo_dir=self.repo_dir)
         installer = NixFlakeInstaller()
 
+        install_results = [self._cp(0)]  # first install succeeds
+
+        def fake_subprocess_run(cmd, *args, **kwargs):
+            # cmd is a string because CommandRunner uses shell=True
+            if isinstance(cmd, str) and cmd.startswith("nix profile list --json"):
+                return self._cp(0, stdout='{"elements": []}', stderr="")
+            if isinstance(cmd, str) and cmd.startswith("nix profile install "):
+                return install_results.pop(0)
+            return self._cp(0)
+
         buf = io.StringIO()
         with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
             "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
         ), patch(
-            "pkgmgr.actions.install.installers.nix.runner.subprocess.run"
+            "pkgmgr.actions.install.installers.nix.runner.subprocess.run", side_effect=fake_subprocess_run
         ) as subproc_mock, redirect_stdout(buf):
-
             self._enable_nix_in_module(which_mock)
-
-            subproc_mock.return_value = subprocess.CompletedProcess(
-                args=["nix", "profile", "list", "--json"],
-                returncode=0,
-                stdout='{"elements": []}',
-                stderr="",
-            )
-
-            # Install succeeds
-            run_cmd_mock.return_value = self._cp(0)
 
             self.assertTrue(installer.supports(ctx))
             installer.run(ctx)
@@ -103,12 +113,8 @@ class TestNixFlakeInstaller(unittest.TestCase):
         self.assertIn("[nix] install: nix profile install", out)
         self.assertIn("[nix] output 'default' successfully installed.", out)
 
-        run_cmd_mock.assert_called_with(
-            f"nix profile install {self.repo_dir}#default",
-            cwd=self.repo_dir,
-            preview=False,
-            allow_failure=True,
-        )
+        install_cmds = self._install_cmds_from_calls(subproc_mock.call_args_list)
+        self.assertEqual(install_cmds, [f"nix profile install {self.repo_dir}#default"])
 
     def test_nix_flake_run_mandatory_failure_raises(self) -> None:
         """
@@ -118,33 +124,42 @@ class TestNixFlakeInstaller(unittest.TestCase):
         ctx = DummyCtx(identifier="some-lib", repo_dir=self.repo_dir)
         installer = NixFlakeInstaller()
 
+        # retry layer does one attempt (non-403), then fallback does final attempt => 2 installs
+        install_results = [self._cp(1), self._cp(1)]
+
+        def fake_subprocess_run(cmd, *args, **kwargs):
+            if isinstance(cmd, str) and cmd.startswith("nix profile list --json"):
+                return self._cp(0, stdout='{"elements": []}', stderr="")
+            if isinstance(cmd, str) and cmd.startswith("nix profile install "):
+                return install_results.pop(0)
+            return self._cp(0)
+
         buf = io.StringIO()
         with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
             "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
         ), patch(
-            "pkgmgr.actions.install.installers.nix.runner.subprocess.run"
+            "pkgmgr.actions.install.installers.nix.runner.subprocess.run", side_effect=fake_subprocess_run
         ) as subproc_mock, redirect_stdout(buf):
-
             self._enable_nix_in_module(which_mock)
-
-            subproc_mock.return_value = subprocess.CompletedProcess(
-                args=["nix", "profile", "list", "--json"],
-                returncode=0,
-                stdout='{"elements": []}',
-                stderr="",
-            )
-
-            # First install fails, retry fails -> should raise SystemExit(1)
-            run_cmd_mock.side_effect = [self._cp(1), self._cp(1)]
 
             self.assertTrue(installer.supports(ctx))
             with self.assertRaises(SystemExit) as cm:
                 installer.run(ctx)
 
         self.assertEqual(cm.exception.code, 1)
+
         out = buf.getvalue()
         self.assertIn("[nix] install: nix profile install", out)
         self.assertIn("[ERROR] Failed to install Nix flake output 'default' (exit 1)", out)
+
+        install_cmds = self._install_cmds_from_calls(subproc_mock.call_args_list)
+        self.assertEqual(
+            install_cmds,
+            [
+                f"nix profile install {self.repo_dir}#default",
+                f"nix profile install {self.repo_dir}#default",
+            ],
+        )
 
     def test_nix_flake_run_optional_failure_does_not_raise(self) -> None:
         """
@@ -156,29 +171,26 @@ class TestNixFlakeInstaller(unittest.TestCase):
         ctx = DummyCtx(identifier="pkgmgr", repo_dir=self.repo_dir)
         installer = NixFlakeInstaller()
 
+        # pkgmgr success (1 call), default fails (2 calls: attempt + final)
+        install_results = [self._cp(0), self._cp(1), self._cp(1)]
+
+        def fake_subprocess_run(cmd, *args, **kwargs):
+            if isinstance(cmd, str) and cmd.startswith("nix profile list --json"):
+                return self._cp(0, stdout='{"elements": []}', stderr="")
+            if isinstance(cmd, str) and cmd.startswith("nix profile install "):
+                return install_results.pop(0)
+            return self._cp(0)
+
         buf = io.StringIO()
         with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
             "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
         ), patch(
-            "pkgmgr.actions.install.installers.nix.runner.subprocess.run"
+            "pkgmgr.actions.install.installers.nix.runner.subprocess.run", side_effect=fake_subprocess_run
         ) as subproc_mock, redirect_stdout(buf):
-
             self._enable_nix_in_module(which_mock)
 
-            subproc_mock.return_value = subprocess.CompletedProcess(
-                args=["nix", "profile", "list", "--json"],
-                returncode=0,
-                stdout='{"elements": []}',
-                stderr="",
-            )
-
-            # pkgmgr install ok; default fails twice (initial + retry)
-            run_cmd_mock.side_effect = [self._cp(0), self._cp(1), self._cp(1)]
-
             self.assertTrue(installer.supports(ctx))
-
-            # Must NOT raise despite optional failure
-            installer.run(ctx)
+            installer.run(ctx)  # must NOT raise
 
         out = buf.getvalue()
 
@@ -192,14 +204,15 @@ class TestNixFlakeInstaller(unittest.TestCase):
         self.assertIn("[ERROR] Failed to install Nix flake output 'default' (exit 1)", out)
         self.assertIn("[WARNING] Continuing despite failure of optional output 'default'.", out)
 
-        # Verify run_command was called for both outputs (default twice due to retry)
-        expected_calls = [
-            (f"nix profile install {self.repo_dir}#pkgmgr",),
-            (f"nix profile install {self.repo_dir}#default",),
-            (f"nix profile install {self.repo_dir}#default",),
-        ]
-        actual_cmds = [c.args[0] for c in run_cmd_mock.call_args_list]
-        self.assertEqual(actual_cmds, [e[0] for e in expected_calls])
+        install_cmds = self._install_cmds_from_calls(subproc_mock.call_args_list)
+        self.assertEqual(
+            install_cmds,
+            [
+                f"nix profile install {self.repo_dir}#pkgmgr",
+                f"nix profile install {self.repo_dir}#default",
+                f"nix profile install {self.repo_dir}#default",
+            ],
+        )
 
     def test_nix_flake_supports_respects_disable_env(self) -> None:
         """
@@ -215,6 +228,7 @@ class TestNixFlakeInstaller(unittest.TestCase):
             self._enable_nix_in_module(which_mock)
             os.environ["PKGMGR_DISABLE_NIX_FLAKE_INSTALLER"] = "1"
             self.assertFalse(installer.supports(ctx))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import subprocess
 
+from typing import TYPE_CHECKING
+
 from .types import RunResult
 
+if TYPE_CHECKING:
+    from pkgmgr.actions.install.context import RepoContext
 
 class CommandRunner:
     """

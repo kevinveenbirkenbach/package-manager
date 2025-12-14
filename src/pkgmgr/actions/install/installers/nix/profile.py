@@ -1,9 +1,13 @@
-# src/pkgmgr/actions/install/installers/nix/profile.py
 from __future__ import annotations
 
 import json
-from typing import Any, List
+from typing import Any, List, TYPE_CHECKING
 
+
+if TYPE_CHECKING:
+    from pkgmgr.actions.install.context import RepoContext
+    from .runner import CommandRunner
+ 
 class NixProfileInspector:
     """
     Reads and interprets `nix profile list --json` and provides helpers for

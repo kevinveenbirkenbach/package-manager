@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 import shutil
-from typing import List, Tuple
+from typing import List, Tuple, TYPE_CHECKING
 
 from pkgmgr.actions.install.installers.base import BaseInstaller
 
@@ -11,6 +11,8 @@ from .profile import NixProfileInspector
 from .retry import GitHubRateLimitRetry, RetryPolicy
 from .runner import CommandRunner
 
+if TYPE_CHECKING:
+    from pkgmgr.actions.install.context import RepoContext
 
 class NixFlakeInstaller(BaseInstaller):
     layer = "nix"
