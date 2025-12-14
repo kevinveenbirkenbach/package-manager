@@ -129,7 +129,6 @@ def dispatch_command(args, ctx: CLIContext) -> None:
     # ------------------------------------------------------------------ #
     if args.command in (
         "install",
-        "update",
         "deinstall",
         "delete",
         "status",
