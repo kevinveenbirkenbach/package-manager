@@ -28,8 +28,8 @@ jobs:
   test-virgin-root:
     uses: ./.github/workflows/test-virgin-root.yml
 
-  codesniffer-shellcheck:
-    uses: ./.github/workflows/codesniffer-shellcheck.yml
+  linter-shell:
+    uses: ./.github/workflows/linter-shell.yml
 
-  codesniffer-ruff:
-    uses: ./.github/workflows/codesniffer-ruff.yml
+  linter-python:
+    uses: ./.github/workflows/linter-python.yml
