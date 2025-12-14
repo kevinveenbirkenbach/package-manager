@@ -9,7 +9,7 @@ from pkgmgr.core.remote_provisioning.ensure import EnsureOptions
 from .context import build_context
 from .git_remote import determine_primary_remote_url
 from .types import Repository
-from .url_utils import hostport_from_git_url, normalize_provider_host
+from .url_utils import normalize_provider_host, parse_repo_from_git_url
 
 
 def ensure_remote_repository(
@@ -18,11 +18,6 @@ def ensure_remote_repository(
     all_repos: List[Repository],
     preview: bool,
 ) -> None:
-    """
-    Ensure that the remote repository exists using provider APIs.
-
-    This is ONLY called when ensure_remote=True.
-    """
     ctx = build_context(repo, repositories_base_dir, all_repos)
     resolved_mirrors = ctx.resolved_mirrors
 
@@ -31,15 +26,13 @@ def ensure_remote_repository(
         print("[INFO] No remote URL could be derived; skipping remote provisioning.")
         return
 
-    host_raw, _port = hostport_from_git_url(primary_url)
+    host_raw, owner_from_url, name_from_url = parse_repo_from_git_url(primary_url)
     host = normalize_provider_host(host_raw)
 
-    owner = repo.get("account")
-    name = repo.get("repository")
-
-    if not host or not owner or not name:
-        print("[WARN] Missing host/account/repository; cannot ensure remote repo.")
-        print(f"       host={host!r}, account={owner!r}, repository={name!r}")
+    if not host or not owner_from_url or not name_from_url:
+        print("[WARN] Could not derive host/owner/repository from URL; cannot ensure remote repo.")
+        print(f"       url={primary_url!r}")
+        print(f"       host={host!r}, owner={owner_from_url!r}, repository={name_from_url!r}")
         return
 
     print("------------------------------------------------------------")
@@ -49,8 +42,8 @@ def ensure_remote_repository(
 
     spec = RepoSpec(
         host=str(host),
-        owner=str(owner),
-        name=str(name),
+        owner=str(owner_from_url),
+        name=str(name_from_url),
         private=bool(repo.get("private", True)),
         description=str(repo.get("description", "")),
     )

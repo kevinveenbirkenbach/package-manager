@@ -6,14 +6,6 @@ from typing import Optional, Tuple
 
 
 def hostport_from_git_url(url: str) -> Tuple[str, Optional[str]]:
-    """
-    Extract (host, port) from common Git remote URL formats.
-
-    Supports:
-      - ssh://git@host:2201/owner/repo.git
-      - https://host/owner/repo.git
-      - git@host:owner/repo.git   (scp-like; no explicit port)
-    """
     url = (url or "").strip()
     if not url:
         return "", None
@@ -24,7 +16,6 @@ def hostport_from_git_url(url: str) -> Tuple[str, Optional[str]]:
         if "@" in netloc:
             netloc = netloc.split("@", 1)[1]
 
-        # IPv6 bracket form: [::1]:2222
         if netloc.startswith("[") and "]" in netloc:
             host = netloc[1:netloc.index("]")]
             rest = netloc[netloc.index("]") + 1 :]
@@ -37,7 +28,6 @@ def hostport_from_git_url(url: str) -> Tuple[str, Optional[str]]:
 
         return netloc.strip(), None
 
-    # scp-like: git@host:owner/repo.git
     if "@" in url and ":" in url:
         after_at = url.split("@", 1)[1]
         host = after_at.split(":", 1)[0].strip()
@@ -48,12 +38,6 @@ def hostport_from_git_url(url: str) -> Tuple[str, Optional[str]]:
 
 
 def normalize_provider_host(host: str) -> str:
-    """
-    Normalize host for provider matching:
-      - strip brackets
-      - strip optional :port
-      - lowercase
-    """
     host = (host or "").strip()
     if not host:
         return ""
@@ -65,3 +49,63 @@ def normalize_provider_host(host: str) -> str:
         host = host.rsplit(":", 1)[0]
 
     return host.strip().lower()
+
+
+def _strip_dot_git(name: str) -> str:
+    n = (name or "").strip()
+    if n.lower().endswith(".git"):
+        return n[:-4]
+    return n
+
+
+def parse_repo_from_git_url(url: str) -> Tuple[str, Optional[str], Optional[str]]:
+    """
+    Parse (host, owner, repo_name) from common Git remote URLs.
+
+    Supports:
+      - ssh://git@host:2201/owner/repo.git
+      - https://host/owner/repo.git
+      - git@host:owner/repo.git
+      - host/owner/repo(.git) (best-effort)
+
+    Returns:
+      (host, owner, repo_name) with owner/repo possibly None if not derivable.
+    """
+    u = (url or "").strip()
+    if not u:
+        return "", None, None
+
+    # URL-style (ssh://, https://, http://)
+    if "://" in u:
+        parsed = urlparse(u)
+        host = (parsed.hostname or "").strip()
+        path = (parsed.path or "").strip("/")
+        parts = [p for p in path.split("/") if p]
+        if len(parts) >= 2:
+            owner = parts[0]
+            repo_name = _strip_dot_git(parts[1])
+            return host, owner, repo_name
+        return host, None, None
+
+    # SCP-like: git@host:owner/repo.git
+    if "@" in u and ":" in u:
+        after_at = u.split("@", 1)[1]
+        host = after_at.split(":", 1)[0].strip()
+        path = after_at.split(":", 1)[1].strip("/")
+        parts = [p for p in path.split("/") if p]
+        if len(parts) >= 2:
+            owner = parts[0]
+            repo_name = _strip_dot_git(parts[1])
+            return host, owner, repo_name
+        return host, None, None
+
+    # Fallback: host/owner/repo.git
+    host = u.split("/", 1)[0].strip()
+    rest = u.split("/", 1)[1] if "/" in u else ""
+    parts = [p for p in rest.strip("/").split("/") if p]
+    if len(parts) >= 2:
+        owner = parts[0]
+        repo_name = _strip_dot_git(parts[1])
+        return host, owner, repo_name
+
+    return host, None, None
