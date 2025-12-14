@@ -13,7 +13,7 @@ if [[ ! -f "${RETRY_LIB}" ]]; then
   exit 1
 fi
 
-# shellcheck source=./nix/lib/retry_403.sh
+# shellcheck source=./scripts/nix/lib/retry_403.sh
 source "${RETRY_LIB}"
 
 # ---------------------------------------------------------------------------
