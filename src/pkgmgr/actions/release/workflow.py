@@ -1,10 +1,13 @@
+# src/pkgmgr/actions/release/workflow.py
 from __future__ import annotations
-from typing import Optional
+
 import os
 import sys
+from typing import Optional
 
 from pkgmgr.actions.branch import close_branch
 from pkgmgr.core.git import get_current_branch, GitError
+from pkgmgr.core.repository.paths import resolve_repo_paths
 
 from .files import (
     update_changelog,
@@ -55,8 +58,12 @@ def _release_impl(
     print(f"New version:     {new_ver_str} ({release_type})")
 
     repo_root = os.path.dirname(os.path.abspath(pyproject_path))
+    paths = resolve_repo_paths(repo_root)
+
+    # --- Update versioned files ------------------------------------------------
 
     update_pyproject_version(pyproject_path, new_ver_str, preview=preview)
+
     changelog_message = update_changelog(
         changelog_path,
         new_ver_str,
@@ -64,38 +71,46 @@ def _release_impl(
         preview=preview,
     )
 
-    flake_path = os.path.join(repo_root, "flake.nix")
-    update_flake_version(flake_path, new_ver_str, preview=preview)
+    update_flake_version(paths.flake_nix, new_ver_str, preview=preview)
 
-    pkgbuild_path = os.path.join(repo_root, "PKGBUILD")
-    update_pkgbuild_version(pkgbuild_path, new_ver_str, preview=preview)
+    if paths.arch_pkgbuild:
+        update_pkgbuild_version(paths.arch_pkgbuild, new_ver_str, preview=preview)
+    else:
+        print("[INFO] No PKGBUILD found (packaging/arch/PKGBUILD or PKGBUILD). Skipping.")
 
-    spec_path = os.path.join(repo_root, "package-manager.spec")
-    update_spec_version(spec_path, new_ver_str, preview=preview)
+    if paths.rpm_spec:
+        update_spec_version(paths.rpm_spec, new_ver_str, preview=preview)
+    else:
+        print("[INFO] No RPM spec file found. Skipping spec version update.")
 
     effective_message: Optional[str] = message
     if effective_message is None and isinstance(changelog_message, str):
         if changelog_message.strip():
             effective_message = changelog_message.strip()
 
-    debian_changelog_path = os.path.join(repo_root, "debian", "changelog")
     package_name = os.path.basename(repo_root) or "package-manager"
 
-    update_debian_changelog(
-        debian_changelog_path,
-        package_name=package_name,
-        new_version=new_ver_str,
-        message=effective_message,
-        preview=preview,
-    )
+    if paths.debian_changelog:
+        update_debian_changelog(
+            paths.debian_changelog,
+            package_name=package_name,
+            new_version=new_ver_str,
+            message=effective_message,
+            preview=preview,
+        )
+    else:
+        print("[INFO] No debian changelog found. Skipping debian/changelog update.")
 
-    update_spec_changelog(
-        spec_path=spec_path,
-        package_name=package_name,
-        new_version=new_ver_str,
-        message=effective_message,
-        preview=preview,
-    )
+    if paths.rpm_spec:
+        update_spec_changelog(
+            spec_path=paths.rpm_spec,
+            package_name=package_name,
+            new_version=new_ver_str,
+            message=effective_message,
+            preview=preview,
+        )
+
+    # --- Git commit / tag / push ----------------------------------------------
 
     commit_msg = f"Release version {new_ver_str}"
     tag_msg = effective_message or commit_msg
@@ -103,12 +118,12 @@ def _release_impl(
     files_to_add = [
         pyproject_path,
         changelog_path,
-        flake_path,
-        pkgbuild_path,
-        spec_path,
-        debian_changelog_path,
+        paths.flake_nix,
+        paths.arch_pkgbuild,
+        paths.rpm_spec,
+        paths.debian_changelog,
     ]
-    existing_files = [p for p in files_to_add if p and os.path.exists(p)]
+    existing_files = [p for p in files_to_add if isinstance(p, str) and p and os.path.exists(p)]
 
     if preview:
         for path in existing_files:
