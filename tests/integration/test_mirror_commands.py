@@ -15,6 +15,7 @@ are patched to keep tests deterministic and CI-safe.
 
 from __future__ import annotations
 
+import importlib
 import io
 import os
 import runpy
@@ -56,8 +57,18 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
             }
         )
 
-        # Helper: patch with create=True so missing modules/symbols don't explode
+        # Helper: patch with create=True so missing symbols don't explode.
+        # IMPORTANT: patch() does not auto-import submodules when resolving dotted names.
+        # Example failure: AttributeError: pkgmgr.actions.mirror has no attribute 'check_cmd'
+        # → so we import the parent module first (if it exists).
         def _p(target: str, **kwargs):
+            module_name = target.rsplit(".", 1)[0]
+            try:
+                importlib.import_module(module_name)
+            except ModuleNotFoundError:
+                # If the module truly doesn't exist, create=True may still allow patching
+                # in some cases, but dotted resolution can still fail. Best-effort.
+                pass
             return patch(target, create=True, **kwargs)
 
         # Fake result for remote provisioning (preview-safe)
@@ -113,7 +124,6 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
                                 "%r failed with exit code %r.\n\nOutput:\n%s"
                                 % (cmd_repr, exc.code, buffer.getvalue())
                             )
-
 
             return buffer.getvalue()
 
