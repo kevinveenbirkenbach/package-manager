@@ -13,9 +13,6 @@ if [[ ! -f "${RETRY_LIB}" ]]; then
   exit 1
 fi
 
-# shellcheck source=./scripts/nix/lib/retry_403.sh
-source "${RETRY_LIB}"
-
 # ---------------------------------------------------------------------------
 # Try to ensure that "nix" is on PATH (common locations + container user)
 # ---------------------------------------------------------------------------
@@ -47,8 +44,12 @@ fi
 # ---------------------------------------------------------------------------
 # Primary path: use Nix flake if available (with GitHub 403 retry)
 # ---------------------------------------------------------------------------
-if command -v nix >/dev/null 2>&1; then
+if declare -F run_with_github_403_retry >/dev/null; then
+  # shellcheck source=./scripts/nix/lib/retry_403.sh
+  source "${RETRY_LIB}"
   exec run_with_github_403_retry nix run "${FLAKE_DIR}#pkgmgr" -- "$@"
+else
+  exec nix run "${FLAKE_DIR}#pkgmgr" -- "$@"
 fi
 
 echo "[launcher] ERROR: 'nix' binary not found on PATH after init."
