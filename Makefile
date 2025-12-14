@@ -44,7 +44,7 @@ install:
 # ------------------------------------------------------------
 
 # Default: keep current auto-detection behavior
-setup: setup-nix setup-venv
+setup: setup-venv
 
 # Explicit: developer setup (Python venv + shell RC + install)
 setup-venv: setup-nix
