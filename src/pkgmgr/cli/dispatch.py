@@ -176,7 +176,7 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         return
 
     if args.command == "mirror":
-        handle_mirror_command(args, ctx, selected)
+        handle_mirror_command(ctx, args, selected)
         return
 
     print(f"Unknown command: {args.command}")
