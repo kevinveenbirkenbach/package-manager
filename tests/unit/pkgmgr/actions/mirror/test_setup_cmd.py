@@ -4,55 +4,120 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
-from pkgmgr.actions.mirror.setup_cmd import _probe_mirror
-from pkgmgr.core.git import GitError
+from pkgmgr.actions.mirror.setup_cmd import setup_mirrors
 
 
 class TestMirrorSetupCmd(unittest.TestCase):
     """
-    Unit tests for the non-destructive remote probing logic in setup_cmd.
+    Unit tests for mirror setup orchestration (local + remote).
     """
 
-    @patch("pkgmgr.actions.mirror.setup_cmd.run_git")
-    def test_probe_mirror_success_returns_true_and_empty_message(
+    @patch("pkgmgr.actions.mirror.setup_cmd.ensure_origin_remote")
+    @patch("pkgmgr.actions.mirror.setup_cmd.build_context")
+    def test_setup_mirrors_local_calls_ensure_origin_remote(
         self,
-        mock_run_git,
+        mock_build_context,
+        mock_ensure_origin,
     ) -> None:
-        """
-        If run_git returns successfully, _probe_mirror must report (True, "").
-        """
-        mock_run_git.return_value = "dummy-output"
+        ctx = MagicMock()
+        ctx.identifier = "repo-id"
+        ctx.repo_dir = "/tmp/repo"
+        ctx.config_mirrors = {}
+        ctx.file_mirrors = {}
+        type(ctx).resolved_mirrors = PropertyMock(return_value={})
+        mock_build_context.return_value = ctx
 
-        ok, message = _probe_mirror(
-            "ssh://git@code.cymais.cloud:2201/kevinveenbirkenbach/pkgmgr.git",
-            "/tmp/some-repo",
+        repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
+
+        setup_mirrors(
+            selected_repos=[repo],
+            repositories_base_dir="/base",
+            all_repos=[repo],
+            preview=True,
+            local=True,
+            remote=False,
+            ensure_remote=False,
         )
 
-        self.assertTrue(ok)
-        self.assertEqual(message, "")
-        mock_run_git.assert_called_once()
+        mock_ensure_origin.assert_called_once()
+        args, kwargs = mock_ensure_origin.call_args
+        self.assertEqual(args[0], repo)
+        self.assertEqual(kwargs.get("preview"), True)
 
-    @patch("pkgmgr.actions.mirror.setup_cmd.run_git")
-    def test_probe_mirror_failure_returns_false_and_error_message(
+    @patch("pkgmgr.actions.mirror.setup_cmd.ensure_remote_repository")
+    @patch("pkgmgr.actions.mirror.setup_cmd.probe_mirror")
+    @patch("pkgmgr.actions.mirror.setup_cmd.build_context")
+    def test_setup_mirrors_remote_provisions_when_enabled(
         self,
-        mock_run_git,
+        mock_build_context,
+        mock_probe,
+        mock_ensure_remote_repository,
     ) -> None:
-        """
-        If run_git raises GitError, _probe_mirror must report (False, <message>),
-        and not re-raise the exception.
-        """
-        mock_run_git.side_effect = GitError("Git command failed (simulated)")
+        ctx = MagicMock()
+        ctx.identifier = "repo-id"
+        ctx.repo_dir = "/tmp/repo"
+        ctx.config_mirrors = {"origin": "git@github.com:alice/repo.git"}
+        ctx.file_mirrors = {}
+        type(ctx).resolved_mirrors = PropertyMock(return_value={"origin": "git@github.com:alice/repo.git"})
+        mock_build_context.return_value = ctx
 
-        ok, message = _probe_mirror(
-            "ssh://git@code.cymais.cloud:2201/kevinveenbirkenbach/pkgmgr.git",
-            "/tmp/some-repo",
+        mock_probe.return_value = (True, "")
+
+        repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
+
+        setup_mirrors(
+            selected_repos=[repo],
+            repositories_base_dir="/base",
+            all_repos=[repo],
+            preview=False,
+            local=False,
+            remote=True,
+            ensure_remote=True,
         )
 
-        self.assertFalse(ok)
-        self.assertIn("Git command failed", message)
-        mock_run_git.assert_called_once()
+        mock_ensure_remote_repository.assert_called_once()
+        mock_probe.assert_called_once()
+
+    @patch("pkgmgr.actions.mirror.setup_cmd.ensure_remote_repository")
+    @patch("pkgmgr.actions.mirror.setup_cmd.probe_mirror")
+    @patch("pkgmgr.actions.mirror.setup_cmd.build_context")
+    def test_setup_mirrors_remote_probes_all_resolved_mirrors(
+        self,
+        mock_build_context,
+        mock_probe,
+        mock_ensure_remote_repository,
+    ) -> None:
+        ctx = MagicMock()
+        ctx.identifier = "repo-id"
+        ctx.repo_dir = "/tmp/repo"
+        ctx.config_mirrors = {}
+        ctx.file_mirrors = {}
+        type(ctx).resolved_mirrors = PropertyMock(
+            return_value={
+                "mirror": "git@github.com:alice/repo.git",
+                "backup": "ssh://git@git.veen.world:2201/alice/repo.git",
+            }
+        )
+        mock_build_context.return_value = ctx
+
+        mock_probe.return_value = (True, "")
+
+        repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
+
+        setup_mirrors(
+            selected_repos=[repo],
+            repositories_base_dir="/base",
+            all_repos=[repo],
+            preview=False,
+            local=False,
+            remote=True,
+            ensure_remote=False,
+        )
+
+        mock_ensure_remote_repository.assert_not_called()
+        self.assertEqual(mock_probe.call_count, 2)
 
 
 if __name__ == "__main__":
