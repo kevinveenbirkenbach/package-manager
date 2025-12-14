@@ -22,7 +22,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from pkgmgr.actions.install.installers.nix_flake import NixFlakeInstaller
+from pkgmgr.actions.install.installers.nix import NixFlakeInstaller
 
 
 class DummyCtx:
@@ -66,7 +66,7 @@ class TestNixFlakeInstaller(unittest.TestCase):
 
     @staticmethod
     def _enable_nix_in_module(which_patch) -> None:
-        """Ensure shutil.which('nix') in nix_flake module returns a path."""
+        """Ensure shutil.which('nix') in nix module returns a path."""
         which_patch.return_value = "/usr/bin/nix"
 
     def test_nix_flake_run_success(self) -> None:
@@ -78,14 +78,14 @@ class TestNixFlakeInstaller(unittest.TestCase):
         installer = NixFlakeInstaller()
 
         buf = io.StringIO()
-        with patch("pkgmgr.actions.install.installers.nix_flake.shutil.which") as which_mock, patch(
-            "pkgmgr.actions.install.installers.nix_flake.subprocess.run"
-        ) as subproc_mock, patch(
-            "pkgmgr.actions.install.installers.nix_flake.run_command"
-        ) as run_cmd_mock, redirect_stdout(buf):
+        with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
+            "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
+        ), patch(
+            "pkgmgr.actions.install.installers.nix.runner.subprocess.run"
+        ) as subproc_mock, redirect_stdout(buf):
+
             self._enable_nix_in_module(which_mock)
 
-            # For profile list JSON (used only on failure paths, but keep deterministic)
             subproc_mock.return_value = subprocess.CompletedProcess(
                 args=["nix", "profile", "list", "--json"],
                 returncode=0,
@@ -119,14 +119,14 @@ class TestNixFlakeInstaller(unittest.TestCase):
         installer = NixFlakeInstaller()
 
         buf = io.StringIO()
-        with patch("pkgmgr.actions.install.installers.nix_flake.shutil.which") as which_mock, patch(
-            "pkgmgr.actions.install.installers.nix_flake.subprocess.run"
-        ) as subproc_mock, patch(
-            "pkgmgr.actions.install.installers.nix_flake.run_command"
-        ) as run_cmd_mock, redirect_stdout(buf):
+        with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
+            "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
+        ), patch(
+            "pkgmgr.actions.install.installers.nix.runner.subprocess.run"
+        ) as subproc_mock, redirect_stdout(buf):
+
             self._enable_nix_in_module(which_mock)
 
-            # No indices available (empty list)
             subproc_mock.return_value = subprocess.CompletedProcess(
                 args=["nix", "profile", "list", "--json"],
                 returncode=0,
@@ -157,14 +157,14 @@ class TestNixFlakeInstaller(unittest.TestCase):
         installer = NixFlakeInstaller()
 
         buf = io.StringIO()
-        with patch("pkgmgr.actions.install.installers.nix_flake.shutil.which") as which_mock, patch(
-            "pkgmgr.actions.install.installers.nix_flake.subprocess.run"
-        ) as subproc_mock, patch(
-            "pkgmgr.actions.install.installers.nix_flake.run_command"
-        ) as run_cmd_mock, redirect_stdout(buf):
+        with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
+            "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
+        ), patch(
+            "pkgmgr.actions.install.installers.nix.runner.subprocess.run"
+        ) as subproc_mock, redirect_stdout(buf):
+
             self._enable_nix_in_module(which_mock)
 
-            # No indices available (empty list)
             subproc_mock.return_value = subprocess.CompletedProcess(
                 args=["nix", "profile", "list", "--json"],
                 returncode=0,
@@ -209,11 +209,12 @@ class TestNixFlakeInstaller(unittest.TestCase):
         ctx = DummyCtx(identifier="pkgmgr", repo_dir=self.repo_dir, quiet=False)
         installer = NixFlakeInstaller()
 
-        with patch("pkgmgr.actions.install.installers.nix_flake.shutil.which") as which_mock:
+        with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
+            "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
+        ):
             self._enable_nix_in_module(which_mock)
             os.environ["PKGMGR_DISABLE_NIX_FLAKE_INSTALLER"] = "1"
             self.assertFalse(installer.supports(ctx))
-
 
 if __name__ == "__main__":
     unittest.main()

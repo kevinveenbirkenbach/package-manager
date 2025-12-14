@@ -28,7 +28,7 @@ from pkgmgr.actions.install.installers.os_packages import (
     DebianControlInstaller,
     RpmSpecInstaller,
 )
-from pkgmgr.actions.install.installers.nix_flake import (
+from pkgmgr.actions.install.installers.nix import (
     NixFlakeInstaller,
 )
 from pkgmgr.actions.install.installers.python import PythonInstaller

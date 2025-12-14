@@ -23,7 +23,7 @@ from unittest.mock import patch
 import pkgmgr.actions.install as install_mod
 from pkgmgr.actions.install import install_repos
 from pkgmgr.actions.install.installers.makefile import MakefileInstaller
-from pkgmgr.actions.install.installers.nix_flake import NixFlakeInstaller
+from pkgmgr.actions.install.installers.nix import NixFlakeInstaller
 from pkgmgr.actions.install.installers.os_packages.arch_pkgbuild import (
     ArchPkgbuildInstaller,
 )

@@ -9,7 +9,7 @@ pkgmgr.actions.install.installers.
 """
 
 from pkgmgr.actions.install.installers.base import BaseInstaller  # noqa: F401
-from pkgmgr.actions.install.installers.nix_flake import NixFlakeInstaller  # noqa: F401
+from pkgmgr.actions.install.installers.nix import NixFlakeInstaller  # noqa: F401
 from pkgmgr.actions.install.installers.python import PythonInstaller  # noqa: F401
 from pkgmgr.actions.install.installers.makefile import MakefileInstaller  # noqa: F401
 
