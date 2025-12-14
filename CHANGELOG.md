@@ -1,3 +1,8 @@
+## [1.6.2] - 2025-12-14
+
+* **pkgmgr version** now also shows the installed pkgmgr version when run outside a repository.
+
+
 ## [1.6.1] - 2025-12-14
 
 * * Added automatic retry handling for GitHub 403 / rate-limit errors during Nix flake installs (Fibonacci backoff with jitter).
