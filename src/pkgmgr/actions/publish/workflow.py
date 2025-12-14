@@ -84,10 +84,13 @@ def publish(
         raise RuntimeError("No build artifacts found in dist/.")
 
     resolver = TokenResolver()
+
+    # Store PyPI token per OS user (keyring is already user-scoped).
+    # Do NOT scope by project name.
     token = resolver.get_token(
         provider_kind="pypi",
         host=target.host,
-        owner=target.project,
+        owner=None,
         options=ResolutionOptions(
             interactive=interactive,
             allow_prompt=allow_prompt,
