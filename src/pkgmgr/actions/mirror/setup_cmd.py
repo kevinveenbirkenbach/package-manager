@@ -4,11 +4,10 @@ from __future__ import annotations
 from typing import List
 
 from .context import build_context
-from .git_remote import ensure_origin_remote
+from .git_remote import ensure_origin_remote, determine_primary_remote_url
 from .remote_check import probe_mirror
 from .remote_provision import ensure_remote_repository
 from .types import Repository
-
 
 def _setup_local_mirrors_for_repo(
     repo: Repository,

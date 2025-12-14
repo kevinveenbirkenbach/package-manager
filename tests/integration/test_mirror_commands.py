@@ -27,7 +27,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 class TestIntegrationMirrorCommands(unittest.TestCase):
     """
-    End-to-end tests for `pkgmgr mirror` commands.
+    Integration tests for `pkgmgr mirror` commands.
     """
 
     def _run_pkgmgr(self, args: List[str], extra_env: Optional[Dict[str, str]] = None) -> str:
