@@ -1,3 +1,11 @@
+## [1.6.4] - 2025-12-14
+
+* * Improved reliability of Nix installs and updates, including automatic resolution of profile conflicts and better handling of GitHub 403 rate limits.
+* More stable launcher behavior in packaged and virtual-env setups.
+* Enhanced mirror and remote handling: repository owner/name are derived from URLs, with smoother provisioning and clearer credential handling.
+* More reliable releases and artifacts due to safer CI behavior when no version tag is present.
+
+
 ## [1.6.3] - 2025-12-14
 
 * ***Fixed:*** Corrected repository path resolution so release and version logic consistently use the canonical packaging/* layout, preventing changelog and packaging files from being read or updated from incorrect locations.
