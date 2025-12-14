@@ -1,3 +1,12 @@
+package-manager (1.7.0-1) unstable; urgency=medium
+
+  * * New *pkgmgr publish* command to publish repository artifacts to PyPI based on the *MIRRORS* file.
+* Automatically selects the current repository when no explicit selection is given.
+* Publishes only when a semantic version tag is present on *HEAD*; otherwise skips with a clear info message.
+* Supports non-interactive mode for CI environments via *--non-interactive*.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Sun, 14 Dec 2025 21:10:06 +0100
+
 package-manager (1.6.4-1) unstable; urgency=medium
 
   * * Improved reliability of Nix installs and updates, including automatic resolution of profile conflicts and better handling of GitHub 403 rate limits.

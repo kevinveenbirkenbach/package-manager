@@ -1,3 +1,11 @@
+## [1.7.0] - 2025-12-14
+
+* * New *pkgmgr publish* command to publish repository artifacts to PyPI based on the *MIRRORS* file.
+* Automatically selects the current repository when no explicit selection is given.
+* Publishes only when a semantic version tag is present on *HEAD*; otherwise skips with a clear info message.
+* Supports non-interactive mode for CI environments via *--non-interactive*.
+
+
 ## [1.6.4] - 2025-12-14
 
 * * Improved reliability of Nix installs and updates, including automatic resolution of profile conflicts and better handling of GitHub 403 rate limits.
