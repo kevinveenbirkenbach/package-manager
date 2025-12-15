@@ -20,6 +20,7 @@ pacman -S --noconfirm --needed \
   curl \
   ca-certificates \
   python \
+  python-pip \
   xz
 
 pacman -Scc --noconfirm

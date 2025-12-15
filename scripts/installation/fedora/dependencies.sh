@@ -14,6 +14,7 @@ dnf -y install \
   curl \
   ca-certificates \
   python3 \
+  python3-pip \
   xz
 
 dnf clean all
