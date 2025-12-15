@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.7.2
+Version:        1.8.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,15 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Mon Dec 15 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.0-1
+- *** New Features: ***
+- **Silent Updates**: You can now use the `--silent` flag during installs and updates to suppress error messages for individual repositories and get a single summary at the end. This ensures the process continues even if some repositories fail, while still preserving interactive checks when not in silent mode.
+- **Repository Scaffolding**: The process for creating new repositories has been improved. You can now use templates to scaffold repositories with a preview and automatic mirror setup.
+
+*** Bug Fixes: ***
+- **Pip Installation**: Pip is now installed automatically on all supported systems. This includes `python-pip` for Arch and `python3-pip` for CentOS, Debian, Fedora, and Ubuntu, ensuring that pip is available for Python package installations.
+- **Pacman Keyring**: Fixed an issue on Arch Linux where package installation would fail due to missing keys. The pacman keyring is now properly initialized before installing packages.
+
 * Mon Dec 15 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.7.2-1
 - * Git mirrors are now resolved consistently (origin → MIRRORS file → config → default).
 * The `origin` remote is always enforced to use the primary URL for both fetch and push.
