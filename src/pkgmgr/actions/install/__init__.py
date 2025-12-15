@@ -16,7 +16,7 @@ Responsibilities:
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.dir import get_repo_dir
@@ -93,6 +93,7 @@ def _verify_repo(
     repo_dir: str,
     no_verification: bool,
     identifier: str,
+    silent: bool,
 ) -> bool:
     """
     Verify a repository using the configured verification data.
@@ -111,10 +112,15 @@ def _verify_repo(
         print(f"Warning: Verification failed for {identifier}:")
         for err in errors:
             print(f"  - {err}")
-        choice = input("Continue anyway? [y/N]: ").strip().lower()
-        if choice != "y":
-            print(f"Skipping installation for {identifier}.")
-            return False
+
+        if silent:
+            # Non-interactive mode: continue with a warning.
+            print(f"[Warning] Continuing despite verification failure for {identifier} (--silent).")
+        else:
+            choice = input("Continue anyway? [y/N]: ").strip().lower()
+            if choice != "y":
+                print(f"Skipping installation for {identifier}.")
+                return False
 
     return True
 
@@ -163,6 +169,8 @@ def install_repos(
     clone_mode: str,
     update_dependencies: bool,
     force_update: bool = False,
+    silent: bool = False,
+    emit_summary: bool = True,
 ) -> None:
     """
     Install one or more repositories according to the configured installers
@@ -170,45 +178,72 @@ def install_repos(
 
     If force_update=True, installers of the currently active layer are allowed
     to run again (upgrade/refresh), even if that layer is already loaded.
+
+    If silent=True, repository failures are downgraded to warnings and the
+    overall command never exits non-zero because of per-repository failures.
     """
     pipeline = InstallationPipeline(INSTALLERS)
+    failures: List[Tuple[str, str]] = []
 
     for repo in selected_repos:
         identifier = get_repo_identifier(repo, all_repos)
 
-        repo_dir = _ensure_repo_dir(
-            repo=repo,
-            repositories_base_dir=repositories_base_dir,
-            all_repos=all_repos,
-            preview=preview,
-            no_verification=no_verification,
-            clone_mode=clone_mode,
-            identifier=identifier,
-        )
-        if not repo_dir:
+        try:
+            repo_dir = _ensure_repo_dir(
+                repo=repo,
+                repositories_base_dir=repositories_base_dir,
+                all_repos=all_repos,
+                preview=preview,
+                no_verification=no_verification,
+                clone_mode=clone_mode,
+                identifier=identifier,
+            )
+            if not repo_dir:
+                failures.append((identifier, "clone/ensure repo directory failed"))
+                continue
+
+            if not _verify_repo(
+                repo=repo,
+                repo_dir=repo_dir,
+                no_verification=no_verification,
+                identifier=identifier,
+                silent=silent,
+            ):
+                continue
+
+            ctx = _create_context(
+                repo=repo,
+                identifier=identifier,
+                repo_dir=repo_dir,
+                repositories_base_dir=repositories_base_dir,
+                bin_dir=bin_dir,
+                all_repos=all_repos,
+                no_verification=no_verification,
+                preview=preview,
+                quiet=quiet,
+                clone_mode=clone_mode,
+                update_dependencies=update_dependencies,
+                force_update=force_update,
+            )
+
+            pipeline.run(ctx)
+
+        except SystemExit as exc:
+            code = exc.code if isinstance(exc.code, int) else str(exc.code)
+            failures.append((identifier, f"installer failed (exit={code})"))
+            if not quiet:
+                print(f"[Warning] install: repository {identifier} failed (exit={code}). Continuing...")
+            continue
+        except Exception as exc:
+            failures.append((identifier, f"unexpected error: {exc}"))
+            if not quiet:
+                print(f"[Warning] install: repository {identifier} hit an unexpected error: {exc}. Continuing...")
             continue
 
-        if not _verify_repo(
-            repo=repo,
-            repo_dir=repo_dir,
-            no_verification=no_verification,
-            identifier=identifier,
-        ):
-            continue
+    if failures and emit_summary and not quiet:
+        print("\n[pkgmgr] Installation finished with warnings:")
+        for ident, msg in failures:
+            print(f"  - {ident}: {msg}")
 
-        ctx = _create_context(
-            repo=repo,
-            identifier=identifier,
-            repo_dir=repo_dir,
-            repositories_base_dir=repositories_base_dir,
-            bin_dir=bin_dir,
-            all_repos=all_repos,
-            no_verification=no_verification,
-            preview=preview,
-            quiet=quiet,
-            clone_mode=clone_mode,
-            update_dependencies=update_dependencies,
-            force_update=force_update,
-        )
-
-        pipeline.run(ctx)
+    if failures and not silent:
+        raise SystemExit(1)

@@ -168,3 +168,10 @@ def add_install_update_arguments(subparser: argparse.ArgumentParser) -> None:
         default="ssh",
         help="Specify clone mode (default: ssh).",
     )
+
+    _add_option_if_missing(
+        subparser,
+        "--silent",
+        action="store_true",
+        help="Continue with other repositories if one fails; downgrade errors to warnings.",
+    )

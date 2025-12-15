@@ -96,6 +96,7 @@ class TestIntegrationUpdateAllshallowNoSystem(unittest.TestCase):
                 "--clone-mode",
                 "shallow",
                 "--no-verification",
+                "--silent",
             ]
             self._run_cmd(["pkgmgr", *args], label="pkgmgr", env=env)
             pkgmgr_help_debug()
@@ -110,6 +111,7 @@ class TestIntegrationUpdateAllshallowNoSystem(unittest.TestCase):
                 "--clone-mode",
                 "shallow",
                 "--no-verification",
+                "--silent",
             ]
             self._run_cmd(
                 ["nix", "run", ".#pkgmgr", "--", *args],

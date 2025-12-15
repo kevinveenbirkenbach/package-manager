@@ -68,6 +68,7 @@ def handle_repos_command(
             args.clone_mode,
             args.dependencies,
             force_update=getattr(args, "update", False),
+            silent=getattr(args, "silent", False),
         )
         return
 

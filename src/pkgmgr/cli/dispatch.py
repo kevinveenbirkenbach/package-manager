@@ -105,6 +105,7 @@ def dispatch_command(args, ctx: CLIContext) -> None:
 
     if args.command == "update":
         from pkgmgr.actions.update import UpdateManager
+
         UpdateManager().run(
             selected_repos=selected,
             repositories_base_dir=ctx.repositories_base_dir,
@@ -116,6 +117,7 @@ def dispatch_command(args, ctx: CLIContext) -> None:
             quiet=args.quiet,
             update_dependencies=args.dependencies,
             clone_mode=args.clone_mode,
+            silent=getattr(args, "silent", False),
             force_update=True,
         )
         return
