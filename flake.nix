@@ -49,6 +49,7 @@
             # Runtime dependencies (matches [project.dependencies] in pyproject.toml)
             propagatedBuildInputs = [
               pyPkgs.pyyaml
+              pyPkgs.jinja2
               pyPkgs.pip
             ];
 
@@ -78,6 +79,7 @@
           pythonWithDeps = python.withPackages (ps: [
             ps.pip
             ps.pyyaml
+            ps.jinja2
           ]);
         in
         {

@@ -4,18 +4,18 @@ import argparse
 
 from pkgmgr.cli.proxy import register_proxy_commands
 
-from .common import SortedSubParsersAction
-from .install_update import add_install_update_subparsers
-from .config_cmd import add_config_subparsers
-from .navigation_cmd import add_navigation_subparsers
 from .branch_cmd import add_branch_subparsers
-from .release_cmd import add_release_subparser
-from .publish_cmd import add_publish_subparser
-from .version_cmd import add_version_subparser
 from .changelog_cmd import add_changelog_subparser
+from .common import SortedSubParsersAction
+from .config_cmd import add_config_subparsers
+from .install_update import add_install_update_subparsers
 from .list_cmd import add_list_subparser
 from .make_cmd import add_make_subparsers
 from .mirror_cmd import add_mirror_subparsers
+from .navigation_cmd import add_navigation_subparsers
+from .publish_cmd import add_publish_subparser
+from .release_cmd import add_release_subparser
+from .version_cmd import add_version_subparser
 
 
 def create_parser(description_text: str) -> argparse.ArgumentParser:
@@ -23,10 +23,32 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
         description=description_text,
         formatter_class=argparse.RawTextHelpFormatter,
     )
+
     subparsers = parser.add_subparsers(
         dest="command",
         help="Subcommands",
         action=SortedSubParsersAction,
+    )
+
+    # create
+    p_create = subparsers.add_parser(
+        "create",
+        help="Create a new repository (scaffold + config).",
+    )
+    p_create.add_argument(
+        "identifiers",
+        nargs="+",
+        help="Repository identifier(s): URL or 'provider(:port)/owner/repo'.",
+    )
+    p_create.add_argument(
+        "--remote",
+        action="store_true",
+        help="Also push an initial commit to the remote (main/master).",
+    )
+    p_create.add_argument(
+        "--preview",
+        action="store_true",
+        help="Print actions without writing files or executing commands.",
     )
 
     add_install_update_subparsers(subparsers)
