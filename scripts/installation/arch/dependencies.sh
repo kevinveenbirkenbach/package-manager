@@ -6,6 +6,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "[arch/dependencies] Installing Arch build dependencies..."
 
 pacman -Syu --noconfirm
+
+if ! pacman-key --list-sigs &>/dev/null; then
+    echo "[arch/dependencies] Initializing pacman keyring..."
+    pacman-key --init
+    pacman-key --populate archlinux
+fi
+
 pacman -S --noconfirm --needed \
   base-devel \
   git \
