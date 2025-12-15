@@ -29,16 +29,16 @@ jobs:
   test-virgin-root:
     uses: ./.github/workflows/test-virgin-root.yml
 
-  linter-shell:
-    uses: ./.github/workflows/linter-shell.yml
+  lint-shell:
+    uses: ./.github/workflows/lint-shell.yml
 
-  linter-python:
-    uses: ./.github/workflows/linter-python.yml
+  lint-python:
+    uses: ./.github/workflows/lint-python.yml
 
   mark-stable:
     needs:
-      - linter-shell
-      - linter-python
+      - lint-shell
+      - lint-python
       - test-unit
       - test-integration
       - test-env-nix

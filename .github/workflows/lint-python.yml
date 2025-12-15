@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  linter-python:
+  lint-python:
     runs-on: ubuntu-latest
 
     steps:
