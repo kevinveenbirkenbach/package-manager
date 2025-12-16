@@ -1,7 +1,21 @@
 from __future__ import annotations
+
 from typing import Optional
-from pkgmgr.core.git import run_git, GitError, get_current_branch
-from .utils import _resolve_base_branch
+
+from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.queries import get_current_branch
+from pkgmgr.core.git.commands import (
+    GitDeleteRemoteBranchError,
+    checkout,
+    delete_local_branch,
+    delete_remote_branch,
+    fetch,
+    merge_no_ff,
+    pull,
+    push,
+)
+
+from pkgmgr.core.git.queries import resolve_base_branch
 
 
 def close_branch(
@@ -14,7 +28,6 @@ def close_branch(
     """
     Merge a feature branch into the base branch and delete it afterwards.
     """
-
     # Determine branch name
     if not name:
         try:
@@ -25,7 +38,7 @@ def close_branch(
     if not name:
         raise RuntimeError("Branch name must not be empty.")
 
-    target_base = _resolve_base_branch(base_branch, fallback_base, cwd=cwd)
+    target_base = resolve_base_branch(base_branch, fallback_base, cwd=cwd)
 
     if name == target_base:
         raise RuntimeError(
@@ -42,58 +55,20 @@ def close_branch(
             print("Aborted closing branch.")
             return
 
-    # Fetch
-    try:
-        run_git(["fetch", "origin"], cwd=cwd)
-    except GitError as exc:
-        raise RuntimeError(
-            f"Failed to fetch from origin before closing branch {name!r}: {exc}"
-        ) from exc
+    # Execute workflow (commands raise specific GitError subclasses)
+    fetch("origin", cwd=cwd)
+    checkout(target_base, cwd=cwd)
+    pull("origin", target_base, cwd=cwd)
+    merge_no_ff(name, cwd=cwd)
+    push("origin", target_base, cwd=cwd)
 
-    # Checkout base
-    try:
-        run_git(["checkout", target_base], cwd=cwd)
-    except GitError as exc:
-        raise RuntimeError(
-            f"Failed to checkout base branch {target_base!r}: {exc}"
-        ) from exc
+    # Delete local branch (safe delete by default)
+    delete_local_branch(name, cwd=cwd, force=False)
 
-    # Pull latest
+    # Delete remote branch (special-case error message)
     try:
-        run_git(["pull", "origin", target_base], cwd=cwd)
-    except GitError as exc:
-        raise RuntimeError(
-            f"Failed to pull latest changes for base branch {target_base!r}: {exc}"
-        ) from exc
-
-    # Merge
-    try:
-        run_git(["merge", "--no-ff", name], cwd=cwd)
-    except GitError as exc:
-        raise RuntimeError(
-            f"Failed to merge branch {name!r} into {target_base!r}: {exc}"
-        ) from exc
-
-    # Push result
-    try:
-        run_git(["push", "origin", target_base], cwd=cwd)
-    except GitError as exc:
-        raise RuntimeError(
-            f"Failed to push base branch {target_base!r} after merge: {exc}"
-        ) from exc
-
-    # Delete local
-    try:
-        run_git(["branch", "-d", name], cwd=cwd)
-    except GitError as exc:
-        raise RuntimeError(
-            f"Failed to delete local branch {name!r}: {exc}"
-        ) from exc
-
-    # Delete remote
-    try:
-        run_git(["push", "origin", "--delete", name], cwd=cwd)
-    except GitError as exc:
+        delete_remote_branch("origin", name, cwd=cwd)
+    except GitDeleteRemoteBranchError as exc:
         raise RuntimeError(
             f"Branch {name!r} deleted locally, but remote deletion failed: {exc}"
         ) from exc

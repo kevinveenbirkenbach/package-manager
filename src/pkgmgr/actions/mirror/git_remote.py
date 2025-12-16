@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional, Set
+from typing import Optional, Set
 
-from pkgmgr.core.command.run import run_command
-from pkgmgr.core.git import GitError, run_git
+from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.commands import (
+    GitAddRemoteError,
+    GitAddRemotePushUrlError,
+    GitSetRemoteUrlError,
+    add_remote,
+    add_remote_push_url,
+    set_remote_url,
+)
+from pkgmgr.core.git.queries import (
+    get_remote_push_urls,
+    list_remotes,
+)
 
 from .types import MirrorMap, RepoMirrorContext, Repository
 
@@ -48,29 +59,20 @@ def determine_primary_remote_url(
     return build_default_ssh_url(repo)
 
 
-def _safe_git_output(args: List[str], cwd: str) -> Optional[str]:
-    try:
-        return run_git(args, cwd=cwd)
-    except GitError:
-        return None
-
-
 def has_origin_remote(repo_dir: str) -> bool:
-    out = _safe_git_output(["remote"], cwd=repo_dir)
-    return bool(out and "origin" in out.split())
+    try:
+        return "origin" in list_remotes(cwd=repo_dir)
+    except GitError:
+        return False
 
 
 def _set_origin_fetch_and_push(repo_dir: str, url: str, preview: bool) -> None:
-    fetch = f"git remote set-url origin {url}"
-    push = f"git remote set-url --push origin {url}"
-
-    if preview:
-        print(f"[PREVIEW] Would run in {repo_dir!r}: {fetch}")
-        print(f"[PREVIEW] Would run in {repo_dir!r}: {push}")
-        return
-
-    run_command(fetch, cwd=repo_dir, preview=False)
-    run_command(push, cwd=repo_dir, preview=False)
+    """
+    Ensure origin has fetch URL and push URL set to the primary URL.
+    Preview is handled by the underlying git runner.
+    """
+    set_remote_url("origin", url, cwd=repo_dir, push=False, preview=preview)
+    set_remote_url("origin", url, cwd=repo_dir, push=True, preview=preview)
 
 
 def _ensure_additional_push_urls(
@@ -79,22 +81,21 @@ def _ensure_additional_push_urls(
     primary: str,
     preview: bool,
 ) -> None:
+    """
+    Ensure all mirror URLs (except primary) are configured as additional push URLs for origin.
+    Preview is handled by the underlying git runner.
+    """
     desired: Set[str] = {u for u in mirrors.values() if u and u != primary}
     if not desired:
         return
 
-    out = _safe_git_output(
-        ["remote", "get-url", "--push", "--all", "origin"],
-        cwd=repo_dir,
-    )
-    existing = set(out.splitlines()) if out else set()
+    try:
+        existing = get_remote_push_urls("origin", cwd=repo_dir)
+    except GitError:
+        existing = set()
 
     for url in sorted(desired - existing):
-        cmd = f"git remote set-url --add --push origin {url}"
-        if preview:
-            print(f"[PREVIEW] Would run in {repo_dir!r}: {cmd}")
-        else:
-            run_command(cmd, cwd=repo_dir, preview=False)
+        add_remote_push_url("origin", url, cwd=repo_dir, preview=preview)
 
 
 def ensure_origin_remote(
@@ -113,21 +114,23 @@ def ensure_origin_remote(
         print("[WARN] No primary mirror URL could be determined.")
         return
 
+    # 1) Ensure origin exists
     if not has_origin_remote(repo_dir):
-        cmd = f"git remote add origin {primary}"
-        if preview:
-            print(f"[PREVIEW] Would run in {repo_dir!r}: {cmd}")
-        else:
-            run_command(cmd, cwd=repo_dir, preview=False)
+        try:
+            add_remote("origin", primary, cwd=repo_dir, preview=preview)
+        except GitAddRemoteError as exc:
+            print(f"[WARN] Failed to add origin remote: {exc}")
+            return  # without origin we cannot reliably proceed
 
-        _set_origin_fetch_and_push(repo_dir, primary, preview)
-
-    _ensure_additional_push_urls(repo_dir, ctx.resolved_mirrors, primary, preview)
-
-
-def is_remote_reachable(url: str, cwd: Optional[str] = None) -> bool:
+    # 2) Ensure origin fetch+push URLs are correct (ALWAYS, even if origin already existed)
     try:
-        run_git(["ls-remote", "--exit-code", url], cwd=cwd or os.getcwd())
-        return True
-    except GitError:
-        return False
+        _set_origin_fetch_and_push(repo_dir, primary, preview)
+    except GitSetRemoteUrlError as exc:
+        # Do not abort: still try to add additional push URLs
+        print(f"[WARN] Failed to set origin URLs: {exc}")
+
+    # 3) Ensure additional push URLs for mirrors
+    try:
+        _ensure_additional_push_urls(repo_dir, ctx.resolved_mirrors, primary, preview)
+    except GitAddRemotePushUrlError as exc:
+        print(f"[WARN] Failed to add additional push URLs: {exc}")

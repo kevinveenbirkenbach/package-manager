@@ -4,7 +4,7 @@ from typing import List
 
 from .context import build_context
 from .git_remote import ensure_origin_remote, determine_primary_remote_url
-from .remote_check import probe_mirror
+from pkgmgr.core.git.queries import probe_remote_reachable
 from .remote_provision import ensure_remote_repository
 from .types import Repository
 
@@ -52,19 +52,14 @@ def _setup_remote_mirrors_for_repo(
         primary = determine_primary_remote_url(repo, ctx)
         if not primary:
             return
-
-        ok, msg = probe_mirror(primary, ctx.repo_dir)
+        ok = probe_remote_reachable(primary, cwd=ctx.repo_dir)
         print("[OK]" if ok else "[WARN]", primary)
-        if msg:
-            print(msg)
         print()
         return
 
     for name, url in ctx.resolved_mirrors.items():
-        ok, msg = probe_mirror(url, ctx.repo_dir)
+        ok = probe_remote_reachable(url, cwd=ctx.repo_dir)
         print(f"[OK] {name}: {url}" if ok else f"[WARN] {name}: {url}")
-        if msg:
-            print(msg)
 
     print()
 
