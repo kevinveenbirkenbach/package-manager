@@ -21,46 +21,34 @@ class TestMirrorGitRemote(unittest.TestCase):
         )
 
     def test_build_default_ssh_url(self) -> None:
-        repo = {
-            "provider": "github.com",
-            "account": "alice",
-            "repository": "repo",
-        }
-        self.assertEqual(
-            build_default_ssh_url(repo),
-            "git@github.com:alice/repo.git",
-        )
-
-    def test_determine_primary_prefers_origin(self) -> None:
         repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
-        ctx = self._ctx(config={"origin": "git@github.com:alice/repo.git"})
-        self.assertEqual(
-            determine_primary_remote_url(repo, ctx),
-            "git@github.com:alice/repo.git",
-        )
+        self.assertEqual(build_default_ssh_url(repo), "git@github.com:alice/repo.git")
 
-    def test_determine_primary_uses_file_order(self) -> None:
+    def test_determine_primary_prefers_origin_in_resolved(self) -> None:
+        # resolved_mirrors = config + file (file wins), so put origin in file.
         repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
-        ctx = self._ctx(
-            file={
-                "first": "git@a/first.git",
-                "second": "git@a/second.git",
-            }
-        )
-        self.assertEqual(
-            determine_primary_remote_url(repo, ctx),
-            "git@a/first.git",
-        )
+        ctx = self._ctx(file={"origin": "git@github.com:alice/repo.git"})
+        self.assertEqual(determine_primary_remote_url(repo, ctx), "git@github.com:alice/repo.git")
+
+    def test_determine_primary_falls_back_to_file_order(self) -> None:
+        repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
+        ctx = self._ctx(file={"first": "git@a/first.git", "second": "git@a/second.git"})
+        self.assertEqual(determine_primary_remote_url(repo, ctx), "git@a/first.git")
+
+    def test_determine_primary_falls_back_to_config_order(self) -> None:
+        repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
+        ctx = self._ctx(config={"cfg1": "git@c/one.git", "cfg2": "git@c/two.git"})
+        self.assertEqual(determine_primary_remote_url(repo, ctx), "git@c/one.git")
 
     def test_determine_primary_fallback_default(self) -> None:
         repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
         ctx = self._ctx()
-        self.assertEqual(
-            determine_primary_remote_url(repo, ctx),
-            "git@github.com:alice/repo.git",
-        )
+        self.assertEqual(determine_primary_remote_url(repo, ctx), "git@github.com:alice/repo.git")
 
-    @patch("pkgmgr.actions.mirror.git_remote._safe_git_output")
-    def test_has_origin_remote(self, m_out) -> None:
-        m_out.return_value = "origin\nupstream\n"
+    @patch("pkgmgr.actions.mirror.git_remote.list_remotes", return_value=["origin", "backup"])
+    def test_has_origin_remote_true(self, _m_list) -> None:
         self.assertTrue(has_origin_remote("/tmp/repo"))
+
+    @patch("pkgmgr.actions.mirror.git_remote.list_remotes", return_value=["backup"])
+    def test_has_origin_remote_false(self, _m_list) -> None:
+        self.assertFalse(has_origin_remote("/tmp/repo"))

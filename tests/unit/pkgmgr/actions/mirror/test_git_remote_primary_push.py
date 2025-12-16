@@ -10,6 +10,8 @@ from pkgmgr.actions.mirror.types import RepoMirrorContext
 class TestGitRemotePrimaryPush(unittest.TestCase):
     def test_origin_created_and_extra_push_added(self) -> None:
         repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
+
+        # Use file_mirrors so ctx.resolved_mirrors contains both, no setattr (frozen dataclass!)
         ctx = RepoMirrorContext(
             identifier="repo",
             repo_dir="/tmp/repo",
@@ -20,31 +22,44 @@ class TestGitRemotePrimaryPush(unittest.TestCase):
             },
         )
 
-        executed: list[str] = []
+        with patch("os.path.isdir", return_value=True):
+            with patch("pkgmgr.actions.mirror.git_remote.has_origin_remote", return_value=False), patch(
+                "pkgmgr.actions.mirror.git_remote.add_remote"
+            ) as m_add_remote, patch(
+                "pkgmgr.actions.mirror.git_remote.set_remote_url"
+            ) as m_set_remote_url, patch(
+                "pkgmgr.actions.mirror.git_remote.get_remote_push_urls", return_value=set()
+            ), patch(
+                "pkgmgr.actions.mirror.git_remote.add_remote_push_url"
+            ) as m_add_push:
+                ensure_origin_remote(repo, ctx, preview=False)
 
-        def fake_run(cmd: str, cwd: str, preview: bool) -> None:
-            executed.append(cmd)
+        # determine_primary_remote_url falls back to file order (primary first)
+        m_add_remote.assert_called_once_with(
+            "origin",
+            "git@github.com:alice/repo.git",
+            cwd="/tmp/repo",
+            preview=False,
+        )
 
-        def fake_git(args, cwd):
-            if args == ["remote"]:
-                return ""
-            if args == ["remote", "get-url", "--push", "--all", "origin"]:
-                return "git@github.com:alice/repo.git\n"
-            return ""
+        m_set_remote_url.assert_any_call(
+            "origin",
+            "git@github.com:alice/repo.git",
+            cwd="/tmp/repo",
+            push=False,
+            preview=False,
+        )
+        m_set_remote_url.assert_any_call(
+            "origin",
+            "git@github.com:alice/repo.git",
+            cwd="/tmp/repo",
+            push=True,
+            preview=False,
+        )
 
-        with patch("os.path.isdir", return_value=True), patch(
-            "pkgmgr.actions.mirror.git_remote.run_command", side_effect=fake_run
-        ), patch(
-            "pkgmgr.actions.mirror.git_remote._safe_git_output", side_effect=fake_git
-        ):
-            ensure_origin_remote(repo, ctx, preview=False)
-
-        self.assertEqual(
-            executed,
-            [
-                "git remote add origin git@github.com:alice/repo.git",
-                "git remote set-url origin git@github.com:alice/repo.git",
-                "git remote set-url --push origin git@github.com:alice/repo.git",
-                "git remote set-url --add --push origin git@github.com:alice/repo-backup.git",
-            ],
+        m_add_push.assert_called_once_with(
+            "origin",
+            "git@github.com:alice/repo-backup.git",
+            cwd="/tmp/repo",
+            preview=False,
         )

@@ -1,4 +1,3 @@
-# src/pkgmgr/actions/release/workflow.py
 from __future__ import annotations
 
 import os
@@ -6,7 +5,8 @@ import sys
 from typing import Optional
 
 from pkgmgr.actions.branch import close_branch
-from pkgmgr.core.git import get_current_branch, GitError
+from pkgmgr.core.git import GitError
+from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.repository.paths import resolve_repo_paths
 
 from .files import (

@@ -11,8 +11,17 @@ class TestOpenBranch(unittest.TestCase):
     @patch("pkgmgr.actions.branch.open_branch.pull")
     @patch("pkgmgr.actions.branch.open_branch.create_branch")
     @patch("pkgmgr.actions.branch.open_branch.push_upstream")
-    def test_open_branch_executes_git_commands(self, push_upstream, create_branch, pull, checkout, fetch, resolve):
+    def test_open_branch_executes_git_commands(
+        self,
+        push_upstream,
+        create_branch,
+        pull,
+        checkout,
+        fetch,
+        _resolve,
+    ) -> None:
         open_branch("feature-x", base_branch="main", cwd=".")
+
         fetch.assert_called_once_with("origin", cwd=".")
         checkout.assert_called_once_with("main", cwd=".")
         pull.assert_called_once_with("origin", "main", cwd=".")
@@ -26,11 +35,25 @@ class TestOpenBranch(unittest.TestCase):
     @patch("pkgmgr.actions.branch.open_branch.pull")
     @patch("pkgmgr.actions.branch.open_branch.create_branch")
     @patch("pkgmgr.actions.branch.open_branch.push_upstream")
-    def test_open_branch_prompts_for_name(self, fetch, resolve, input_mock):
+    def test_open_branch_prompts_for_name(
+        self,
+        push_upstream,
+        create_branch,
+        pull,
+        checkout,
+        fetch,
+        _resolve,
+        _input_mock,
+    ) -> None:
         open_branch(None)
-        fetch.assert_called_once()
 
-    def test_open_branch_rejects_empty_name(self):
+        fetch.assert_called_once_with("origin", cwd=".")
+        checkout.assert_called_once_with("main", cwd=".")
+        pull.assert_called_once_with("origin", "main", cwd=".")
+        create_branch.assert_called_once_with("auto-branch", "main", cwd=".")
+        push_upstream.assert_called_once_with("origin", "auto-branch", cwd=".")
+
+    def test_open_branch_rejects_empty_name(self) -> None:
         with patch("builtins.input", return_value=""):
             with self.assertRaises(RuntimeError):
                 open_branch(None)

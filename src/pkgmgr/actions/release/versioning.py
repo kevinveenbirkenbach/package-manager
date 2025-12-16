@@ -7,7 +7,7 @@ Version discovery and bumping helpers for the release workflow.
 
 from __future__ import annotations
 
-from pkgmgr.core.git import get_tags
+from pkgmgr.core.git.queries import get_tags
 from pkgmgr.core.version.semver import (
     SemVer,
     find_latest_version,
