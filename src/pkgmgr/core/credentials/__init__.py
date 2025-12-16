@@ -1,4 +1,3 @@
-# src/pkgmgr/core/credentials/__init__.py
 """Credential resolution for provider APIs."""
 
 from .resolver import ResolutionOptions, TokenResolver

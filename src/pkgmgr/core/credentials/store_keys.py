@@ -44,6 +44,7 @@ def env_var_candidates(provider_kind: str, host: str, owner: Optional[str]) -> l
     candidates.append(f"PKGMGR_{kind}_TOKEN")
     candidates.append(f"PKGMGR_TOKEN_{kind}")
     candidates.append("PKGMGR_TOKEN")
+    
     return candidates
 
 
