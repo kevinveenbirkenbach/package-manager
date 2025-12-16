@@ -24,6 +24,8 @@ import tempfile
 from datetime import date, datetime
 from typing import Optional, Tuple
 
+from pkgmgr.core.git.queries import get_config_value
+
 
 # ---------------------------------------------------------------------------
 # Editor helper for interactive changelog messages
@@ -74,16 +76,14 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
         except OSError:
             pass
 
-    lines = [
-        line for line in content.splitlines()
-        if not line.strip().startswith("#")
-    ]
+    lines = [line for line in content.splitlines() if not line.strip().startswith("#")]
     return "\n".join(lines).strip()
 
 
 # ---------------------------------------------------------------------------
 # File update helpers (pyproject + extra packaging + changelog)
 # ---------------------------------------------------------------------------
+
 
 def update_pyproject_version(
     pyproject_path: str,
@@ -365,24 +365,6 @@ def update_changelog(
 # ---------------------------------------------------------------------------
 
 
-def _get_git_config_value(key: str) -> Optional[str]:
-    """
-    Try to read a value from `git config --get <key>`.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "config", "--get", key],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except Exception:
-        return None
-
-    value = result.stdout.strip()
-    return value or None
-
-
 def _get_debian_author() -> Tuple[str, str]:
     """
     Determine the maintainer name/email for debian/changelog entries.
@@ -396,9 +378,9 @@ def _get_debian_author() -> Tuple[str, str]:
         email = os.environ.get("GIT_AUTHOR_EMAIL")
 
     if not name:
-        name = _get_git_config_value("user.name")
+        name = get_config_value("user.name")
     if not email:
-        email = _get_git_config_value("user.email")
+        email = get_config_value("user.email")
 
     if not name:
         name = "Unknown Maintainer"

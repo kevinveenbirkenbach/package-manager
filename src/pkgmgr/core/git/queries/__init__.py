@@ -9,6 +9,7 @@ from .get_remote_push_urls import get_remote_push_urls
 from .probe_remote_reachable import probe_remote_reachable
 from .get_changelog import get_changelog, GitChangelogQueryError
 from .get_tags_at_ref import get_tags_at_ref, GitTagsAtRefQueryError
+from .get_config_value import get_config_value
 
 __all__ = [
     "get_current_branch",
@@ -23,4 +24,5 @@ __all__ = [
     "GitChangelogQueryError",
     "get_tags_at_ref",
     "GitTagsAtRefQueryError",
+    "get_config_value",
 ]
