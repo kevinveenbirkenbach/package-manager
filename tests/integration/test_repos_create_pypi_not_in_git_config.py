@@ -75,12 +75,12 @@ class TestCreateRepoPypiNotInGitConfig(unittest.TestCase):
 
             mirrors_content = mirrors_file.read_text(encoding="utf-8")
             self.assertIn(
-                "pypi https://pypi.org/project/repo/",
+                "https://pypi.org/project/repo/",
                 mirrors_content,
                 "PyPI mirror entry must exist in MIRRORS",
             )
             self.assertIn(
-                "origin git@github.com:acme/repo.git",
+                "git@github.com:acme/repo.git",
                 mirrors_content,
                 "origin SSH URL must exist in MIRRORS",
             )

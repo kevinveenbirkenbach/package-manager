@@ -12,8 +12,8 @@ class MirrorBootstrapper:
     """
     MIRRORS is the single source of truth.
 
-    We write defaults to MIRRORS and then call mirror setup which will
-    configure git remotes based on MIRRORS content (but only for git URLs).
+    Defaults are written to MIRRORS and mirror setup derives
+    git remotes exclusively from that file (git URLs only).
     """
 
     def write_defaults(
@@ -25,10 +25,8 @@ class MirrorBootstrapper:
         preview: bool,
     ) -> None:
         mirrors = {
-            # preferred SSH url is supplied by CreateRepoPlanner.primary_remote
-            "origin": primary,
-            # metadata only: must NEVER be configured as a git remote
-            "pypi": f"https://pypi.org/project/{name}/",
+            primary,
+            f"https://pypi.org/project/{name}/",
         }
         write_mirrors_file(repo_dir, mirrors, preview=preview)
 
@@ -41,7 +39,8 @@ class MirrorBootstrapper:
         preview: bool,
         remote: bool,
     ) -> None:
-        # IMPORTANT: do NOT set repo["mirrors"] here.
+        # IMPORTANT:
+        # Do NOT set repo["mirrors"] here.
         # MIRRORS file is the single source of truth.
         setup_mirrors(
             selected_repos=[repo],
