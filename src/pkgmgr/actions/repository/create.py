@@ -1,8 +1,8 @@
+# src/pkgmgr/actions/repository/create.py
 from __future__ import annotations
 
 import os
 import re
-import subprocess
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlparse
@@ -14,6 +14,16 @@ from pkgmgr.actions.mirror.setup_cmd import setup_mirrors
 from pkgmgr.actions.repository.scaffold import render_default_templates
 from pkgmgr.core.command.alias import generate_alias
 from pkgmgr.core.config.save import save_user_config
+from pkgmgr.core.git.commands import (
+    GitCommitError,
+    GitPushUpstreamError,
+    add_all,
+    branch_move,
+    commit,
+    init,
+    push_upstream,
+)
+from pkgmgr.core.git.queries import get_config_value
 
 Repository = Dict[str, Any]
 
@@ -26,27 +36,6 @@ class RepoParts:
     port: Optional[str]
     owner: str
     name: str
-
-
-def _run(cmd: str, cwd: str, preview: bool) -> None:
-    if preview:
-        print(f"[Preview] Would run in {cwd}: {cmd}")
-        return
-    subprocess.run(cmd, cwd=cwd, shell=True, check=True)
-
-
-def _git_get(key: str) -> str:
-    try:
-        out = subprocess.run(
-            f"git config --get {key}",
-            shell=True,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        return (out.stdout or "").strip()
-    except Exception:
-        return ""
 
 
 def _split_host_port(host_with_port: str) -> Tuple[str, Optional[str]]:
@@ -116,28 +105,27 @@ def _write_default_mirrors(repo_dir: str, primary: str, name: str, preview: bool
 
 
 def _git_init_and_initial_commit(repo_dir: str, preview: bool) -> None:
-    _run("git init", cwd=repo_dir, preview=preview)
-    _run("git add -A", cwd=repo_dir, preview=preview)
+    init(cwd=repo_dir, preview=preview)
+    add_all(cwd=repo_dir, preview=preview)
 
-    if preview:
-        print(f'[Preview] Would run in {repo_dir}: git commit -m "Initial commit"')
-        return
-
-    subprocess.run('git commit -m "Initial commit"', cwd=repo_dir, shell=True, check=False)
+    try:
+        commit("Initial commit", cwd=repo_dir, preview=preview)
+    except GitCommitError as exc:
+        print(f"[WARN] Initial commit failed (continuing): {exc}")
 
 
 def _git_push_main_or_master(repo_dir: str, preview: bool) -> None:
-    _run("git branch -M main", cwd=repo_dir, preview=preview)
     try:
-        _run("git push -u origin main", cwd=repo_dir, preview=preview)
+        branch_move("main", cwd=repo_dir, preview=preview)
+        push_upstream("origin", "main", cwd=repo_dir, preview=preview)
         return
-    except subprocess.CalledProcessError:
+    except GitPushUpstreamError:
         pass
 
     try:
-        _run("git branch -M master", cwd=repo_dir, preview=preview)
-        _run("git push -u origin master", cwd=repo_dir, preview=preview)
-    except subprocess.CalledProcessError as exc:
+        branch_move("master", cwd=repo_dir, preview=preview)
+        push_upstream("origin", "master", cwd=repo_dir, preview=preview)
+    except GitPushUpstreamError as exc:
         print(f"[WARN] Push failed: {exc}")
 
 
@@ -157,8 +145,8 @@ def create_repo(
     base_dir = os.path.expanduser(str(directories.get("repositories", "~/Repositories")))
     repo_dir = os.path.join(base_dir, parts.host, parts.owner, parts.name)
 
-    author_name = _git_get("user.name") or "Unknown Author"
-    author_email = _git_get("user.email") or "unknown@example.invalid"
+    author_name = get_config_value("user.name") or "Unknown Author"
+    author_email = get_config_value("user.email") or "unknown@example.invalid"
 
     homepage = _repo_homepage(parts.host, parts.owner, parts.name)
     primary_url = _build_default_primary_url(parts)
