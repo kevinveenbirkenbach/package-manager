@@ -8,9 +8,31 @@ class GitFetchError(GitCommandError):
     """Raised when fetching from a remote fails."""
 
 
-def fetch(remote: str = "origin", cwd: str = ".") -> None:
+def fetch(
+    remote: str = "origin",
+    *,
+    prune: bool = False,
+    tags: bool = False,
+    force: bool = False,
+    cwd: str = ".",
+    preview: bool = False,
+) -> None:
+    """
+    Fetch from a remote, optionally with prune/tags/force.
+
+    Equivalent to:
+      git fetch <remote> [--prune] [--tags] [--force]
+    """
+    args = ["fetch", remote]
+    if prune:
+        args.append("--prune")
+    if tags:
+        args.append("--tags")
+    if force:
+        args.append("--force")
+
     try:
-        run(["fetch", remote], cwd=cwd)
+        run(args, cwd=cwd, preview=preview)
     except GitError as exc:
         raise GitFetchError(
             f"Failed to fetch from remote {remote!r}.",

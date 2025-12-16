@@ -6,6 +6,7 @@ from typing import Optional
 
 from pkgmgr.actions.branch import close_branch
 from pkgmgr.core.git import GitError
+from pkgmgr.core.git.commands import add, commit, push, tag_annotated
 from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.repository.paths import resolve_repo_paths
 
@@ -21,7 +22,6 @@ from .files import (
 from .git_ops import (
     ensure_clean_and_synced,
     is_highest_version_tag,
-    run_git_command,
     update_latest_tag,
 )
 from .prompts import confirm_proceed_release, should_delete_branch
@@ -126,12 +126,11 @@ def _release_impl(
     existing_files = [p for p in files_to_add if isinstance(p, str) and p and os.path.exists(p)]
 
     if preview:
-        for path in existing_files:
-            print(f"[PREVIEW] Would run: git add {path}")
-        print(f'[PREVIEW] Would run: git commit -am "{commit_msg}"')
-        print(f'[PREVIEW] Would run: git tag -a {new_tag} -m "{tag_msg}"')
-        print(f"[PREVIEW] Would run: git push origin {branch}")
-        print(f"[PREVIEW] Would run: git push origin {new_tag}")
+        add(existing_files, preview=True)
+        commit(commit_msg, all=True, preview=True)
+        tag_annotated(new_tag, tag_msg, preview=True)
+        push("origin", branch, preview=True)
+        push("origin", new_tag, preview=True)
 
         if is_highest_version_tag(new_tag):
             update_latest_tag(new_tag, preview=True)
@@ -145,15 +144,13 @@ def _release_impl(
                 print(f"[PREVIEW] Would ask whether to delete branch {branch} after release.")
         return
 
-    for path in existing_files:
-        run_git_command(f"git add {path}")
-
-    run_git_command(f'git commit -am "{commit_msg}"')
-    run_git_command(f'git tag -a {new_tag} -m "{tag_msg}"')
+    add(existing_files, preview=False)
+    commit(commit_msg, all=True, preview=False)
+    tag_annotated(new_tag, tag_msg, preview=False)
 
     # Push branch and ONLY the newly created version tag (no --tags)
-    run_git_command(f"git push origin {branch}")
-    run_git_command(f"git push origin {new_tag}")
+    push("origin", branch, preview=False)
+    push("origin", new_tag, preview=False)
 
     # Update 'latest' only if this is the highest version tag
     try:

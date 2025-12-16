@@ -8,9 +8,26 @@ class GitPushError(GitCommandError):
     """Raised when pushing to a remote fails."""
 
 
-def push(remote: str, ref: str, cwd: str = ".") -> None:
+def push(
+    remote: str,
+    ref: str,
+    *,
+    force: bool = False,
+    cwd: str = ".",
+    preview: bool = False,
+) -> None:
+    """
+    Push a ref to a remote, optionally forced.
+
+    Equivalent to:
+      git push <remote> <ref> [--force]
+    """
+    args = ["push", remote, ref]
+    if force:
+        args.append("--force")
+
     try:
-        run(["push", remote, ref], cwd=cwd)
+        run(args, cwd=cwd, preview=preview)
     except GitError as exc:
         raise GitPushError(
             f"Failed to push ref {ref!r} to remote {remote!r}.",
