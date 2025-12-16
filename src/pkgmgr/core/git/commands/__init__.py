@@ -18,6 +18,7 @@ from .add_remote_push_url import GitAddRemotePushUrlError, add_remote_push_url
 from .set_remote_url import GitSetRemoteUrlError, set_remote_url
 from .tag_annotated import GitTagAnnotatedError, tag_annotated
 from .tag_force_annotated import GitTagForceAnnotatedError, tag_force_annotated
+from .clone import GitCloneError, clone
 
 __all__ = [
     "add",
@@ -37,6 +38,7 @@ __all__ = [
     "add_remote_push_url",
     "tag_annotated",
     "tag_force_annotated",
+    "clone",
     "GitAddError",
     "GitFetchError",
     "GitCheckoutError",
@@ -54,4 +56,5 @@ __all__ = [
     "GitAddRemotePushUrlError",
     "GitTagAnnotatedError",
     "GitTagForceAnnotatedError",
+    "GitCloneError",
 ]

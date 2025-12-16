@@ -1,103 +1,132 @@
-import subprocess
+from __future__ import annotations
+
 import os
+from typing import Any, Dict, List, Optional
+
+from pkgmgr.core.git.commands import clone as git_clone, GitCloneError
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.verify import verify_repository
 
+Repository = Dict[str, Any]
+
+
+def _build_clone_url(repo: Repository, clone_mode: str) -> Optional[str]:
+    provider = repo.get("provider")
+    account = repo.get("account")
+    name = repo.get("repository")
+    replacement = repo.get("replacement")
+
+    if clone_mode == "ssh":
+        if not provider or not account or not name:
+            return None
+        return f"git@{provider}:{account}/{name}.git"
+
+    if clone_mode in ("https", "shallow"):
+        if replacement:
+            return f"https://{replacement}.git"
+        if not provider or not account or not name:
+            return None
+        return f"https://{provider}/{account}/{name}.git"
+
+    return None
+
+
 def clone_repos(
-    selected_repos, 
-    repositories_base_dir: str, 
-    all_repos, 
-    preview: bool, 
-    no_verification: bool, 
-    clone_mode: str
-    ):
+    selected_repos: List[Repository],
+    repositories_base_dir: str,
+    all_repos: List[Repository],
+    preview: bool,
+    no_verification: bool,
+    clone_mode: str,
+) -> None:
     for repo in selected_repos:
         repo_identifier = get_repo_identifier(repo, all_repos)
         repo_dir = get_repo_dir(repositories_base_dir, repo)
+
         if os.path.exists(repo_dir):
-            print(f"[INFO] Repository '{repo_identifier}' already exists at '{repo_dir}'. Skipping clone.")
+            print(
+                f"[INFO] Repository '{repo_identifier}' already exists at '{repo_dir}'. Skipping clone."
+            )
             continue
 
         parent_dir = os.path.dirname(repo_dir)
         os.makedirs(parent_dir, exist_ok=True)
-        # Build clone URL based on the clone_mode
-        # Build clone URL based on the clone_mode
-        if clone_mode == "ssh":
-            clone_url = (
-                f"git@{repo.get('provider')}:"
-                f"{repo.get('account')}/"
-                f"{repo.get('repository')}.git"
-            )
-        elif clone_mode in ("https", "shallow"):
-            # Use replacement if defined, otherwise construct from provider/account/repository
-            if repo.get("replacement"):
-                clone_url = f"https://{repo.get('replacement')}.git"
-            else:
-                clone_url = (
-                    f"https://{repo.get('provider')}/"
-                    f"{repo.get('account')}/"
-                    f"{repo.get('repository')}.git"
-                )
-        else:
-            print(f"Unknown clone mode '{clone_mode}'. Aborting clone for {repo_identifier}.")
+
+        clone_url = _build_clone_url(repo, clone_mode)
+        if not clone_url:
+            print(f"[WARNING] Cannot build clone URL for '{repo_identifier}'. Skipping.")
             continue
 
-        # Build base clone command
-        base_clone_cmd = "git clone"
-        if clone_mode == "shallow":
-            # Shallow clone: only latest state via HTTPS, no full history
-            base_clone_cmd += " --depth 1 --single-branch"
+        shallow = clone_mode == "shallow"
+        mode_label = "HTTPS (shallow)" if shallow else clone_mode.upper()
 
-        mode_label = "HTTPS (shallow)" if clone_mode == "shallow" else clone_mode.upper()
         print(
             f"[INFO] Attempting to clone '{repo_identifier}' using {mode_label} "
             f"from {clone_url} into '{repo_dir}'."
         )
 
-        if preview:
-            print(f"[Preview] Would run: {base_clone_cmd} {clone_url} {repo_dir} in {parent_dir}")
-            result = subprocess.CompletedProcess(args=[], returncode=0)
-        else:
-            result = subprocess.run(
-                f"{base_clone_cmd} {clone_url} {repo_dir}",
+        try:
+            args = []
+            if shallow:
+                args += ["--depth", "1", "--single-branch"]
+            args += [clone_url, repo_dir]
+
+            git_clone(
+                args,
                 cwd=parent_dir,
-                shell=True,
+                preview=preview,
             )
-        
-        if result.returncode != 0:
-            # Only offer fallback if the original mode was SSH.
-            if clone_mode == "ssh":
-                print(f"[WARNING] SSH clone failed for '{repo_identifier}' with return code {result.returncode}.")
-                choice = input("Do you want to attempt HTTPS clone instead? (y/N): ").strip().lower()
-                if choice == 'y':
-                    # Attempt HTTPS clone
-                    if repo.get("replacement"):
-                        clone_url = f"https://{repo.get('replacement')}.git"
-                    else:
-                        clone_url = f"https://{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}.git"
-                    print(f"[INFO] Attempting to clone '{repo_identifier}' using HTTPS from {clone_url} into '{repo_dir}'.")
-                    if preview:
-                        print(f"[Preview] Would run: git clone {clone_url} {repo_dir} in {parent_dir}")
-                        result = subprocess.CompletedProcess(args=[], returncode=0)
-                    else:
-                        result = subprocess.run(f"git clone {clone_url} {repo_dir}", cwd=parent_dir, shell=True)
-                else:
-                    print(f"[INFO] HTTPS clone not attempted for '{repo_identifier}'.")
-                    continue
-            else:
-                # For https mode, do not attempt fallback.
-                print(f"[WARNING] HTTPS clone failed for '{repo_identifier}' with return code {result.returncode}.")
+
+        except GitCloneError as exc:
+            if clone_mode != "ssh":
+                print(f"[WARNING] Clone failed for '{repo_identifier}': {exc}")
                 continue
-        
-        # After cloning, perform verification in local mode.
+
+            print(f"[WARNING] SSH clone failed for '{repo_identifier}': {exc}")
+            choice = input("Do you want to attempt HTTPS clone instead? (y/N): ").strip().lower()
+            if choice != "y":
+                print(f"[INFO] HTTPS clone not attempted for '{repo_identifier}'.")
+                continue
+
+            fallback_url = _build_clone_url(repo, "https")
+            if not fallback_url:
+                print(f"[WARNING] Cannot build HTTPS URL for '{repo_identifier}'.")
+                continue
+
+            print(
+                f"[INFO] Attempting to clone '{repo_identifier}' using HTTPS "
+                f"from {fallback_url} into '{repo_dir}'."
+            )
+
+            try:
+                git_clone(
+                    [fallback_url, repo_dir],
+                    cwd=parent_dir,
+                    preview=preview,
+                )
+            except GitCloneError as exc2:
+                print(f"[WARNING] HTTPS clone failed for '{repo_identifier}': {exc2}")
+                continue
+
         verified_info = repo.get("verified")
-        if verified_info:
-            verified_ok, errors, commit_hash, signing_key = verify_repository(repo, repo_dir, mode="local", no_verification=no_verification)
-            if not no_verification and not verified_ok:
-                print(f"Warning: Verification failed for {repo_identifier} after cloning:")
-                for err in errors:
-                    print(f"  - {err}")
-                choice = input("Proceed anyway? (y/N): ").strip().lower()
-                if choice != "y":
-                    print(f"Skipping repository {repo_identifier} due to failed verification.")
+        if not verified_info:
+            continue
+
+        verified_ok, errors, _commit_hash, _signing_key = verify_repository(
+            repo,
+            repo_dir,
+            mode="local",
+            no_verification=no_verification,
+        )
+
+        if no_verification or verified_ok:
+            continue
+
+        print(f"Warning: Verification failed for {repo_identifier} after cloning:")
+        for err in errors:
+            print(f"  - {err}")
+
+        choice = input("Proceed anyway? (y/N): ").strip().lower()
+        if choice != "y":
+            print(f"Skipping repository {repo_identifier} due to failed verification.")
