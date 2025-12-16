@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.8.2
+Version:        1.8.3
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Dec 16 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.3-1
+- MIRRORS now supports plain URL entries, ensuring metadata-only sources like PyPI are recorded without ever being added to the Git configuration.
+
 * Tue Dec 16 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.2-1
 - * ***pkgmgr tools code*** is more robust and predictable: it now fails early with clear errors if VS Code is not installed or a repository is not yet identified.
 

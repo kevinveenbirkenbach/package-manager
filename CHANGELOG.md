@@ -1,3 +1,8 @@
+## [1.8.3] - 2025-12-16
+
+* MIRRORS now supports plain URL entries, ensuring metadata-only sources like PyPI are recorded without ever being added to the Git configuration.
+
+
 ## [1.8.2] - 2025-12-16
 
 * * ***pkgmgr tools code*** is more robust and predictable: it now fails early with clear errors if VS Code is not installed or a repository is not yet identified.

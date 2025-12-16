@@ -1,3 +1,9 @@
+package-manager (1.8.3-1) unstable; urgency=medium
+
+  * MIRRORS now supports plain URL entries, ensuring metadata-only sources like PyPI are recorded without ever being added to the Git configuration.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 16 Dec 2025 19:49:51 +0100
+
 package-manager (1.8.2-1) unstable; urgency=medium
 
   * * ***pkgmgr tools code*** is more robust and predictable: it now fails early with clear errors if VS Code is not installed or a repository is not yet identified.
