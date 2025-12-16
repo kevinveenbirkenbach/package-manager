@@ -1,3 +1,12 @@
+package-manager (1.8.1-1) unstable; urgency=medium
+
+  * * Improved stability and consistency of all Git operations (clone, pull, push, release, branch handling) with clearer error messages and predictable preview behavior.
+* Mirrors are now handled cleanly: only valid Git remotes are used for Git operations, while non-Git URLs (e.g. PyPI) are excluded, preventing broken or confusing repository configs.
+* GitHub authentication is more robust: tokens are automatically resolved via the GitHub CLI (`gh`), invalid stored tokens are replaced, and interactive prompts occur only when necessary.
+* Repository creation and release workflows are more reliable, producing cleaner Git configurations and more predictable version handling.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 16 Dec 2025 18:06:35 +0100
+
 package-manager (1.8.0-1) unstable; urgency=medium
 
   * *** New Features: ***

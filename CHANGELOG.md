@@ -1,3 +1,11 @@
+## [1.8.1] - 2025-12-16
+
+* * Improved stability and consistency of all Git operations (clone, pull, push, release, branch handling) with clearer error messages and predictable preview behavior.
+* Mirrors are now handled cleanly: only valid Git remotes are used for Git operations, while non-Git URLs (e.g. PyPI) are excluded, preventing broken or confusing repository configs.
+* GitHub authentication is more robust: tokens are automatically resolved via the GitHub CLI (`gh`), invalid stored tokens are replaced, and interactive prompts occur only when necessary.
+* Repository creation and release workflows are more reliable, producing cleaner Git configurations and more predictable version handling.
+
+
 ## [1.8.0] - 2025-12-15
 
 * *** New Features: ***

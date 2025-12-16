@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.8.0
+Version:        1.8.1
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,12 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Dec 16 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.1-1
+- * Improved stability and consistency of all Git operations (clone, pull, push, release, branch handling) with clearer error messages and predictable preview behavior.
+* Mirrors are now handled cleanly: only valid Git remotes are used for Git operations, while non-Git URLs (e.g. PyPI) are excluded, preventing broken or confusing repository configs.
+* GitHub authentication is more robust: tokens are automatically resolved via the GitHub CLI (`gh`), invalid stored tokens are replaced, and interactive prompts occur only when necessary.
+* Repository creation and release workflows are more reliable, producing cleaner Git configurations and more predictable version handling.
+
 * Mon Dec 15 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.0-1
 - *** New Features: ***
 - **Silent Updates**: You can now use the `--silent` flag during installs and updates to suppress error messages for individual repositories and get a single summary at the end. This ensures the process continues even if some repositories fail, while still preserving interactive checks when not in silent mode.
