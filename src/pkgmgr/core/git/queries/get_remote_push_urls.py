@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Set
 
-from ..errors import GitError
 from ..run import run
 
 
