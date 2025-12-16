@@ -8,7 +8,7 @@ from unittest.mock import patch
 from pkgmgr.actions.repository.create import create_repo
 
 
-class TestE2ECreateRepoPreviewOutput(unittest.TestCase):
+class TestCreateRepoPreviewOutput(unittest.TestCase):
     def test_create_repo_preview_prints_expected_steps(self) -> None:
         cfg = {"directories": {"repositories": "/tmp/Repositories"}, "repositories": []}
 
@@ -22,7 +22,10 @@ class TestE2ECreateRepoPreviewOutput(unittest.TestCase):
             patch("pkgmgr.actions.repository.create.render_default_templates"),
             patch("pkgmgr.actions.repository.create.write_mirrors_file"),
             patch("pkgmgr.actions.repository.create.setup_mirrors"),
-            patch("pkgmgr.actions.repository.create.subprocess.run"),
+            patch("pkgmgr.actions.repository.create.get_config_value", return_value=None),
+            patch("pkgmgr.actions.repository.create.init"),
+            patch("pkgmgr.actions.repository.create.add_all"),
+            patch("pkgmgr.actions.repository.create.commit"),
         ):
             create_repo(
                 "github.com/acme/repo",
