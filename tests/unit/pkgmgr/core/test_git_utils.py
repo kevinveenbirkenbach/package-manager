@@ -1,40 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import subprocess
 import unittest
-from types import SimpleNamespace
 from unittest.mock import patch
 
-from pkgmgr.core.git import (
-    GitError,
-    run_git,
-    get_tags,
-    get_head_commit,
-    get_current_branch,
-)
+from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.run import run
+from pkgmgr.core.git.queries import get_tags, get_head_commit, get_current_branch
 
 
-class TestGitUtils(unittest.TestCase):
-    @patch("pkgmgr.core.git.subprocess.run")
-    def test_run_git_success(self, mock_run):
-        mock_run.return_value = SimpleNamespace(
-            stdout="ok\n",
-            stderr="",
-            returncode=0,
-        )
+class TestGitRun(unittest.TestCase):
+    @patch("pkgmgr.core.git.run.subprocess.run")
+    def test_run_success(self, mock_run):
+        mock_run.return_value.stdout = "ok\n"
+        mock_run.return_value.stderr = ""
+        mock_run.return_value.returncode = 0
 
-        output = run_git(["status"], cwd="/tmp/repo")
+        output = run(["status"], cwd="/tmp/repo")
 
         self.assertEqual(output, "ok")
         mock_run.assert_called_once()
-        # basic sanity: command prefix should be 'git'
         args, kwargs = mock_run.call_args
         self.assertEqual(args[0][0], "git")
         self.assertEqual(kwargs.get("cwd"), "/tmp/repo")
 
-    @patch("pkgmgr.core.git.subprocess.run")
-    def test_run_git_failure_raises_giterror(self, mock_run):
+    @patch("pkgmgr.core.git.run.subprocess.run")
+    def test_run_failure_raises_giterror(self, mock_run):
+        import subprocess
+
         mock_run.side_effect = subprocess.CalledProcessError(
             returncode=1,
             cmd=["git", "status"],
@@ -43,7 +36,7 @@ class TestGitUtils(unittest.TestCase):
         )
 
         with self.assertRaises(GitError) as ctx:
-            run_git(["status"], cwd="/tmp/repo")
+            run(["status"], cwd="/tmp/repo")
 
         msg = str(ctx.exception)
         self.assertIn("Git command failed", msg)
@@ -51,71 +44,41 @@ class TestGitUtils(unittest.TestCase):
         self.assertIn("bad", msg)
         self.assertIn("error", msg)
 
-    @patch("pkgmgr.core.git.subprocess.run")
-    def test_get_tags_empty(self, mock_run):
-        mock_run.return_value = SimpleNamespace(
-            stdout="",
-            stderr="",
-            returncode=0,
-        )
 
+class TestGitQueries(unittest.TestCase):
+    @patch("pkgmgr.core.git.queries.get_tags.run")
+    def test_get_tags_empty(self, mock_run):
+        mock_run.return_value = ""
         tags = get_tags(cwd="/tmp/repo")
         self.assertEqual(tags, [])
 
-    @patch("pkgmgr.core.git.subprocess.run")
+    @patch("pkgmgr.core.git.queries.get_tags.run")
     def test_get_tags_non_empty(self, mock_run):
-        mock_run.return_value = SimpleNamespace(
-            stdout="v1.0.0\nv1.1.0\n",
-            stderr="",
-            returncode=0,
-        )
-
+        mock_run.return_value = "v1.0.0\nv1.1.0\n"
         tags = get_tags(cwd="/tmp/repo")
         self.assertEqual(tags, ["v1.0.0", "v1.1.0"])
 
-    @patch("pkgmgr.core.git.subprocess.run")
+    @patch("pkgmgr.core.git.queries.get_head_commit.run")
     def test_get_head_commit_success(self, mock_run):
-        mock_run.return_value = SimpleNamespace(
-            stdout="abc123\n",
-            stderr="",
-            returncode=0,
-        )
-
+        mock_run.return_value = "abc123"
         commit = get_head_commit(cwd="/tmp/repo")
         self.assertEqual(commit, "abc123")
 
-    @patch("pkgmgr.core.git.subprocess.run")
+    @patch("pkgmgr.core.git.queries.get_head_commit.run")
     def test_get_head_commit_failure_returns_none(self, mock_run):
-        mock_run.side_effect = subprocess.CalledProcessError(
-            returncode=1,
-            cmd=["git", "rev-parse", "HEAD"],
-            output="",
-            stderr="error\n",
-        )
-
+        mock_run.side_effect = GitError("fail")
         commit = get_head_commit(cwd="/tmp/repo")
         self.assertIsNone(commit)
 
-    @patch("pkgmgr.core.git.subprocess.run")
+    @patch("pkgmgr.core.git.queries.get_current_branch.run")
     def test_get_current_branch_success(self, mock_run):
-        mock_run.return_value = SimpleNamespace(
-            stdout="main\n",
-            stderr="",
-            returncode=0,
-        )
-
+        mock_run.return_value = "main"
         branch = get_current_branch(cwd="/tmp/repo")
         self.assertEqual(branch, "main")
 
-    @patch("pkgmgr.core.git.subprocess.run")
+    @patch("pkgmgr.core.git.queries.get_current_branch.run")
     def test_get_current_branch_failure_returns_none(self, mock_run):
-        mock_run.side_effect = subprocess.CalledProcessError(
-            returncode=1,
-            cmd=["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            output="",
-            stderr="error\n",
-        )
-
+        mock_run.side_effect = GitError("fail")
         branch = get_current_branch(cwd="/tmp/repo")
         self.assertIsNone(branch)
 

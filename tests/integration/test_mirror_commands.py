@@ -27,18 +27,10 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 
 class TestIntegrationMirrorCommands(unittest.TestCase):
-    """
-    Integration tests for `pkgmgr mirror` commands.
-    """
+    """Integration tests for `pkgmgr mirror` commands."""
 
     def _run_pkgmgr(self, args: List[str], extra_env: Optional[Dict[str, str]] = None) -> str:
-        """
-        Execute pkgmgr with the given arguments and return captured output.
-
-        - Treat SystemExit(0) or SystemExit(None) as success.
-        - Any other exit code is considered a test failure.
-        - Mirror commands are patched to avoid network/destructive operations.
-        """
+        """Execute pkgmgr with the given arguments and return captured output."""
         original_argv = list(sys.argv)
         original_env = dict(os.environ)
         buffer = io.StringIO()
@@ -64,8 +56,7 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
             try:
                 importlib.import_module(module_name)
             except ModuleNotFoundError:
-                # If the module truly doesn't exist, create=True may still allow patching
-                # in some cases, but dotted resolution can still fail. Best-effort.
+                # Best-effort: allow patch(create=True) even if a symbol moved.
                 pass
             return patch(target, create=True, **kwargs)
 
@@ -95,10 +86,9 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
                 stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.build_context", return_value=dummy_ctx))
                 stack.enter_context(_p("pkgmgr.actions.mirror.remote_provision.build_context", return_value=dummy_ctx))
 
-                # Deterministic remote probing (covers setup + likely check implementations)
-                stack.enter_context(_p("pkgmgr.actions.mirror.remote_check.probe_mirror", return_value=(True, "")))
-                stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.probe_mirror", return_value=(True, "")))
-                stack.enter_context(_p("pkgmgr.actions.mirror.git_remote.is_remote_reachable", return_value=True))
+                # Deterministic remote probing (new refactor: probe_remote_reachable)
+                stack.enter_context(_p("pkgmgr.core.git.queries.probe_remote_reachable", return_value=True))
+                stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable", return_value=True))
 
                 # setup_cmd imports ensure_origin_remote directly:
                 stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.ensure_origin_remote", return_value=None))
@@ -112,9 +102,6 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
                         side_effect=_fake_ensure_remote_repo,
                     )
                 )
-
-                # Extra safety: if anything calls remote_check.run_git directly, make it inert
-                stack.enter_context(_p("pkgmgr.actions.mirror.remote_check.run_git", return_value="dummy"))
 
                 with redirect_stdout(buffer), redirect_stderr(buffer):
                     try:
@@ -133,10 +120,6 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
             sys.argv = original_argv
             os.environ.clear()
             os.environ.update(original_env)
-
-    # ------------------------------------------------------------
-    # Tests
-    # ------------------------------------------------------------
 
     def test_mirror_help(self) -> None:
         output = self._run_pkgmgr(["mirror", "--help"])

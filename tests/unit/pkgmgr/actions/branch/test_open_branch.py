@@ -5,27 +5,30 @@ from pkgmgr.actions.branch.open_branch import open_branch
 
 
 class TestOpenBranch(unittest.TestCase):
-    @patch("pkgmgr.actions.branch.open_branch._resolve_base_branch", return_value="main")
-    @patch("pkgmgr.actions.branch.open_branch.run_git")
-    def test_open_branch_executes_git_commands(self, run_git, resolve):
+    @patch("pkgmgr.actions.branch.open_branch.resolve_base_branch", return_value="main")
+    @patch("pkgmgr.actions.branch.open_branch.fetch")
+    @patch("pkgmgr.actions.branch.open_branch.checkout")
+    @patch("pkgmgr.actions.branch.open_branch.pull")
+    @patch("pkgmgr.actions.branch.open_branch.create_branch")
+    @patch("pkgmgr.actions.branch.open_branch.push_upstream")
+    def test_open_branch_executes_git_commands(self, push_upstream, create_branch, pull, checkout, fetch, resolve):
         open_branch("feature-x", base_branch="main", cwd=".")
-        expected_calls = [
-            (["fetch", "origin"],),
-            (["checkout", "main"],),
-            (["pull", "origin", "main"],),
-            (["checkout", "-b", "feature-x"],),
-            (["push", "-u", "origin", "feature-x"],),
-        ]
-        actual = [call.args for call in run_git.call_args_list]
-        self.assertEqual(actual, expected_calls)
+        fetch.assert_called_once_with("origin", cwd=".")
+        checkout.assert_called_once_with("main", cwd=".")
+        pull.assert_called_once_with("origin", "main", cwd=".")
+        create_branch.assert_called_once_with("feature-x", "main", cwd=".")
+        push_upstream.assert_called_once_with("origin", "feature-x", cwd=".")
 
     @patch("builtins.input", return_value="auto-branch")
-    @patch("pkgmgr.actions.branch.open_branch._resolve_base_branch", return_value="main")
-    @patch("pkgmgr.actions.branch.open_branch.run_git")
-    def test_open_branch_prompts_for_name(self, run_git, resolve, input_mock):
+    @patch("pkgmgr.actions.branch.open_branch.resolve_base_branch", return_value="main")
+    @patch("pkgmgr.actions.branch.open_branch.fetch")
+    @patch("pkgmgr.actions.branch.open_branch.checkout")
+    @patch("pkgmgr.actions.branch.open_branch.pull")
+    @patch("pkgmgr.actions.branch.open_branch.create_branch")
+    @patch("pkgmgr.actions.branch.open_branch.push_upstream")
+    def test_open_branch_prompts_for_name(self, fetch, resolve, input_mock):
         open_branch(None)
-        calls = [call.args for call in run_git.call_args_list]
-        self.assertEqual(calls[3][0][0], "checkout")  # verify git executed normally
+        fetch.assert_called_once()
 
     def test_open_branch_rejects_empty_name(self):
         with patch("builtins.input", return_value=""):

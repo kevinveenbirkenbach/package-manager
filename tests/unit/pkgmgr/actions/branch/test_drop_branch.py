@@ -2,48 +2,59 @@ import unittest
 from unittest.mock import patch
 
 from pkgmgr.actions.branch.drop_branch import drop_branch
-from pkgmgr.core.git import GitError
+from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.commands import GitDeleteRemoteBranchError
 
 
 class TestDropBranch(unittest.TestCase):
     @patch("pkgmgr.actions.branch.drop_branch.input", return_value="y")
     @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x")
-    @patch("pkgmgr.actions.branch.drop_branch._resolve_base_branch", return_value="main")
-    @patch("pkgmgr.actions.branch.drop_branch.run_git")
-    def test_drop_branch_happy_path(self, run_git, resolve, current, input_mock):
+    @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
+    @patch("pkgmgr.actions.branch.drop_branch.delete_local_branch")
+    @patch("pkgmgr.actions.branch.drop_branch.delete_remote_branch")
+    def test_drop_branch_happy_path(self, delete_remote, delete_local, resolve, current, input_mock):
         drop_branch(None, cwd=".")
-        expected = [
-            (["branch", "-d", "feature-x"],),
-            (["push", "origin", "--delete", "feature-x"],),
-        ]
-        actual = [call.args for call in run_git.call_args_list]
-        self.assertEqual(actual, expected)
+        delete_local.assert_called_once_with("feature-x", cwd=".", force=False)
+        delete_remote.assert_called_once_with("origin", "feature-x", cwd=".")
 
     @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="main")
-    @patch("pkgmgr.actions.branch.drop_branch._resolve_base_branch", return_value="main")
+    @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
     def test_refuses_to_drop_base_branch(self, resolve, current):
         with self.assertRaises(RuntimeError):
             drop_branch(None)
 
     @patch("pkgmgr.actions.branch.drop_branch.input", return_value="n")
     @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x")
-    @patch("pkgmgr.actions.branch.drop_branch._resolve_base_branch", return_value="main")
-    @patch("pkgmgr.actions.branch.drop_branch.run_git")
-    def test_drop_branch_aborts_on_no(self, run_git, resolve, current, input_mock):
+    @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
+    @patch("pkgmgr.actions.branch.drop_branch.delete_local_branch")
+    def test_drop_branch_aborts_on_no(self, delete_local, resolve, current, input_mock):
         drop_branch(None, cwd=".")
-        run_git.assert_not_called()
+        delete_local.assert_not_called()
 
     @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x")
-    @patch("pkgmgr.actions.branch.drop_branch._resolve_base_branch", return_value="main")
-    @patch("pkgmgr.actions.branch.drop_branch.run_git")
-    def test_drop_branch_force_skips_prompt(self, run_git, resolve, current):
+    @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
+    @patch("pkgmgr.actions.branch.drop_branch.delete_local_branch")
+    def test_drop_branch_force_skips_prompt(self, delete_local, resolve, current):
         drop_branch(None, cwd=".", force=True)
-        self.assertGreater(len(run_git.call_args_list), 0)
+        delete_local.assert_called_once()
 
     @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", side_effect=GitError("fail"))
     def test_drop_branch_errors_if_no_branch_detected(self, current):
         with self.assertRaises(RuntimeError):
             drop_branch(None)
+
+    @patch("pkgmgr.actions.branch.drop_branch.input", return_value="y")
+    @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x")
+    @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
+    @patch("pkgmgr.actions.branch.drop_branch.delete_local_branch")
+    @patch(
+        "pkgmgr.actions.branch.drop_branch.delete_remote_branch",
+        side_effect=GitDeleteRemoteBranchError("boom", cwd="."),
+    )
+    def test_drop_branch_remote_delete_failure_is_wrapped(self, delete_remote, delete_local, resolve, current, input_mock):
+        with self.assertRaises(RuntimeError) as ctx:
+            drop_branch(None, cwd=".")
+        self.assertIn("remote deletion failed", str(ctx.exception))
 
 
 if __name__ == "__main__":
