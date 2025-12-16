@@ -1,9 +1,11 @@
+# src/pkgmgr/actions/repository/scaffold.py
 from __future__ import annotations
 
 import os
-import subprocess
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+from pkgmgr.core.git.queries import get_repo_root
 
 try:
     from jinja2 import Environment, FileSystemLoader, StrictUndefined
@@ -22,20 +24,10 @@ def _repo_root_from_here(anchor: Optional[Path] = None) -> str:
     Fallback to a conservative relative parent lookup.
     """
     here = (anchor or Path(__file__)).resolve().parent
-    try:
-        r = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            cwd=str(here),
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        if r.returncode == 0:
-            top = (r.stdout or "").strip()
-            if top:
-                return top
-    except Exception:
-        pass
+
+    top = get_repo_root(cwd=str(here))
+    if top:
+        return top
 
     # Fallback: src/pkgmgr/actions/repository/scaffold.py -> <repo root> = parents[5]
     p = (anchor or Path(__file__)).resolve()
