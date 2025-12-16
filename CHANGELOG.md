@@ -1,3 +1,8 @@
+## [1.8.2] - 2025-12-16
+
+* * ***pkgmgr tools code*** is more robust and predictable: it now fails early with clear errors if VS Code is not installed or a repository is not yet identified.
+
+
 ## [1.8.1] - 2025-12-16
 
 * * Improved stability and consistency of all Git operations (clone, pull, push, release, branch handling) with clearer error messages and predictable preview behavior.

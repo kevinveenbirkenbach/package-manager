@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.8.1
+Version:        1.8.2
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Dec 16 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.2-1
+- * ***pkgmgr tools code*** is more robust and predictable: it now fails early with clear errors if VS Code is not installed or a repository is not yet identified.
+
 * Tue Dec 16 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.1-1
 - * Improved stability and consistency of all Git operations (clone, pull, push, release, branch handling) with clearer error messages and predictable preview behavior.
 * Mirrors are now handled cleanly: only valid Git remotes are used for Git operations, while non-Git URLs (e.g. PyPI) are excluded, preventing broken or confusing repository configs.
