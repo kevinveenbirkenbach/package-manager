@@ -14,7 +14,7 @@ with the expected structure:
 
 For each discovered repository, the function:
   • derives provider, account, repository from the folder structure
-  • (optionally) determines the latest commit hash via git log
+  • (optionally) determines the latest commit hash via git
   • generates a unique CLI alias
   • marks ignore=True for newly discovered repos
   • skips repos already known in defaults or user config
@@ -23,11 +23,11 @@ For each discovered repository, the function:
 from __future__ import annotations
 
 import os
-import subprocess
 from typing import Any, Dict
 
 from pkgmgr.core.command.alias import generate_alias
 from pkgmgr.core.config.save import save_user_config
+from pkgmgr.core.git.queries import get_latest_commit
 
 
 def config_init(
@@ -116,27 +116,18 @@ def config_init(
 
                 print(f"[ADD]      {provider}/{account}/{repo_name}")
 
-                # Determine commit hash
-                try:
-                    result = subprocess.run(
-                        ["git", "log", "-1", "--format=%H"],
-                        cwd=repo_path,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        text=True,
-                        check=True,
-                    )
-                    verified = result.stdout.strip()
-                    print(f"[INFO]       Latest commit: {verified}")
-                except Exception as exc:
-                    verified = ""
-                    print(f"[WARN]       Could not read commit: {exc}")
+                # Determine commit hash via git query
+                verified_commit = get_latest_commit(repo_path) or ""
+                if verified_commit:
+                    print(f"[INFO]       Latest commit: {verified_commit}")
+                else:
+                    print("[WARN]       Could not read commit (not a git repo or no commits).")
 
-                entry = {
+                entry: Dict[str, Any] = {
                     "provider": provider,
                     "account": account,
                     "repository": repo_name,
-                    "verified": {"commit": verified},
+                    "verified": {"commit": verified_commit},
                     "ignore": True,
                 }
 
