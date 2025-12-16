@@ -15,17 +15,47 @@ class TestCreateRepoPreviewOutput(unittest.TestCase):
         out = io.StringIO()
         with (
             redirect_stdout(out),
-            patch("pkgmgr.actions.repository.create.os.path.exists", return_value=False),
-            patch("pkgmgr.actions.repository.create.generate_alias", return_value="repo"),
-            patch("pkgmgr.actions.repository.create.save_user_config"),
-            patch("pkgmgr.actions.repository.create.os.makedirs"),
-            patch("pkgmgr.actions.repository.create.render_default_templates"),
-            patch("pkgmgr.actions.repository.create.write_mirrors_file"),
-            patch("pkgmgr.actions.repository.create.setup_mirrors"),
-            patch("pkgmgr.actions.repository.create.get_config_value", return_value=None),
-            patch("pkgmgr.actions.repository.create.init"),
-            patch("pkgmgr.actions.repository.create.add_all"),
-            patch("pkgmgr.actions.repository.create.commit"),
+            patch(
+                "pkgmgr.actions.repository.create.config_writer.generate_alias",
+                return_value="repo",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.config_writer.save_user_config",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.config_writer.os.path.exists",
+                return_value=False,
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.service.os.makedirs",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.templates.TemplateRenderer._resolve_templates_dir",
+                return_value="/tpl",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.templates.os.walk",
+                return_value=[("/tpl", [], ["README.md.j2"])],
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.git_bootstrap.init",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.git_bootstrap.add_all",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.git_bootstrap.commit",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.mirrors.write_mirrors_file",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.mirrors.setup_mirrors",
+            ),
+            patch(
+                "pkgmgr.actions.repository.create.service.get_config_value",
+                return_value=None,
+            ),
         ):
             create_repo(
                 "github.com/acme/repo",
@@ -37,7 +67,7 @@ class TestCreateRepoPreviewOutput(unittest.TestCase):
             )
 
         s = out.getvalue()
-        self.assertIn("[Preview] Would save user config:", s)
+        self.assertIn("[Preview] Would add repository to config:", s)
         self.assertIn("[Preview] Would ensure directory exists:", s)
 
 

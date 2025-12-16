@@ -2,11 +2,27 @@ from __future__ import annotations
 
 from typing import List
 
+from pkgmgr.core.git.queries import probe_remote_reachable
+
 from .context import build_context
 from .git_remote import ensure_origin_remote, determine_primary_remote_url
-from pkgmgr.core.git.queries import probe_remote_reachable
 from .remote_provision import ensure_remote_repository
 from .types import Repository
+
+
+def _is_git_remote_url(url: str) -> bool:
+    # Keep the same filtering semantics as in git_remote.py (duplicated on purpose
+    # to keep setup_cmd independent of private helpers).
+    u = (url or "").strip()
+    if not u:
+        return False
+    if u.startswith("git@"):
+        return True
+    if u.startswith("ssh://"):
+        return True
+    if (u.startswith("https://") or u.startswith("http://")) and u.endswith(".git"):
+        return True
+    return False
 
 
 def _setup_local_mirrors_for_repo(
@@ -48,16 +64,23 @@ def _setup_remote_mirrors_for_repo(
             preview,
         )
 
-    if not ctx.resolved_mirrors:
+    # Probe only git URLs (do not try ls-remote against PyPI etc.)
+    # If there are no mirrors at all, probe the primary git URL.
+    git_mirrors = {k: v for k, v in ctx.resolved_mirrors.items() if _is_git_remote_url(v)}
+
+    if not git_mirrors:
         primary = determine_primary_remote_url(repo, ctx)
-        if not primary:
+        if not primary or not _is_git_remote_url(primary):
+            print("[INFO] No git mirrors to probe.")
+            print()
             return
+
         ok = probe_remote_reachable(primary, cwd=ctx.repo_dir)
         print("[OK]" if ok else "[WARN]", primary)
         print()
         return
 
-    for name, url in ctx.resolved_mirrors.items():
+    for name, url in git_mirrors.items():
         ok = probe_remote_reachable(url, cwd=ctx.repo_dir)
         print(f"[OK] {name}: {url}" if ok else f"[WARN] {name}: {url}")
 

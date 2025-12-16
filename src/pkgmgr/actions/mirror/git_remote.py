@@ -12,12 +12,36 @@ from pkgmgr.core.git.commands import (
     add_remote_push_url,
     set_remote_url,
 )
-from pkgmgr.core.git.queries import (
-    get_remote_push_urls,
-    list_remotes,
-)
+from pkgmgr.core.git.queries import get_remote_push_urls, list_remotes
 
 from .types import MirrorMap, RepoMirrorContext, Repository
+
+
+def _is_git_remote_url(url: str) -> bool:
+    """
+    True only for URLs that should become git remotes / push URLs.
+
+    Accepted:
+      - git@host:owner/repo(.git)                (SCP-like SSH)
+      - ssh://git@host(:port)/owner/repo(.git)   (SSH URL)
+      - https://host/owner/repo.git              (HTTPS git remote)
+      - http://host/owner/repo.git               (rare, but possible)
+    Everything else (e.g. PyPI project page) stays metadata only.
+    """
+    u = (url or "").strip()
+    if not u:
+        return False
+
+    if u.startswith("git@"):
+        return True
+
+    if u.startswith("ssh://"):
+        return True
+
+    if (u.startswith("https://") or u.startswith("http://")) and u.endswith(".git"):
+        return True
+
+    return False
 
 
 def build_default_ssh_url(repo: Repository) -> Optional[str]:
@@ -35,25 +59,29 @@ def build_default_ssh_url(repo: Repository) -> Optional[str]:
     return f"git@{provider}:{account}/{name}.git"
 
 
+def _git_mirrors_only(m: MirrorMap) -> MirrorMap:
+    return {k: v for k, v in m.items() if v and _is_git_remote_url(v)}
+
+
 def determine_primary_remote_url(
     repo: Repository,
     ctx: RepoMirrorContext,
 ) -> Optional[str]:
     """
-    Priority order:
-      1. origin from resolved mirrors
-      2. MIRRORS file order
-      3. config mirrors order
+    Priority order (GIT URLS ONLY):
+      1. origin from resolved mirrors (if it is a git URL)
+      2. first git URL from MIRRORS file (in file order)
+      3. first git URL from config mirrors (in config order)
       4. default SSH URL
     """
     resolved = ctx.resolved_mirrors
-
-    if resolved.get("origin"):
-        return resolved["origin"]
+    origin = resolved.get("origin")
+    if origin and _is_git_remote_url(origin):
+        return origin
 
     for mirrors in (ctx.file_mirrors, ctx.config_mirrors):
         for _, url in mirrors.items():
-            if url:
+            if url and _is_git_remote_url(url):
                 return url
 
     return build_default_ssh_url(repo)
@@ -82,10 +110,13 @@ def _ensure_additional_push_urls(
     preview: bool,
 ) -> None:
     """
-    Ensure all mirror URLs (except primary) are configured as additional push URLs for origin.
-    Preview is handled by the underlying git runner.
+    Ensure all *git* mirror URLs (except primary) are configured as additional
+    push URLs for origin.
+
+    Non-git URLs (like PyPI) are ignored and will never land in git config.
     """
-    desired: Set[str] = {u for u in mirrors.values() if u and u != primary}
+    git_only = _git_mirrors_only(mirrors)
+    desired: Set[str] = {u for u in git_only.values() if u and u != primary}
     if not desired:
         return
 
@@ -110,8 +141,8 @@ def ensure_origin_remote(
         return
 
     primary = determine_primary_remote_url(repo, ctx)
-    if not primary:
-        print("[WARN] No primary mirror URL could be determined.")
+    if not primary or not _is_git_remote_url(primary):
+        print("[WARN] No valid git primary mirror URL could be determined.")
         return
 
     # 1) Ensure origin exists
@@ -122,14 +153,13 @@ def ensure_origin_remote(
             print(f"[WARN] Failed to add origin remote: {exc}")
             return  # without origin we cannot reliably proceed
 
-    # 2) Ensure origin fetch+push URLs are correct (ALWAYS, even if origin already existed)
+    # 2) Ensure origin fetch+push URLs are correct
     try:
         _set_origin_fetch_and_push(repo_dir, primary, preview)
     except GitSetRemoteUrlError as exc:
-        # Do not abort: still try to add additional push URLs
         print(f"[WARN] Failed to set origin URLs: {exc}")
 
-    # 3) Ensure additional push URLs for mirrors
+    # 3) Ensure additional push URLs for mirrors (git urls only)
     try:
         _ensure_additional_push_urls(repo_dir, ctx.resolved_mirrors, primary, preview)
     except GitAddRemotePushUrlError as exc:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import unittest
 
-from pkgmgr.actions.repository.create import (
-    RepoParts,
-    _parse_identifier,
+from pkgmgr.actions.repository.create.model import RepoParts
+from pkgmgr.actions.repository.create.parser import (
+    parse_identifier,
     _parse_git_url,
     _strip_git_suffix,
     _split_host_port,
@@ -22,7 +22,7 @@ class TestRepositoryCreateParsing(unittest.TestCase):
         self.assertEqual(_split_host_port("example.com:"), ("example.com", None))
 
     def test_parse_identifier_plain(self) -> None:
-        parts = _parse_identifier("github.com/owner/repo")
+        parts = parse_identifier("github.com/owner/repo")
         self.assertIsInstance(parts, RepoParts)
         self.assertEqual(parts.host, "github.com")
         self.assertEqual(parts.port, None)
@@ -30,7 +30,7 @@ class TestRepositoryCreateParsing(unittest.TestCase):
         self.assertEqual(parts.name, "repo")
 
     def test_parse_identifier_with_port(self) -> None:
-        parts = _parse_identifier("gitea.example.com:2222/org/repo")
+        parts = parse_identifier("gitea.example.com:2222/org/repo")
         self.assertEqual(parts.host, "gitea.example.com")
         self.assertEqual(parts.port, "2222")
         self.assertEqual(parts.owner, "org")
