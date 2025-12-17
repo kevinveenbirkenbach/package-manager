@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -25,7 +25,7 @@ def clone(
     """
     try:
         run(["clone", *args], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitCloneError(
             f"Git clone failed with args={args!r}.",
             cwd=cwd,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .errors import GitError
+from .errors import GitRunError
 from .run import run
 
 """
@@ -12,6 +12,6 @@ details of subprocess handling.
 """
 
 __all__ = [
-    "GitError",
+    "GitRunError",
     "run",
 ]

@@ -30,7 +30,7 @@ def open_branch(
 
     resolved_base = resolve_base_branch(base_branch, fallback_base, cwd=cwd)
 
-    # Workflow (commands raise specific GitError subclasses)
+    # Workflow (commands raise specific GitBaseError subclasses)
     fetch("origin", cwd=cwd)
     checkout(resolved_base, cwd=cwd)
     pull("origin", resolved_base, cwd=cwd)

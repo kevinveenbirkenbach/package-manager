@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -33,7 +33,7 @@ def fetch(
 
     try:
         run(args, cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitFetchError(
             f"Failed to fetch from remote {remote!r}.",
             cwd=cwd,

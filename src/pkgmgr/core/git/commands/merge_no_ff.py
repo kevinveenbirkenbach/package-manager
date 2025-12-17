@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -11,7 +11,7 @@ class GitMergeError(GitCommandError):
 def merge_no_ff(branch: str, cwd: str = ".") -> None:
     try:
         run(["merge", "--no-ff", branch], cwd=cwd)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitMergeError(
             f"Failed to merge branch {branch!r} with --no-ff.",
             cwd=cwd,

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ..errors import GitError
+from ..errors import GitRunError
 from ..run import run
 
 
-def _is_missing_key_error(exc: GitError) -> bool:
+def _is_missing_key_error(exc: GitRunError) -> bool:
     msg = str(exc).lower()
 
     # Ensure we only swallow the expected case for THIS command.
@@ -25,7 +25,7 @@ def get_config_value(key: str, *, cwd: str = ".") -> Optional[str]:
     """
     try:
         output = run(["config", "--get", key], cwd=cwd)
-    except GitError as exc:
+    except GitRunError as exc:
         if _is_missing_key_error(exc):
             return None
         raise

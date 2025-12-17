@@ -89,7 +89,7 @@ class TestIntegrationChangelogCommands(unittest.TestCase):
         """
         Run 'pkgmgr changelog HEAD~5..HEAD' inside the pkgmgr repo.
         Selbst wenn HEAD~5 nicht existiert, sollte der Befehl den
-        GitError intern behandeln und mit Exit-Code 0 beenden
+        GitBaseError intern behandeln und mit Exit-Code 0 beenden
         (es wird dann eine [ERROR]-Zeile gedruckt).
 
         Wird übersprungen, wenn das pkgmgr-Repo nicht lokal vorhanden ist.

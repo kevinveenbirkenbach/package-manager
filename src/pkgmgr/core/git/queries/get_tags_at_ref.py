@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import List
 
-from ..errors import GitError
+from ..errors import GitQueryError, GitRunError
 from ..run import run
 
 
-class GitTagsAtRefQueryError(GitError):
+class GitTagsAtRefQueryError(GitQueryError):
     """Raised when querying tags for a ref fails."""
 
 
@@ -19,7 +19,7 @@ def get_tags_at_ref(ref: str, *, cwd: str = ".") -> List[str]:
     """
     try:
         output = run(["tag", "--points-at", ref], cwd=cwd)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitTagsAtRefQueryError(
             f"Failed to query tags at ref {ref!r}.",
         ) from exc

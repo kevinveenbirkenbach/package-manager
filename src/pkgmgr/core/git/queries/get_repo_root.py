@@ -1,9 +1,8 @@
-# src/pkgmgr/core/git/queries/get_repo_root.py
 from __future__ import annotations
 
 from typing import Optional
 
-from ..errors import GitError
+from ..errors import GitRunError
 from ..run import run
 
 
@@ -16,7 +15,7 @@ def get_repo_root(*, cwd: str = ".") -> Optional[str]:
     """
     try:
         out = run(["rev-parse", "--show-toplevel"], cwd=cwd)
-    except GitError:
+    except GitRunError:
         return None
 
     out = out.strip()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from ..errors import GitError
+from ..errors import GitRunError
 from ..run import run
 
 
@@ -14,11 +14,10 @@ def get_tags(cwd: str = ".") -> List[str]:
     """
     try:
         output = run(["tag"], cwd=cwd)
-    except GitError as exc:
+    except GitRunError as exc:
         # If the repo is not a git repo, surface a clear error.
         if "not a git repository" in str(exc):
             raise
-        # Otherwise, treat as "no tags" (e.g., empty stdout).
         return []
 
     if not output:

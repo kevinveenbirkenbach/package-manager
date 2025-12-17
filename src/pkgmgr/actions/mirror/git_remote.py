@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Optional, Set
 
-from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.commands import (
     GitAddRemoteError,
     GitAddRemotePushUrlError,
@@ -90,7 +90,7 @@ def determine_primary_remote_url(
 def has_origin_remote(repo_dir: str) -> bool:
     try:
         return "origin" in list_remotes(cwd=repo_dir)
-    except GitError:
+    except GitRunError:
         return False
 
 
@@ -122,7 +122,7 @@ def _ensure_additional_push_urls(
 
     try:
         existing = get_remote_push_urls("origin", cwd=repo_dir)
-    except GitError:
+    except GitRunError:
         existing = set()
 
     for url in sorted(desired - existing):

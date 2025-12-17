@@ -16,7 +16,7 @@ from .fetch import GitFetchError, fetch
 from .init import GitInitError, init
 from .merge_no_ff import GitMergeError, merge_no_ff
 from .pull import GitPullError, pull
-from .pull_args import GitPullArgsError, pull_args  # <-- add
+from .pull_args import GitPullArgsError, pull_args
 from .pull_ff_only import GitPullFfOnlyError, pull_ff_only
 from .push import GitPushError, push
 from .push_upstream import GitPushUpstreamError, push_upstream
@@ -30,7 +30,7 @@ __all__ = [
     "fetch",
     "checkout",
     "pull",
-    "pull_args",  # <-- add
+    "pull_args",
     "pull_ff_only",
     "merge_no_ff",
     "push",
@@ -52,7 +52,7 @@ __all__ = [
     "GitFetchError",
     "GitCheckoutError",
     "GitPullError",
-    "GitPullArgsError",  # <-- add
+    "GitPullArgsError",
     "GitPullFfOnlyError",
     "GitMergeError",
     "GitPushError",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -28,7 +28,7 @@ def push(
 
     try:
         run(args, cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitPushError(
             f"Failed to push ref {ref!r} to remote {remote!r}.",
             cwd=cwd,

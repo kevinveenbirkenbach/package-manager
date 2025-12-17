@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.git.commands import (
     GitDeleteRemoteBranchError,
@@ -32,7 +32,7 @@ def close_branch(
     if not name:
         try:
             name = get_current_branch(cwd=cwd)
-        except GitError as exc:
+        except GitRunError as exc:
             raise RuntimeError(f"Failed to detect current branch: {exc}") from exc
 
     if not name:
@@ -55,7 +55,7 @@ def close_branch(
             print("Aborted closing branch.")
             return
 
-    # Execute workflow (commands raise specific GitError subclasses)
+    # Execute workflow (commands raise specific GitRunError subclasses)
     fetch("origin", cwd=cwd)
     checkout(target_base, cwd=cwd)
     pull("origin", target_base, cwd=cwd)

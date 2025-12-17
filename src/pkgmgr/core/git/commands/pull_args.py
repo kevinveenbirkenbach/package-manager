@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -28,7 +28,7 @@ def pull_args(
     extra = args or []
     try:
         run(["pull", *extra], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitPullArgsError(
             f"Failed to run `git pull` with args={extra!r}.",
             cwd=cwd,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.git.commands import (
     GitDeleteRemoteBranchError,
@@ -26,7 +26,7 @@ def drop_branch(
     if not name:
         try:
             name = get_current_branch(cwd=cwd)
-        except GitError as exc:
+        except GitRunError as exc:
             raise RuntimeError(f"Failed to detect current branch: {exc}") from exc
 
     if not name:

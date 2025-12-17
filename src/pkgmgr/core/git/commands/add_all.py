@@ -1,7 +1,6 @@
-# src/pkgmgr/core/git/commands/add_all.py
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitCommandError, GitRunError
 from ..run import run
 
 
@@ -18,5 +17,5 @@ def add_all(*, cwd: str = ".", preview: bool = False) -> None:
     """
     try:
         run(["add", "-A"], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitAddAllError("Failed to stage all changes with `git add -A`.", cwd=cwd) from exc

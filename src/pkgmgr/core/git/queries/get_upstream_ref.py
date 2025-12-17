@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ..errors import GitError
+from ..errors import GitRunError
 from ..run import run
 
 
@@ -18,7 +18,7 @@ def get_upstream_ref(*, cwd: str = ".") -> Optional[str]:
             ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
             cwd=cwd,
         )
-    except GitError:
+    except GitRunError:
         return None
 
     out = out.strip()

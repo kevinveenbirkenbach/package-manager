@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -23,7 +23,7 @@ def tag_annotated(
     """
     try:
         run(["tag", "-a", tag, "-m", message], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitTagAnnotatedError(
             f"Failed to create annotated tag {tag!r}.",
             cwd=cwd,

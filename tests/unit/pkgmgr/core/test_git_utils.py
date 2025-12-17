@@ -4,7 +4,7 @@
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.run import run
 from pkgmgr.core.git.queries import get_tags, get_head_commit, get_current_branch
 
@@ -35,7 +35,7 @@ class TestGitRun(unittest.TestCase):
             stderr="error\n",
         )
 
-        with self.assertRaises(GitError) as ctx:
+        with self.assertRaises(GitRunError) as ctx:
             run(["status"], cwd="/tmp/repo")
 
         msg = str(ctx.exception)
@@ -66,7 +66,7 @@ class TestGitQueries(unittest.TestCase):
 
     @patch("pkgmgr.core.git.queries.get_head_commit.run")
     def test_get_head_commit_failure_returns_none(self, mock_run):
-        mock_run.side_effect = GitError("fail")
+        mock_run.side_effect = GitRunError("fail")
         commit = get_head_commit(cwd="/tmp/repo")
         self.assertIsNone(commit)
 
@@ -78,7 +78,7 @@ class TestGitQueries(unittest.TestCase):
 
     @patch("pkgmgr.core.git.queries.get_current_branch.run")
     def test_get_current_branch_failure_returns_none(self, mock_run):
-        mock_run.side_effect = GitError("fail")
+        mock_run.side_effect = GitRunError("fail")
         branch = get_current_branch(cwd="/tmp/repo")
         self.assertIsNone(branch)
 

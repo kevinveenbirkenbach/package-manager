@@ -1,7 +1,6 @@
-# src/pkgmgr/core/git/commands/init.py
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -18,5 +17,5 @@ def init(*, cwd: str = ".", preview: bool = False) -> None:
     """
     try:
         run(["init"], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitInitError("Failed to initialize git repository.", cwd=cwd) from exc

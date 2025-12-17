@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -16,7 +16,7 @@ def create_branch(branch: str, base: str, cwd: str = ".") -> None:
     """
     try:
         run(["checkout", "-b", branch, base], cwd=cwd)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitCreateBranchError(
             f"Failed to create branch {branch!r} from base {base!r}.",
             cwd=cwd,

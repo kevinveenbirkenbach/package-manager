@@ -4,7 +4,6 @@ from typing import Set
 
 from ..run import run
 
-
 def get_remote_push_urls(remote: str, cwd: str = ".") -> Set[str]:
     """
     Return all push URLs configured for a remote.
@@ -12,7 +11,7 @@ def get_remote_push_urls(remote: str, cwd: str = ".") -> Set[str]:
     Equivalent to:
       git remote get-url --push --all <remote>
 
-    Raises GitError if the command fails.
+    Raises GitBaseError if the command fails.
     """
     output = run(["remote", "get-url", "--push", "--all", remote], cwd=cwd)
     if not output:

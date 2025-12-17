@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -11,7 +11,7 @@ class GitCheckoutError(GitCommandError):
 def checkout(branch: str, cwd: str = ".") -> None:
     try:
         run(["checkout", branch], cwd=cwd)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitCheckoutError(
             f"Failed to checkout branch {branch!r}.",
             cwd=cwd,

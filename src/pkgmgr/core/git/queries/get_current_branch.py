@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
-from ..errors import GitError
+from ..errors import GitRunError
 from ..run import run
 
 
@@ -13,6 +13,6 @@ def get_current_branch(cwd: str = ".") -> Optional[str]:
     """
     try:
         output = run(["rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd)
-    except GitError:
+    except GitRunError:
         return None
     return output or None

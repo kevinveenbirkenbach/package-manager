@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from pkgmgr.actions.branch.close_branch import close_branch
-from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.commands import GitDeleteRemoteBranchError
 
 
@@ -90,7 +90,7 @@ class TestCloseBranch(unittest.TestCase):
         delete_local_branch.assert_called_once_with("feature-x", cwd=".", force=False)
         delete_remote_branch.assert_called_once_with("origin", "feature-x", cwd=".")
 
-    @patch("pkgmgr.actions.branch.close_branch.get_current_branch", side_effect=GitError("fail"))
+    @patch("pkgmgr.actions.branch.close_branch.get_current_branch", side_effect=GitRunError("fail"))
     def test_close_branch_errors_if_cannot_detect_branch(self, _current) -> None:
         with self.assertRaises(RuntimeError):
             close_branch(None)

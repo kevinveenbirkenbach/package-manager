@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -17,7 +17,7 @@ def pull_ff_only(*, cwd: str = ".", preview: bool = False) -> None:
     """
     try:
         run(["pull", "--ff-only"], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitPullFfOnlyError(
             "Failed to pull with --ff-only.",
             cwd=cwd,

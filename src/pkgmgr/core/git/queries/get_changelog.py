@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ..errors import GitError
+from ..errors import GitQueryError, GitRunError
 from ..run import run
 
 
-class GitChangelogQueryError(GitError):
+class GitChangelogQueryError(GitQueryError):
     """Raised when querying the git changelog fails."""
 
 
@@ -38,7 +38,7 @@ def get_changelog(
 
     try:
         return run(cmd, cwd=cwd)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitChangelogQueryError(
             f"Failed to query changelog for range {rev_range!r}.",
         ) from exc

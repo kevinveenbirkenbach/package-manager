@@ -1,7 +1,6 @@
-# src/pkgmgr/core/git/commands/branch_move.py
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -18,5 +17,5 @@ def branch_move(branch: str, *, cwd: str = ".", preview: bool = False) -> None:
     """
     try:
         run(["branch", "-M", branch], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitBranchMoveError(f"Failed to move/rename current branch to {branch!r}.", cwd=cwd) from exc

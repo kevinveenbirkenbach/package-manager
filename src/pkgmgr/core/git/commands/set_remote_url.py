@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -35,7 +35,7 @@ def set_remote_url(
             cwd=cwd,
             preview=preview,
         )
-    except GitError as exc:
+    except GitRunError as exc:
         mode = "push" if push else "fetch"
         raise GitSetRemoteUrlError(
             f"Failed to set {mode} url for remote {remote!r} to {url!r}.",

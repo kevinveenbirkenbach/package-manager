@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from pkgmgr.actions.branch.drop_branch import drop_branch
-from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.commands import GitDeleteRemoteBranchError
 
 
@@ -50,7 +50,7 @@ class TestDropBranch(unittest.TestCase):
         delete_local.assert_called_once_with("feature-x", cwd=".", force=False)
         delete_remote.assert_called_once_with("origin", "feature-x", cwd=".")
 
-    @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", side_effect=GitError("fail"))
+    @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", side_effect=GitRunError("fail"))
     def test_drop_branch_errors_if_no_branch_detected(self, _current) -> None:
         with self.assertRaises(RuntimeError):
             drop_branch(None)

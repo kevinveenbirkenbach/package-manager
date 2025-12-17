@@ -5,7 +5,7 @@ import sys
 from typing import Optional
 
 from pkgmgr.actions.branch import close_branch
-from pkgmgr.core.git import GitError
+from pkgmgr.core.git import GitRunError
 from pkgmgr.core.git.commands import add, commit, push, tag_annotated
 from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.repository.paths import resolve_repo_paths
@@ -40,7 +40,7 @@ def _release_impl(
     # Determine current branch early
     try:
         branch = get_current_branch() or "main"
-    except GitError:
+    except GitRunError:
         branch = "main"
     print(f"Releasing on branch: {branch}")
 
@@ -158,7 +158,7 @@ def _release_impl(
             update_latest_tag(new_tag, preview=False)
         else:
             print(f"[INFO] Skipping 'latest' update (tag {new_tag} is not the highest).")
-    except GitError as exc:
+    except GitRunError as exc:
         print(f"[WARN] Failed to update floating 'latest' tag for {new_tag}: {exc}")
         print("'latest' tag was not updated.")
 

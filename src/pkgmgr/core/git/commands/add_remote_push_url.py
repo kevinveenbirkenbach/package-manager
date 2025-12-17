@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -27,7 +27,7 @@ def add_remote_push_url(
             cwd=cwd,
             preview=preview,
         )
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitAddRemotePushUrlError(
             f"Failed to add push url {url!r} to remote {remote!r}.",
             cwd=cwd,

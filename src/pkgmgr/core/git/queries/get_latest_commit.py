@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ..errors import GitError
+from ..errors import GitRunError
 from ..run import run
 
 
@@ -19,7 +19,7 @@ def get_latest_commit(cwd: str = ".") -> Optional[str]:
     """
     try:
         output = run(["log", "-1", "--format=%H"], cwd=cwd)
-    except GitError:
+    except GitRunError:
         return None
 
     output = output.strip()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError
+from ..errors import GitRunError
 from ..run import run
 
 
@@ -17,5 +17,5 @@ def probe_remote_reachable(url: str, cwd: str = ".") -> bool:
     try:
         run(["ls-remote", "--exit-code", url], cwd=cwd)
         return True
-    except GitError:
+    except GitRunError:
         return False

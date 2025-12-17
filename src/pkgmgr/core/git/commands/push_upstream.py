@@ -1,7 +1,6 @@
-# src/pkgmgr/core/git/commands/push_upstream.py
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -24,7 +23,7 @@ def push_upstream(
     """
     try:
         run(["push", "-u", remote, branch], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitPushUpstreamError(
             f"Failed to push branch {branch!r} to {remote!r} with upstream tracking.",
             cwd=cwd,

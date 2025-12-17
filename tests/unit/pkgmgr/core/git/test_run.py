@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from pkgmgr.core.git.errors import GitError
+from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.run import run
 
 
@@ -55,7 +55,7 @@ class TestGitRun(unittest.TestCase):
         exc.stderr = "ERR!"
 
         with patch("pkgmgr.core.git.run.subprocess.run", side_effect=exc):
-            with self.assertRaises(GitError) as ctx:
+            with self.assertRaises(GitRunError) as ctx:
                 run(["status"], cwd="/bad/repo", preview=False)
 
         msg = str(ctx.exception)

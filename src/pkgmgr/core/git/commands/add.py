@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, List, Sequence, Union
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -37,7 +37,7 @@ def add(
 
     try:
         run(["add", *normalized], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitAddError(
             f"Failed to add paths to staging area: {normalized!r}.",
             cwd=cwd,

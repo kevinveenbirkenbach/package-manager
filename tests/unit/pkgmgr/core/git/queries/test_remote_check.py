@@ -6,7 +6,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.core.git import GitError
+from pkgmgr.core.git import GitRunError
 from pkgmgr.core.git.queries.probe_remote_reachable import probe_remote_reachable
 
 
@@ -32,7 +32,7 @@ class TestProbeRemoteReachable(unittest.TestCase):
 
     @patch("pkgmgr.core.git.queries.probe_remote_reachable.run")
     def test_probe_remote_reachable_failure_returns_false(self, mock_run) -> None:
-        mock_run.side_effect = GitError("Git command failed (simulated)")
+        mock_run.side_effect = GitRunError("Git command failed (simulated)")
 
         ok = probe_remote_reachable(
             "ssh://git@code.example.org:2201/alice/repo.git",

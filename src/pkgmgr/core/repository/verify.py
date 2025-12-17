@@ -1,48 +1,37 @@
-import subprocess
+from __future__ import annotations
+
+from pkgmgr.core.git.queries import (
+    get_head_commit,
+    get_latest_signing_key,
+    get_remote_head_commit,
+    GitLatestSigningKeyQueryError,
+    GitRemoteHeadCommitQueryError,
+)
+
 
 def verify_repository(repo, repo_dir, mode="local", no_verification=False):
-    """
-    Verifies the repository based on its 'verified' field.
-    
-    The 'verified' field can be a dictionary with the following keys:
-      commit:   The expected commit hash.
-      gpg_keys: A list of valid GPG key IDs (at least one must match the signing key).
+    _ = no_verification
 
-    If mode == "pull", the remote HEAD commit is checked via "git ls-remote origin HEAD".
-    Otherwise (mode "local", used for install and clone), the local HEAD commit is checked via "git rev-parse HEAD".
-
-    Returns a tuple:
-      (verified_ok, error_details, commit_hash, signing_key)
-        - verified_ok: True if the verification passed (or no verification info is set), False otherwise.
-        - error_details: A list of error messages for any failed checks.
-        - commit_hash: The obtained commit hash.
-        - signing_key: The GPG key ID that signed the latest commit (obtained via "git log -1 --format=%GK").
-    """
     verified_info = repo.get("verified")
-    if not verified_info:
-        # Nothing to verify.
-        commit_hash = ""
-        signing_key = ""
+
+    commit_hash = ""
+    signing_key = ""
+
+    # best-effort info collection
+    try:
         if mode == "pull":
-            try:
-                result = subprocess.run("git ls-remote origin HEAD", cwd=repo_dir, shell=True, check=True,
-                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                commit_hash = result.stdout.split()[0].strip()
-            except Exception:
-                commit_hash = ""
+            commit_hash = get_remote_head_commit(cwd=repo_dir)
         else:
-            try:
-                result = subprocess.run("git rev-parse HEAD", cwd=repo_dir, shell=True, check=True,
-                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                commit_hash = result.stdout.strip()
-            except Exception:
-                commit_hash = ""
-        try:
-            result = subprocess.run(["git", "log", "-1", "--format=%GK"], cwd=repo_dir, shell=False, check=True,
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            signing_key = result.stdout.strip()
-        except Exception:
-            signing_key = ""
+            commit_hash = get_head_commit(cwd=repo_dir) or ""
+    except GitRemoteHeadCommitQueryError:
+        commit_hash = ""
+
+    try:
+        signing_key = get_latest_signing_key(cwd=repo_dir)
+    except GitLatestSigningKeyQueryError:
+        signing_key = ""
+
+    if not verified_info:
         return True, [], commit_hash, signing_key
 
     expected_commit = None
@@ -51,47 +40,42 @@ def verify_repository(repo, repo_dir, mode="local", no_verification=False):
         expected_commit = verified_info.get("commit")
         expected_gpg_keys = verified_info.get("gpg_keys")
     else:
-        # If verified is a plain string, treat it as the expected commit.
         expected_commit = verified_info
 
-    error_details = []
+    error_details: list[str] = []
 
-    # Get commit hash according to the mode.
-    commit_hash = ""
+    # strict retrieval when verification is configured
     if mode == "pull":
         try:
-            result = subprocess.run("git ls-remote origin HEAD", cwd=repo_dir, shell=True, check=True,
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            commit_hash = result.stdout.split()[0].strip()
-        except Exception as e:
-            error_details.append(f"Error retrieving remote commit: {e}")
+            commit_hash = get_remote_head_commit(cwd=repo_dir)
+        except GitRemoteHeadCommitQueryError as exc:
+            error_details.append(str(exc))
+            commit_hash = ""
     else:
-        try:
-            result = subprocess.run("git rev-parse HEAD", cwd=repo_dir, shell=True, check=True,
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            commit_hash = result.stdout.strip()
-        except Exception as e:
-            error_details.append(f"Error retrieving local commit: {e}")
+        commit_hash = get_head_commit(cwd=repo_dir) or ""
 
-    # Get the signing key using "git log -1 --format=%GK"
-    signing_key = ""
     try:
-        result = subprocess.run(["git", "log", "-1", "--format=%GK"], cwd=repo_dir, shell=False, check=True,
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        signing_key = result.stdout.strip()
-    except Exception as e:
-        error_details.append(f"Error retrieving signing key: {e}")
+        signing_key = get_latest_signing_key(cwd=repo_dir)
+    except GitLatestSigningKeyQueryError as exc:
+        error_details.append(str(exc))
+        signing_key = ""
 
     commit_check_passed = True
     gpg_check_passed = True
 
     if expected_commit:
-        if commit_hash != expected_commit:
+        if not commit_hash:
+            commit_check_passed = False
+            error_details.append(f"Expected commit: {expected_commit}, but could not determine current commit.")
+        elif commit_hash != expected_commit:
             commit_check_passed = False
             error_details.append(f"Expected commit: {expected_commit}, found: {commit_hash}")
 
     if expected_gpg_keys:
-        if signing_key not in expected_gpg_keys:
+        if not signing_key:
+            gpg_check_passed = False
+            error_details.append(f"Expected one of GPG keys: {expected_gpg_keys}, but no signing key was found.")
+        elif signing_key not in expected_gpg_keys:
             gpg_check_passed = False
             error_details.append(f"Expected one of GPG keys: {expected_gpg_keys}, found: {signing_key}")
 

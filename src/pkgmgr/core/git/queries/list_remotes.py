@@ -9,7 +9,7 @@ def list_remotes(cwd: str = ".") -> List[str]:
     """
     Return a list of configured git remotes (e.g. ['origin', 'upstream']).
 
-    Raises GitError if the command fails.
+    Raises GitBaseError if the command fails.
     """
     output = run(["remote"], cwd=cwd)
     if not output:

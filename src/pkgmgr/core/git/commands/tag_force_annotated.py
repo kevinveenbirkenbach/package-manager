@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -24,7 +24,7 @@ def tag_force_annotated(
     """
     try:
         run(["tag", "-f", "-a", name, target, "-m", message], cwd=cwd, preview=preview)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitTagForceAnnotatedError(
             f"Failed to force annotated tag {name!r} at {target!r}.",
             cwd=cwd,

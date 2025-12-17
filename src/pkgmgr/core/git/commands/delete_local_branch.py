@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitError, GitCommandError
+from ..errors import GitRunError, GitCommandError
 from ..run import run
 
 
@@ -12,7 +12,7 @@ def delete_local_branch(branch: str, cwd: str = ".", force: bool = False) -> Non
     flag = "-D" if force else "-d"
     try:
         run(["branch", flag, branch], cwd=cwd)
-    except GitError as exc:
+    except GitRunError as exc:
         raise GitDeleteLocalBranchError(
             f"Failed to delete local branch {branch!r} (flag {flag}).",
             cwd=cwd,
