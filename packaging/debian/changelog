@@ -1,3 +1,9 @@
+package-manager (1.8.4-1) unstable; urgency=medium
+
+  * * Made pkgmgr’s base-layer role explicit by standardizing the Docker/CI mount path to *`/opt/src/pkgmgr`*.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Wed, 17 Dec 2025 11:20:16 +0100
+
 package-manager (1.8.3-1) unstable; urgency=medium
 
   * MIRRORS now supports plain URL entries, ensuring metadata-only sources like PyPI are recorded without ever being added to the Git configuration.
