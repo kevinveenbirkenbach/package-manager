@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.8.4
+Version:        1.9.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Wed Dec 17 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.0-1
+- Automated release.
+
 * Wed Dec 17 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.4-1
 - * Made pkgmgr’s base-layer role explicit by standardizing the Docker/CI mount path to *`/opt/src/pkgmgr`*.
 

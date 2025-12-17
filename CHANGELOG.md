@@ -1,3 +1,8 @@
+## [1.9.0] - 2025-12-17
+
+* Automated release.
+
+
 ## [1.8.4] - 2025-12-17
 
 * * Made pkgmgr’s base-layer role explicit by standardizing the Docker/CI mount path to *`/opt/src/pkgmgr`*.
