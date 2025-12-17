@@ -11,7 +11,7 @@ PKGMGR_DISTRO ?= arch
 export PKGMGR_DISTRO
 
 # Nix Config Variable (To avoid rate limit)
-NIX_CONFIG ?= ""
+NIX_CONFIG ?=
 export NIX_CONFIG
 
 # ------------------------------------------------------------
