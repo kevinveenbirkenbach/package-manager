@@ -9,18 +9,18 @@ echo ">>> Image: ${IMAGE}"
 echo "============================================================"
 
 docker run --rm \
-  -v "$(pwd):/src" \
+  -v "$(pwd):/opt/src/pkgmgr" \
   -v "pkgmgr_nix_store_${PKGMGR_DISTRO}:/nix" \
   -v "pkgmgr_nix_cache_${PKGMGR_DISTRO}:/root/.cache/nix" \
-  --workdir /src \
+  --workdir /opt/src/pkgmgr \
   -e REINSTALL_PKGMGR=1 \
   "${IMAGE}" \
   bash -lc '
     set -euo pipefail
 
     if command -v git >/dev/null 2>&1; then
-      git config --global --add safe.directory /src || true
-      git config --global --add safe.directory /src/.git || true
+      git config --global --add safe.directory /opt/src/pkgmgr || true
+      git config --global --add safe.directory /opt/src/pkgmgr/.git || true
       git config --global --add safe.directory "*" || true
     fi
 
@@ -38,9 +38,9 @@ docker run --rm \
     # ------------------------------------------------------------
     # Retry helper for GitHub API rate-limit (HTTP 403)
     # ------------------------------------------------------------
-    if [[ -f /src/scripts/nix/lib/retry_403.sh ]]; then
+    if [[ -f /opt/src/pkgmgr/scripts/nix/lib/retry_403.sh ]]; then
       # shellcheck source=./scripts/nix/lib/retry_403.sh
-      source /src/scripts/nix/lib/retry_403.sh
+      source /opt/src/pkgmgr/scripts/nix/lib/retry_403.sh
     elif [[ -f ./scripts/nix/lib/retry_403.sh ]]; then
       # shellcheck source=./scripts/nix/lib/retry_403.sh
       source ./scripts/nix/lib/retry_403.sh

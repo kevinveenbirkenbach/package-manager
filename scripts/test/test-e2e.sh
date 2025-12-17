@@ -6,12 +6,12 @@ echo ">>> Running E2E tests: $PKGMGR_DISTRO"
 echo "============================================================"
 
 docker run --rm \
-  -v "$(pwd):/src" \
+  -v "$(pwd):/opt/src/pkgmgr" \
   -v "pkgmgr_nix_store_${PKGMGR_DISTRO}:/nix" \
   -v "pkgmgr_nix_cache_${PKGMGR_DISTRO}:/root/.cache/nix" \
   -e REINSTALL_PKGMGR=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
-  --workdir /src \
+  --workdir /opt/src/pkgmgr \
   "pkgmgr-${PKGMGR_DISTRO}" \
   bash -lc '
     set -euo pipefail
@@ -40,14 +40,14 @@ docker run --rm \
     }
 
     # Mark the mounted repository as safe to avoid Git ownership errors.
-    # Newer Git (e.g. on Ubuntu) complains about the gitdir (/src/.git),
-    # older versions about the worktree (/src). Nix turns "." into the
-    # flake input "git+file:///src", which then uses Git under the hood.
+    # Newer Git (e.g. on Ubuntu) complains about the gitdir (/opt/src/pkgmgr/.git),
+    # older versions about the worktree (/opt/src/pkgmgr). Nix turns "." into the
+    # flake input "git+file:///opt/src/pkgmgr", which then uses Git under the hood.
     if command -v git >/dev/null 2>&1; then
       # Worktree path
-      git config --global --add safe.directory /src || true
+      git config --global --add safe.directory /opt/src/pkgmgr || true
       # Gitdir path shown in the "dubious ownership" error
-      git config --global --add safe.directory /src/.git || true
+      git config --global --add safe.directory /opt/src/pkgmgr/.git || true
       # Ephemeral CI containers: allow all paths as a last resort
       git config --global --add safe.directory "*" || true
     fi
@@ -55,6 +55,6 @@ docker run --rm \
     # Run the E2E tests inside the Nix development shell
     nix develop .#default --no-write-lock-file -c \
       python3 -m unittest discover \
-        -s /src/tests/e2e \
+        -s /opt/src/pkgmgr/tests/e2e \
         -p "$TEST_PATTERN"
   '

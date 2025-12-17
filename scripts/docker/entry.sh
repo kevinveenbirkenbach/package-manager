@@ -12,16 +12,16 @@ if [[ -f /etc/os-release ]]; then
   echo "[docker-pkgmgr] Detected distro: ${ID:-unknown} (like: ${ID_LIKE:-})"
 fi
 
-# Always use /src (mounted from host) as working directory
-echo "[docker-pkgmgr] Using /src as working directory"
-cd /src
+# Always use /opt/src/pkgmgr (mounted from host) as working directory
+echo "[docker-pkgmgr] Using /opt/src/pkgmgr as working directory"
+cd /opt/src/pkgmgr
 
 # ---------------------------------------------------------------------------
-# DEV mode: rebuild package-manager from the mounted /src tree
+# DEV mode: rebuild package-manager from the mounted /opt/src/pkgmgr tree
 # ---------------------------------------------------------------------------
 if [[ "${REINSTALL_PKGMGR:-0}" == "1" ]]; then
   echo "[docker-pkgmgr] DEV mode enabled (REINSTALL_PKGMGR=1)"
-  echo "[docker-pkgmgr] Rebuilding package-manager from /src via scripts/installation/package.sh..."
+  echo "[docker-pkgmgr] Rebuilding package-manager from /opt/src/pkgmgr via scripts/installation/package.sh..."
   bash scripts/installation/package.sh || exit 1
 fi
 

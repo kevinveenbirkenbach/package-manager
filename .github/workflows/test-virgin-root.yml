@@ -31,15 +31,15 @@ jobs:
           set -euo pipefail
 
           docker run --rm \
-            -v "$PWD":/src \
+            -v "$PWD":/opt/src/pkgmgr \
             -v pkgmgr_repos:/root/Repositories \
             -v pkgmgr_pip_cache:/root/.cache/pip \
-            -w /src \
+            -w /opt/src/pkgmgr \
             "pkgmgr-${{ matrix.distro }}-virgin" \
             bash -lc '
               set -euo pipefail
 
-              git config --global --add safe.directory /src
+              git config --global --add safe.directory /opt/src/pkgmgr
 
               make install
               make setup
@@ -50,5 +50,5 @@ jobs:
               pkgmgr version pkgmgr
 
               echo ">>> Running Nix-based: nix run .#pkgmgr -- version pkgmgr"
-              nix run /src#pkgmgr -- version pkgmgr
+              nix run /opt/src/pkgmgr#pkgmgr -- version pkgmgr
             '

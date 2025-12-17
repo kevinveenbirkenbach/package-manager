@@ -50,6 +50,6 @@ RUN set -euo pipefail; \
 # Entry point
 COPY scripts/docker/entry.sh /usr/local/bin/docker-entry.sh
 
-WORKDIR /src
+WORKDIR /opt/src/pkgmgr
 ENTRYPOINT ["/usr/local/bin/docker-entry.sh"]
 CMD ["pkgmgr", "--help"]

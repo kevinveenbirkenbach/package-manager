@@ -6,7 +6,7 @@ echo "[arch/package] Building Arch package (makepkg --nodeps) in an isolated bui
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
-# We must not build inside /src (mounted repo). Build in /tmp to avoid permission issues.
+# We must not build inside /opt/src/pkgmgr (mounted repo). Build in /tmp to avoid permission issues.
 BUILD_ROOT="/tmp/package-manager-arch-build"
 PKG_SRC_DIR="${PROJECT_ROOT}/packaging/arch"
 PKG_BUILD_DIR="${BUILD_ROOT}/packaging/arch"

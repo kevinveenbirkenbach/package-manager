@@ -17,8 +17,8 @@ echo
 # ------------------------------------------------------------
 if OUTPUT=$(docker run --rm \
     -e REINSTALL_PKGMGR=1 \
-    -v "$(pwd):/src" \
-    -w /src \
+    -v "$(pwd):/opt/src/pkgmgr" \
+    -w /opt/src/pkgmgr \
     "${IMAGE}" \
     bash -lc '
         set -euo pipefail
