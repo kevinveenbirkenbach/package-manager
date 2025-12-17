@@ -11,6 +11,7 @@ docker run --rm \
   -v "pkgmgr_nix_cache_${PKGMGR_DISTRO}:/root/.cache/nix" \
   -e REINSTALL_PKGMGR=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
+  -e NIX_CONFIG="${NIX_CONFIG}" \
   --workdir /opt/src/pkgmgr \
   "pkgmgr-${PKGMGR_DISTRO}" \
   bash -lc '

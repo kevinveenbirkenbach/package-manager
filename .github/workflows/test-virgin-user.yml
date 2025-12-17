@@ -11,7 +11,9 @@ jobs:
       fail-fast: false
       matrix:
         distro: [arch, debian, ubuntu, fedora, centos]
-
+    env:
+      NIX_CONFIG: |
+        access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,19 +21,18 @@ jobs:
       - name: Show Docker version
         run: docker version
 
-      # 🔹 BUILD virgin image if missing
       - name: Build virgin container (${{ matrix.distro }})
         run: |
           set -euo pipefail
           PKGMGR_DISTRO="${{ matrix.distro }}" make build-missing-virgin
 
-      # 🔹 RUN test inside virgin image as non-root
       - name: Virgin ${{ matrix.distro }} pkgmgr test (user)
         run: |
           set -euo pipefail
 
           docker run --rm \
             -v "$PWD":/opt/src/pkgmgr \
+            -e NIX_CONFIG="${NIX_CONFIG}" \
             -w /opt/src/pkgmgr \
             "pkgmgr-${{ matrix.distro }}-virgin" \
             bash -lc '

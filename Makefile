@@ -10,6 +10,10 @@ DISTROS ?= arch debian ubuntu fedora centos
 PKGMGR_DISTRO ?= arch
 export PKGMGR_DISTRO
 
+# Nix Config Variable (To avoid rate limit)
+NIX_CONFIG ?= ""
+export NIX_CONFIG
+
 # ------------------------------------------------------------
 # Base images
 # (kept for documentation/reference; actual build logic is in scripts/build)

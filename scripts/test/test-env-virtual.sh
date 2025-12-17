@@ -19,6 +19,7 @@ if OUTPUT=$(docker run --rm \
     -e REINSTALL_PKGMGR=1 \
     -v "$(pwd):/opt/src/pkgmgr" \
     -w /opt/src/pkgmgr \
+    -e NIX_CONFIG="${NIX_CONFIG}" \
     "${IMAGE}" \
     bash -lc '
         set -euo pipefail

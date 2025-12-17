@@ -14,6 +14,7 @@ docker run --rm \
   -v "pkgmgr_nix_cache_${PKGMGR_DISTRO}:/root/.cache/nix" \
   --workdir /opt/src/pkgmgr \
   -e REINSTALL_PKGMGR=1 \
+  -e NIX_CONFIG="${NIX_CONFIG}" \
   "${IMAGE}" \
   bash -lc '
     set -euo pipefail

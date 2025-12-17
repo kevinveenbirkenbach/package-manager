@@ -12,6 +12,7 @@ docker run --rm \
   --workdir /opt/src/pkgmgr \
   -e REINSTALL_PKGMGR=1 \
   -e TEST_PATTERN="${TEST_PATTERN}" \
+  -e NIX_CONFIG="${NIX_CONFIG}" \
   "pkgmgr-${PKGMGR_DISTRO}" \
   bash -lc '
     set -e;
