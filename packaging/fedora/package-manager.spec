@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.8.5
+Version:        1.8.6
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Wed Dec 17 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.6-1
+- Prevent Rate Limits during GitHub Nix Setups
+
 * Wed Dec 17 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.5-1
 - * Clearer Git error handling, especially when a directory is not a Git repository.
 * More reliable repository verification with improved commit and GPG signature checks.

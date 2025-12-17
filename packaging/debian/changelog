@@ -1,3 +1,9 @@
+package-manager (1.8.6-1) unstable; urgency=medium
+
+  * Prevent Rate Limits during GitHub Nix Setups
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Wed, 17 Dec 2025 23:50:31 +0100
+
 package-manager (1.8.5-1) unstable; urgency=medium
 
   * * Clearer Git error handling, especially when a directory is not a Git repository.

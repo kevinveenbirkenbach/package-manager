@@ -1,3 +1,8 @@
+## [1.8.6] - 2025-12-17
+
+* Prevent Rate Limits during GitHub Nix Setups
+
+
 ## [1.8.5] - 2025-12-17
 
 * * Clearer Git error handling, especially when a directory is not a Git repository.
