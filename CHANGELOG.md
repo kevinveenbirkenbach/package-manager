@@ -1,3 +1,10 @@
+## [1.8.5] - 2025-12-17
+
+* * Clearer Git error handling, especially when a directory is not a Git repository.
+* More reliable repository verification with improved commit and GPG signature checks.
+* Better error messages and overall robustness when working with Git-based workflows.
+
+
 ## [1.9.0] - 2025-12-17
 
 * Automated release.
