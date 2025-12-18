@@ -41,15 +41,19 @@ def drop_branch(
 
     # Confirmation
     if not force:
-        answer = input(
-            f"Delete branch '{name}' locally and on origin? This is destructive! (y/N): "
-        ).strip().lower()
+        answer = (
+            input(
+                f"Delete branch '{name}' locally and on origin? This is destructive! (y/N): "
+            )
+            .strip()
+            .lower()
+        )
         if answer != "y":
             print("Aborted dropping branch.")
             return
 
     delete_local_branch(name, cwd=cwd, force=False)
-    
+
     # Remote delete (special-case message)
     try:
         delete_remote_branch("origin", name, cwd=cwd)

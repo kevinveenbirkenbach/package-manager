@@ -29,10 +29,12 @@ class TestIntegrationReleasePublishHook(unittest.TestCase):
             # Go through real parser to ensure CLI surface is wired correctly
             args = self._parse(["release", "patch"])
 
-            with patch("pkgmgr.cli.commands.release.run_release") as m_release, patch(
-                "pkgmgr.cli.commands.release.run_publish"
-            ) as m_publish, patch(
-                "pkgmgr.cli.commands.release.sys.stdin.isatty", return_value=False
+            with (
+                patch("pkgmgr.cli.commands.release.run_release") as m_release,
+                patch("pkgmgr.cli.commands.release.run_publish") as m_publish,
+                patch(
+                    "pkgmgr.cli.commands.release.sys.stdin.isatty", return_value=False
+                ),
             ):
                 handle_release(args=args, ctx=self._ctx(), selected=selected)
 
@@ -53,9 +55,10 @@ class TestIntegrationReleasePublishHook(unittest.TestCase):
 
             args = self._parse(["release", "patch", "--no-publish"])
 
-            with patch("pkgmgr.cli.commands.release.run_release") as m_release, patch(
-                "pkgmgr.cli.commands.release.run_publish"
-            ) as m_publish:
+            with (
+                patch("pkgmgr.cli.commands.release.run_release") as m_release,
+                patch("pkgmgr.cli.commands.release.run_publish") as m_publish,
+            ):
                 handle_release(args=args, ctx=self._ctx(), selected=selected)
 
             m_release.assert_called_once()

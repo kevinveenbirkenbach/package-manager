@@ -31,9 +31,7 @@ from typing import List
 from pkgmgr.core.config.load import load_config
 
 # Resolve project root (the repo where main.py lives, e.g. /src)
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..")
-)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "config.yaml")
 
 

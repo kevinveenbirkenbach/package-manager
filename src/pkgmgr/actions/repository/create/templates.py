@@ -66,9 +66,7 @@ class TemplateRenderer:
         for root, _, files in os.walk(self.templates_dir):
             for fn in files:
                 if fn.endswith(".j2"):
-                    rel = os.path.relpath(
-                        os.path.join(root, fn), self.templates_dir
-                    )
+                    rel = os.path.relpath(os.path.join(root, fn), self.templates_dir)
                     print(f"[Preview] Would render template: {rel} -> {rel[:-3]}")
 
     @staticmethod

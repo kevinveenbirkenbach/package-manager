@@ -16,6 +16,7 @@ def _is_missing_key_error(exc: GitRunError) -> bool:
     # 'git config --get' returns exit code 1 when the key is not set.
     return "exit code: 1" in msg
 
+
 def get_config_value(key: str, *, cwd: str = ".") -> Optional[str]:
     """
     Return a value from `git config --get <key>`, or None if not set.

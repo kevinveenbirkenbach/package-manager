@@ -76,7 +76,9 @@ def _release_impl(
     if paths.arch_pkgbuild:
         update_pkgbuild_version(paths.arch_pkgbuild, new_ver_str, preview=preview)
     else:
-        print("[INFO] No PKGBUILD found (packaging/arch/PKGBUILD or PKGBUILD). Skipping.")
+        print(
+            "[INFO] No PKGBUILD found (packaging/arch/PKGBUILD or PKGBUILD). Skipping."
+        )
 
     if paths.rpm_spec:
         update_spec_version(paths.rpm_spec, new_ver_str, preview=preview)
@@ -123,7 +125,9 @@ def _release_impl(
         paths.rpm_spec,
         paths.debian_changelog,
     ]
-    existing_files = [p for p in files_to_add if isinstance(p, str) and p and os.path.exists(p)]
+    existing_files = [
+        p for p in files_to_add if isinstance(p, str) and p and os.path.exists(p)
+    ]
 
     if preview:
         add(existing_files, preview=True)
@@ -135,13 +139,17 @@ def _release_impl(
         if is_highest_version_tag(new_tag):
             update_latest_tag(new_tag, preview=True)
         else:
-            print(f"[PREVIEW] Skipping 'latest' update (tag {new_tag} is not the highest).")
+            print(
+                f"[PREVIEW] Skipping 'latest' update (tag {new_tag} is not the highest)."
+            )
 
         if close and branch not in ("main", "master"):
             if force:
                 print(f"[PREVIEW] Would delete branch {branch} (forced).")
             else:
-                print(f"[PREVIEW] Would ask whether to delete branch {branch} after release.")
+                print(
+                    f"[PREVIEW] Would ask whether to delete branch {branch} after release."
+                )
         return
 
     add(existing_files, preview=False)
@@ -157,7 +165,9 @@ def _release_impl(
         if is_highest_version_tag(new_tag):
             update_latest_tag(new_tag, preview=False)
         else:
-            print(f"[INFO] Skipping 'latest' update (tag {new_tag} is not the highest).")
+            print(
+                f"[INFO] Skipping 'latest' update (tag {new_tag} is not the highest)."
+            )
     except GitRunError as exc:
         print(f"[WARN] Failed to update floating 'latest' tag for {new_tag}: {exc}")
         print("'latest' tag was not updated.")
@@ -166,7 +176,9 @@ def _release_impl(
 
     if close:
         if branch in ("main", "master"):
-            print(f"[INFO] close=True but current branch is {branch}; skipping branch deletion.")
+            print(
+                f"[INFO] close=True but current branch is {branch}; skipping branch deletion."
+            )
             return
 
         if not should_delete_branch(force=force):

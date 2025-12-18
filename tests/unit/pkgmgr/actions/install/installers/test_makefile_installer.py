@@ -26,10 +26,10 @@ class TestMakefileInstaller(unittest.TestCase):
         )
         self.installer = MakefileInstaller()
 
-#    @patch("os.path.exists", return_value=True)
-#    def test_supports_true_when_makefile_exists(self, mock_exists):
-#        self.assertTrue(self.installer.supports(self.ctx))
-#        mock_exists.assert_called_with(os.path.join(self.ctx.repo_dir, "Makefile"))
+    #    @patch("os.path.exists", return_value=True)
+    #    def test_supports_true_when_makefile_exists(self, mock_exists):
+    #        self.assertTrue(self.installer.supports(self.ctx))
+    #        mock_exists.assert_called_with(os.path.join(self.ctx.repo_dir, "Makefile"))
 
     @patch("os.path.exists", return_value=False)
     def test_supports_false_when_makefile_missing(self, mock_exists):

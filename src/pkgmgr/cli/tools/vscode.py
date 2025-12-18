@@ -57,7 +57,9 @@ def _build_workspace_filename(identifiers: List[str]) -> str:
     return "_".join(sorted_identifiers) + ".code-workspace"
 
 
-def _build_workspace_data(selected: List[Repository], ctx: CLIContext) -> Dict[str, Any]:
+def _build_workspace_data(
+    selected: List[Repository], ctx: CLIContext
+) -> Dict[str, Any]:
     folders = [{"path": resolve_repository_path(repo, ctx)} for repo in selected]
     return {
         "folders": folders,

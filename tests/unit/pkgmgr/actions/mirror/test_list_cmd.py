@@ -23,7 +23,9 @@ class TestListCmd(unittest.TestCase):
         ctx.repo_dir = "/tmp/repo"
         ctx.config_mirrors = {"origin": "a"}
         ctx.file_mirrors = {"backup": "b"}
-        type(ctx).resolved_mirrors = PropertyMock(return_value={"origin": "a", "backup": "b"})
+        type(ctx).resolved_mirrors = PropertyMock(
+            return_value={"origin": "a", "backup": "b"}
+        )
         mock_build_context.return_value = ctx
 
         buf = io.StringIO()
@@ -49,7 +51,9 @@ class TestListCmd(unittest.TestCase):
         ctx.repo_dir = "/tmp/repo"
         ctx.config_mirrors = {"origin": "a"}
         ctx.file_mirrors = {"backup": "b"}
-        type(ctx).resolved_mirrors = PropertyMock(return_value={"origin": "a", "backup": "b"})
+        type(ctx).resolved_mirrors = PropertyMock(
+            return_value={"origin": "a", "backup": "b"}
+        )
         mock_build_context.return_value = ctx
 
         buf = io.StringIO()

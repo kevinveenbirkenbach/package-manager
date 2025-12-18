@@ -30,7 +30,9 @@ class TestRemoteProvision(unittest.TestCase):
         ctx.identifier = "repo-id"
         mock_build_context.return_value = ctx
 
-        mock_determine_primary.return_value = "ssh://git@git.veen.world:2201/alice/repo.git"
+        mock_determine_primary.return_value = (
+            "ssh://git@git.veen.world:2201/alice/repo.git"
+        )
 
         result = MagicMock()
         result.status = "created"

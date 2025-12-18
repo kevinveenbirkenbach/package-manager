@@ -29,6 +29,7 @@ For details on any command, run:
   \033[1mpkgmgr <command> --help\033[0m
 """
 
+
 def main() -> None:
     """
     Entry point for the pkgmgr CLI.
@@ -41,9 +42,7 @@ def main() -> None:
     repositories_dir = os.path.expanduser(
         directories.get("repositories", "~/Repositories")
     )
-    binaries_dir = os.path.expanduser(
-        directories.get("binaries", "~/.local/bin")
-    )
+    binaries_dir = os.path.expanduser(directories.get("binaries", "~/.local/bin"))
 
     # Ensure the merged config actually contains the resolved directories
     config_merged.setdefault("directories", {})

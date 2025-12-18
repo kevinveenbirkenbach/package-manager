@@ -8,11 +8,15 @@ from pkgmgr.core.git.commands import GitDeleteRemoteBranchError
 
 class TestDropBranch(unittest.TestCase):
     @patch("builtins.input", return_value="y")
-    @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x")
+    @patch(
+        "pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x"
+    )
     @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
     @patch("pkgmgr.actions.branch.drop_branch.delete_local_branch")
     @patch("pkgmgr.actions.branch.drop_branch.delete_remote_branch")
-    def test_drop_branch_happy_path(self, delete_remote, delete_local, _resolve, _current, _input_mock) -> None:
+    def test_drop_branch_happy_path(
+        self, delete_remote, delete_local, _resolve, _current, _input_mock
+    ) -> None:
         drop_branch(None, cwd=".")
         delete_local.assert_called_once_with("feature-x", cwd=".", force=False)
         delete_remote.assert_called_once_with("origin", "feature-x", cwd=".")
@@ -24,15 +28,21 @@ class TestDropBranch(unittest.TestCase):
             drop_branch(None)
 
     @patch("builtins.input", return_value="n")
-    @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x")
+    @patch(
+        "pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x"
+    )
     @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
     @patch("pkgmgr.actions.branch.drop_branch.delete_local_branch")
-    def test_drop_branch_aborts_on_no(self, delete_local, _resolve, _current, _input_mock) -> None:
+    def test_drop_branch_aborts_on_no(
+        self, delete_local, _resolve, _current, _input_mock
+    ) -> None:
         drop_branch(None, cwd=".")
         delete_local.assert_not_called()
 
     @patch("builtins.input")
-    @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x")
+    @patch(
+        "pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x"
+    )
     @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
     @patch("pkgmgr.actions.branch.drop_branch.delete_local_branch")
     @patch("pkgmgr.actions.branch.drop_branch.delete_remote_branch")
@@ -50,13 +60,18 @@ class TestDropBranch(unittest.TestCase):
         delete_local.assert_called_once_with("feature-x", cwd=".", force=False)
         delete_remote.assert_called_once_with("origin", "feature-x", cwd=".")
 
-    @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", side_effect=GitRunError("fail"))
+    @patch(
+        "pkgmgr.actions.branch.drop_branch.get_current_branch",
+        side_effect=GitRunError("fail"),
+    )
     def test_drop_branch_errors_if_no_branch_detected(self, _current) -> None:
         with self.assertRaises(RuntimeError):
             drop_branch(None)
 
     @patch("builtins.input", return_value="y")
-    @patch("pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x")
+    @patch(
+        "pkgmgr.actions.branch.drop_branch.get_current_branch", return_value="feature-x"
+    )
     @patch("pkgmgr.actions.branch.drop_branch.resolve_base_branch", return_value="main")
     @patch("pkgmgr.actions.branch.drop_branch.delete_local_branch")
     @patch(

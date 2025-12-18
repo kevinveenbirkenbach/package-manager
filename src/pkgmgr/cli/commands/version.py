@@ -38,9 +38,9 @@ def _print_pkgmgr_self_version() -> None:
 
     # Common distribution/module naming variants.
     python_candidates = [
-        "package-manager",   # PyPI dist name in your project
-        "package_manager",   # module-ish variant
-        "pkgmgr",            # console/alias-ish
+        "package-manager",  # PyPI dist name in your project
+        "package_manager",  # module-ish variant
+        "pkgmgr",  # console/alias-ish
     ]
     nix_candidates = [
         "pkgmgr",

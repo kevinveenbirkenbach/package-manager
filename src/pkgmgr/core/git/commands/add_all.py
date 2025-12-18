@@ -18,4 +18,6 @@ def add_all(*, cwd: str = ".", preview: bool = False) -> None:
     try:
         run(["add", "-A"], cwd=cwd, preview=preview)
     except GitRunError as exc:
-        raise GitAddAllError("Failed to stage all changes with `git add -A`.", cwd=cwd) from exc
+        raise GitAddAllError(
+            "Failed to stage all changes with `git add -A`.", cwd=cwd
+        ) from exc

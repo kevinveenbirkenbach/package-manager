@@ -75,7 +75,9 @@ class NixFlakeInstaller(BaseInstaller):
     # Core install path
     # ---------------------------------------------------------------------
 
-    def _install_only(self, ctx: "RepoContext", output: str, allow_failure: bool) -> None:
+    def _install_only(
+        self, ctx: "RepoContext", output: str, allow_failure: bool
+    ) -> None:
         install_cmd = f"nix profile install {self._installable(ctx, output)}"
 
         if not ctx.quiet:
@@ -96,7 +98,9 @@ class NixFlakeInstaller(BaseInstaller):
             output=output,
         ):
             if not ctx.quiet:
-                print(f"[nix] output '{output}' successfully installed after conflict cleanup.")
+                print(
+                    f"[nix] output '{output}' successfully installed after conflict cleanup."
+                )
             return
 
         if not ctx.quiet:
@@ -107,20 +111,26 @@ class NixFlakeInstaller(BaseInstaller):
 
         # If indices are supported, try legacy index-upgrade path.
         if self._indices_supported is not False:
-            indices = self._profile.find_installed_indices_for_output(ctx, self._runner, output)
+            indices = self._profile.find_installed_indices_for_output(
+                ctx, self._runner, output
+            )
 
             upgraded = False
             for idx in indices:
                 if self._upgrade_index(ctx, idx):
                     upgraded = True
                     if not ctx.quiet:
-                        print(f"[nix] output '{output}' successfully upgraded (index {idx}).")
+                        print(
+                            f"[nix] output '{output}' successfully upgraded (index {idx})."
+                        )
 
             if upgraded:
                 return
 
             if indices and not ctx.quiet:
-                print(f"[nix] upgrade failed; removing indices {indices} and reinstalling '{output}'.")
+                print(
+                    f"[nix] upgrade failed; removing indices {indices} and reinstalling '{output}'."
+                )
 
             for idx in indices:
                 self._remove_index(ctx, idx)
@@ -139,7 +149,9 @@ class NixFlakeInstaller(BaseInstaller):
                 print(f"[nix] output '{output}' successfully re-installed.")
             return
 
-        print(f"[ERROR] Failed to install Nix flake output '{output}' (exit {final.returncode})")
+        print(
+            f"[ERROR] Failed to install Nix flake output '{output}' (exit {final.returncode})"
+        )
         if not allow_failure:
             raise SystemExit(final.returncode)
 
@@ -149,7 +161,9 @@ class NixFlakeInstaller(BaseInstaller):
     # force_update path
     # ---------------------------------------------------------------------
 
-    def _force_upgrade_output(self, ctx: "RepoContext", output: str, allow_failure: bool) -> None:
+    def _force_upgrade_output(
+        self, ctx: "RepoContext", output: str, allow_failure: bool
+    ) -> None:
         # Prefer token path if indices unsupported (new nix)
         if self._indices_supported is False:
             self._remove_tokens_for_output(ctx, output)
@@ -158,14 +172,18 @@ class NixFlakeInstaller(BaseInstaller):
                 print(f"[nix] output '{output}' successfully upgraded.")
             return
 
-        indices = self._profile.find_installed_indices_for_output(ctx, self._runner, output)
+        indices = self._profile.find_installed_indices_for_output(
+            ctx, self._runner, output
+        )
 
         upgraded_any = False
         for idx in indices:
             if self._upgrade_index(ctx, idx):
                 upgraded_any = True
                 if not ctx.quiet:
-                    print(f"[nix] output '{output}' successfully upgraded (index {idx}).")
+                    print(
+                        f"[nix] output '{output}' successfully upgraded (index {idx})."
+                    )
 
         if upgraded_any:
             if not ctx.quiet:
@@ -173,7 +191,9 @@ class NixFlakeInstaller(BaseInstaller):
             return
 
         if indices and not ctx.quiet:
-            print(f"[nix] upgrade failed; removing indices {indices} and reinstalling '{output}'.")
+            print(
+                f"[nix] upgrade failed; removing indices {indices} and reinstalling '{output}'."
+            )
 
         for idx in indices:
             self._remove_index(ctx, idx)
@@ -223,7 +243,9 @@ class NixFlakeInstaller(BaseInstaller):
             return
 
         if not ctx.quiet:
-            print(f"[nix] indices unsupported; removing by token(s): {', '.join(tokens)}")
+            print(
+                f"[nix] indices unsupported; removing by token(s): {', '.join(tokens)}"
+            )
 
         for t in tokens:
             self._runner.run(ctx, f"nix profile remove {t}", allow_failure=True)

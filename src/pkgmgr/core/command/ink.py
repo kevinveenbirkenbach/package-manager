@@ -98,8 +98,7 @@ def create_ink(
         if alias_name == repo_identifier:
             if not quiet:
                 print(
-                    f"Alias '{alias_name}' equals identifier. "
-                    "Skipping alias creation."
+                    f"Alias '{alias_name}' equals identifier. Skipping alias creation."
                 )
             return
 

@@ -5,7 +5,11 @@ from __future__ import annotations
 
 import unittest
 
-from pkgmgr.actions.mirror.url_utils import hostport_from_git_url, normalize_provider_host, parse_repo_from_git_url
+from pkgmgr.actions.mirror.url_utils import (
+    hostport_from_git_url,
+    normalize_provider_host,
+    parse_repo_from_git_url,
+)
 
 
 class TestUrlUtils(unittest.TestCase):
@@ -14,7 +18,9 @@ class TestUrlUtils(unittest.TestCase):
     """
 
     def test_hostport_from_git_url_ssh_url_with_port(self) -> None:
-        host, port = hostport_from_git_url("ssh://git@code.example.org:2201/alice/repo.git")
+        host, port = hostport_from_git_url(
+            "ssh://git@code.example.org:2201/alice/repo.git"
+        )
         self.assertEqual(host, "code.example.org")
         self.assertEqual(port, "2201")
 
@@ -34,7 +40,9 @@ class TestUrlUtils(unittest.TestCase):
         self.assertIsNone(port)
 
     def test_normalize_provider_host_strips_port_and_lowercases(self) -> None:
-        self.assertEqual(normalize_provider_host("GIT.VEEN.WORLD:2201"), "git.veen.world")
+        self.assertEqual(
+            normalize_provider_host("GIT.VEEN.WORLD:2201"), "git.veen.world"
+        )
 
     def test_normalize_provider_host_ipv6_brackets(self) -> None:
         self.assertEqual(normalize_provider_host("[::1]"), "::1")
@@ -43,7 +51,9 @@ class TestUrlUtils(unittest.TestCase):
         self.assertEqual(normalize_provider_host(""), "")
 
     def test_parse_repo_from_git_url_ssh_url(self) -> None:
-        host, owner, name = parse_repo_from_git_url("ssh://git@code.example.org:2201/alice/repo.git")
+        host, owner, name = parse_repo_from_git_url(
+            "ssh://git@code.example.org:2201/alice/repo.git"
+        )
         self.assertEqual(host, "code.example.org")
         self.assertEqual(owner, "alice")
         self.assertEqual(name, "repo")

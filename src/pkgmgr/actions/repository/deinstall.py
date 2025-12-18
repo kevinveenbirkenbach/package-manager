@@ -24,9 +24,13 @@ def deinstall_repos(
 
         # Remove alias link/file (interactive)
         if os.path.exists(alias_path):
-            confirm = input(
-                f"Are you sure you want to delete link '{alias_path}' for {repo_identifier}? [y/N]: "
-            ).strip().lower()
+            confirm = (
+                input(
+                    f"Are you sure you want to delete link '{alias_path}' for {repo_identifier}? [y/N]: "
+                )
+                .strip()
+                .lower()
+            )
             if confirm == "y":
                 if preview:
                     print(f"[Preview] Would remove link '{alias_path}'.")

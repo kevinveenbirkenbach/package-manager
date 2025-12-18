@@ -57,7 +57,9 @@ class NixConflictResolver:
 
             # 3) Fallback: output-name based lookup (also covers nix suggesting: `nix profile remove pkgmgr`)
             if not tokens:
-                tokens = self._profile.find_remove_tokens_for_output(ctx, self._runner, output)
+                tokens = self._profile.find_remove_tokens_for_output(
+                    ctx, self._runner, output
+                )
 
             if tokens:
                 if not quiet:
@@ -94,7 +96,9 @@ class NixConflictResolver:
                 continue
 
             if not quiet:
-                print("[nix] conflict detected but could not resolve profile entries to remove.")
+                print(
+                    "[nix] conflict detected but could not resolve profile entries to remove."
+                )
             return False
 
         return False

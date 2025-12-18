@@ -14,17 +14,16 @@ class TestPkgmgrInstallThreeTimesNix(unittest.TestCase):
             env["HOME"] = tmp
 
             # Ensure nix is found
-            env["PATH"] = "/nix/var/nix/profiles/default/bin:" + os.environ.get("PATH", "")
+            env["PATH"] = "/nix/var/nix/profiles/default/bin:" + os.environ.get(
+                "PATH", ""
+            )
 
             # IMPORTANT:
             # nix run uses git+file:///src internally -> Git will reject /src if it's not a safe.directory.
             # Our test sets HOME to a temp dir, so we must provide a temp global gitconfig.
             gitconfig = tmp_path / ".gitconfig"
             gitconfig.write_text(
-                "[safe]\n"
-                "\tdirectory = /src\n"
-                "\tdirectory = /src/.git\n"
-                "\tdirectory = *\n"
+                "[safe]\n\tdirectory = /src\n\tdirectory = /src/.git\n\tdirectory = *\n"
             )
             env["GIT_CONFIG_GLOBAL"] = str(gitconfig)
 

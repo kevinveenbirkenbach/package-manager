@@ -1,5 +1,4 @@
-
-def resolve_repos(identifiers:[], all_repos:[]):
+def resolve_repos(identifiers: [], all_repos: []):
     """
     Given a list of identifier strings, return a list of repository configs.
     The identifier can be:
@@ -11,7 +10,9 @@ def resolve_repos(identifiers:[], all_repos:[]):
     for ident in identifiers:
         matches = []
         for repo in all_repos:
-            full_id = f'{repo.get("provider")}/{repo.get("account")}/{repo.get("repository")}'
+            full_id = (
+                f"{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}"
+            )
             if ident == full_id:
                 matches.append(repo)
             elif ident == repo.get("alias"):

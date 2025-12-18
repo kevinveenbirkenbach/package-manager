@@ -12,7 +12,11 @@ class TestRunCommand(unittest.TestCase):
             popen_mock.assert_not_called()
 
     def test_success_streams_and_returns_completed_process(self) -> None:
-        cmd = ["python3", "-c", "print('out'); import sys; print('err', file=sys.stderr)"]
+        cmd = [
+            "python3",
+            "-c",
+            "print('out'); import sys; print('err', file=sys.stderr)",
+        ]
 
         with patch.object(run_mod.sys, "exit") as exit_mock:
             result = run_mod.run_command(cmd, allow_failure=False)
@@ -23,7 +27,11 @@ class TestRunCommand(unittest.TestCase):
         exit_mock.assert_not_called()
 
     def test_failure_exits_when_not_allowed(self) -> None:
-        cmd = ["python3", "-c", "import sys; print('oops', file=sys.stderr); sys.exit(2)"]
+        cmd = [
+            "python3",
+            "-c",
+            "import sys; print('oops', file=sys.stderr); sys.exit(2)",
+        ]
 
         with patch.object(run_mod.sys, "exit", side_effect=SystemExit(2)) as exit_mock:
             with self.assertRaises(SystemExit) as ctx:
@@ -33,7 +41,11 @@ class TestRunCommand(unittest.TestCase):
         exit_mock.assert_called_once_with(2)
 
     def test_failure_does_not_exit_when_allowed(self) -> None:
-        cmd = ["python3", "-c", "import sys; print('oops', file=sys.stderr); sys.exit(3)"]
+        cmd = [
+            "python3",
+            "-c",
+            "import sys; print('oops', file=sys.stderr); sys.exit(3)",
+        ]
 
         with patch.object(run_mod.sys, "exit") as exit_mock:
             result = run_mod.run_command(cmd, allow_failure=True)

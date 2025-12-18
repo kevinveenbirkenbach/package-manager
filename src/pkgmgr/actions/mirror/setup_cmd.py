@@ -66,7 +66,9 @@ def _setup_remote_mirrors_for_repo(
 
     # Probe only git URLs (do not try ls-remote against PyPI etc.)
     # If there are no mirrors at all, probe the primary git URL.
-    git_mirrors = {k: v for k, v in ctx.resolved_mirrors.items() if _is_git_remote_url(v)}
+    git_mirrors = {
+        k: v for k, v in ctx.resolved_mirrors.items() if _is_git_remote_url(v)
+    }
 
     if not git_mirrors:
         primary = determine_primary_remote_url(repo, ctx)

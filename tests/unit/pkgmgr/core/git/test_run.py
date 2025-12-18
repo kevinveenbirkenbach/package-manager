@@ -7,9 +7,10 @@ from pkgmgr.core.git.run import run
 
 class TestGitRun(unittest.TestCase):
     def test_preview_mode_prints_and_does_not_execute(self) -> None:
-        with patch("pkgmgr.core.git.run.subprocess.run") as mock_run, patch(
-            "builtins.print"
-        ) as mock_print:
+        with (
+            patch("pkgmgr.core.git.run.subprocess.run") as mock_run,
+            patch("builtins.print") as mock_print,
+        ):
             out = run(["status"], cwd="/tmp/repo", preview=True)
 
         self.assertEqual(out, "")
@@ -24,7 +25,9 @@ class TestGitRun(unittest.TestCase):
         completed.stderr = ""
         completed.returncode = 0
 
-        with patch("pkgmgr.core.git.run.subprocess.run", return_value=completed) as mock_run:
+        with patch(
+            "pkgmgr.core.git.run.subprocess.run", return_value=completed
+        ) as mock_run:
             out = run(["rev-parse", "HEAD"], cwd="/repo", preview=False)
 
         self.assertEqual(out, "hello world")

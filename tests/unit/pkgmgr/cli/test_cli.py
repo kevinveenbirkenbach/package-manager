@@ -115,13 +115,16 @@ class TestCliVersion(unittest.TestCase):
         """
         Write a minimal PEP 621-style pyproject.toml into the temp directory.
         """
-        content = textwrap.dedent(
-            f"""
+        content = (
+            textwrap.dedent(
+                f"""
             [project]
             name = "pkgmgr-test"
             version = "{version}"
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         path = os.path.join(self._tmp_dir.name, "pyproject.toml")
         with open(path, "w", encoding="utf-8") as f:

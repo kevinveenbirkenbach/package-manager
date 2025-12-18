@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import unittest
 
-from pkgmgr.actions.install.installers.nix.profile.normalizer import coerce_index, normalize_elements
+from pkgmgr.actions.install.installers.nix.profile.normalizer import (
+    coerce_index,
+    normalize_elements,
+)
 
 
 class TestNormalizer(unittest.TestCase):
@@ -25,7 +28,9 @@ class TestNormalizer(unittest.TestCase):
                 "pkgmgr-1": {
                     "name": "pkgmgr-1",
                     "attrPath": "packages.x86_64-linux.pkgmgr",
-                    "storePaths": ["/nix/store/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-pkgmgr"],
+                    "storePaths": [
+                        "/nix/store/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-pkgmgr"
+                    ],
                 },
                 "2": {
                     "name": "foo",

@@ -51,6 +51,7 @@ Repo = Dict[str, Any]
 # Hilfsfunktionen
 # ---------------------------------------------------------------------------
 
+
 def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
     """
     Recursively merge two dictionaries.
@@ -58,11 +59,7 @@ def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
     Values from `override` win over values in `base`.
     """
     for key, value in override.items():
-        if (
-            key in base
-            and isinstance(base[key], dict)
-            and isinstance(value, dict)
-        ):
+        if key in base and isinstance(base[key], dict) and isinstance(value, dict):
             _deep_merge(base[key], value)
         else:
             base[key] = value
@@ -93,9 +90,7 @@ def _merge_repo_lists(
     - Wenn category_name gesetzt ist, wird dieser in
       repo["category_files"] eingetragen.
     """
-    index: Dict[Tuple[str, str, str], Repo] = {
-        _repo_key(r): r for r in base_list
-    }
+    index: Dict[Tuple[str, str, str], Repo] = {_repo_key(r): r for r in base_list}
 
     for src in new_list:
         key = _repo_key(src)
@@ -233,9 +228,11 @@ def _load_defaults_from_package_or_project() -> Dict[str, Any]:
 
     return {"directories": {}, "repositories": []}
 
+
 # ---------------------------------------------------------------------------
 # Hauptfunktion
 # ---------------------------------------------------------------------------
+
 
 def load_config(user_config_path: str) -> Dict[str, Any]:
     """
@@ -289,8 +286,12 @@ def load_config(user_config_path: str) -> Dict[str, Any]:
 
     # repositories
     merged["repositories"] = []
-    _merge_repo_lists(merged["repositories"], defaults["repositories"], category_name=None)
-    _merge_repo_lists(merged["repositories"], user_cfg["repositories"], category_name=None)
+    _merge_repo_lists(
+        merged["repositories"], defaults["repositories"], category_name=None
+    )
+    _merge_repo_lists(
+        merged["repositories"], user_cfg["repositories"], category_name=None
+    )
 
     # andere Top-Level-Keys (falls vorhanden)
     other_keys = (set(defaults.keys()) | set(user_cfg.keys())) - {

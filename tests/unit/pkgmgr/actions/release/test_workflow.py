@@ -18,7 +18,9 @@ class TestWorkflowReleaseEntryPoint(unittest.TestCase):
 
     @patch("pkgmgr.actions.release.workflow._release_impl")
     @patch("pkgmgr.actions.release.workflow.sys.stdin.isatty", return_value=False)
-    def test_release_non_interactive_runs_real_without_confirmation(self, _mock_isatty, mock_impl) -> None:
+    def test_release_non_interactive_runs_real_without_confirmation(
+        self, _mock_isatty, mock_impl
+    ) -> None:
         release(preview=False, force=False, close=False)
 
         mock_impl.assert_called_once()
@@ -35,9 +37,13 @@ class TestWorkflowReleaseEntryPoint(unittest.TestCase):
         self.assertTrue(kwargs["force"])
 
     @patch("pkgmgr.actions.release.workflow._release_impl")
-    @patch("pkgmgr.actions.release.workflow.confirm_proceed_release", return_value=False)
+    @patch(
+        "pkgmgr.actions.release.workflow.confirm_proceed_release", return_value=False
+    )
     @patch("pkgmgr.actions.release.workflow.sys.stdin.isatty", return_value=True)
-    def test_release_interactive_decline_runs_only_preview(self, _mock_isatty, _mock_confirm, mock_impl) -> None:
+    def test_release_interactive_decline_runs_only_preview(
+        self, _mock_isatty, _mock_confirm, mock_impl
+    ) -> None:
         release(preview=False, force=False, close=False)
 
         # interactive path: preview first, then decline => only one call
@@ -47,7 +53,9 @@ class TestWorkflowReleaseEntryPoint(unittest.TestCase):
     @patch("pkgmgr.actions.release.workflow._release_impl")
     @patch("pkgmgr.actions.release.workflow.confirm_proceed_release", return_value=True)
     @patch("pkgmgr.actions.release.workflow.sys.stdin.isatty", return_value=True)
-    def test_release_interactive_accept_runs_preview_then_real(self, _mock_isatty, _mock_confirm, mock_impl) -> None:
+    def test_release_interactive_accept_runs_preview_then_real(
+        self, _mock_isatty, _mock_confirm, mock_impl
+    ) -> None:
         release(preview=False, force=False, close=False)
 
         self.assertEqual(mock_impl.call_count, 2)

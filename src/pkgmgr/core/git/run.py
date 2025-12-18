@@ -44,9 +44,7 @@ def run(
         stderr = exc.stderr or ""
         if _is_not_repo_error(stderr):
             raise GitNotRepositoryError(
-                f"Not a git repository: {cwd!r}\n"
-                f"Command: {cmd_str}\n"
-                f"STDERR:\n{stderr}"
+                f"Not a git repository: {cwd!r}\nCommand: {cmd_str}\nSTDERR:\n{stderr}"
             ) from exc
 
         raise GitRunError(

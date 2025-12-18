@@ -9,4 +9,4 @@ def get_repo_identifier(repo, all_repos):
     if count == 1:
         return repo_name
     else:
-        return f'{repo.get("provider")}/{repo.get("account")}/{repo.get("repository")}'
+        return f"{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}"

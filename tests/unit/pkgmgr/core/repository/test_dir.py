@@ -7,7 +7,10 @@ from pkgmgr.core.repository.dir import get_repo_dir
 class TestGetRepoDir(unittest.TestCase):
     def test_builds_path_with_expanded_base_dir(self):
         repo = {"provider": "github.com", "account": "alice", "repository": "demo"}
-        with patch("pkgmgr.core.repository.dir.os.path.expanduser", return_value="/home/u/repos"):
+        with patch(
+            "pkgmgr.core.repository.dir.os.path.expanduser",
+            return_value="/home/u/repos",
+        ):
             result = get_repo_dir("~/repos", repo)
 
         self.assertEqual(result, "/home/u/repos/github.com/alice/demo")

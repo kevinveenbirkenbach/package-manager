@@ -17,7 +17,7 @@ def hostport_from_git_url(url: str) -> Tuple[str, Optional[str]]:
             netloc = netloc.split("@", 1)[1]
 
         if netloc.startswith("[") and "]" in netloc:
-            host = netloc[1:netloc.index("]")]
+            host = netloc[1 : netloc.index("]")]
             rest = netloc[netloc.index("]") + 1 :]
             port = rest[1:] if rest.startswith(":") else None
             return host.strip(), (port.strip() if port else None)
@@ -43,7 +43,7 @@ def normalize_provider_host(host: str) -> str:
         return ""
 
     if host.startswith("[") and "]" in host:
-        host = host[1:host.index("]")]
+        host = host[1 : host.index("]")]
 
     if ":" in host and host.count(":") == 1:
         host = host.rsplit(":", 1)[0]

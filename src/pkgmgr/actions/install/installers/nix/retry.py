@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from pkgmgr.actions.install.context import RepoContext
     from .runner import CommandRunner
 
+
 @dataclass(frozen=True)
 class RetryPolicy:
     max_attempts: int = 7
@@ -35,13 +36,19 @@ class GitHubRateLimitRetry:
         install_cmd: str,
     ) -> RunResult:
         quiet = bool(getattr(ctx, "quiet", False))
-        delays = list(self._fibonacci_backoff(self._policy.base_delay_seconds, self._policy.max_attempts))
+        delays = list(
+            self._fibonacci_backoff(
+                self._policy.base_delay_seconds, self._policy.max_attempts
+            )
+        )
 
         last: RunResult | None = None
 
         for attempt, base_delay in enumerate(delays, start=1):
             if not quiet:
-                print(f"[nix] attempt {attempt}/{self._policy.max_attempts}: {install_cmd}")
+                print(
+                    f"[nix] attempt {attempt}/{self._policy.max_attempts}: {install_cmd}"
+                )
 
             res = runner.run(ctx, install_cmd, allow_failure=True)
             last = res
@@ -56,7 +63,9 @@ class GitHubRateLimitRetry:
             if attempt >= self._policy.max_attempts:
                 break
 
-            jitter = random.randint(self._policy.jitter_seconds_min, self._policy.jitter_seconds_max)
+            jitter = random.randint(
+                self._policy.jitter_seconds_min, self._policy.jitter_seconds_max
+            )
             wait_time = base_delay + jitter
 
             if not quiet:
@@ -67,7 +76,11 @@ class GitHubRateLimitRetry:
 
             time.sleep(wait_time)
 
-        return last if last is not None else RunResult(returncode=1, stdout="", stderr="nix install retry failed")
+        return (
+            last
+            if last is not None
+            else RunResult(returncode=1, stdout="", stderr="nix install retry failed")
+        )
 
     @staticmethod
     def _is_github_rate_limit_error(text: str) -> bool:

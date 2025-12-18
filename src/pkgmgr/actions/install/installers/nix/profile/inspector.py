@@ -101,7 +101,9 @@ class NixProfileInspector:
         data = self.list_json(ctx, runner)
         entries = normalize_elements(data)
 
-        tokens: List[str] = [out]  # critical: matches nix's own suggestion for conflicts
+        tokens: List[str] = [
+            out
+        ]  # critical: matches nix's own suggestion for conflicts
 
         for e in entries:
             if entry_matches_output(e, out):

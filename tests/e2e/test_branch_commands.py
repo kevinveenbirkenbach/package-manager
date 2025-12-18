@@ -37,9 +37,7 @@ class TestIntegrationBranchCommands(unittest.TestCase):
         `pkgmgr branch open feature/test --base develop` must forward
         the name and base branch to open_branch() with cwd=".".
         """
-        self._run_pkgmgr(
-            ["branch", "open", "feature/test", "--base", "develop"]
-        )
+        self._run_pkgmgr(["branch", "open", "feature/test", "--base", "develop"])
 
         mock_open_branch.assert_called_once()
         _, kwargs = mock_open_branch.call_args
@@ -74,9 +72,7 @@ class TestIntegrationBranchCommands(unittest.TestCase):
         `pkgmgr branch close feature/test --base develop` must forward
         the name and base branch to close_branch() with cwd=".".
         """
-        self._run_pkgmgr(
-            ["branch", "close", "feature/test", "--base", "develop"]
-        )
+        self._run_pkgmgr(["branch", "close", "feature/test", "--base", "develop"])
 
         mock_close_branch.assert_called_once()
         _, kwargs = mock_close_branch.call_args

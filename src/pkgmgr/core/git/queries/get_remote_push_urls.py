@@ -4,6 +4,7 @@ from typing import Set
 
 from ..run import run
 
+
 def get_remote_push_urls(remote: str, cwd: str = ".") -> Set[str]:
     """
     Return all push URLs configured for a remote.

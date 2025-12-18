@@ -20,7 +20,9 @@ class NixConflictTextParser:
         tokens: List[str] = []
         for m in pat.finditer(text or ""):
             t = (m.group(1) or "").strip()
-            if (t.startswith("'") and t.endswith("'")) or (t.startswith('"') and t.endswith('"')):
+            if (t.startswith("'") and t.endswith("'")) or (
+                t.startswith('"') and t.endswith('"')
+            ):
                 t = t[1:-1]
             if t:
                 tokens.append(t)

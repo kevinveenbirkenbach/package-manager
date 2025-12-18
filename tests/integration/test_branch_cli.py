@@ -227,9 +227,7 @@ class TestBranchCLI(unittest.TestCase):
         Ensure that `pkgmgr branch drop <name> --force` passes force=True.
         """
         parser = self._create_parser()
-        args = parser.parse_args(
-            ["branch", "drop", "feature/tmp-branch", "--force"]
-        )
+        args = parser.parse_args(["branch", "drop", "feature/tmp-branch", "--force"])
 
         self.assertTrue(args.force)
 

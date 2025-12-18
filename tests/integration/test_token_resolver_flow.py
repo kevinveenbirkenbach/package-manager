@@ -25,7 +25,6 @@ class TestTokenResolverIntegration(unittest.TestCase):
         # 1) ENV: empty
         # ------------------------------------------------------------------
         with patch.dict("os.environ", {}, clear=True):
-
             # ------------------------------------------------------------------
             # 2) GH CLI is available
             # ------------------------------------------------------------------
@@ -37,14 +36,12 @@ class TestTokenResolverIntegration(unittest.TestCase):
                     "pkgmgr.core.credentials.providers.gh.subprocess.check_output",
                     return_value="gh-invalid-token\n",
                 ):
-
                     # ------------------------------------------------------------------
                     # 3) Keyring returns an existing (invalid) token
                     # ------------------------------------------------------------------
                     with patch(
                         "pkgmgr.core.credentials.providers.keyring._import_keyring"
                     ) as mock_import_keyring:
-
                         mock_keyring = mock_import_keyring.return_value
                         mock_keyring.get_password.return_value = "keyring-invalid-token"
 
@@ -59,7 +56,6 @@ class TestTokenResolverIntegration(unittest.TestCase):
                                 "pkgmgr.core.credentials.providers.prompt.getpass",
                                 return_value="new-valid-token",
                             ):
-
                                 # ------------------------------------------------------------------
                                 # 5) Validation logic:
                                 #    - gh token invalid
@@ -77,7 +73,6 @@ class TestTokenResolverIntegration(unittest.TestCase):
                                     "pkgmgr.core.credentials.resolver.validate_token",
                                     side_effect=validate_side_effect,
                                 ) as validate_mock:
-
                                     result = resolver.get_token(
                                         provider_kind="github",
                                         host="github.com",

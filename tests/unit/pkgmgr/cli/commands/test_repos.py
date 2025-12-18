@@ -79,9 +79,10 @@ class TestReposCommand(unittest.TestCase):
 
         buf = io.StringIO()
 
-        with patch(
-            "pkgmgr.cli.commands.repos.get_repo_dir"
-        ) as mock_get_repo_dir, redirect_stdout(buf):
+        with (
+            patch("pkgmgr.cli.commands.repos.get_repo_dir") as mock_get_repo_dir,
+            redirect_stdout(buf),
+        ):
             handle_repos_command(args, ctx, selected=repos)
 
         output = buf.getvalue().strip().splitlines()
@@ -113,10 +114,13 @@ class TestReposCommand(unittest.TestCase):
 
         buf = io.StringIO()
 
-        with patch(
-            "pkgmgr.cli.commands.repos.get_repo_dir",
-            return_value="/resolved/from/get_repo_dir",
-        ) as mock_get_repo_dir, redirect_stdout(buf):
+        with (
+            patch(
+                "pkgmgr.cli.commands.repos.get_repo_dir",
+                return_value="/resolved/from/get_repo_dir",
+            ) as mock_get_repo_dir,
+            redirect_stdout(buf),
+        ):
             handle_repos_command(args, ctx, selected=repos)
 
         output = buf.getvalue().strip().splitlines()
@@ -168,12 +172,13 @@ class TestReposCommand(unittest.TestCase):
             shell_command=["echo", "hello"],
         )
 
-        with patch(
-            "pkgmgr.cli.commands.repos.get_repo_dir",
-            return_value="/resolved/for/shell",
-        ) as mock_get_repo_dir, patch(
-            "pkgmgr.cli.commands.repos.run_command"
-        ) as mock_run_command:
+        with (
+            patch(
+                "pkgmgr.cli.commands.repos.get_repo_dir",
+                return_value="/resolved/for/shell",
+            ) as mock_get_repo_dir,
+            patch("pkgmgr.cli.commands.repos.run_command") as mock_run_command,
+        ):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 handle_repos_command(args, ctx, selected=repos)
@@ -185,7 +190,7 @@ class TestReposCommand(unittest.TestCase):
         mock_run_command.assert_called_once()
         called_args, called_kwargs = mock_run_command.call_args
 
-        self.assertEqual("echo hello", called_args[0])        # command string
+        self.assertEqual("echo hello", called_args[0])  # command string
         self.assertEqual("/resolved/for/shell", called_kwargs["cwd"])
         self.assertFalse(called_kwargs["preview"])
 

@@ -16,7 +16,9 @@ class MakefileInstaller(BaseInstaller):
     def supports(self, ctx: RepoContext) -> bool:
         if os.environ.get("PKGMGR_DISABLE_MAKEFILE_INSTALLER") == "1":
             if not ctx.quiet:
-                print("[INFO] PKGMGR_DISABLE_MAKEFILE_INSTALLER=1 – skipping MakefileInstaller.")
+                print(
+                    "[INFO] PKGMGR_DISABLE_MAKEFILE_INSTALLER=1 – skipping MakefileInstaller."
+                )
             return False
 
         makefile_path = os.path.join(ctx.repo_dir, self.MAKEFILE_NAME)
@@ -46,7 +48,9 @@ class MakefileInstaller(BaseInstaller):
             return
 
         if not ctx.quiet:
-            print(f"[pkgmgr] Running make install for {ctx.identifier} (MakefileInstaller)")
+            print(
+                f"[pkgmgr] Running make install for {ctx.identifier} (MakefileInstaller)"
+            )
 
         run_command("make install", cwd=ctx.repo_dir, preview=ctx.preview)
 

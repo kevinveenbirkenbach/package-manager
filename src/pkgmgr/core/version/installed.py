@@ -13,6 +13,7 @@ class InstalledVersion:
     """
     Represents a resolved installed version and the matched name.
     """
+
     name: str
     version: str
 

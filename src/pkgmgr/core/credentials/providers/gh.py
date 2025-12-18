@@ -15,6 +15,7 @@ class GhTokenProvider:
 
     This does NOT persist anything; it only reads what `gh` already knows.
     """
+
     source_name: str = "gh"
 
     def get(self, request: TokenRequest) -> Optional[TokenResult]:

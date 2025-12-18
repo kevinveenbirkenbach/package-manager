@@ -53,10 +53,7 @@ def _add_proxy_identifier_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "identifiers",
         nargs="*",
-        help=(
-            "Identifier(s) for repositories. "
-            "Default: Repository of current folder."
-        ),
+        help=("Identifier(s) for repositories. Default: Repository of current folder."),
     )
     parser.add_argument(
         "--all",
@@ -118,12 +115,7 @@ def _proxy_has_explicit_selection(args: argparse.Namespace) -> bool:
     string_filter = getattr(args, "string", "") or ""
 
     # Proxy commands currently do not support --tag, so it is not checked here.
-    return bool(
-        use_all
-        or identifiers
-        or categories
-        or string_filter
-    )
+    return bool(use_all or identifiers or categories or string_filter)
 
 
 def _select_repo_for_current_directory(
@@ -204,9 +196,7 @@ def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
     If the top-level command is one of the proxy subcommands
     (git / docker / docker compose), handle it here and return True.
     """
-    all_proxy_subcommands = {
-        sub for subs in PROXY_COMMANDS.values() for sub in subs
-    }
+    all_proxy_subcommands = {sub for subs in PROXY_COMMANDS.values() for sub in subs}
 
     if args.command not in all_proxy_subcommands:
         return False

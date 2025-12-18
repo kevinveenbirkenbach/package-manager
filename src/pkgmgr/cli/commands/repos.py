@@ -32,9 +32,8 @@ def _resolve_repository_directory(repository: Repository, ctx: CLIContext) -> st
     if repo_dir:
         return repo_dir
 
-    base_dir = (
-        getattr(ctx, "repositories_base_dir", None)
-        or getattr(ctx, "repositories_dir", None)
+    base_dir = getattr(ctx, "repositories_base_dir", None) or getattr(
+        ctx, "repositories_dir", None
     )
     if not base_dir:
         raise RuntimeError(

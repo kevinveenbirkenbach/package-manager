@@ -48,9 +48,13 @@ def close_branch(
 
     # Confirmation
     if not force:
-        answer = input(
-            f"Merge branch '{name}' into '{target_base}' and delete it afterwards? (y/N): "
-        ).strip().lower()
+        answer = (
+            input(
+                f"Merge branch '{name}' into '{target_base}' and delete it afterwards? (y/N): "
+            )
+            .strip()
+            .lower()
+        )
         if answer != "y":
             print("Aborted closing branch.")
             return

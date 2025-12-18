@@ -17,7 +17,9 @@ class TestDiffCmd(unittest.TestCase):
     """
 
     @patch("pkgmgr.actions.mirror.diff_cmd.build_context")
-    def test_diff_mirrors_reports_only_in_config_and_only_in_file(self, mock_build_context) -> None:
+    def test_diff_mirrors_reports_only_in_config_and_only_in_file(
+        self, mock_build_context
+    ) -> None:
         ctx = MagicMock()
         ctx.identifier = "id"
         ctx.repo_dir = "/tmp/repo"
@@ -30,7 +32,9 @@ class TestDiffCmd(unittest.TestCase):
 
         buf = io.StringIO()
         with redirect_stdout(buf):
-            diff_mirrors(selected_repos=[{}], repositories_base_dir="/base", all_repos=[])
+            diff_mirrors(
+                selected_repos=[{}], repositories_base_dir="/base", all_repos=[]
+            )
 
         out = buf.getvalue()
         self.assertIn("[ONLY IN CONFIG] cfgonly: b", out)
@@ -48,7 +52,9 @@ class TestDiffCmd(unittest.TestCase):
 
         buf = io.StringIO()
         with redirect_stdout(buf):
-            diff_mirrors(selected_repos=[{}], repositories_base_dir="/base", all_repos=[])
+            diff_mirrors(
+                selected_repos=[{}], repositories_base_dir="/base", all_repos=[]
+            )
 
         out = buf.getvalue()
         self.assertIn("[URL MISMATCH]", out)
@@ -67,7 +73,9 @@ class TestDiffCmd(unittest.TestCase):
 
         buf = io.StringIO()
         with redirect_stdout(buf):
-            diff_mirrors(selected_repos=[{}], repositories_base_dir="/base", all_repos=[])
+            diff_mirrors(
+                selected_repos=[{}], repositories_base_dir="/base", all_repos=[]
+            )
 
         out = buf.getvalue()
         self.assertIn("[OK] Mirrors in config and MIRRORS file are in sync.", out)

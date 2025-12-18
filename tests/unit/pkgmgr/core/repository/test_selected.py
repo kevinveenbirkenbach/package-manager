@@ -96,7 +96,9 @@ class TestGetSelectedRepos(unittest.TestCase):
         selected = get_selected_repos(args, self.all_repos)
 
         # Beide Repos sollten erscheinen, weil include_ignored=True
-        self.assertEqual({r["repository"] for r in selected}, {"ignored-repo", "visible-repo"})
+        self.assertEqual(
+            {r["repository"] for r in selected}, {"ignored-repo", "visible-repo"}
+        )
 
     # ------------------------------------------------------------------
     # 3) --all Modus – ignorierte Repos werden per Default entfernt

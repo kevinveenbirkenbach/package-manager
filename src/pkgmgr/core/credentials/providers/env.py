@@ -16,7 +16,9 @@ class EnvTokenProvider:
     source_name: str = "env"
 
     def get(self, request: TokenRequest) -> Optional[TokenResult]:
-        for key in env_var_candidates(request.provider_kind, request.host, request.owner):
+        for key in env_var_candidates(
+            request.provider_kind, request.host, request.owner
+        ):
             val = os.environ.get(key)
             if val:
                 return TokenResult(token=val.strip(), source=self.source_name)

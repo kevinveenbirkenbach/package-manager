@@ -8,6 +8,7 @@ class CliLayer(str, Enum):
     """
     CLI layer precedence (lower number = stronger layer).
     """
+
     OS_PACKAGES = "os-packages"
     NIX = "nix"
     PYTHON = "python"

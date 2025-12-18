@@ -43,9 +43,7 @@ class TestDebianControlInstaller(unittest.TestCase):
         """
         self.assertFalse(self.installer.supports(self.ctx))
 
-    @patch(
-        "pkgmgr.actions.install.installers.os_packages.debian_control.run_command"
-    )
+    @patch("pkgmgr.actions.install.installers.os_packages.debian_control.run_command")
     @patch("glob.glob", return_value=["/tmp/package-manager_0.1.1_all.deb"])
     @patch("os.path.exists", return_value=True)
     @patch("shutil.which")
@@ -88,9 +86,7 @@ class TestDebianControlInstaller(unittest.TestCase):
         # 2) apt-get build-dep -y ./ (with or without trailing space)
         self.assertTrue(
             any(
-                "apt-get build-dep -y ./ " in cmd
-                or "apt-get build-dep -y ./"
-                in cmd
+                "apt-get build-dep -y ./ " in cmd or "apt-get build-dep -y ./" in cmd
                 for cmd in cmds
             )
         )

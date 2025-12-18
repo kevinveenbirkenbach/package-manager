@@ -27,7 +27,9 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
         from pkgmgr.cli.tools.vscode import open_vscode_workspace
 
         ctx = SimpleNamespace(config_merged={}, all_repositories=[])
-        selected: List[Repository] = [{"provider": "github.com", "account": "x", "repository": "y"}]
+        selected: List[Repository] = [
+            {"provider": "github.com", "account": "x", "repository": "y"}
+        ]
 
         with patch("pkgmgr.cli.tools.vscode.shutil.which", return_value=None):
             with self.assertRaises(RuntimeError) as cm:
@@ -42,11 +44,16 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
             config_merged={"directories": {"workspaces": "~/Workspaces"}},
             all_repositories=[],
         )
-        selected: List[Repository] = [{"provider": "github.com", "account": "x", "repository": "y"}]
+        selected: List[Repository] = [
+            {"provider": "github.com", "account": "x", "repository": "y"}
+        ]
 
-        with patch("pkgmgr.cli.tools.vscode.shutil.which", return_value="/usr/bin/code"), patch(
-            "pkgmgr.cli.tools.vscode.get_repo_identifier",
-            return_value="github.com/x/y",
+        with (
+            patch("pkgmgr.cli.tools.vscode.shutil.which", return_value="/usr/bin/code"),
+            patch(
+                "pkgmgr.cli.tools.vscode.get_repo_identifier",
+                return_value="github.com/x/y",
+            ),
         ):
             with self.assertRaises(RuntimeError) as cm:
                 open_vscode_workspace(ctx, selected)
@@ -68,18 +75,27 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
                 repositories_base_dir=os.path.join(tmp, "Repos"),
             )
             selected: List[Repository] = [
-                {"provider": "github.com", "account": "kevin", "repository": "dotlinker"}
+                {
+                    "provider": "github.com",
+                    "account": "kevin",
+                    "repository": "dotlinker",
+                }
             ]
 
-            with patch("pkgmgr.cli.tools.vscode.shutil.which", return_value="/usr/bin/code"), patch(
-                "pkgmgr.cli.tools.vscode.get_repo_identifier",
-                return_value="dotlinker",
-            ), patch(
-                "pkgmgr.cli.tools.vscode.resolve_repository_path",
-                return_value=repo_path,
-            ), patch(
-                "pkgmgr.cli.tools.vscode.run_command"
-            ) as run_cmd:
+            with (
+                patch(
+                    "pkgmgr.cli.tools.vscode.shutil.which", return_value="/usr/bin/code"
+                ),
+                patch(
+                    "pkgmgr.cli.tools.vscode.get_repo_identifier",
+                    return_value="dotlinker",
+                ),
+                patch(
+                    "pkgmgr.cli.tools.vscode.resolve_repository_path",
+                    return_value=repo_path,
+                ),
+                patch("pkgmgr.cli.tools.vscode.run_command") as run_cmd,
+            ):
                 open_vscode_workspace(ctx, selected)
 
             workspace_file = os.path.join(workspaces_dir, "dotlinker.code-workspace")
@@ -110,18 +126,27 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
                 all_repositories=[],
             )
             selected: List[Repository] = [
-                {"provider": "github.com", "account": "kevin", "repository": "dotlinker"}
+                {
+                    "provider": "github.com",
+                    "account": "kevin",
+                    "repository": "dotlinker",
+                }
             ]
 
-            with patch("pkgmgr.cli.tools.vscode.shutil.which", return_value="/usr/bin/code"), patch(
-                "pkgmgr.cli.tools.vscode.get_repo_identifier",
-                return_value="dotlinker",
-            ), patch(
-                "pkgmgr.cli.tools.vscode.resolve_repository_path",
-                return_value="/new/path",
-            ), patch(
-                "pkgmgr.cli.tools.vscode.run_command"
-            ) as run_cmd:
+            with (
+                patch(
+                    "pkgmgr.cli.tools.vscode.shutil.which", return_value="/usr/bin/code"
+                ),
+                patch(
+                    "pkgmgr.cli.tools.vscode.get_repo_identifier",
+                    return_value="dotlinker",
+                ),
+                patch(
+                    "pkgmgr.cli.tools.vscode.resolve_repository_path",
+                    return_value="/new/path",
+                ),
+                patch("pkgmgr.cli.tools.vscode.run_command") as run_cmd,
+            ):
                 open_vscode_workspace(ctx, selected)
 
             with open(workspace_file, "r", encoding="utf-8") as f:

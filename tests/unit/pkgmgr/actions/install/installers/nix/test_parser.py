@@ -10,7 +10,9 @@ class TestParseProfileListJson(unittest.TestCase):
     def test_parses_valid_json(self) -> None:
         payload = {"elements": {"0": {"name": "pkgmgr"}}}
         raw = json.dumps(payload)
-        self.assertEqual(parse_profile_list_json(raw)["elements"]["0"]["name"], "pkgmgr")
+        self.assertEqual(
+            parse_profile_list_json(raw)["elements"]["0"]["name"], "pkgmgr"
+        )
 
     def test_raises_systemexit_on_invalid_json(self) -> None:
         with self.assertRaises(SystemExit) as cm:

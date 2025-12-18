@@ -213,9 +213,7 @@ def handle_config(args, ctx: CLIContext) -> None:
                 )
                 if key == mod_key:
                     entry["ignore"] = args.set == "true"
-                    print(
-                        f"Set ignore for {key} to {entry['ignore']}"
-                    )
+                    print(f"Set ignore for {key} to {entry['ignore']}")
 
         save_user_config(user_config, user_config_path)
         return

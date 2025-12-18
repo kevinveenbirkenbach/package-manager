@@ -29,7 +29,9 @@ from unittest.mock import MagicMock, PropertyMock, patch
 class TestIntegrationMirrorCommands(unittest.TestCase):
     """Integration tests for `pkgmgr mirror` commands."""
 
-    def _run_pkgmgr(self, args: List[str], extra_env: Optional[Dict[str, str]] = None) -> str:
+    def _run_pkgmgr(
+        self, args: List[str], extra_env: Optional[Dict[str, str]] = None
+    ) -> str:
         """Execute pkgmgr with the given arguments and return captured output."""
         original_argv = list(sys.argv)
         original_env = dict(os.environ)
@@ -80,20 +82,65 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
 
             with ExitStack() as stack:
                 # build_context is imported directly in these modules:
-                stack.enter_context(_p("pkgmgr.actions.mirror.list_cmd.build_context", return_value=dummy_ctx))
-                stack.enter_context(_p("pkgmgr.actions.mirror.diff_cmd.build_context", return_value=dummy_ctx))
-                stack.enter_context(_p("pkgmgr.actions.mirror.merge_cmd.build_context", return_value=dummy_ctx))
-                stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.build_context", return_value=dummy_ctx))
-                stack.enter_context(_p("pkgmgr.actions.mirror.remote_provision.build_context", return_value=dummy_ctx))
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.actions.mirror.list_cmd.build_context",
+                        return_value=dummy_ctx,
+                    )
+                )
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.actions.mirror.diff_cmd.build_context",
+                        return_value=dummy_ctx,
+                    )
+                )
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.actions.mirror.merge_cmd.build_context",
+                        return_value=dummy_ctx,
+                    )
+                )
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.actions.mirror.setup_cmd.build_context",
+                        return_value=dummy_ctx,
+                    )
+                )
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.actions.mirror.remote_provision.build_context",
+                        return_value=dummy_ctx,
+                    )
+                )
 
                 # Deterministic remote probing (new refactor: probe_remote_reachable)
-                stack.enter_context(_p("pkgmgr.core.git.queries.probe_remote_reachable", return_value=True))
-                stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable", return_value=True))
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.core.git.queries.probe_remote_reachable",
+                        return_value=True,
+                    )
+                )
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable",
+                        return_value=True,
+                    )
+                )
 
                 # setup_cmd imports ensure_origin_remote directly:
-                stack.enter_context(_p("pkgmgr.actions.mirror.setup_cmd.ensure_origin_remote", return_value=None))
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.actions.mirror.setup_cmd.ensure_origin_remote",
+                        return_value=None,
+                    )
+                )
                 # Extra safety: if any code calls git_remote.ensure_origin_remote directly
-                stack.enter_context(_p("pkgmgr.actions.mirror.git_remote.ensure_origin_remote", return_value=None))
+                stack.enter_context(
+                    _p(
+                        "pkgmgr.actions.mirror.git_remote.ensure_origin_remote",
+                        return_value=None,
+                    )
+                )
 
                 # remote provisioning: remote_provision imports ensure_remote_repo directly from core:
                 stack.enter_context(
@@ -135,8 +182,12 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
         self.assertTrue(output.strip(), "Expected output from mirror diff")
 
     def test_mirror_merge_config_to_file_preview_all(self) -> None:
-        output = self._run_pkgmgr(["mirror", "merge", "config", "file", "--preview", "--all"])
-        self.assertTrue(output.strip(), "Expected output from mirror merge (config -> file)")
+        output = self._run_pkgmgr(
+            ["mirror", "merge", "config", "file", "--preview", "--all"]
+        )
+        self.assertTrue(
+            output.strip(), "Expected output from mirror merge (config -> file)"
+        )
 
     def test_mirror_setup_preview_all(self) -> None:
         output = self._run_pkgmgr(["mirror", "setup", "--preview", "--all"])
@@ -148,7 +199,9 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
 
     def test_mirror_provision_preview_all(self) -> None:
         output = self._run_pkgmgr(["mirror", "provision", "--preview", "--all"])
-        self.assertTrue(output.strip(), "Expected output from mirror provision (preview)")
+        self.assertTrue(
+            output.strip(), "Expected output from mirror provision (preview)"
+        )
 
 
 if __name__ == "__main__":

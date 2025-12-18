@@ -8,8 +8,13 @@ from pkgmgr.core.git.commands import GitDeleteRemoteBranchError
 
 class TestCloseBranch(unittest.TestCase):
     @patch("builtins.input", return_value="y")
-    @patch("pkgmgr.actions.branch.close_branch.get_current_branch", return_value="feature-x")
-    @patch("pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main")
+    @patch(
+        "pkgmgr.actions.branch.close_branch.get_current_branch",
+        return_value="feature-x",
+    )
+    @patch(
+        "pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main"
+    )
     @patch("pkgmgr.actions.branch.close_branch.fetch")
     @patch("pkgmgr.actions.branch.close_branch.checkout")
     @patch("pkgmgr.actions.branch.close_branch.pull")
@@ -40,22 +45,36 @@ class TestCloseBranch(unittest.TestCase):
         delete_remote_branch.assert_called_once_with("origin", "feature-x", cwd=".")
 
     @patch("pkgmgr.actions.branch.close_branch.get_current_branch", return_value="main")
-    @patch("pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main")
+    @patch(
+        "pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main"
+    )
     def test_refuses_to_close_base_branch(self, _resolve, _current) -> None:
         with self.assertRaises(RuntimeError):
             close_branch(None)
 
     @patch("builtins.input", return_value="n")
-    @patch("pkgmgr.actions.branch.close_branch.get_current_branch", return_value="feature-x")
-    @patch("pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main")
+    @patch(
+        "pkgmgr.actions.branch.close_branch.get_current_branch",
+        return_value="feature-x",
+    )
+    @patch(
+        "pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main"
+    )
     @patch("pkgmgr.actions.branch.close_branch.fetch")
-    def test_close_branch_aborts_on_no(self, fetch, _resolve, _current, _input_mock) -> None:
+    def test_close_branch_aborts_on_no(
+        self, fetch, _resolve, _current, _input_mock
+    ) -> None:
         close_branch(None, cwd=".")
         fetch.assert_not_called()
 
     @patch("builtins.input")
-    @patch("pkgmgr.actions.branch.close_branch.get_current_branch", return_value="feature-x")
-    @patch("pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main")
+    @patch(
+        "pkgmgr.actions.branch.close_branch.get_current_branch",
+        return_value="feature-x",
+    )
+    @patch(
+        "pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main"
+    )
     @patch("pkgmgr.actions.branch.close_branch.fetch")
     @patch("pkgmgr.actions.branch.close_branch.checkout")
     @patch("pkgmgr.actions.branch.close_branch.pull")
@@ -90,14 +109,22 @@ class TestCloseBranch(unittest.TestCase):
         delete_local_branch.assert_called_once_with("feature-x", cwd=".", force=False)
         delete_remote_branch.assert_called_once_with("origin", "feature-x", cwd=".")
 
-    @patch("pkgmgr.actions.branch.close_branch.get_current_branch", side_effect=GitRunError("fail"))
+    @patch(
+        "pkgmgr.actions.branch.close_branch.get_current_branch",
+        side_effect=GitRunError("fail"),
+    )
     def test_close_branch_errors_if_cannot_detect_branch(self, _current) -> None:
         with self.assertRaises(RuntimeError):
             close_branch(None)
 
     @patch("builtins.input", return_value="y")
-    @patch("pkgmgr.actions.branch.close_branch.get_current_branch", return_value="feature-x")
-    @patch("pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main")
+    @patch(
+        "pkgmgr.actions.branch.close_branch.get_current_branch",
+        return_value="feature-x",
+    )
+    @patch(
+        "pkgmgr.actions.branch.close_branch.resolve_base_branch", return_value="main"
+    )
     @patch("pkgmgr.actions.branch.close_branch.fetch")
     @patch("pkgmgr.actions.branch.close_branch.checkout")
     @patch("pkgmgr.actions.branch.close_branch.pull")

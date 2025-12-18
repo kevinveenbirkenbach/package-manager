@@ -69,7 +69,10 @@ class TestCreateInk(unittest.TestCase):
         """
         mock_get_repo_identifier.return_value = "mytool"
 
-        with tempfile.TemporaryDirectory() as repo_dir, tempfile.TemporaryDirectory() as bin_dir:
+        with (
+            tempfile.TemporaryDirectory() as repo_dir,
+            tempfile.TemporaryDirectory() as bin_dir,
+        ):
             mock_get_repo_dir.return_value = repo_dir
 
             # Create a fake executable inside the repository.

@@ -69,9 +69,7 @@ class TestIntegrationMakeCommands(unittest.TestCase):
         - '--preview' ensures that no destructive make commands are
           actually executed inside the container.
         """
-        self._run_pkgmgr_make(
-            ["make", "install", "--preview", "pkgmgr"]
-        )
+        self._run_pkgmgr_make(["make", "install", "--preview", "pkgmgr"])
 
 
 if __name__ == "__main__":

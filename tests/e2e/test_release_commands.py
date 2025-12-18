@@ -164,5 +164,6 @@ class TestIntegrationReleaseCommand(unittest.TestCase):
         self.assertIn("usage:", output)
         self.assertIn("pkgmgr release", output)
 
+
 if __name__ == "__main__":
     unittest.main()

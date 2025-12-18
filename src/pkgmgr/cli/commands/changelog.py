@@ -135,9 +135,7 @@ def handle_changelog(
                     target_tag=range_arg,
                 )
                 if cur_tag is None:
-                    print(
-                        f"[WARN] Tag {range_arg!r} not found or not a SemVer tag."
-                    )
+                    print(f"[WARN] Tag {range_arg!r} not found or not a SemVer tag.")
                     print("[INFO] Falling back to full history.")
                     from_ref = None
                     to_ref = None

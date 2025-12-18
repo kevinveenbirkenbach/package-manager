@@ -14,6 +14,10 @@ from pkgmgr.actions.install.installers.python import PythonInstaller  # noqa: F4
 from pkgmgr.actions.install.installers.makefile import MakefileInstaller  # noqa: F401
 
 # OS-specific installers
-from pkgmgr.actions.install.installers.os_packages.arch_pkgbuild import ArchPkgbuildInstaller  # noqa: F401
-from pkgmgr.actions.install.installers.os_packages.debian_control import DebianControlInstaller  # noqa: F401
+from pkgmgr.actions.install.installers.os_packages.arch_pkgbuild import (
+    ArchPkgbuildInstaller,
+)  # noqa: F401
+from pkgmgr.actions.install.installers.os_packages.debian_control import (
+    DebianControlInstaller,
+)  # noqa: F401
 from pkgmgr.actions.install.installers.os_packages.rpm_spec import RpmSpecInstaller  # noqa: F401

@@ -36,8 +36,12 @@ class TestMirrorContext(unittest.TestCase):
 
         self.assertEqual(ctx.identifier, "id")
         self.assertEqual(ctx.repo_dir, "/tmp/repo")
-        self.assertEqual(ctx.config_mirrors, {"origin": "git@github.com:alice/repo.git"})
-        self.assertEqual(ctx.file_mirrors, {"backup": "ssh://git@backup/alice/repo.git"})
+        self.assertEqual(
+            ctx.config_mirrors, {"origin": "git@github.com:alice/repo.git"}
+        )
+        self.assertEqual(
+            ctx.file_mirrors, {"backup": "ssh://git@backup/alice/repo.git"}
+        )
         self.assertEqual(
             ctx.resolved_mirrors,
             {

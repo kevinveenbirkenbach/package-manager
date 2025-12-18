@@ -132,7 +132,11 @@ class InstallationPipeline:
                 continue
 
             if not quiet:
-                if ctx.force_update and state.layer is not None and installer_layer == state.layer:
+                if (
+                    ctx.force_update
+                    and state.layer is not None
+                    and installer_layer == state.layer
+                ):
                     print(
                         f"[pkgmgr] Running installer {installer.__class__.__name__} "
                         f"for {identifier} in '{repo_dir}' (upgrade requested)..."

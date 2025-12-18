@@ -233,9 +233,7 @@ def list_repositories(
             categories.append(str(repo["category"]))
 
         yaml_tags: List[str] = list(map(str, repo.get("tags", [])))
-        display_tags: List[str] = sorted(
-            set(yaml_tags + list(map(str, extra_tags)))
-        )
+        display_tags: List[str] = sorted(set(yaml_tags + list(map(str, extra_tags))))
 
         rows.append(
             {
@@ -288,13 +286,7 @@ def list_repositories(
         status_padded = status.ljust(status_width)
         status_colored = _color_status(status_padded)
 
-        print(
-            f"{ident_col}  "
-            f"{status_colored}  "
-            f"{cat_col}  "
-            f"{tag_col}  "
-            f"{dir_col}"
-        )
+        print(f"{ident_col}  {status_colored}  {cat_col}  {tag_col}  {dir_col}")
 
     # ------------------------------------------------------------------
     # Detailed section (alias value red, same status coloring)

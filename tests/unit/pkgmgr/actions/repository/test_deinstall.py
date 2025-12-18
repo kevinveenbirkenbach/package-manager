@@ -6,17 +6,32 @@ from pkgmgr.actions.repository.deinstall import deinstall_repos
 
 class TestDeinstallRepos(unittest.TestCase):
     def test_preview_removes_nothing_but_runs_make_if_makefile_exists(self):
-        repo = {"provider": "github.com", "account": "alice", "repository": "demo", "alias": "demo"}
+        repo = {
+            "provider": "github.com",
+            "account": "alice",
+            "repository": "demo",
+            "alias": "demo",
+        }
         selected = [repo]
 
-        with patch("pkgmgr.actions.repository.deinstall.get_repo_identifier", return_value="demo"), \
-             patch("pkgmgr.actions.repository.deinstall.get_repo_dir", return_value="/repos/github.com/alice/demo"), \
-             patch("pkgmgr.actions.repository.deinstall.os.path.expanduser", return_value="/home/u/.local/bin"), \
-             patch("pkgmgr.actions.repository.deinstall.os.path.exists") as mock_exists, \
-             patch("pkgmgr.actions.repository.deinstall.os.remove") as mock_remove, \
-             patch("pkgmgr.actions.repository.deinstall.run_command") as mock_run, \
-             patch("builtins.input", return_value="y"):
-
+        with (
+            patch(
+                "pkgmgr.actions.repository.deinstall.get_repo_identifier",
+                return_value="demo",
+            ),
+            patch(
+                "pkgmgr.actions.repository.deinstall.get_repo_dir",
+                return_value="/repos/github.com/alice/demo",
+            ),
+            patch(
+                "pkgmgr.actions.repository.deinstall.os.path.expanduser",
+                return_value="/home/u/.local/bin",
+            ),
+            patch("pkgmgr.actions.repository.deinstall.os.path.exists") as mock_exists,
+            patch("pkgmgr.actions.repository.deinstall.os.remove") as mock_remove,
+            patch("pkgmgr.actions.repository.deinstall.run_command") as mock_run,
+            patch("builtins.input", return_value="y"),
+        ):
             # alias exists, Makefile exists
             def exists_side_effect(path):
                 if path == "/home/u/.local/bin/demo":
@@ -46,17 +61,32 @@ class TestDeinstallRepos(unittest.TestCase):
             )
 
     def test_non_preview_removes_alias_when_confirmed(self):
-        repo = {"provider": "github.com", "account": "alice", "repository": "demo", "alias": "demo"}
+        repo = {
+            "provider": "github.com",
+            "account": "alice",
+            "repository": "demo",
+            "alias": "demo",
+        }
         selected = [repo]
 
-        with patch("pkgmgr.actions.repository.deinstall.get_repo_identifier", return_value="demo"), \
-             patch("pkgmgr.actions.repository.deinstall.get_repo_dir", return_value="/repos/github.com/alice/demo"), \
-             patch("pkgmgr.actions.repository.deinstall.os.path.expanduser", return_value="/home/u/.local/bin"), \
-             patch("pkgmgr.actions.repository.deinstall.os.path.exists") as mock_exists, \
-             patch("pkgmgr.actions.repository.deinstall.os.remove") as mock_remove, \
-             patch("pkgmgr.actions.repository.deinstall.run_command") as mock_run, \
-             patch("builtins.input", return_value="y"):
-
+        with (
+            patch(
+                "pkgmgr.actions.repository.deinstall.get_repo_identifier",
+                return_value="demo",
+            ),
+            patch(
+                "pkgmgr.actions.repository.deinstall.get_repo_dir",
+                return_value="/repos/github.com/alice/demo",
+            ),
+            patch(
+                "pkgmgr.actions.repository.deinstall.os.path.expanduser",
+                return_value="/home/u/.local/bin",
+            ),
+            patch("pkgmgr.actions.repository.deinstall.os.path.exists") as mock_exists,
+            patch("pkgmgr.actions.repository.deinstall.os.remove") as mock_remove,
+            patch("pkgmgr.actions.repository.deinstall.run_command") as mock_run,
+            patch("builtins.input", return_value="y"),
+        ):
             # alias exists, Makefile does NOT exist
             def exists_side_effect(path):
                 if path == "/home/u/.local/bin/demo":

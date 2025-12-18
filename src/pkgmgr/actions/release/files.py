@@ -121,7 +121,7 @@ def update_pyproject_version(
     pattern = r'^(version\s*=\s*")([^"]+)(")'
     new_content, count = re.subn(
         pattern,
-        lambda m: f'{m.group(1)}{new_version}{m.group(3)}',
+        lambda m: f"{m.group(1)}{new_version}{m.group(3)}",
         content,
         flags=re.MULTILINE,
     )
@@ -162,7 +162,7 @@ def update_flake_version(
     pattern = r'(version\s*=\s*")([^"]+)(")'
     new_content, count = re.subn(
         pattern,
-        lambda m: f'{m.group(1)}{new_version}{m.group(3)}',
+        lambda m: f"{m.group(1)}{new_version}{m.group(3)}",
         content,
     )
 

@@ -48,9 +48,6 @@ def add_navigation_subparsers(
         "--command",
         nargs=argparse.REMAINDER,
         dest="shell_command",
-        help=(
-            "The shell command (and its arguments) to execute in each "
-            "repository"
-        ),
+        help=("The shell command (and its arguments) to execute in each repository"),
         default=[],
     )

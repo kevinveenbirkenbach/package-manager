@@ -55,7 +55,9 @@ def clone_repos(
 
         clone_url = _build_clone_url(repo, clone_mode)
         if not clone_url:
-            print(f"[WARNING] Cannot build clone URL for '{repo_identifier}'. Skipping.")
+            print(
+                f"[WARNING] Cannot build clone URL for '{repo_identifier}'. Skipping."
+            )
             continue
 
         shallow = clone_mode == "shallow"
@@ -84,7 +86,11 @@ def clone_repos(
                 continue
 
             print(f"[WARNING] SSH clone failed for '{repo_identifier}': {exc}")
-            choice = input("Do you want to attempt HTTPS clone instead? (y/N): ").strip().lower()
+            choice = (
+                input("Do you want to attempt HTTPS clone instead? (y/N): ")
+                .strip()
+                .lower()
+            )
             if choice != "y":
                 print(f"[INFO] HTTPS clone not attempted for '{repo_identifier}'.")
                 continue

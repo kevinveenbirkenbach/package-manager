@@ -61,8 +61,12 @@ class TestNixFlakeInstaller(unittest.TestCase):
             shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     @staticmethod
-    def _cp(code: int, stdout: str = "", stderr: str = "") -> subprocess.CompletedProcess:
-        return subprocess.CompletedProcess(args=["nix"], returncode=code, stdout=stdout, stderr=stderr)
+    def _cp(
+        code: int, stdout: str = "", stderr: str = ""
+    ) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=["nix"], returncode=code, stdout=stdout, stderr=stderr
+        )
 
     @staticmethod
     def _enable_nix_in_module(which_patch) -> None:
@@ -99,11 +103,20 @@ class TestNixFlakeInstaller(unittest.TestCase):
             return self._cp(0)
 
         buf = io.StringIO()
-        with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
-            "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
-        ), patch(
-            "pkgmgr.actions.install.installers.nix.runner.subprocess.run", side_effect=fake_subprocess_run
-        ) as subproc_mock, redirect_stdout(buf):
+        with (
+            patch(
+                "pkgmgr.actions.install.installers.nix.installer.shutil.which"
+            ) as which_mock,
+            patch(
+                "pkgmgr.actions.install.installers.nix.installer.os.path.exists",
+                return_value=True,
+            ),
+            patch(
+                "pkgmgr.actions.install.installers.nix.runner.subprocess.run",
+                side_effect=fake_subprocess_run,
+            ) as subproc_mock,
+            redirect_stdout(buf),
+        ):
             self._enable_nix_in_module(which_mock)
 
             self.assertTrue(installer.supports(ctx))
@@ -115,7 +128,7 @@ class TestNixFlakeInstaller(unittest.TestCase):
 
         install_cmds = self._install_cmds_from_calls(subproc_mock.call_args_list)
         self.assertEqual(install_cmds, [f"nix profile install {self.repo_dir}#default"])
-        
+
     def test_nix_flake_supports_respects_disable_env(self) -> None:
         """
         PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 must disable the installer,
@@ -124,8 +137,14 @@ class TestNixFlakeInstaller(unittest.TestCase):
         ctx = DummyCtx(identifier="pkgmgr", repo_dir=self.repo_dir, quiet=False)
         installer = NixFlakeInstaller()
 
-        with patch("pkgmgr.actions.install.installers.nix.installer.shutil.which") as which_mock, patch(
-            "pkgmgr.actions.install.installers.nix.installer.os.path.exists", return_value=True
+        with (
+            patch(
+                "pkgmgr.actions.install.installers.nix.installer.shutil.which"
+            ) as which_mock,
+            patch(
+                "pkgmgr.actions.install.installers.nix.installer.os.path.exists",
+                return_value=True,
+            ),
         ):
             self._enable_nix_in_module(which_mock)
             os.environ["PKGMGR_DISABLE_NIX_FLAKE_INSTALLER"] = "1"

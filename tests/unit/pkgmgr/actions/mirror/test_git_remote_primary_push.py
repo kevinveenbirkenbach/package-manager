@@ -23,15 +23,23 @@ class TestGitRemotePrimaryPush(unittest.TestCase):
         )
 
         with patch("os.path.isdir", return_value=True):
-            with patch("pkgmgr.actions.mirror.git_remote.has_origin_remote", return_value=False), patch(
-                "pkgmgr.actions.mirror.git_remote.add_remote"
-            ) as m_add_remote, patch(
-                "pkgmgr.actions.mirror.git_remote.set_remote_url"
-            ) as m_set_remote_url, patch(
-                "pkgmgr.actions.mirror.git_remote.get_remote_push_urls", return_value=set()
-            ), patch(
-                "pkgmgr.actions.mirror.git_remote.add_remote_push_url"
-            ) as m_add_push:
+            with (
+                patch(
+                    "pkgmgr.actions.mirror.git_remote.has_origin_remote",
+                    return_value=False,
+                ),
+                patch("pkgmgr.actions.mirror.git_remote.add_remote") as m_add_remote,
+                patch(
+                    "pkgmgr.actions.mirror.git_remote.set_remote_url"
+                ) as m_set_remote_url,
+                patch(
+                    "pkgmgr.actions.mirror.git_remote.get_remote_push_urls",
+                    return_value=set(),
+                ),
+                patch(
+                    "pkgmgr.actions.mirror.git_remote.add_remote_push_url"
+                ) as m_add_push,
+            ):
                 ensure_origin_remote(repo, ctx, preview=False)
 
         # determine_primary_remote_url falls back to file order (primary first)

@@ -31,6 +31,7 @@ class OSReleaseInfo:
     """
     Minimal /etc/os-release representation for distro detection.
     """
+
     id: str = ""
     id_like: str = ""
     pretty_name: str = ""
@@ -63,4 +64,6 @@ class OSReleaseInfo:
 
     def is_fedora_family(self) -> bool:
         ids = self.ids()
-        return bool(ids.intersection({"fedora", "rhel", "centos", "rocky", "almalinux"}))
+        return bool(
+            ids.intersection({"fedora", "rhel", "centos", "rocky", "almalinux"})
+        )

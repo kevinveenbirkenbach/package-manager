@@ -33,8 +33,7 @@ def add_branch_subparsers(
         "name",
         nargs="?",
         help=(
-            "Name of the new branch (optional; will be asked interactively "
-            "if omitted)"
+            "Name of the new branch (optional; will be asked interactively if omitted)"
         ),
     )
     branch_open.add_argument(
@@ -54,8 +53,7 @@ def add_branch_subparsers(
         "name",
         nargs="?",
         help=(
-            "Name of the branch to close (optional; current branch is used "
-            "if omitted)"
+            "Name of the branch to close (optional; current branch is used if omitted)"
         ),
     )
     branch_close.add_argument(
@@ -84,8 +82,7 @@ def add_branch_subparsers(
         "name",
         nargs="?",
         help=(
-            "Name of the branch to drop (optional; current branch is used "
-            "if omitted)"
+            "Name of the branch to drop (optional; current branch is used if omitted)"
         ),
     )
     branch_drop.add_argument(

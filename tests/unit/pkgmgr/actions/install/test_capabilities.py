@@ -152,7 +152,9 @@ class TestDetectCapabilities(unittest.TestCase):
             },
         )
 
-        with patch("pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [dummy1, dummy2]):
+        with patch(
+            "pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [dummy1, dummy2]
+        ):
             caps = detect_capabilities(self.ctx, layers)
 
         self.assertEqual(
@@ -282,7 +284,9 @@ class TestResolveEffectiveCapabilities(unittest.TestCase):
             },
         )
 
-        with patch("pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [cap_only_make]):
+        with patch(
+            "pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [cap_only_make]
+        ):
             effective = resolve_effective_capabilities(self.ctx, layers)
 
         self.assertEqual(effective["makefile"], {"make-install"})
@@ -305,7 +309,9 @@ class TestResolveEffectiveCapabilities(unittest.TestCase):
             },
         )
 
-        with patch("pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [cap_only_nix]):
+        with patch(
+            "pkgmgr.actions.install.capabilities.CAPABILITY_MATCHERS", [cap_only_nix]
+        ):
             effective = resolve_effective_capabilities(self.ctx, layers)
 
         self.assertEqual(effective["makefile"], set())

@@ -155,13 +155,14 @@ class TestResolveCommandForRepo(unittest.TestCase):
         If no CLI is found via PATH or Nix, resolve_command_for_repo()
         should fall back to an executable main.sh in the repo root.
         """
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "pkgmgr.core.command.resolve.shutil.which", return_value=None
-        ), patch(
-            "pkgmgr.core.command.resolve._nix_binary_candidates", return_value=[]
-        ), patch(
-            "pkgmgr.core.command.resolve._is_executable"
-        ) as mock_is_executable:
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("pkgmgr.core.command.resolve.shutil.which", return_value=None),
+            patch(
+                "pkgmgr.core.command.resolve._nix_binary_candidates", return_value=[]
+            ),
+            patch("pkgmgr.core.command.resolve._is_executable") as mock_is_executable,
+        ):
             main_sh = os.path.join(tmpdir, "main.sh")
             with open(main_sh, "w", encoding="utf-8") as f:
                 f.write("#!/bin/sh\nexit 0\n")
@@ -186,12 +187,13 @@ class TestResolveCommandForRepo(unittest.TestCase):
         but there is no CLI entry point or main.sh/main.py, the result
         should be None.
         """
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "pkgmgr.core.command.resolve.shutil.which", return_value=None
-        ), patch(
-            "pkgmgr.core.command.resolve._nix_binary_candidates", return_value=[]
-        ), patch(
-            "pkgmgr.core.command.resolve._is_executable", return_value=False
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("pkgmgr.core.command.resolve.shutil.which", return_value=None),
+            patch(
+                "pkgmgr.core.command.resolve._nix_binary_candidates", return_value=[]
+            ),
+            patch("pkgmgr.core.command.resolve._is_executable", return_value=False),
         ):
             src_dir = os.path.join(tmpdir, "src", "mypkg")
             os.makedirs(src_dir, exist_ok=True)

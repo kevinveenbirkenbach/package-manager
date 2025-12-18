@@ -28,7 +28,9 @@ class TestMirrorGitRemote(unittest.TestCase):
         # resolved_mirrors = config + file (file wins), so put origin in file.
         repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
         ctx = self._ctx(file={"origin": "git@github.com:alice/repo.git"})
-        self.assertEqual(determine_primary_remote_url(repo, ctx), "git@github.com:alice/repo.git")
+        self.assertEqual(
+            determine_primary_remote_url(repo, ctx), "git@github.com:alice/repo.git"
+        )
 
     def test_determine_primary_falls_back_to_file_order(self) -> None:
         repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
@@ -43,9 +45,14 @@ class TestMirrorGitRemote(unittest.TestCase):
     def test_determine_primary_fallback_default(self) -> None:
         repo = {"provider": "github.com", "account": "alice", "repository": "repo"}
         ctx = self._ctx()
-        self.assertEqual(determine_primary_remote_url(repo, ctx), "git@github.com:alice/repo.git")
+        self.assertEqual(
+            determine_primary_remote_url(repo, ctx), "git@github.com:alice/repo.git"
+        )
 
-    @patch("pkgmgr.actions.mirror.git_remote.list_remotes", return_value=["origin", "backup"])
+    @patch(
+        "pkgmgr.actions.mirror.git_remote.list_remotes",
+        return_value=["origin", "backup"],
+    )
     def test_has_origin_remote_true(self, _m_list) -> None:
         self.assertTrue(has_origin_remote("/tmp/repo"))
 

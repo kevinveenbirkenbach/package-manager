@@ -101,9 +101,7 @@ class TestReleaseCommand(unittest.TestCase):
         handle_release(args, ctx, selected)
 
         # We should have changed into the repo dir and then back.
-        mock_chdir.assert_has_calls(
-            [call("/repos/dummy"), call("/cwd")]
-        )
+        mock_chdir.assert_has_calls([call("/repos/dummy"), call("/cwd")])
 
         # And run_release should be invoked once with the expected parameters.
         mock_run_release.assert_called_once_with(

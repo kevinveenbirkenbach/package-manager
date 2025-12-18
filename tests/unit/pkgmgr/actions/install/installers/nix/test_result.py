@@ -15,15 +15,18 @@ class TestExtractStdoutText(unittest.TestCase):
     def test_accepts_object_with_stdout_str(self) -> None:
         class R:
             stdout = "ok"
+
         self.assertEqual(extract_stdout_text(R()), "ok")
 
     def test_accepts_object_with_stdout_bytes(self) -> None:
         class R:
             stdout = b"ok"
+
         self.assertEqual(extract_stdout_text(R()), "ok")
 
     def test_fallback_str(self) -> None:
         class R:
             def __str__(self) -> str:
                 return "repr"
+
         self.assertEqual(extract_stdout_text(R()), "repr")

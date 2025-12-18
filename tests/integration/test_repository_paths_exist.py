@@ -18,9 +18,13 @@ def _find_repo_root() -> Path:
     """
     here = Path(__file__).resolve()
     for parent in here.parents:
-        if (parent / "pyproject.toml").is_file() and (parent / "src" / "pkgmgr").is_dir():
+        if (parent / "pyproject.toml").is_file() and (
+            parent / "src" / "pkgmgr"
+        ).is_dir():
             return parent
-    raise RuntimeError("Could not determine repository root for pkgmgr integration test")
+    raise RuntimeError(
+        "Could not determine repository root for pkgmgr integration test"
+    )
 
 
 class TestRepositoryPathsExist(unittest.TestCase):

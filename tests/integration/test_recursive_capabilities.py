@@ -74,26 +74,28 @@ class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
 
         patched_installers = []
         for label, inst in installers:
+
             def always_supports(self, ctx):
                 return True
 
             def make_run(label_name: str):
                 def _run(self, ctx):
                     called_installers.append(label_name)
+
                 return _run
 
             inst.supports = always_supports.__get__(inst, inst.__class__)  # type: ignore[assignment]
             inst.run = make_run(label).__get__(inst, inst.__class__)  # type: ignore[assignment]
             patched_installers.append(inst)
 
-        with patch.object(install_mod, "INSTALLERS", patched_installers), patch.object(
-            install_mod, "get_repo_identifier", return_value="dummy-repo"
-        ), patch.object(
-            install_mod, "get_repo_dir", return_value=repo_dir
-        ), patch.object(
-            install_mod, "verify_repository", return_value=(True, [], None, None)
-        ), patch.object(
-            install_mod, "clone_repos"
+        with (
+            patch.object(install_mod, "INSTALLERS", patched_installers),
+            patch.object(install_mod, "get_repo_identifier", return_value="dummy-repo"),
+            patch.object(install_mod, "get_repo_dir", return_value=repo_dir),
+            patch.object(
+                install_mod, "verify_repository", return_value=(True, [], None, None)
+            ),
+            patch.object(install_mod, "clone_repos"),
         ):
             install_repos(
                 selected_repos=selected_repos,

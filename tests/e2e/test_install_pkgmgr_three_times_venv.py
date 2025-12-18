@@ -16,10 +16,8 @@ class TestPkgmgrInstallThreeTimesVenv(unittest.TestCase):
             env["HOME"] = tmp
 
             # pkgmgr kommt aus dem Projekt-venv
-            env["PATH"] = (
-                f"{Path.cwd() / '.venv' / 'bin'}:"
-                f"{bin_dir}:"
-                + os.environ.get("PATH", "")
+            env["PATH"] = f"{Path.cwd() / '.venv' / 'bin'}:{bin_dir}:" + os.environ.get(
+                "PATH", ""
             )
 
             # nix explizit deaktivieren → Python/Venv-Pfad

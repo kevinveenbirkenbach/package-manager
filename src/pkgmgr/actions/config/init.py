@@ -107,11 +107,15 @@ def config_init(
                 # Already known?
                 if key in default_keys:
                     skipped += 1
-                    print(f"[SKIP]     (defaults)       {provider}/{account}/{repo_name}")
+                    print(
+                        f"[SKIP]     (defaults)       {provider}/{account}/{repo_name}"
+                    )
                     continue
                 if key in existing_keys:
                     skipped += 1
-                    print(f"[SKIP]     (user-config)    {provider}/{account}/{repo_name}")
+                    print(
+                        f"[SKIP]     (user-config)    {provider}/{account}/{repo_name}"
+                    )
                     continue
 
                 print(f"[ADD]      {provider}/{account}/{repo_name}")
@@ -121,7 +125,9 @@ def config_init(
                 if verified_commit:
                     print(f"[INFO]       Latest commit: {verified_commit}")
                 else:
-                    print("[WARN]       Could not read commit (not a git repo or no commits).")
+                    print(
+                        "[WARN]       Could not read commit (not a git repo or no commits)."
+                    )
 
                 entry: Dict[str, Any] = {
                     "provider": provider,

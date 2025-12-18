@@ -8,7 +8,13 @@ from ._fakes import FakeRunResult
 
 
 class DummyCtx:
-    def __init__(self, identifier: str = "x", repo_dir: str = "/repo", quiet: bool = True, force_update: bool = False):
+    def __init__(
+        self,
+        identifier: str = "x",
+        repo_dir: str = "/repo",
+        quiet: bool = True,
+        force_update: bool = False,
+    ):
         self.identifier = identifier
         self.repo_dir = repo_dir
         self.quiet = quiet

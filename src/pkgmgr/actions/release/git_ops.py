@@ -80,7 +80,9 @@ def is_highest_version_tag(tag: str) -> bool:
         return True
 
     latest = max(parsed_all)
-    print(f"[INFO] Latest tag (parsed): v{'.'.join(map(str, latest))}, Current tag: {tag}")
+    print(
+        f"[INFO] Latest tag (parsed): v{'.'.join(map(str, latest))}, Current tag: {tag}"
+    )
     return parsed_current >= latest
 
 
@@ -93,7 +95,9 @@ def update_latest_tag(new_tag: str, *, preview: bool = False) -> None:
     - 'latest' is forced (floating tag), therefore the push uses --force.
     """
     target_ref = f"{new_tag}^{{}}"
-    print(f"[INFO] Updating 'latest' tag to point at {new_tag} (commit {target_ref})...")
+    print(
+        f"[INFO] Updating 'latest' tag to point at {new_tag} (commit {target_ref})..."
+    )
 
     tag_force_annotated(
         name="latest",

@@ -30,10 +30,12 @@ class TestCLIReleasePublishHook(unittest.TestCase):
                 no_publish=False,
             )
 
-            with patch("pkgmgr.cli.commands.release.run_release") as m_release, patch(
-                "pkgmgr.cli.commands.release.run_publish"
-            ) as m_publish, patch(
-                "pkgmgr.cli.commands.release.sys.stdin.isatty", return_value=False
+            with (
+                patch("pkgmgr.cli.commands.release.run_release") as m_release,
+                patch("pkgmgr.cli.commands.release.run_publish") as m_publish,
+                patch(
+                    "pkgmgr.cli.commands.release.sys.stdin.isatty", return_value=False
+                ),
             ):
                 handle_release(args=args, ctx=self._ctx(), selected=[repo])
 
@@ -62,9 +64,10 @@ class TestCLIReleasePublishHook(unittest.TestCase):
                 no_publish=True,
             )
 
-            with patch("pkgmgr.cli.commands.release.run_release") as m_release, patch(
-                "pkgmgr.cli.commands.release.run_publish"
-            ) as m_publish:
+            with (
+                patch("pkgmgr.cli.commands.release.run_release") as m_release,
+                patch("pkgmgr.cli.commands.release.run_publish") as m_publish,
+            ):
                 handle_release(args=args, ctx=self._ctx(), selected=[repo])
 
             m_release.assert_called_once()

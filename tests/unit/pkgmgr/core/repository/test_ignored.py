@@ -9,8 +9,18 @@ from pkgmgr.core.repository.ignored import filter_ignored
 class TestFilterIgnored(unittest.TestCase):
     def test_filter_ignored_removes_repos_with_ignore_true(self) -> None:
         repos = [
-            {"provider": "github.com", "account": "user", "repository": "a", "ignore": True},
-            {"provider": "github.com", "account": "user", "repository": "b", "ignore": False},
+            {
+                "provider": "github.com",
+                "account": "user",
+                "repository": "a",
+                "ignore": True,
+            },
+            {
+                "provider": "github.com",
+                "account": "user",
+                "repository": "b",
+                "ignore": False,
+            },
             {"provider": "github.com", "account": "user", "repository": "c"},
         ]
 

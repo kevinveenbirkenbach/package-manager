@@ -3,15 +3,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
+
 class TestMakefileThreeTimes(unittest.TestCase):
     def test_make_install_three_times(self):
         with tempfile.TemporaryDirectory(prefix="makefile-3x-") as tmp:
             repo = Path(tmp)
 
             # Minimal Makefile with install target
-            (repo / "Makefile").write_text(
-                "install:\n\t@echo install >> install.log\n"
-            )
+            (repo / "Makefile").write_text("install:\n\t@echo install >> install.log\n")
 
             for i in range(1, 4):
                 print(f"\n=== RUN {i}/3 ===")

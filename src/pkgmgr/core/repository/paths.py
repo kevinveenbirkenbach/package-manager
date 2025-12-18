@@ -109,7 +109,9 @@ def resolve_repo_paths(repo_dir: str) -> RepoPaths:
         ]
     )
     if rpm_spec is None:
-        rpm_spec = _find_first_spec_in_dir(os.path.join(repo_dir, "packaging", "fedora"))
+        rpm_spec = _find_first_spec_in_dir(
+            os.path.join(repo_dir, "packaging", "fedora")
+        )
     if rpm_spec is None:
         rpm_spec = _find_first_spec_in_dir(repo_dir)
 

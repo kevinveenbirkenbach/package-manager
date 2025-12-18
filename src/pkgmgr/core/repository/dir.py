@@ -34,7 +34,15 @@ def get_repo_dir(repositories_base_dir: str, repo: Dict[str, Any]) -> str:
     account = repo.get("account")
     repository = repo.get("repository")
 
-    missing = [k for k, v in [("provider", provider), ("account", account), ("repository", repository)] if not v]
+    missing = [
+        k
+        for k, v in [
+            ("provider", provider),
+            ("account", account),
+            ("repository", repository),
+        ]
+        if not v
+    ]
     if missing:
         print(
             "Error: repository entry is missing required keys.\n"

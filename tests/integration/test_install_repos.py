@@ -83,7 +83,10 @@ class TestInstallReposIntegration(unittest.TestCase):
         selected_repos = [repo_system, repo_nix]
         all_repos = selected_repos
 
-        with tempfile.TemporaryDirectory() as tmp_base, tempfile.TemporaryDirectory() as tmp_bin:
+        with (
+            tempfile.TemporaryDirectory() as tmp_base,
+            tempfile.TemporaryDirectory() as tmp_bin,
+        ):
             # Fake repo directories (what get_repo_dir will return)
             repo_system_dir = os.path.join(tmp_base, "repo-system")
             repo_nix_dir = os.path.join(tmp_base, "repo-nix")
@@ -103,11 +106,12 @@ class TestInstallReposIntegration(unittest.TestCase):
 
             # Patch resolve_command_for_repo at the *pipeline* module level,
             # because InstallationPipeline imports it there.
-            with patch(
-                "pkgmgr.actions.install.pipeline.resolve_command_for_repo"
-            ) as mock_resolve, patch(
-                "pkgmgr.actions.install.os.path.exists"
-            ) as mock_exists_install:
+            with (
+                patch(
+                    "pkgmgr.actions.install.pipeline.resolve_command_for_repo"
+                ) as mock_resolve,
+                patch("pkgmgr.actions.install.os.path.exists") as mock_exists_install,
+            ):
 
                 def fake_resolve(repo, repo_identifier: str, repo_dir: str):
                     """

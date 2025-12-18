@@ -24,9 +24,7 @@ import unittest
 
 
 # Resolve project root (the repo where flake.nix lives, e.g. /src)
-PROJECT_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..")
-)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 def _run_cmd(cmd: list[str]) -> subprocess.CompletedProcess:
@@ -69,13 +67,18 @@ class TestNixBuildPkgmgrAllDistros(unittest.TestCase):
             _run_cmd(["id"])
 
             # --- nix build .#pkgmgr -L ---
-            proc = _run_cmd([
-                "nix",
-                "--option", "sandbox", "false",
-                "build", ".#pkgmgr",
-                "-L",
-            ])
-            
+            proc = _run_cmd(
+                [
+                    "nix",
+                    "--option",
+                    "sandbox",
+                    "false",
+                    "build",
+                    ".#pkgmgr",
+                    "-L",
+                ]
+            )
+
             if proc.returncode != 0:
                 raise AssertionError(
                     "nix build .#pkgmgr -L failed inside the test container.\n"

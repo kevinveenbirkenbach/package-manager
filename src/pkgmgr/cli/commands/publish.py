@@ -18,7 +18,9 @@ def handle_publish(args, ctx: CLIContext, selected: List[Repository]) -> None:
 
     for repo in selected:
         identifier = get_repo_identifier(repo, ctx.all_repositories)
-        repo_dir = repo.get("directory") or get_repo_dir(ctx.repositories_base_dir, repo)
+        repo_dir = repo.get("directory") or get_repo_dir(
+            ctx.repositories_base_dir, repo
+        )
 
         if not os.path.isdir(repo_dir):
             print(f"[WARN] Skipping {identifier}: directory missing.")

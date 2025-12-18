@@ -16,6 +16,7 @@ from .types import MirrorMap, Repository
 # Helpers
 # -----------------------------------------------------------------------------
 
+
 def _repo_key(repo: Repository) -> Tuple[str, str, str]:
     """
     Normalised key for identifying a repository in config files.
@@ -46,6 +47,7 @@ def _load_user_config(path: str) -> Dict[str, object]:
 # -----------------------------------------------------------------------------
 # Main merge command
 # -----------------------------------------------------------------------------
+
 
 def merge_mirrors(
     selected_repos: List[Repository],

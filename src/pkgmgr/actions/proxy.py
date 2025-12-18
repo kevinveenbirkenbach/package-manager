@@ -4,7 +4,16 @@ from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.command.run import run_command
 import sys
 
-def exec_proxy_command(proxy_prefix: str, selected_repos, repositories_base_dir, all_repos, proxy_command: str, extra_args, preview: bool):
+
+def exec_proxy_command(
+    proxy_prefix: str,
+    selected_repos,
+    repositories_base_dir,
+    all_repos,
+    proxy_command: str,
+    extra_args,
+    preview: bool,
+):
     """Execute a given proxy command with extra arguments for each repository."""
     error_repos = []
     max_exit_code = 0
@@ -22,7 +31,9 @@ def exec_proxy_command(proxy_prefix: str, selected_repos, repositories_base_dir,
         try:
             run_command(full_cmd, cwd=repo_dir, preview=preview)
         except SystemExit as e:
-            print(f"[ERROR] Command failed in {repo_identifier} with exit code {e.code}.")
+            print(
+                f"[ERROR] Command failed in {repo_identifier} with exit code {e.code}."
+            )
             error_repos.append((repo_identifier, e.code))
             max_exit_code = max(max_exit_code, e.code)
 

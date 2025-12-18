@@ -7,7 +7,11 @@ import os
 import tempfile
 import unittest
 
-from pkgmgr.actions.mirror.io import load_config_mirrors, read_mirrors_file, write_mirrors_file
+from pkgmgr.actions.mirror.io import (
+    load_config_mirrors,
+    read_mirrors_file,
+    write_mirrors_file,
+)
 
 
 class TestMirrorIO(unittest.TestCase):
@@ -76,7 +80,10 @@ class TestMirrorIO(unittest.TestCase):
         self.assertEqual(mirrors["github.com2"], "https://github.com/alice/repo2")
 
         self.assertIn("git@git.veen.world", mirrors)
-        self.assertEqual(mirrors["git@git.veen.world"], "ssh://git@git.veen.world:2201/alice/repo3.git")
+        self.assertEqual(
+            mirrors["git@git.veen.world"],
+            "ssh://git@git.veen.world:2201/alice/repo3.git",
+        )
 
     def test_read_mirrors_file_missing_returns_empty(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -96,7 +103,9 @@ class TestMirrorIO(unittest.TestCase):
             with open(p, "r", encoding="utf-8") as fh:
                 content = fh.read()
 
-        self.assertEqual(content, "a ssh://a.example/repo.git\nb ssh://b.example/repo.git\n")
+        self.assertEqual(
+            content, "a ssh://a.example/repo.git\nb ssh://b.example/repo.git\n"
+        )
 
     def test_write_mirrors_file_preview_does_not_create_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

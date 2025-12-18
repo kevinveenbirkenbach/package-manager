@@ -66,18 +66,26 @@ def verify_repository(repo, repo_dir, mode="local", no_verification=False):
     if expected_commit:
         if not commit_hash:
             commit_check_passed = False
-            error_details.append(f"Expected commit: {expected_commit}, but could not determine current commit.")
+            error_details.append(
+                f"Expected commit: {expected_commit}, but could not determine current commit."
+            )
         elif commit_hash != expected_commit:
             commit_check_passed = False
-            error_details.append(f"Expected commit: {expected_commit}, found: {commit_hash}")
+            error_details.append(
+                f"Expected commit: {expected_commit}, found: {commit_hash}"
+            )
 
     if expected_gpg_keys:
         if not signing_key:
             gpg_check_passed = False
-            error_details.append(f"Expected one of GPG keys: {expected_gpg_keys}, but no signing key was found.")
+            error_details.append(
+                f"Expected one of GPG keys: {expected_gpg_keys}, but no signing key was found."
+            )
         elif signing_key not in expected_gpg_keys:
             gpg_check_passed = False
-            error_details.append(f"Expected one of GPG keys: {expected_gpg_keys}, found: {signing_key}")
+            error_details.append(
+                f"Expected one of GPG keys: {expected_gpg_keys}, found: {signing_key}"
+            )
 
     if expected_commit and expected_gpg_keys:
         verified_ok = commit_check_passed and gpg_check_passed

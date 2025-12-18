@@ -20,7 +20,9 @@ class TestResolveRepositoryPath(unittest.TestCase):
         ctx = SimpleNamespace(repositories_base_dir="/base", repositories_dir="/base2")
         repo = {"provider": "github.com", "account": "acme", "repository": "demo"}
 
-        with patch("pkgmgr.cli.tools.paths.get_repo_dir", return_value="/computed/repo") as m:
+        with patch(
+            "pkgmgr.cli.tools.paths.get_repo_dir", return_value="/computed/repo"
+        ) as m:
             out = resolve_repository_path(repo, ctx)
 
         self.assertEqual(out, "/computed/repo")

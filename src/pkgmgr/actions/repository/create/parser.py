@@ -63,6 +63,4 @@ def _strip_git_suffix(name: str) -> str:
 
 def _ensure_valid_repo_name(name: str) -> None:
     if not _NAME_RE.fullmatch(name):
-        raise ValueError(
-            "Repository name must match: lowercase a-z, 0-9, '_' and '-'."
-        )
+        raise ValueError("Repository name must match: lowercase a-z, 0-9, '_' and '-'.")

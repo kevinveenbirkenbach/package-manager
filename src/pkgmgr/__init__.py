@@ -25,12 +25,12 @@ __all__ = ["cli"]
 
 
 def __getattr__(name: str) -> Any:
-  """
-  Lazily expose ``pkgmgr.cli`` as attribute on the top-level package.
+    """
+    Lazily expose ``pkgmgr.cli`` as attribute on the top-level package.
 
-  This keeps ``import pkgmgr`` lightweight while still allowing
-  ``from pkgmgr import cli`` in tests and entry points.
-  """
-  if name == "cli":
-      return import_module("pkgmgr.cli")
-  raise AttributeError(f"module 'pkgmgr' has no attribute {name!r}")
+    This keeps ``import pkgmgr`` lightweight while still allowing
+    ``from pkgmgr import cli`` in tests and entry points.
+    """
+    if name == "cli":
+        return import_module("pkgmgr.cli")
+    raise AttributeError(f"module 'pkgmgr' has no attribute {name!r}")

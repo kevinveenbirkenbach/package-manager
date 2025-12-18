@@ -30,4 +30,4 @@ def get_remote_head_commit(
         ) from exc
 
     # minimal parsing: first token is the hash
-    return (out.split()[0].strip() if out else "")
+    return out.split()[0].strip() if out else ""

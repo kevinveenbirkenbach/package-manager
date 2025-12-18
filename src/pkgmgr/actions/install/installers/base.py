@@ -41,7 +41,9 @@ class BaseInstaller(ABC):
             return caps
 
         for matcher in CAPABILITY_MATCHERS:
-            if matcher.applies_to_layer(self.layer) and matcher.is_provided(ctx, self.layer):
+            if matcher.applies_to_layer(self.layer) and matcher.is_provided(
+                ctx, self.layer
+            ):
                 caps.add(matcher.name)
 
         return caps

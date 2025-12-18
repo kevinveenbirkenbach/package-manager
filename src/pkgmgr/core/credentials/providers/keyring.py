@@ -21,9 +21,7 @@ def _import_keyring():
     try:
         import keyring  # type: ignore
     except Exception as exc:  # noqa: BLE001
-        raise KeyringUnavailableError(
-            "python-keyring is not installed."
-        ) from exc
+        raise KeyringUnavailableError("python-keyring is not installed.") from exc
 
     # Some environments have keyring installed but no usable backend.
     # We do a lightweight "backend sanity check" by attempting to read the backend.

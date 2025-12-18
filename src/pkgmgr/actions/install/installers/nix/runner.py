@@ -9,6 +9,7 @@ from .types import RunResult
 if TYPE_CHECKING:
     from pkgmgr.actions.install.context import RepoContext
 
+
 class CommandRunner:
     """
     Executes commands (shell=True) inside a repository directory (if provided).
@@ -40,7 +41,9 @@ class CommandRunner:
                 raise
             return RunResult(returncode=1, stdout="", stderr=str(e))
 
-        res = RunResult(returncode=p.returncode, stdout=p.stdout or "", stderr=p.stderr or "")
+        res = RunResult(
+            returncode=p.returncode, stdout=p.stdout or "", stderr=p.stderr or ""
+        )
 
         if res.returncode != 0 and not quiet:
             self._print_compact_failure(res)

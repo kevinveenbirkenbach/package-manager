@@ -4,7 +4,12 @@ from __future__ import annotations
 import sys
 from typing import Any, Dict, List
 
-from pkgmgr.actions.mirror import diff_mirrors, list_mirrors, merge_mirrors, setup_mirrors
+from pkgmgr.actions.mirror import (
+    diff_mirrors,
+    list_mirrors,
+    merge_mirrors,
+    setup_mirrors,
+)
 from pkgmgr.cli.context import CLIContext
 
 Repository = Dict[str, Any]
@@ -56,11 +61,15 @@ def handle_mirror_command(
         preview = getattr(args, "preview", False)
 
         if source == target:
-            print("[ERROR] For 'mirror merge', source and target must differ (config vs file).")
+            print(
+                "[ERROR] For 'mirror merge', source and target must differ (config vs file)."
+            )
             sys.exit(2)
 
         explicit_config_path = getattr(args, "config_path", None)
-        user_config_path = explicit_config_path or getattr(ctx, "user_config_path", None)
+        user_config_path = explicit_config_path or getattr(
+            ctx, "user_config_path", None
+        )
 
         merge_mirrors(
             selected_repos=selected,

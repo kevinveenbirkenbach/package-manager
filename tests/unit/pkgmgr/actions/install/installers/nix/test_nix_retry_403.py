@@ -3,7 +3,10 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.actions.install.installers.nix.retry import GitHubRateLimitRetry, RetryPolicy
+from pkgmgr.actions.install.installers.nix.retry import (
+    GitHubRateLimitRetry,
+    RetryPolicy,
+)
 from pkgmgr.actions.install.installers.nix.types import RunResult
 
 
@@ -46,8 +49,8 @@ class TestGitHub403Retry(unittest.TestCase):
           - Wait times follow Fibonacci(base=30) + jitter
         """
         policy = RetryPolicy(
-            max_attempts=3,          # attempts: 1,2,3
-            base_delay_seconds=30,   # fibonacci delays: 30, 30, 60
+            max_attempts=3,  # attempts: 1,2,3
+            base_delay_seconds=30,  # fibonacci delays: 30, 30, 60
             jitter_seconds_min=0,
             jitter_seconds_max=60,
         )
@@ -57,9 +60,15 @@ class TestGitHub403Retry(unittest.TestCase):
         runner = FakeRunner(fail_count=2)  # fail twice (403), then succeed
 
         # Make jitter deterministic and prevent real sleeping.
-        with patch("pkgmgr.actions.install.installers.nix.retry.random.randint", return_value=5) as jitter_mock, patch(
-            "pkgmgr.actions.install.installers.nix.retry.time.sleep"
-        ) as sleep_mock:
+        with (
+            patch(
+                "pkgmgr.actions.install.installers.nix.retry.random.randint",
+                return_value=5,
+            ) as jitter_mock,
+            patch(
+                "pkgmgr.actions.install.installers.nix.retry.time.sleep"
+            ) as sleep_mock,
+        ):
             res = retry.run_with_retry(ctx, runner, "nix profile install /tmp#default")
 
         # Result should be success on 3rd attempt.
@@ -90,15 +99,19 @@ class TestGitHub403Retry(unittest.TestCase):
 
             def run(self, ctx: DummyCtx, cmd: str, allow_failure: bool) -> RunResult:
                 self.calls += 1
-                return RunResult(returncode=1, stdout="", stderr="some other error (simulated)")
+                return RunResult(
+                    returncode=1, stdout="", stderr="some other error (simulated)"
+                )
 
         runner = Non403Runner()
 
-        with patch("pkgmgr.actions.install.installers.nix.retry.time.sleep") as sleep_mock:
+        with patch(
+            "pkgmgr.actions.install.installers.nix.retry.time.sleep"
+        ) as sleep_mock:
             res = retry.run_with_retry(ctx, runner, "nix profile install /tmp#default")
 
         self.assertEqual(res.returncode, 1)
-        self.assertEqual(runner.calls, 1)      # no retries
+        self.assertEqual(runner.calls, 1)  # no retries
         self.assertEqual(sleep_mock.call_count, 0)
 
 

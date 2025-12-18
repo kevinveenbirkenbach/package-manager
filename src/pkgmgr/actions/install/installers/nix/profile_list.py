@@ -48,7 +48,9 @@ class NixProfileListReader:
 
         return uniq
 
-    def indices_matching_store_prefixes(self, ctx: "RepoContext", prefixes: List[str]) -> List[int]:
+    def indices_matching_store_prefixes(
+        self, ctx: "RepoContext", prefixes: List[str]
+    ) -> List[int]:
         prefixes = [self._store_prefix(p) for p in prefixes if p]
         prefixes = [p for p in prefixes if p]
         if not prefixes:

@@ -1,4 +1,3 @@
-
 import unittest
 from pkgmgr.actions.publish.pypi_url import parse_pypi_project_url
 

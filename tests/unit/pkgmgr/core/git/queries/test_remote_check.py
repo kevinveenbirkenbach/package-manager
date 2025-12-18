@@ -26,7 +26,11 @@ class TestProbeRemoteReachable(unittest.TestCase):
 
         self.assertTrue(ok)
         mock_run.assert_called_once_with(
-            ["ls-remote", "--exit-code", "ssh://git@code.example.org:2201/alice/repo.git"],
+            [
+                "ls-remote",
+                "--exit-code",
+                "ssh://git@code.example.org:2201/alice/repo.git",
+            ],
             cwd="/tmp/some-repo",
         )
 
@@ -41,7 +45,11 @@ class TestProbeRemoteReachable(unittest.TestCase):
 
         self.assertFalse(ok)
         mock_run.assert_called_once_with(
-            ["ls-remote", "--exit-code", "ssh://git@code.example.org:2201/alice/repo.git"],
+            [
+                "ls-remote",
+                "--exit-code",
+                "ssh://git@code.example.org:2201/alice/repo.git",
+            ],
             cwd="/tmp/some-repo",
         )
 

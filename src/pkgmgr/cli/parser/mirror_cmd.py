@@ -20,7 +20,9 @@ def add_mirror_subparsers(subparsers: argparse._SubParsersAction) -> None:
         required=True,
     )
 
-    mirror_list = mirror_subparsers.add_parser("list", help="List configured mirrors for repositories")
+    mirror_list = mirror_subparsers.add_parser(
+        "list", help="List configured mirrors for repositories"
+    )
     add_identifier_arguments(mirror_list)
     mirror_list.add_argument(
         "--source",
@@ -29,15 +31,21 @@ def add_mirror_subparsers(subparsers: argparse._SubParsersAction) -> None:
         help="Which mirror source to show.",
     )
 
-    mirror_diff = mirror_subparsers.add_parser("diff", help="Show differences between config mirrors and MIRRORS file")
+    mirror_diff = mirror_subparsers.add_parser(
+        "diff", help="Show differences between config mirrors and MIRRORS file"
+    )
     add_identifier_arguments(mirror_diff)
 
     mirror_merge = mirror_subparsers.add_parser(
         "merge",
         help="Merge mirrors between config and MIRRORS file (example: pkgmgr mirror merge config file --all)",
     )
-    mirror_merge.add_argument("source", choices=["config", "file"], help="Source of mirrors.")
-    mirror_merge.add_argument("target", choices=["config", "file"], help="Target of mirrors.")
+    mirror_merge.add_argument(
+        "source", choices=["config", "file"], help="Source of mirrors."
+    )
+    mirror_merge.add_argument(
+        "target", choices=["config", "file"], help="Target of mirrors."
+    )
     add_identifier_arguments(mirror_merge)
     mirror_merge.add_argument(
         "--config-path",

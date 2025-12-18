@@ -9,7 +9,12 @@ from .providers.env import EnvTokenProvider
 from .providers.gh import GhTokenProvider
 from .providers.keyring import KeyringTokenProvider
 from .providers.prompt import PromptTokenProvider
-from .types import KeyringUnavailableError, NoCredentialsError, TokenRequest, TokenResult
+from .types import (
+    KeyringUnavailableError,
+    NoCredentialsError,
+    TokenRequest,
+    TokenResult,
+)
 from .validate import validate_token
 
 
@@ -55,7 +60,10 @@ class TokenResolver:
         print(f"       {msg}", file=sys.stderr)
         print("       Tokens will NOT be persisted securely.", file=sys.stderr)
         print("", file=sys.stderr)
-        print("       To enable secure token storage, install python-keyring:", file=sys.stderr)
+        print(
+            "       To enable secure token storage, install python-keyring:",
+            file=sys.stderr,
+        )
         print("         pip install keyring", file=sys.stderr)
         print("", file=sys.stderr)
         print("       Or install via system packages:", file=sys.stderr)

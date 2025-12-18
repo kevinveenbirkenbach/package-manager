@@ -17,6 +17,7 @@ import sys
 import unittest
 from typing import List
 
+
 def _run_main(argv: List[str]) -> None:
     """
     Helper to run main.py with the given argv.

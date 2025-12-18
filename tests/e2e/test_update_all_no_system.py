@@ -30,10 +30,7 @@ from test_install_pkgmgr_shallow import (
 def _make_temp_gitconfig_with_safe_dirs(home: Path) -> Path:
     gitconfig = home / ".gitconfig"
     gitconfig.write_text(
-        "[safe]\n"
-        "\tdirectory = /src\n"
-        "\tdirectory = /src/.git\n"
-        "\tdirectory = *\n"
+        "[safe]\n\tdirectory = /src\n\tdirectory = /src/.git\n\tdirectory = *\n"
     )
     return gitconfig
 

@@ -2,10 +2,11 @@ import os
 import hashlib
 import re
 
+
 def generate_alias(repo, bin_dir, existing_aliases):
     """
     Generate an alias for a repository based on its repository name.
-    
+
     Steps:
       1. Keep only consonants from the repository name (letters from BCDFGHJKLMNPQRSTVWXYZ).
       2. Collapse consecutive identical consonants.

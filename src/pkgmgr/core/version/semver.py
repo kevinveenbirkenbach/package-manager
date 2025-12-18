@@ -43,10 +43,14 @@ class SemVer:
             minor = int(parts[1])
             patch = int(parts[2])
         except ValueError as exc:
-            raise ValueError(f"Semantic version components must be integers: {value!r}") from exc
+            raise ValueError(
+                f"Semantic version components must be integers: {value!r}"
+            ) from exc
 
         if major < 0 or minor < 0 or patch < 0:
-            raise ValueError(f"Semantic version components must be non-negative: {value!r}")
+            raise ValueError(
+                f"Semantic version components must be non-negative: {value!r}"
+            )
 
         return cls(major=major, minor=minor, patch=patch)
 

@@ -24,7 +24,10 @@ class TestIntegrationReposCreatePreview(unittest.TestCase):
             repositories_base_dir="/tmp/Repositories",
             binaries_dir="/tmp/bin",
             all_repositories=[],
-            config_merged={"directories": {"repositories": "/tmp/Repositories"}, "repositories": []},
+            config_merged={
+                "directories": {"repositories": "/tmp/Repositories"},
+                "repositories": [],
+            },
             user_config_path="/tmp/user.yml",
         )
 

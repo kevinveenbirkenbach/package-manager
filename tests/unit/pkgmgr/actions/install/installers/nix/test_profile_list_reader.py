@@ -8,10 +8,10 @@ from ._fakes import FakeRunResult, FakeRunner
 
 class TestNixProfileListReader(unittest.TestCase):
     def test_entries_parses_indices_and_store_prefixes(self) -> None:
-        out = '''
+        out = """
           0  something  /nix/store/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-pkgmgr
           1  something  /nix/store/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-foo
-        '''
+        """
         runner = FakeRunner(default=FakeRunResult(0, stdout=out))
         reader = NixProfileListReader(runner=runner)
         entries = reader.entries(ctx=None)

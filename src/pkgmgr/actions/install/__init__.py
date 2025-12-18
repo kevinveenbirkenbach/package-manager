@@ -66,10 +66,7 @@ def _ensure_repo_dir(
     repo_dir = get_repo_dir(repositories_base_dir, repo)
 
     if not os.path.exists(repo_dir):
-        print(
-            f"Repository directory '{repo_dir}' does not exist. "
-            "Cloning it now..."
-        )
+        print(f"Repository directory '{repo_dir}' does not exist. Cloning it now...")
         clone_repos(
             [repo],
             repositories_base_dir,
@@ -79,10 +76,7 @@ def _ensure_repo_dir(
             clone_mode,
         )
         if not os.path.exists(repo_dir):
-            print(
-                f"Cloning failed for repository {identifier}. "
-                "Skipping installation."
-            )
+            print(f"Cloning failed for repository {identifier}. Skipping installation.")
             return None
 
     return repo_dir
@@ -115,7 +109,9 @@ def _verify_repo(
 
         if silent:
             # Non-interactive mode: continue with a warning.
-            print(f"[Warning] Continuing despite verification failure for {identifier} (--silent).")
+            print(
+                f"[Warning] Continuing despite verification failure for {identifier} (--silent)."
+            )
         else:
             choice = input("Continue anyway? [y/N]: ").strip().lower()
             if choice != "y":
@@ -232,12 +228,16 @@ def install_repos(
             code = exc.code if isinstance(exc.code, int) else str(exc.code)
             failures.append((identifier, f"installer failed (exit={code})"))
             if not quiet:
-                print(f"[Warning] install: repository {identifier} failed (exit={code}). Continuing...")
+                print(
+                    f"[Warning] install: repository {identifier} failed (exit={code}). Continuing..."
+                )
             continue
         except Exception as exc:
             failures.append((identifier, f"unexpected error: {exc}"))
             if not quiet:
-                print(f"[Warning] install: repository {identifier} hit an unexpected error: {exc}. Continuing...")
+                print(
+                    f"[Warning] install: repository {identifier} hit an unexpected error: {exc}. Continuing..."
+                )
             continue
 
     if failures and emit_summary and not quiet:

@@ -46,14 +46,22 @@ class TestUpdateSilentContinues(unittest.TestCase):
 
         def install_side_effect(selected_repos, *_args, **kwargs):
             repo = selected_repos[0]
-            install_calls.append((repo["repository"], kwargs.get("silent"), kwargs.get("emit_summary")))
+            install_calls.append(
+                (repo["repository"], kwargs.get("silent"), kwargs.get("emit_summary"))
+            )
             if repo["repository"] == "repo-b":
                 raise SystemExit(3)
             return None
 
         # Patch at the exact import locations used inside UpdateManager.run()
-        with patch("pkgmgr.actions.repository.pull.pull_with_verification", side_effect=pull_side_effect), patch(
-            "pkgmgr.actions.install.install_repos", side_effect=install_side_effect
+        with (
+            patch(
+                "pkgmgr.actions.repository.pull.pull_with_verification",
+                side_effect=pull_side_effect,
+            ),
+            patch(
+                "pkgmgr.actions.install.install_repos", side_effect=install_side_effect
+            ),
         ):
             # 1) silent=True: should NOT raise (even though failures happened)
             UpdateManager().run(
@@ -73,7 +81,9 @@ class TestUpdateSilentContinues(unittest.TestCase):
 
             # Ensure it tried all pulls, and installs happened for B and C only.
             self.assertEqual(pull_calls, ["repo-a", "repo-b", "repo-c"])
-            self.assertEqual([r for r, _silent, _emit in install_calls], ["repo-b", "repo-c"])
+            self.assertEqual(
+                [r for r, _silent, _emit in install_calls], ["repo-b", "repo-c"]
+            )
 
             # Ensure UpdateManager suppressed install summary spam by passing emit_summary=False.
             for _repo_name, _silent, emit_summary in install_calls:
@@ -103,7 +113,9 @@ class TestUpdateSilentContinues(unittest.TestCase):
 
             # Still must have processed all repos (continue-on-failure behavior).
             self.assertEqual(pull_calls, ["repo-a", "repo-b", "repo-c"])
-            self.assertEqual([r for r, _silent, _emit in install_calls], ["repo-b", "repo-c"])
+            self.assertEqual(
+                [r for r, _silent, _emit in install_calls], ["repo-b", "repo-c"]
+            )
 
 
 if __name__ == "__main__":

@@ -58,7 +58,9 @@ class SystemUpdater:
             run_command("sudo pacman -Syu --noconfirm", preview=preview)
             return
 
-        print("[Warning] Cannot update Arch system: missing required tools (sudo/yay/pacman).")
+        print(
+            "[Warning] Cannot update Arch system: missing required tools (sudo/yay/pacman)."
+        )
 
     def _update_debian(self, *, preview: bool) -> None:
         from pkgmgr.core.command.run import run_command
@@ -67,7 +69,9 @@ class SystemUpdater:
         apt_get = shutil.which("apt-get")
 
         if not (sudo and apt_get):
-            print("[Warning] Cannot update Debian/Ubuntu system: missing required tools (sudo/apt-get).")
+            print(
+                "[Warning] Cannot update Debian/Ubuntu system: missing required tools (sudo/apt-get)."
+            )
             return
 
         env = "DEBIAN_FRONTEND=noninteractive"

@@ -114,7 +114,9 @@ class TestIntegrationInstalPKGMGRShallow(unittest.TestCase):
             # Optional XDG override for a fully isolated environment
             os.environ.setdefault("XDG_CONFIG_HOME", os.path.join(temp_home, ".config"))
             os.environ.setdefault("XDG_CACHE_HOME", os.path.join(temp_home, ".cache"))
-            os.environ.setdefault("XDG_DATA_HOME", os.path.join(temp_home, ".local", "share"))
+            os.environ.setdefault(
+                "XDG_DATA_HOME", os.path.join(temp_home, ".local", "share")
+            )
 
             # 🔧 IMPORTANT FIX: allow Git to access /src safely
             configure_git_safe_directory()

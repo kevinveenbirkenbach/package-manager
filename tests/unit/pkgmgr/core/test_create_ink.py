@@ -19,9 +19,11 @@ class TestCreateInk(unittest.TestCase):
         mock_get_repo_identifier.return_value = "test-id"
         mock_get_repo_dir.return_value = "/repos/test-id"
 
-        with patch("pkgmgr.core.command.ink.os.makedirs") as mock_makedirs, \
-             patch("pkgmgr.core.command.ink.os.symlink") as mock_symlink, \
-             patch("pkgmgr.core.command.ink.os.chmod") as mock_chmod:
+        with (
+            patch("pkgmgr.core.command.ink.os.makedirs") as mock_makedirs,
+            patch("pkgmgr.core.command.ink.os.symlink") as mock_symlink,
+            patch("pkgmgr.core.command.ink.os.chmod") as mock_chmod,
+        ):
             create_ink_module.create_ink(
                 repo=repo,
                 repositories_base_dir="/repos",
@@ -45,9 +47,11 @@ class TestCreateInk(unittest.TestCase):
         mock_get_repo_identifier.return_value = "test-id"
         mock_get_repo_dir.return_value = "/repos/test-id"
 
-        with patch("pkgmgr.core.command.ink.os.makedirs") as mock_makedirs, \
-             patch("pkgmgr.core.command.ink.os.symlink") as mock_symlink, \
-             patch("pkgmgr.core.command.ink.os.chmod") as mock_chmod:
+        with (
+            patch("pkgmgr.core.command.ink.os.makedirs") as mock_makedirs,
+            patch("pkgmgr.core.command.ink.os.symlink") as mock_symlink,
+            patch("pkgmgr.core.command.ink.os.chmod") as mock_chmod,
+        ):
             create_ink_module.create_ink(
                 repo=repo,
                 repositories_base_dir="/repos",
@@ -74,12 +78,14 @@ class TestCreateInk(unittest.TestCase):
         mock_get_repo_identifier.return_value = "test-id"
         mock_get_repo_dir.return_value = "/repos/test-id"
 
-        with patch("pkgmgr.core.command.ink.os.makedirs") as mock_makedirs, \
-             patch("pkgmgr.core.command.ink.os.symlink") as mock_symlink, \
-             patch("pkgmgr.core.command.ink.os.chmod") as mock_chmod, \
-             patch("pkgmgr.core.command.ink.os.path.exists", return_value=False), \
-             patch("pkgmgr.core.command.ink.os.path.islink", return_value=False), \
-             patch("pkgmgr.core.command.ink.os.path.realpath", side_effect=lambda p: p):
+        with (
+            patch("pkgmgr.core.command.ink.os.makedirs") as mock_makedirs,
+            patch("pkgmgr.core.command.ink.os.symlink") as mock_symlink,
+            patch("pkgmgr.core.command.ink.os.chmod") as mock_chmod,
+            patch("pkgmgr.core.command.ink.os.path.exists", return_value=False),
+            patch("pkgmgr.core.command.ink.os.path.islink", return_value=False),
+            patch("pkgmgr.core.command.ink.os.path.realpath", side_effect=lambda p: p),
+        ):
             create_ink_module.create_ink(
                 repo=repo,
                 repositories_base_dir="/repos",
@@ -92,6 +98,7 @@ class TestCreateInk(unittest.TestCase):
         self.assertEqual(mock_symlink.call_count, 2)
         mock_makedirs.assert_called_once()
         mock_chmod.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

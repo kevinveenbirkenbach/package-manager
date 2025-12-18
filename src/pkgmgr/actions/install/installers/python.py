@@ -14,7 +14,9 @@ class PythonInstaller(BaseInstaller):
 
     def supports(self, ctx: RepoContext) -> bool:
         if os.environ.get("PKGMGR_DISABLE_PYTHON_INSTALLER") == "1":
-            print("[INFO] PythonInstaller disabled via PKGMGR_DISABLE_PYTHON_INSTALLER.")
+            print(
+                "[INFO] PythonInstaller disabled via PKGMGR_DISABLE_PYTHON_INSTALLER."
+            )
             return False
 
         return os.path.exists(os.path.join(ctx.repo_dir, "pyproject.toml"))

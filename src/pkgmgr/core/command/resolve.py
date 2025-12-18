@@ -34,11 +34,7 @@ def _nix_binary_candidates(home: str, names: List[str]) -> List[str]:
     """
     Build possible Nix profile binary paths for a list of candidate names.
     """
-    return [
-        os.path.join(home, ".nix-profile", "bin", name)
-        for name in names
-        if name
-    ]
+    return [os.path.join(home, ".nix-profile", "bin", name) for name in names if name]
 
 
 def _path_binary_candidates(names: List[str]) -> List[str]:
@@ -148,7 +144,8 @@ def resolve_command_for_repo(
 
     # c) Nix profile binaries
     nix_binaries = [
-        path for path in _nix_binary_candidates(home, candidate_names)
+        path
+        for path in _nix_binary_candidates(home, candidate_names)
         if _is_executable(path)
     ]
     nix_binary = nix_binaries[0] if nix_binaries else None

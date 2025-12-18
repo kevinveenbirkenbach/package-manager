@@ -10,7 +10,9 @@ from pkgmgr.cli.commands.changelog import _find_previous_and_current_tag
 
 class TestGenerateChangelog(unittest.TestCase):
     @patch("pkgmgr.actions.changelog.get_changelog")
-    def test_generate_changelog_default_range_no_merges(self, mock_get_changelog) -> None:
+    def test_generate_changelog_default_range_no_merges(
+        self, mock_get_changelog
+    ) -> None:
         mock_get_changelog.return_value = "abc123 (HEAD -> main) Initial commit"
 
         output = generate_changelog(cwd="/repo")
@@ -43,7 +45,9 @@ class TestGenerateChangelog(unittest.TestCase):
         )
 
     @patch("pkgmgr.actions.changelog.get_changelog")
-    def test_generate_changelog_giterror_returns_error_message(self, mock_get_changelog) -> None:
+    def test_generate_changelog_giterror_returns_error_message(
+        self, mock_get_changelog
+    ) -> None:
         mock_get_changelog.side_effect = GitChangelogQueryError("simulated git failure")
 
         result = generate_changelog(cwd="/repo", from_ref="v0.1.0", to_ref="v0.2.0")
@@ -53,7 +57,9 @@ class TestGenerateChangelog(unittest.TestCase):
         self.assertIn("v0.1.0..v0.2.0", result)
 
     @patch("pkgmgr.actions.changelog.get_changelog")
-    def test_generate_changelog_empty_output_returns_info(self, mock_get_changelog) -> None:
+    def test_generate_changelog_empty_output_returns_info(
+        self, mock_get_changelog
+    ) -> None:
         mock_get_changelog.return_value = "   \n   "
 
         result = generate_changelog(cwd="/repo", from_ref=None, to_ref="HEAD")

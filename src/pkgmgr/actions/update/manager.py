@@ -55,12 +55,16 @@ class UpdateManager:
                 code = exc.code if isinstance(exc.code, int) else str(exc.code)
                 failures.append((identifier, f"pull failed (exit={code})"))
                 if not quiet:
-                    print(f"[Warning] update: pull failed for {identifier} (exit={code}). Continuing...")
+                    print(
+                        f"[Warning] update: pull failed for {identifier} (exit={code}). Continuing..."
+                    )
                 continue
             except Exception as exc:
                 failures.append((identifier, f"pull failed: {exc}"))
                 if not quiet:
-                    print(f"[Warning] update: pull failed for {identifier}: {exc}. Continuing...")
+                    print(
+                        f"[Warning] update: pull failed for {identifier}: {exc}. Continuing..."
+                    )
                 continue
 
             try:
@@ -82,12 +86,16 @@ class UpdateManager:
                 code = exc.code if isinstance(exc.code, int) else str(exc.code)
                 failures.append((identifier, f"install failed (exit={code})"))
                 if not quiet:
-                    print(f"[Warning] update: install failed for {identifier} (exit={code}). Continuing...")
+                    print(
+                        f"[Warning] update: install failed for {identifier} (exit={code}). Continuing..."
+                    )
                 continue
             except Exception as exc:
                 failures.append((identifier, f"install failed: {exc}"))
                 if not quiet:
-                    print(f"[Warning] update: install failed for {identifier}: {exc}. Continuing...")
+                    print(
+                        f"[Warning] update: install failed for {identifier}: {exc}. Continuing..."
+                    )
                 continue
 
         if failures and not quiet:

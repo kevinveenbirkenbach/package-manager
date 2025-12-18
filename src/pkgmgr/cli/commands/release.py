@@ -36,9 +36,13 @@ def handle_release(
         identifier = get_repo_identifier(repo, ctx.all_repositories)
 
         try:
-            repo_dir = repo.get("directory") or get_repo_dir(ctx.repositories_base_dir, repo)
+            repo_dir = repo.get("directory") or get_repo_dir(
+                ctx.repositories_base_dir, repo
+            )
         except Exception as exc:
-            print(f"[WARN] Skipping repository {identifier}: failed to resolve directory: {exc}")
+            print(
+                f"[WARN] Skipping repository {identifier}: failed to resolve directory: {exc}"
+            )
             continue
 
         if not os.path.isdir(repo_dir):

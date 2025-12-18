@@ -18,4 +18,6 @@ def branch_move(branch: str, *, cwd: str = ".", preview: bool = False) -> None:
     try:
         run(["branch", "-M", branch], cwd=cwd, preview=preview)
     except GitRunError as exc:
-        raise GitBranchMoveError(f"Failed to move/rename current branch to {branch!r}.", cwd=cwd) from exc
+        raise GitBranchMoveError(
+            f"Failed to move/rename current branch to {branch!r}.", cwd=cwd
+        ) from exc

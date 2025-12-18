@@ -19,13 +19,16 @@ from pkgmgr.actions.release.files import (
 
 class TestUpdatePyprojectVersion(unittest.TestCase):
     def test_update_pyproject_version_replaces_version_line(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             [project]
             name = "example"
             version = "0.1.0"
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "pyproject.toml")
@@ -41,13 +44,16 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
         self.assertNotIn('version = "0.1.0"', content)
 
     def test_update_pyproject_version_preview_does_not_write(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             [project]
             name = "example"
             version = "0.1.0"
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "pyproject.toml")
@@ -63,12 +69,15 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
         self.assertEqual(content, original)
 
     def test_update_pyproject_version_exits_when_no_version_line_found(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             [project]
             name = "example"
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "pyproject.toml")
@@ -129,13 +138,16 @@ class TestUpdateFlakeVersion(unittest.TestCase):
 
 class TestUpdatePkgbuildVersion(unittest.TestCase):
     def test_update_pkgbuild_version_normal(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             pkgname=example
             pkgver=0.1.0
             pkgrel=5
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "PKGBUILD")
@@ -152,13 +164,16 @@ class TestUpdatePkgbuildVersion(unittest.TestCase):
         self.assertNotIn("pkgver=0.1.0", content)
 
     def test_update_pkgbuild_version_preview(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             pkgname=example
             pkgver=0.1.0
             pkgrel=5
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "PKGBUILD")
@@ -175,13 +190,16 @@ class TestUpdatePkgbuildVersion(unittest.TestCase):
 
 class TestUpdateSpecVersion(unittest.TestCase):
     def test_update_spec_version_normal(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             Name: package-manager
             Version: 0.1.0
             Release: 5%{?dist}
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "package-manager.spec")
@@ -199,13 +217,16 @@ class TestUpdateSpecVersion(unittest.TestCase):
         self.assertNotIn("Release: 5%{?dist}", content)
 
     def test_update_spec_version_preview(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             Name: package-manager
             Version: 0.1.0
             Release: 5%{?dist}
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "package-manager.spec")
@@ -328,8 +349,9 @@ class TestUpdateDebianChangelog(unittest.TestCase):
 
 class TestUpdateSpecChangelog(unittest.TestCase):
     def test_update_spec_changelog_inserts_stanza_after_changelog_marker(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             Name: package-manager
             Version: 0.1.0
             Release: 5%{?dist}
@@ -341,7 +363,9 @@ class TestUpdateSpecChangelog(unittest.TestCase):
             * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
             - Old entry
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "package-manager.spec")
@@ -375,8 +399,9 @@ class TestUpdateSpecChangelog(unittest.TestCase):
         self.assertIn("Old Maintainer <old@example.com>", content)
 
     def test_update_spec_changelog_preview_does_not_write(self) -> None:
-        original = textwrap.dedent(
-            """
+        original = (
+            textwrap.dedent(
+                """
             Name: package-manager
             Version: 0.1.0
             Release: 5%{?dist}
@@ -385,7 +410,9 @@ class TestUpdateSpecChangelog(unittest.TestCase):
             * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
             - Old entry
             """
-        ).strip() + "\n"
+            ).strip()
+            + "\n"
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "package-manager.spec")
