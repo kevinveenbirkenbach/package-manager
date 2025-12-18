@@ -15,9 +15,9 @@ from pkgmgr.actions.install.installers.makefile import MakefileInstaller  # noqa
 
 # OS-specific installers
 from pkgmgr.actions.install.installers.os_packages.arch_pkgbuild import (
-    ArchPkgbuildInstaller,
+    ArchPkgbuildInstaller as ArchPkgbuildInstaller,
 )  # noqa: F401
 from pkgmgr.actions.install.installers.os_packages.debian_control import (
-    DebianControlInstaller,
+    DebianControlInstaller as DebianControlInstaller,
 )  # noqa: F401
 from pkgmgr.actions.install.installers.os_packages.rpm_spec import RpmSpecInstaller  # noqa: F401
