@@ -7,13 +7,13 @@ import unittest
 from unittest.mock import patch
 
 from pkgmgr.actions.release.files import (
-    update_pyproject_version,
-    update_flake_version,
-    update_pkgbuild_version,
-    update_spec_version,
     update_changelog,
     update_debian_changelog,
+    update_flake_version,
+    update_pkgbuild_version,
+    update_pyproject_version,
     update_spec_changelog,
+    update_spec_version,
 )
 
 
@@ -22,10 +22,10 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
         original = (
             textwrap.dedent(
                 """
-            [project]
-            name = "example"
-            version = "0.1.0"
-            """
+                [project]
+                name = "example"
+                version = "0.1.0"
+                """
             ).strip()
             + "\n"
         )
@@ -47,10 +47,10 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
         original = (
             textwrap.dedent(
                 """
-            [project]
-            name = "example"
-            version = "0.1.0"
-            """
+                [project]
+                name = "example"
+                version = "0.1.0"
+                """
             ).strip()
             + "\n"
         )
@@ -65,16 +65,15 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-        # Content must be unchanged in preview mode
         self.assertEqual(content, original)
 
-    def test_update_pyproject_version_exits_when_no_version_line_found(self) -> None:
+    def test_update_pyproject_version_raises_when_no_version_line_found(self) -> None:
         original = (
             textwrap.dedent(
                 """
-            [project]
-            name = "example"
-            """
+                [project]
+                name = "example"
+                """
             ).strip()
             + "\n"
         )
@@ -84,24 +83,39 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
             with open(path, "w", encoding="utf-8") as f:
                 f.write(original)
 
-            with self.assertRaises(SystemExit) as cm:
+            with self.assertRaises(RuntimeError) as cm:
                 update_pyproject_version(path, "1.2.3", preview=False)
 
-        self.assertNotEqual(cm.exception.code, 0)
+        self.assertIn("Missing version key", str(cm.exception))
+
+    def test_update_pyproject_version_raises_when_project_section_missing(self) -> None:
+        original = (
+            textwrap.dedent(
+                """
+                name = "example"
+                version = "0.1.0"
+                """
+            ).strip()
+            + "\n"
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "pyproject.toml")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(original)
+
+            with self.assertRaises(RuntimeError) as cm:
+                update_pyproject_version(path, "1.2.3", preview=False)
+
+        self.assertIn("Missing [project] section", str(cm.exception))
 
     def test_update_pyproject_version_missing_file_is_skipped(self) -> None:
-        """
-        If pyproject.toml does not exist, the function must not raise
-        and must not create the file. It should simply be skipped.
-        """
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "pyproject.toml")
             self.assertFalse(os.path.exists(path))
 
-            # Must not raise an exception
             update_pyproject_version(path, "1.2.3", preview=False)
 
-            # Still no file created
             self.assertFalse(os.path.exists(path))
 
 
@@ -141,10 +155,10 @@ class TestUpdatePkgbuildVersion(unittest.TestCase):
         original = (
             textwrap.dedent(
                 """
-            pkgname=example
-            pkgver=0.1.0
-            pkgrel=5
-            """
+                pkgname=example
+                pkgver=0.1.0
+                pkgrel=5
+                """
             ).strip()
             + "\n"
         )
@@ -167,10 +181,10 @@ class TestUpdatePkgbuildVersion(unittest.TestCase):
         original = (
             textwrap.dedent(
                 """
-            pkgname=example
-            pkgver=0.1.0
-            pkgrel=5
-            """
+                pkgname=example
+                pkgver=0.1.0
+                pkgrel=5
+                """
             ).strip()
             + "\n"
         )
@@ -193,10 +207,10 @@ class TestUpdateSpecVersion(unittest.TestCase):
         original = (
             textwrap.dedent(
                 """
-            Name: package-manager
-            Version: 0.1.0
-            Release: 5%{?dist}
-            """
+                Name: package-manager
+                Version: 0.1.0
+                Release: 5%{?dist}
+                """
             ).strip()
             + "\n"
         )
@@ -220,10 +234,10 @@ class TestUpdateSpecVersion(unittest.TestCase):
         original = (
             textwrap.dedent(
                 """
-            Name: package-manager
-            Version: 0.1.0
-            Release: 5%{?dist}
-            """
+                Name: package-manager
+                Version: 0.1.0
+                Release: 5%{?dist}
+                """
             ).strip()
             + "\n"
         )
@@ -267,7 +281,6 @@ class TestUpdateChangelog(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-        # New entry must be on top
         self.assertTrue(content.startswith("## [1.0.0]"))
         self.assertIn("## [0.1.0] - 2024-01-01", content)
 
@@ -290,16 +303,12 @@ class TestUpdateDebianChangelog(unittest.TestCase):
     def test_update_debian_changelog_creates_new_stanza(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "changelog")
-            # existing content
             with open(path, "w", encoding="utf-8") as f:
                 f.write("existing content\n")
 
             with patch.dict(
                 os.environ,
-                {
-                    "DEBFULLNAME": "Test Maintainer",
-                    "DEBEMAIL": "test@example.com",
-                },
+                {"DEBFULLNAME": "Test Maintainer", "DEBEMAIL": "test@example.com"},
                 clear=False,
             ):
                 update_debian_changelog(
@@ -327,10 +336,7 @@ class TestUpdateDebianChangelog(unittest.TestCase):
 
             with patch.dict(
                 os.environ,
-                {
-                    "DEBFULLNAME": "Test Maintainer",
-                    "DEBEMAIL": "test@example.com",
-                },
+                {"DEBFULLNAME": "Test Maintainer", "DEBEMAIL": "test@example.com"},
                 clear=False,
             ):
                 update_debian_changelog(
@@ -352,17 +358,17 @@ class TestUpdateSpecChangelog(unittest.TestCase):
         original = (
             textwrap.dedent(
                 """
-            Name: package-manager
-            Version: 0.1.0
-            Release: 5%{?dist}
+                Name: package-manager
+                Version: 0.1.0
+                Release: 5%{?dist}
 
-            %description
-            Some description.
+                %description
+                Some description.
 
-            %changelog
-            * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
-            - Old entry
-            """
+                %changelog
+                * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
+                - Old entry
+                """
             ).strip()
             + "\n"
         )
@@ -374,10 +380,7 @@ class TestUpdateSpecChangelog(unittest.TestCase):
 
             with patch.dict(
                 os.environ,
-                {
-                    "DEBFULLNAME": "Test Maintainer",
-                    "DEBEMAIL": "test@example.com",
-                },
+                {"DEBFULLNAME": "Test Maintainer", "DEBEMAIL": "test@example.com"},
                 clear=False,
             ):
                 update_spec_changelog(
@@ -391,25 +394,23 @@ class TestUpdateSpecChangelog(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-        # New stanza must appear after the %changelog marker
         self.assertIn("%changelog", content)
         self.assertIn("Fedora changelog entry", content)
         self.assertIn("Test Maintainer <test@example.com>", content)
-        # Old entries must still be present
         self.assertIn("Old Maintainer <old@example.com>", content)
 
     def test_update_spec_changelog_preview_does_not_write(self) -> None:
         original = (
             textwrap.dedent(
                 """
-            Name: package-manager
-            Version: 0.1.0
-            Release: 5%{?dist}
+                Name: package-manager
+                Version: 0.1.0
+                Release: 5%{?dist}
 
-            %changelog
-            * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
-            - Old entry
-            """
+                %changelog
+                * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
+                - Old entry
+                """
             ).strip()
             + "\n"
         )
@@ -421,10 +422,7 @@ class TestUpdateSpecChangelog(unittest.TestCase):
 
             with patch.dict(
                 os.environ,
-                {
-                    "DEBFULLNAME": "Test Maintainer",
-                    "DEBEMAIL": "test@example.com",
-                },
+                {"DEBFULLNAME": "Test Maintainer", "DEBEMAIL": "test@example.com"},
                 clear=False,
             ):
                 update_spec_changelog(
@@ -438,7 +436,6 @@ class TestUpdateSpecChangelog(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-        # In preview mode, the spec file must not change
         self.assertEqual(content, original)
 
 
