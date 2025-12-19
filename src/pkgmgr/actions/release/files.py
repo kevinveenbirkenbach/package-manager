@@ -19,7 +19,6 @@ from __future__ import annotations
 import os
 import re
 import subprocess
-import sys
 import tempfile
 from datetime import date, datetime
 from typing import Optional, Tuple
@@ -85,60 +84,48 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
 # ---------------------------------------------------------------------------
 
 
-def update_pyproject_version(
-    pyproject_path: str,
-    new_version: str,
-    preview: bool = False,
-) -> None:
-    """
-    Update the version in pyproject.toml with the new version.
-
-    The function looks for a line matching:
-
-        version = "X.Y.Z"
-
-    and replaces the version part with the given new_version string.
-
-    If the file does not exist, it is skipped without failing the release.
-    """
+def update_pyproject_version(pyproject_path: str, new_version: str, preview: bool = False) -> None:
     if not os.path.exists(pyproject_path):
-        print(
-            f"[INFO] pyproject.toml not found at: {pyproject_path}, "
-            "skipping version update."
-        )
+        print(f"[INFO] pyproject.toml not found at: {pyproject_path}, skipping version update.")
         return
 
     try:
         with open(pyproject_path, "r", encoding="utf-8") as f:
             content = f.read()
     except OSError as exc:
-        print(
-            f"[WARN] Could not read pyproject.toml at {pyproject_path}: {exc}. "
-            "Skipping version update."
-        )
+        print(f"[WARN] Could not read pyproject.toml at {pyproject_path}: {exc}. Skipping version update.")
         return
 
-    pattern = r'^(version\s*=\s*")([^"]+)(")'
-    new_content, count = re.subn(
-        pattern,
-        lambda m: f"{m.group(1)}{new_version}{m.group(3)}",
-        content,
-        flags=re.MULTILINE,
+    # Find [project] block (PEP 621)
+    m = re.search(r"(?ms)^\s*\[project\]\s*$.*?(?=^\s*\[|\Z)", content)
+    if not m:
+        print("[ERROR] Could not find [project] section in pyproject.toml")
+        raise RuntimeError("Missing [project] section in pyproject.toml")
+
+    project_block = m.group(0)
+
+    # Replace version line inside that block (allow leading whitespace)
+    ver_pat = r'(?m)^(\s*version\s*=\s*")([^"]+)(")\s*$'
+    new_project_block, count = re.subn(
+        ver_pat,
+        lambda mm: f"{mm.group(1)}{new_version}{mm.group(3)}",
+        project_block,
     )
 
     if count == 0:
-        print("[ERROR] Could not find version line in pyproject.toml")
-        sys.exit(1)
+        print("[ERROR] Could not find version = \"...\" in [project] section of pyproject.toml")
+        raise RuntimeError("Missing version key in [project] section")
+
+    new_content = content[: m.start()] + new_project_block + content[m.end() :]
 
     if preview:
-        print(f"[PREVIEW] Would update pyproject.toml version to {new_version}")
+        print(f"[PREVIEW] Would update pyproject.toml [project].version to {new_version}")
         return
 
     with open(pyproject_path, "w", encoding="utf-8") as f:
         f.write(new_content)
 
     print(f"Updated pyproject.toml version to {new_version}")
-
 
 def update_flake_version(
     flake_path: str,
