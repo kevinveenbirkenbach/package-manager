@@ -1,3 +1,10 @@
+## [1.8.7] - 2025-12-19
+
+* * **Release version updates now correctly modify ***pyproject.toml*** files that follow PEP 621**, ensuring the ***[project].version*** field is updated as expected.
+* **Invalid or incomplete ***pyproject.toml*** files are now handled gracefully** with clear error messages instead of abrupt process termination.
+* **RPM spec files remain compatible during releases**: existing macros such as ***%{?dist}*** are preserved and no longer accidentally modified.
+
+
 ## [1.8.6] - 2025-12-17
 
 * Prevent Rate Limits during GitHub Nix Setups

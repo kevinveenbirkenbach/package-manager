@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.8.6
+Version:        1.8.7
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,11 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Fri Dec 19 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.7-1
+- * **Release version updates now correctly modify ***pyproject.toml*** files that follow PEP 621**, ensuring the ***[project].version*** field is updated as expected.
+* **Invalid or incomplete ***pyproject.toml*** files are now handled gracefully** with clear error messages instead of abrupt process termination.
+* **RPM spec files remain compatible during releases**: existing macros such as ***%{?dist}*** are preserved and no longer accidentally modified.
+
 * Wed Dec 17 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.6-1
 - Prevent Rate Limits during GitHub Nix Setups
 
