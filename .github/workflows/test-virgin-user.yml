@@ -49,17 +49,19 @@ jobs:
               chown -R dev:dev /nix
               chmod 0755 /nix
               chmod 1777 /nix/store
+              sudo -H -u dev env \
+                HOME=/home/dev \
+                NIX_CONFIG="$NIX_CONFIG" \
+                PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 \
+                bash -lc "
+                  set -euo pipefail
+                  cd /opt/src/pkgmgr
+                  make setup-venv
+                  . \"\$HOME/.venvs/pkgmgr/bin/activate\"
 
-              sudo -H -u dev env HOME=/home/dev PKGMGR_DISABLE_NIX_FLAKE_INSTALLER=1 bash -lc "
-                set -euo pipefail
-                cd /opt/src/pkgmgr
+                  pkgmgr version pkgmgr
 
-                make setup-venv
-                . \"\$HOME/.venvs/pkgmgr/bin/activate\"
-
-                pkgmgr version pkgmgr
-
-                export NIX_REMOTE=local
-                nix run /opt/src/pkgmgr#pkgmgr -- version pkgmgr
-              "
+                  export NIX_REMOTE=local
+                  nix run /opt/src/pkgmgr#pkgmgr -- version pkgmgr
+                "
             '
