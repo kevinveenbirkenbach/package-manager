@@ -38,7 +38,6 @@ class TestMirrorSetupCmd(unittest.TestCase):
             ensure_remote=False,
         )
 
-        # ensure_origin_remote(repo, ctx, preview) is called positionally in your code
         m_ensure.assert_called_once()
         args, kwargs = m_ensure.call_args
 
@@ -50,13 +49,13 @@ class TestMirrorSetupCmd(unittest.TestCase):
 
     @patch("pkgmgr.actions.mirror.setup_cmd.build_context")
     @patch("pkgmgr.actions.mirror.setup_cmd.determine_primary_remote_url")
-    @patch("pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable")
+    @patch("pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable_detail")
     def test_setup_mirrors_remote_no_mirrors_probes_primary(
-        self, m_probe, m_primary, m_ctx
+        self, m_probe_detail, m_primary, m_ctx
     ) -> None:
         m_ctx.return_value = self._ctx(repo_dir="/tmp/repo", resolved={})
         m_primary.return_value = "git@github.com:alice/repo.git"
-        m_probe.return_value = True
+        m_probe_detail.return_value = (True, "")
 
         repos = [{"provider": "github.com", "account": "alice", "repository": "repo"}]
         setup_mirrors(
@@ -70,14 +69,14 @@ class TestMirrorSetupCmd(unittest.TestCase):
         )
 
         m_primary.assert_called()
-        m_probe.assert_called_once_with(
+        m_probe_detail.assert_called_once_with(
             "git@github.com:alice/repo.git", cwd="/tmp/repo"
         )
 
     @patch("pkgmgr.actions.mirror.setup_cmd.build_context")
-    @patch("pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable")
+    @patch("pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable_detail")
     def test_setup_mirrors_remote_with_mirrors_probes_each(
-        self, m_probe, m_ctx
+        self, m_probe_detail, m_ctx
     ) -> None:
         m_ctx.return_value = self._ctx(
             repo_dir="/tmp/repo",
@@ -86,7 +85,7 @@ class TestMirrorSetupCmd(unittest.TestCase):
                 "backup": "ssh://git@git.veen.world:2201/alice/repo.git",
             },
         )
-        m_probe.return_value = True
+        m_probe_detail.return_value = (True, "")
 
         repos = [{"provider": "github.com", "account": "alice", "repository": "repo"}]
         setup_mirrors(
@@ -99,10 +98,103 @@ class TestMirrorSetupCmd(unittest.TestCase):
             ensure_remote=False,
         )
 
-        self.assertEqual(m_probe.call_count, 2)
-        m_probe.assert_any_call("git@github.com:alice/repo.git", cwd="/tmp/repo")
-        m_probe.assert_any_call(
+        # Should probe BOTH git mirror URLs
+        self.assertEqual(m_probe_detail.call_count, 2)
+        m_probe_detail.assert_any_call("git@github.com:alice/repo.git", cwd="/tmp/repo")
+        m_probe_detail.assert_any_call(
             "ssh://git@git.veen.world:2201/alice/repo.git", cwd="/tmp/repo"
+        )
+
+    @patch("pkgmgr.actions.mirror.setup_cmd.build_context")
+    @patch("pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable_detail")
+    @patch("pkgmgr.actions.mirror.setup_cmd.ensure_remote_repository_for_url")
+    def test_setup_mirrors_remote_with_mirrors_ensure_remote_provisions_each(
+        self, m_ensure_url, m_probe_detail, m_ctx
+    ) -> None:
+        m_ctx.return_value = self._ctx(
+            repo_dir="/tmp/repo",
+            resolved={
+                "origin": "git@github.com:alice/repo.git",
+                "backup": "ssh://git@git.veen.world:2201/alice/repo.git",
+            },
+        )
+        m_probe_detail.return_value = (True, "")
+
+        repos = [
+            {
+                "provider": "github.com",
+                "account": "alice",
+                "repository": "repo",
+                "private": True,
+                "description": "desc",
+            }
+        ]
+        setup_mirrors(
+            selected_repos=repos,
+            repositories_base_dir="/tmp",
+            all_repos=repos,
+            preview=True,
+            local=False,
+            remote=True,
+            ensure_remote=True,
+        )
+
+        # Provision both mirrors
+        self.assertEqual(m_ensure_url.call_count, 2)
+        m_ensure_url.assert_any_call(
+            url="git@github.com:alice/repo.git",
+            private_default=True,
+            description="desc",
+            preview=True,
+        )
+        m_ensure_url.assert_any_call(
+            url="ssh://git@git.veen.world:2201/alice/repo.git",
+            private_default=True,
+            description="desc",
+            preview=True,
+        )
+
+        # Still probes both
+        self.assertEqual(m_probe_detail.call_count, 2)
+
+    @patch("pkgmgr.actions.mirror.setup_cmd.build_context")
+    @patch("pkgmgr.actions.mirror.setup_cmd.determine_primary_remote_url")
+    @patch("pkgmgr.actions.mirror.setup_cmd.ensure_remote_repository_for_url")
+    @patch("pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable_detail")
+    def test_setup_mirrors_remote_no_mirrors_ensure_remote_provisions_primary(
+        self, m_probe_detail, m_ensure_url, m_primary, m_ctx
+    ) -> None:
+        m_ctx.return_value = self._ctx(repo_dir="/tmp/repo", resolved={})
+        m_primary.return_value = "git@github.com:alice/repo.git"
+        m_probe_detail.return_value = (True, "")
+
+        repos = [
+            {
+                "provider": "github.com",
+                "account": "alice",
+                "repository": "repo",
+                "private": False,
+                "description": "desc",
+            }
+        ]
+        setup_mirrors(
+            selected_repos=repos,
+            repositories_base_dir="/tmp",
+            all_repos=repos,
+            preview=True,
+            local=False,
+            remote=True,
+            ensure_remote=True,
+        )
+
+        m_ensure_url.assert_called_once_with(
+            url="git@github.com:alice/repo.git",
+            private_default=False,
+            description="desc",
+            preview=True,
+        )
+        m_probe_detail.assert_called_once_with(
+            "git@github.com:alice/repo.git", cwd="/tmp/repo"
         )
 
 

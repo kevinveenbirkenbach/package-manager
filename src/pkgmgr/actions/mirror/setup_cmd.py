@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import List
 
-from pkgmgr.core.git.queries import probe_remote_reachable
+from pkgmgr.core.git.queries import probe_remote_reachable_detail
 
 from .context import build_context
-from .git_remote import ensure_origin_remote, determine_primary_remote_url
-from .remote_provision import ensure_remote_repository
+from .git_remote import determine_primary_remote_url, ensure_origin_remote
+from .remote_provision import ensure_remote_repository_for_url
 from .types import Repository
 
 
@@ -23,6 +23,25 @@ def _is_git_remote_url(url: str) -> bool:
     if (u.startswith("https://") or u.startswith("http://")) and u.endswith(".git"):
         return True
     return False
+
+
+def _print_probe_result(name: str | None, url: str, *, cwd: str) -> None:
+    """
+    Print probe result for a git remote URL, including a short failure reason.
+    """
+    ok, reason = probe_remote_reachable_detail(url, cwd=cwd)
+
+    prefix = f"{name}: " if name else ""
+    if ok:
+        print(f"[OK] {prefix}{url}")
+        return
+
+    print(f"[WARN] {prefix}{url}")
+    if reason:
+        reason = reason.strip()
+        if len(reason) > 240:
+            reason = reason[:240].rstrip() + "…"
+        print(f"       reason: {reason}")
 
 
 def _setup_local_mirrors_for_repo(
@@ -56,35 +75,47 @@ def _setup_remote_mirrors_for_repo(
     print(f"[MIRROR SETUP:REMOTE] dir: {ctx.repo_dir}")
     print("------------------------------------------------------------")
 
-    if ensure_remote:
-        ensure_remote_repository(
-            repo,
-            repositories_base_dir,
-            all_repos,
-            preview,
-        )
-
-    # Probe only git URLs (do not try ls-remote against PyPI etc.)
-    # If there are no mirrors at all, probe the primary git URL.
     git_mirrors = {
         k: v for k, v in ctx.resolved_mirrors.items() if _is_git_remote_url(v)
     }
 
+    # If there are no git mirrors, fall back to primary (git) URL.
     if not git_mirrors:
         primary = determine_primary_remote_url(repo, ctx)
         if not primary or not _is_git_remote_url(primary):
-            print("[INFO] No git mirrors to probe.")
+            print("[INFO] No git mirrors to probe or provision.")
             print()
             return
 
-        ok = probe_remote_reachable(primary, cwd=ctx.repo_dir)
-        print("[OK]" if ok else "[WARN]", primary)
+        if ensure_remote:
+            print(f"[REMOTE ENSURE] ensuring primary: {primary}")
+            ensure_remote_repository_for_url(
+                url=primary,
+                private_default=bool(repo.get("private", True)),
+                description=str(repo.get("description", "")),
+                preview=preview,
+            )
+            print()
+
+        _print_probe_result(None, primary, cwd=ctx.repo_dir)
         print()
         return
 
+    # Provision ALL git mirrors (if requested)
+    if ensure_remote:
+        for name, url in git_mirrors.items():
+            print(f"[REMOTE ENSURE] ensuring mirror {name!r}: {url}")
+            ensure_remote_repository_for_url(
+                url=url,
+                private_default=bool(repo.get("private", True)),
+                description=str(repo.get("description", "")),
+                preview=preview,
+            )
+        print()
+
+    # Probe ALL git mirrors
     for name, url in git_mirrors.items():
-        ok = probe_remote_reachable(url, cwd=ctx.repo_dir)
-        print(f"[OK] {name}: {url}" if ok else f"[WARN] {name}: {url}")
+        _print_probe_result(name, url, cwd=ctx.repo_dir)
 
     print()
 

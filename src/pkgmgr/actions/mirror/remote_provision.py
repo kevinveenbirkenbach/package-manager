@@ -11,35 +11,37 @@ from .types import Repository
 from .url_utils import normalize_provider_host, parse_repo_from_git_url
 
 
-def ensure_remote_repository(
-    repo: Repository,
-    repositories_base_dir: str,
-    all_repos: List[Repository],
+def _provider_hint_from_host(host: str) -> str | None:
+    h = (host or "").lower()
+    if h == "github.com":
+        return "github"
+    # Best-effort default for self-hosted git domains
+    return "gitea" if h else None
+
+
+def ensure_remote_repository_for_url(
+    *,
+    url: str,
+    private_default: bool,
+    description: str,
     preview: bool,
 ) -> None:
-    ctx = build_context(repo, repositories_base_dir, all_repos)
-
-    primary_url = determine_primary_remote_url(repo, ctx)
-    if not primary_url:
-        print("[INFO] No primary URL found; skipping remote provisioning.")
-        return
-
-    host_raw, owner, name = parse_repo_from_git_url(primary_url)
+    host_raw, owner, name = parse_repo_from_git_url(url)
     host = normalize_provider_host(host_raw)
 
     if not host or not owner or not name:
-        print("[WARN] Could not parse remote URL:", primary_url)
+        print(f"[WARN] Could not parse repo from URL: {url}")
         return
 
     spec = RepoSpec(
         host=host,
         owner=owner,
         name=name,
-        private=bool(repo.get("private", True)),
-        description=str(repo.get("description", "")),
+        private=private_default,
+        description=description,
     )
 
-    provider_kind = str(repo.get("provider", "")).lower() or None
+    provider_kind = _provider_hint_from_host(host)
 
     try:
         result = ensure_remote_repo(
@@ -56,4 +58,29 @@ def ensure_remote_repository(
         if result.url:
             print(f"[REMOTE ENSURE] URL: {result.url}")
     except Exception as exc:  # noqa: BLE001
-        print(f"[ERROR] Remote provisioning failed: {exc}")
+        print(f"[ERROR] Remote provisioning failed for {url!r}: {exc}")
+
+
+def ensure_remote_repository(
+    repo: Repository,
+    repositories_base_dir: str,
+    all_repos: List[Repository],
+    preview: bool,
+) -> None:
+    """
+    Backwards-compatible wrapper: ensure the *primary* remote repository
+    derived from the primary URL.
+    """
+    ctx = build_context(repo, repositories_base_dir, all_repos)
+
+    primary_url = determine_primary_remote_url(repo, ctx)
+    if not primary_url:
+        print("[INFO] No primary URL found; skipping remote provisioning.")
+        return
+
+    ensure_remote_repository_for_url(
+        url=primary_url,
+        private_default=bool(repo.get("private", True)),
+        description=str(repo.get("description", "")),
+        preview=preview,
+    )

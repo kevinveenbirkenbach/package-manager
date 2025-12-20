@@ -20,7 +20,10 @@ from .get_tags_at_ref import GitTagsAtRefQueryError, get_tags_at_ref
 from .get_upstream_ref import get_upstream_ref
 from .list_remotes import list_remotes
 from .list_tags import list_tags
-from .probe_remote_reachable import probe_remote_reachable
+from .probe_remote_reachable import (
+    probe_remote_reachable,
+    probe_remote_reachable_detail,
+)
 from .resolve_base_branch import GitBaseBranchNotFoundError, resolve_base_branch
 
 __all__ = [
@@ -37,6 +40,7 @@ __all__ = [
     "list_remotes",
     "get_remote_push_urls",
     "probe_remote_reachable",
+    "probe_remote_reachable_detail",
     "get_changelog",
     "GitChangelogQueryError",
     "get_tags_at_ref",

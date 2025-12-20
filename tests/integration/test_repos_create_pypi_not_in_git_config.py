@@ -40,8 +40,8 @@ class TestCreateRepoPypiNotInGitConfig(unittest.TestCase):
             with (
                 # Avoid any real network calls during mirror "remote probing"
                 patch(
-                    "pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable",
-                    return_value=True,
+                    "pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable_detail",
+                    return_value=(True, ""),
                 ),
                 # Force templates to come from our temp directory
                 patch(

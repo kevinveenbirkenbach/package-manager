@@ -42,16 +42,34 @@ def run(
         )
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr or ""
-        if _is_not_repo_error(stderr):
-            raise GitNotRepositoryError(
-                f"Not a git repository: {cwd!r}\nCommand: {cmd_str}\nSTDERR:\n{stderr}"
-            ) from exc
+        stdout = exc.stdout or ""
 
-        raise GitRunError(
+        if _is_not_repo_error(stderr):
+            err = GitNotRepositoryError(
+                f"Not a git repository: {cwd!r}\nCommand: {cmd_str}\nSTDERR:\n{stderr}"
+            )
+            # Attach details for callers who want to debug
+            err.cwd = cwd
+            err.cmd = cmd
+            err.cmd_str = cmd_str
+            err.returncode = exc.returncode
+            err.stdout = stdout
+            err.stderr = stderr
+            raise err from exc
+
+        err = GitRunError(
             f"Git command failed in {cwd!r}: {cmd_str}\n"
             f"Exit code: {exc.returncode}\n"
-            f"STDOUT:\n{exc.stdout}\n"
+            f"STDOUT:\n{stdout}\n"
             f"STDERR:\n{stderr}"
-        ) from exc
+        )
+        # Attach details for callers who want to debug
+        err.cwd = cwd
+        err.cmd = cmd
+        err.cmd_str = cmd_str
+        err.returncode = exc.returncode
+        err.stdout = stdout
+        err.stderr = stderr
+        raise err from exc
 
     return result.stdout.strip()

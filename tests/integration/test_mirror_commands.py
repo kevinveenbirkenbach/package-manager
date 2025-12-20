@@ -113,17 +113,12 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
                     )
                 )
 
-                # Deterministic remote probing (new refactor: probe_remote_reachable)
+                # Deterministic remote probing (refactor: probe_remote_reachable_detail)
+                # Patch where it is USED (setup_cmd imported it directly).
                 stack.enter_context(
                     _p(
-                        "pkgmgr.core.git.queries.probe_remote_reachable",
-                        return_value=True,
-                    )
-                )
-                stack.enter_context(
-                    _p(
-                        "pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable",
-                        return_value=True,
+                        "pkgmgr.actions.mirror.setup_cmd.probe_remote_reachable_detail",
+                        return_value=(True, ""),
                     )
                 )
 
