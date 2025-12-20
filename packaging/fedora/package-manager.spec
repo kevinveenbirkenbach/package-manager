@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.8.7
+Version:        1.9.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,11 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sat Dec 20 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.0-1
+- * New ***mirror visibility*** command to set remote Git repositories to ***public*** or ***private***.
+* New ***--public*** flag for ***mirror provision*** to create repositories and immediately make them public.
+* All configured git mirrors are now provisioned.
+
 * Fri Dec 19 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.8.7-1
 - * **Release version updates now correctly modify ***pyproject.toml*** files that follow PEP 621**, ensuring the ***[project].version*** field is updated as expected.
 * **Invalid or incomplete ***pyproject.toml*** files are now handled gracefully** with clear error messages instead of abrupt process termination.

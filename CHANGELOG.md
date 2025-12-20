@@ -1,3 +1,10 @@
+## [1.9.0] - 2025-12-20
+
+* * New ***mirror visibility*** command to set remote Git repositories to ***public*** or ***private***.
+* New ***--public*** flag for ***mirror provision*** to create repositories and immediately make them public.
+* All configured git mirrors are now provisioned.
+
+
 ## [1.8.7] - 2025-12-19
 
 * * **Release version updates now correctly modify ***pyproject.toml*** files that follow PEP 621**, ensuring the ***[project].version*** field is updated as expected.
