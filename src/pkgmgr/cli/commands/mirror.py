@@ -8,6 +8,7 @@ from pkgmgr.actions.mirror import (
     diff_mirrors,
     list_mirrors,
     merge_mirrors,
+    set_mirror_visibility,
     setup_mirrors,
 )
 from pkgmgr.cli.context import CLIContext
@@ -30,6 +31,7 @@ def handle_mirror_command(
       - mirror setup
       - mirror check
       - mirror provision
+      - mirror visibility
     """
     if not selected:
         print("[INFO] No repositories selected for 'mirror' command.")
@@ -92,6 +94,7 @@ def handle_mirror_command(
             local=True,
             remote=False,
             ensure_remote=False,
+            ensure_visibility=None,
         )
         return
 
@@ -105,11 +108,14 @@ def handle_mirror_command(
             local=False,
             remote=True,
             ensure_remote=False,
+            ensure_visibility=None,
         )
         return
 
     if subcommand == "provision":
         preview = getattr(args, "preview", False)
+        public = bool(getattr(args, "public", False))
+
         setup_mirrors(
             selected_repos=selected,
             repositories_base_dir=ctx.repositories_base_dir,
@@ -118,6 +124,23 @@ def handle_mirror_command(
             local=False,
             remote=True,
             ensure_remote=True,
+            ensure_visibility="public" if public else None,
+        )
+        return
+
+    if subcommand == "visibility":
+        preview = getattr(args, "preview", False)
+        visibility = getattr(args, "visibility", None)
+        if visibility not in ("private", "public"):
+            print("[ERROR] mirror visibility expects 'private' or 'public'.")
+            sys.exit(2)
+
+        set_mirror_visibility(
+            selected_repos=selected,
+            repositories_base_dir=ctx.repositories_base_dir,
+            all_repos=ctx.all_repositories,
+            visibility=visibility,
+            preview=preview,
         )
         return
 

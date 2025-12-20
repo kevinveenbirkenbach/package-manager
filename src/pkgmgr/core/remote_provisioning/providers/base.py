@@ -1,4 +1,3 @@
-# src/pkgmgr/core/remote_provisioning/providers/base.py
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -23,7 +22,26 @@ class RemoteProvider(ABC):
     def create_repo(self, token: str, spec: RepoSpec) -> EnsureResult:
         """Create a repository (owner may be user or org)."""
 
+    @abstractmethod
+    def get_repo_private(self, token: str, spec: RepoSpec) -> bool | None:
+        """
+        Return current repo privacy, or None if repo not found / inaccessible.
+
+        IMPORTANT:
+        - Must NOT create repositories.
+        - Should return None on 404 (not found) or when the repo cannot be accessed.
+        """
+
+    @abstractmethod
+    def set_repo_private(self, token: str, spec: RepoSpec, *, private: bool) -> None:
+        """
+        Update repo privacy (PATCH). Must NOT create repositories.
+
+        Implementations should raise HttpError on API failure.
+        """
+
     def ensure_repo(self, token: str, spec: RepoSpec) -> EnsureResult:
+        """Ensure repository exists (create if missing)."""
         if self.repo_exists(token, spec):
             return EnsureResult(status="exists", message="Repository exists.")
         return self.create_repo(token, spec)

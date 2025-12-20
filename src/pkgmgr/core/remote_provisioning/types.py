@@ -1,10 +1,17 @@
-# src/pkgmgr/core/remote_provisioning/types.py
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal, Optional
 
-EnsureStatus = Literal["exists", "created", "skipped", "failed"]
+EnsureStatus = Literal[
+    "exists",
+    "created",
+    "updated",
+    "noop",
+    "notfound",
+    "skipped",
+    "failed",
+]
 
 
 @dataclass(frozen=True)

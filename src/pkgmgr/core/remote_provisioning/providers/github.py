@@ -54,6 +54,39 @@ class GitHubProvider(RemoteProvider):
                 return False
             raise
 
+    def get_repo_private(self, token: str, spec: RepoSpec) -> bool | None:
+        api = self._api_base(spec.host)
+        url = f"{api}/repos/{spec.owner}/{spec.name}"
+        try:
+            resp = self._http.request_json("GET", url, headers=self._headers(token))
+        except HttpError as exc:
+            if exc.status == 404:
+                return None
+            raise
+
+        if not (200 <= resp.status < 300):
+            return None
+        data = resp.json or {}
+        return bool(data.get("private", False))
+
+    def set_repo_private(self, token: str, spec: RepoSpec, *, private: bool) -> None:
+        api = self._api_base(spec.host)
+        url = f"{api}/repos/{spec.owner}/{spec.name}"
+        payload: Dict[str, Any] = {"private": bool(private)}
+
+        resp = self._http.request_json(
+            "PATCH",
+            url,
+            headers=self._headers(token),
+            payload=payload,
+        )
+        if not (200 <= resp.status < 300):
+            raise HttpError(
+                status=resp.status,
+                message="Failed to update repository.",
+                body=resp.text,
+            )
+
     def create_repo(self, token: str, spec: RepoSpec) -> EnsureResult:
         api = self._api_base(spec.host)
 

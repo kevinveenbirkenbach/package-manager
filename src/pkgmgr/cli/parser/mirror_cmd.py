@@ -1,4 +1,3 @@
-# src/pkgmgr/cli/parser/mirror_cmd.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -12,7 +11,7 @@ from .common import add_identifier_arguments
 def add_mirror_subparsers(subparsers: argparse._SubParsersAction) -> None:
     mirror_parser = subparsers.add_parser(
         "mirror",
-        help="Mirror-related utilities (list, diff, merge, setup, check, provision)",
+        help="Mirror-related utilities (list, diff, merge, setup, check, provision, visibility)",
     )
     mirror_subparsers = mirror_parser.add_subparsers(
         dest="subcommand",
@@ -68,4 +67,20 @@ def add_mirror_subparsers(subparsers: argparse._SubParsersAction) -> None:
         "provision",
         help="Provision remote repositories via provider APIs (create missing repos).",
     )
+    mirror_provision.add_argument(
+        "--public",
+        action="store_true",
+        help="After ensuring repos exist, enforce public visibility on the remote provider.",
+    )
     add_identifier_arguments(mirror_provision)
+
+    mirror_visibility = mirror_subparsers.add_parser(
+        "visibility",
+        help="Set visibility (public/private) for all remote git mirrors via provider APIs.",
+    )
+    mirror_visibility.add_argument(
+        "visibility",
+        choices=["private", "public"],
+        help="Target visibility for all git mirrors.",
+    )
+    add_identifier_arguments(mirror_visibility)
