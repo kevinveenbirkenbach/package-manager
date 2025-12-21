@@ -1,3 +1,8 @@
+## [1.9.1] - 2025-12-21
+
+* Fixed installation issues and improved loading of default configuration files.
+
+
 ## [1.9.0] - 2025-12-20
 
 * * New ***mirror visibility*** command to set remote Git repositories to ***public*** or ***private***.

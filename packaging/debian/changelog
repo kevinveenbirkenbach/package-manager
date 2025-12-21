@@ -1,3 +1,9 @@
+package-manager (1.9.1-1) unstable; urgency=medium
+
+  * Fixed installation issues and improved loading of default configuration files.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Sun, 21 Dec 2025 13:38:58 +0100
+
 package-manager (1.9.0-1) unstable; urgency=medium
 
   * * New ***mirror visibility*** command to set remote Git repositories to ***public*** or ***private***.

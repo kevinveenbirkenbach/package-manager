@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.9.0
+Version:        1.9.1
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sun Dec 21 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.1-1
+- Fixed installation issues and improved loading of default configuration files.
+
 * Sat Dec 20 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.0-1
 - * New ***mirror visibility*** command to set remote Git repositories to ***public*** or ***private***.
 * New ***--public*** flag for ***mirror provision*** to create repositories and immediately make them public.
