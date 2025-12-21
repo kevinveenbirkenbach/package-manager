@@ -1,3 +1,8 @@
+## [1.9.2] - 2025-12-21
+
+* Default configuration files are now packaged and loaded correctly when no user config exists, while fully preserving custom user configurations.
+
+
 ## [1.9.1] - 2025-12-21
 
 * Fixed installation issues and improved loading of default configuration files.

@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.9.1
+Version:        1.9.2
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sun Dec 21 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.2-1
+- Default configuration files are now packaged and loaded correctly when no user config exists, while fully preserving custom user configurations.
+
 * Sun Dec 21 2025 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.1-1
 - Fixed installation issues and improved loading of default configuration files.
 

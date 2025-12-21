@@ -1,3 +1,9 @@
+package-manager (1.9.2-1) unstable; urgency=medium
+
+  * Default configuration files are now packaged and loaded correctly when no user config exists, while fully preserving custom user configurations.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Sun, 21 Dec 2025 15:30:22 +0100
+
 package-manager (1.9.1-1) unstable; urgency=medium
 
   * Fixed installation issues and improved loading of default configuration files.
