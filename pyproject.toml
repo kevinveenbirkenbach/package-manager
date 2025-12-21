@@ -44,10 +44,11 @@ pkgmgr = "pkgmgr.cli:main"
 # Source layout: all packages live under "src/"
 [tool.setuptools]
 package-dir = { "" = "src" }
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["pkgmgr*"]
 
 [tool.setuptools.package-data]
-"config" = ["defaults.yaml"]
+"pkgmgr.config" = ["*.yml", "*.yaml"]

@@ -20,13 +20,11 @@ class ConfigDefaultsIntegrationTest(unittest.TestCase):
         """
         Integration test:
         - Create a temp "site-packages/pkgmgr" fake install root
-        - Put defaults under "<project_root>/config/defaults.yaml"
-          where project_root == pkg_root.parent (as per your current logic)
+        - Put defaults under "<pkg_root>/config/defaults.yaml"
         - Verify:
             A) load_config() picks up defaults from that config folder when user dir has no defaults
             B) _update_default_configs() copies defaults.yaml into ~/.config/pkgmgr/
         """
-
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
 
@@ -44,15 +42,12 @@ class ConfigDefaultsIntegrationTest(unittest.TestCase):
 
             # Fake pkg install layout:
             # pkg_root = <root>/site-packages/pkgmgr
-            # project_root = pkg_root.parent = <root>/site-packages
             site_packages = root / "site-packages"
             pkg_root = site_packages / "pkgmgr"
             pkg_root.mkdir(parents=True)
 
-            # This is the "project_root/config" candidate for both:
-            # - load.py: roots include pkg_root.parent -> site-packages, so it checks site-packages/config
-            # - cli/config.py: project_root == pkg_root.parent -> site-packages, so it checks site-packages/config
-            config_dir = site_packages / "config"
+            # defaults live inside the package now: <pkg_root>/config/defaults.yaml
+            config_dir = pkg_root / "config"
             config_dir.mkdir(parents=True)
 
             defaults_payload = {
@@ -74,7 +69,7 @@ class ConfigDefaultsIntegrationTest(unittest.TestCase):
 
             with patch.dict(sys.modules, {"pkgmgr": fake_pkgmgr}):
                 with patch.dict(os.environ, {"HOME": str(home)}):
-                    # A) load_config should fall back to site-packages/config/defaults.yaml
+                    # A) load_config should fall back to <pkg_root>/config/defaults.yaml
                     merged = load_config(user_config_path)
 
                     self.assertEqual(
@@ -98,7 +93,6 @@ class ConfigDefaultsIntegrationTest(unittest.TestCase):
                     )
 
                     # B) update_default_configs should copy defaults.yaml to ~/.config/pkgmgr/
-                    # (and should not overwrite config.yaml)
                     before_config_yaml = (user_cfg_dir / "config.yaml").read_text(
                         encoding="utf-8"
                     )

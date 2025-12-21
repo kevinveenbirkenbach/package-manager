@@ -1,3 +1,4 @@
+# src/pkgmgr/core/config/load.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -7,29 +8,28 @@ Load and merge pkgmgr configuration.
 Layering rules:
 
 1. Defaults / category files:
-   - Zuerst werden alle *.yml/*.yaml (außer config.yaml) im
-     Benutzerverzeichnis geladen:
+   - First load all *.yml/*.yaml (except config.yaml) from the user directory:
          ~/.config/pkgmgr/
 
-   - Falls dort keine passenden Dateien existieren, wird auf die im
-     Paket / Projekt mitgelieferten Config-Verzeichnisse zurückgegriffen:
+   - If no matching files exist there, fall back to defaults shipped with pkgmgr:
 
          <pkg_root>/config
-         <project_root>/config
 
-     Dabei werden ebenfalls alle *.yml/*.yaml als Layer geladen.
+     During development (src-layout), we optionally also check:
+         <repo_root>/config
 
-   - Der Dateiname ohne Endung (stem) wird als Kategorie-Name
-     verwendet und in repo["category_files"] eingetragen.
+     All *.yml/*.yaml files are loaded as layers.
+
+   - The filename stem is used as category name and stored in repo["category_files"].
 
 2. User config:
-   - ~/.config/pkgmgr/config.yaml (oder der übergebene Pfad)
-     wird geladen und PER LISTEN-MERGE über die Defaults gelegt:
+   - ~/.config/pkgmgr/config.yaml (or the provided path)
+     is loaded and merged over defaults:
        - directories: dict deep-merge
-       - repositories: per _merge_repo_lists (kein Löschen!)
+       - repositories: per _merge_repo_lists (no deletions!)
 
-3. Ergebnis:
-   - Ein dict mit mindestens:
+3. Result:
+   - A dict with at least:
        config["directories"]  (dict)
        config["repositories"] (list[dict])
 """
@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
@@ -46,7 +46,7 @@ Repo = Dict[str, Any]
 
 
 # ---------------------------------------------------------------------------
-# Hilfsfunktionen
+# Helper functions
 # ---------------------------------------------------------------------------
 
 
@@ -83,17 +83,16 @@ def _merge_repo_lists(
     """
     Merge two repository lists, matching by (provider, account, repository).
 
-    - Wenn ein Repo aus new_list noch nicht existiert, wird es hinzugefügt.
-    - Wenn es existiert, werden seine Felder per Deep-Merge überschrieben.
-    - Wenn category_name gesetzt ist, wird dieser in
-      repo["category_files"] eingetragen.
+    - If a repo from new_list does not exist, it is added.
+    - If it exists, its fields are deep-merged (override wins).
+    - If category_name is set, it is appended to repo["category_files"].
     """
     index: Dict[Tuple[str, str, str], Repo] = {_repo_key(r): r for r in base_list}
 
     for src in new_list:
         key = _repo_key(src)
         if key == ("", "", ""):
-            # Unvollständiger Schlüssel -> einfach anhängen
+            # Incomplete key -> append as-is
             dst = dict(src)
             if category_name:
                 dst.setdefault("category_files", [])
@@ -141,10 +140,9 @@ def _load_layer_dir(
     """
     Load all *.yml/*.yaml from a directory as layered defaults.
 
-    - skip_filename: Dateiname (z.B. "config.yaml"), der ignoriert
-      werden soll (z.B. User-Config).
+    - skip_filename: filename (e.g. "config.yaml") to ignore.
 
-    Rückgabe:
+    Returns:
       {
         "directories": {...},
         "repositories": [...],
@@ -169,7 +167,7 @@ def _load_layer_dir(
 
     for path in yaml_files:
         data = _load_yaml_file(path)
-        category_name = path.stem  # Dateiname ohne .yml/.yaml
+        category_name = path.stem
 
         dirs = data.get("directories")
         if isinstance(dirs, dict):
@@ -190,8 +188,11 @@ def _load_layer_dir(
 
 def _load_defaults_from_package_or_project() -> Dict[str, Any]:
     """
-    Fallback: load default configs from various possible install or development
-    layouts (pip-installed, editable install, source repo with src/ layout).
+    Fallback: load default configs from possible install or dev layouts.
+
+    Supported locations:
+      - <pkg_root>/config                (installed wheel / editable)
+      - <repo_root>/config               (optional dev fallback when pkg_root is src/pkgmgr)
     """
     try:
         import pkgmgr  # type: ignore
@@ -199,24 +200,16 @@ def _load_defaults_from_package_or_project() -> Dict[str, Any]:
         return {"directories": {}, "repositories": []}
 
     pkg_root = Path(pkgmgr.__file__).resolve().parent
-    roots = set()
+    candidates: List[Path] = []
 
-    # Case 1: installed package (site-packages/pkgmgr)
-    roots.add(pkg_root)
+    # Always prefer package-internal config dir
+    candidates.append(pkg_root / "config")
 
-    # Case 2: parent directory (site-packages/, src/)
-    roots.add(pkg_root.parent)
-
-    # Case 3: src-layout during development:
-    #   repo_root/src/pkgmgr -> repo_root
+    # Dev fallback: repo_root/src/pkgmgr -> repo_root/config
     parent = pkg_root.parent
     if parent.name == "src":
-        roots.add(parent.parent)
-
-    # Candidate config dirs
-    candidates = []
-    for root in roots:
-        candidates.append(root / "config")
+        repo_root = parent.parent
+        candidates.append(repo_root / "config")
 
     for cand in candidates:
         defaults = _load_layer_dir(cand, skip_filename=None)
@@ -227,7 +220,7 @@ def _load_defaults_from_package_or_project() -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Hauptfunktion
+# Public API
 # ---------------------------------------------------------------------------
 
 
@@ -235,53 +228,49 @@ def load_config(user_config_path: str) -> Dict[str, Any]:
     """
     Load and merge configuration for pkgmgr.
 
-    Schritte:
-      1. Ermittle ~/.config/pkgmgr/ (oder das Verzeichnis von user_config_path).
-      2. Lade alle *.yml/*.yaml dort (außer der User-Config selbst) als
-         Defaults / Kategorie-Layer.
-      3. Wenn dort nichts gefunden wurde, Fallback auf Paket/Projekt.
-      4. Lade die User-Config-Datei selbst (falls vorhanden).
+    Steps:
+      1. Determine ~/.config/pkgmgr/ (or dir of user_config_path).
+      2. Load all *.yml/*.yaml in that dir (except the user config file) as defaults.
+      3. If nothing found, fall back to package defaults.
+      4. Load the user config file (if present).
       5. Merge:
-         - directories: deep-merge (Defaults <- User)
-         - repositories: _merge_repo_lists (Defaults <- User)
+         - directories: deep-merge (defaults <- user)
+         - repositories: _merge_repo_lists (defaults <- user)
     """
     user_config_path_expanded = os.path.expanduser(user_config_path)
     user_cfg_path = Path(user_config_path_expanded)
 
     config_dir = user_cfg_path.parent
     if not str(config_dir):
-        # Fallback, falls jemand nur "config.yaml" übergibt
         config_dir = Path(os.path.expanduser("~/.config/pkgmgr"))
     config_dir.mkdir(parents=True, exist_ok=True)
 
     user_cfg_name = user_cfg_path.name
 
-    # 1+2) Defaults / Kategorie-Layer aus dem User-Verzeichnis
+    # 1+2) Defaults from user directory
     defaults = _load_layer_dir(config_dir, skip_filename=user_cfg_name)
 
-    # 3) Falls dort nichts gefunden wurde, Fallback auf Paket/Projekt
+    # 3) Fallback to package defaults
     if not defaults["directories"] and not defaults["repositories"]:
         defaults = _load_defaults_from_package_or_project()
 
     defaults.setdefault("directories", {})
     defaults.setdefault("repositories", [])
 
-    # 4) User-Config
+    # 4) User config
     user_cfg: Dict[str, Any] = {}
     if user_cfg_path.is_file():
         user_cfg = _load_yaml_file(user_cfg_path)
     user_cfg.setdefault("directories", {})
     user_cfg.setdefault("repositories", [])
 
-    # 5) Merge: directories deep-merge, repositories listen-merge
+    # 5) Merge
     merged: Dict[str, Any] = {}
 
-    # directories
     merged["directories"] = {}
     _deep_merge(merged["directories"], defaults["directories"])
     _deep_merge(merged["directories"], user_cfg["directories"])
 
-    # repositories
     merged["repositories"] = []
     _merge_repo_lists(
         merged["repositories"], defaults["repositories"], category_name=None
@@ -290,7 +279,7 @@ def load_config(user_config_path: str) -> Dict[str, Any]:
         merged["repositories"], user_cfg["repositories"], category_name=None
     )
 
-    # andere Top-Level-Keys (falls vorhanden)
+    # Merge other top-level keys
     other_keys = (set(defaults.keys()) | set(user_cfg.keys())) - {
         "directories",
         "repositories",
