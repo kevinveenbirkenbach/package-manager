@@ -42,9 +42,7 @@ def _find_defaults_source_dir() -> Optional[str]:
     project root that contains default config files.
 
     Preferred locations (in dieser Reihenfolge):
-      - <pkg_root>/config_defaults
       - <pkg_root>/config
-      - <project_root>/config_defaults
       - <project_root>/config
     """
     import pkgmgr  # local import to avoid circular deps
@@ -53,9 +51,7 @@ def _find_defaults_source_dir() -> Optional[str]:
     project_root = pkg_root.parent
 
     candidates = [
-        pkg_root / "config_defaults",
         pkg_root / "config",
-        project_root / "config_defaults",
         project_root / "config",
     ]
     for cand in candidates:
@@ -73,7 +69,7 @@ def _update_default_configs(user_config_path: str) -> None:
     source_dir = _find_defaults_source_dir()
     if not source_dir:
         print(
-            "[WARN] No config_defaults or config directory found in "
+            "[WARN] No config directory found in "
             "pkgmgr installation. Nothing to update."
         )
         return

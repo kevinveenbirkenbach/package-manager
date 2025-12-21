@@ -14,9 +14,7 @@ Layering rules:
    - Falls dort keine passenden Dateien existieren, wird auf die im
      Paket / Projekt mitgelieferten Config-Verzeichnisse zurückgegriffen:
 
-         <pkg_root>/config_defaults
          <pkg_root>/config
-         <project_root>/config_defaults
          <project_root>/config
 
      Dabei werden ebenfalls alle *.yml/*.yaml als Layer geladen.
@@ -218,7 +216,6 @@ def _load_defaults_from_package_or_project() -> Dict[str, Any]:
     # Candidate config dirs
     candidates = []
     for root in roots:
-        candidates.append(root / "config_defaults")
         candidates.append(root / "config")
 
     for cand in candidates:
