@@ -1,3 +1,8 @@
+## [1.9.3] - 2026-01-07
+
+* Made the Nix dependency optional on non-x86_64 architectures to avoid broken Arch Linux ARM repository packages.
+
+
 ## [1.9.2] - 2025-12-21
 
 * Default configuration files are now packaged and loaded correctly when no user config exists, while fully preserving custom user configurations.

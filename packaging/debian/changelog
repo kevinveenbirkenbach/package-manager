@@ -1,3 +1,9 @@
+package-manager (1.9.3-1) unstable; urgency=medium
+
+  * Made the Nix dependency optional on non-x86_64 architectures to avoid broken Arch Linux ARM repository packages.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Wed, 07 Jan 2026 13:44:40 +0100
+
 package-manager (1.9.2-1) unstable; urgency=medium
 
   * Default configuration files are now packaged and loaded correctly when no user config exists, while fully preserving custom user configurations.
