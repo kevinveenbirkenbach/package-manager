@@ -8,8 +8,18 @@ arch=('any')
 url="https://github.com/kevinveenbirkenbach/package-manager"
 license=('MIT')
 
-# Nix is the only runtime dependency; Python is provided by the Nix closure.
-depends=('nix')
+# Nix is required at runtime to run pkgmgr via the flake.
+# On Arch x86_64 we can depend on the distro package.
+# On other arches (e.g. ARM) we only declare it as optional because the
+# repo package may be broken/out-of-sync; installation can be done via the official installer.
+depends=()
+optdepends=('nix: required to run pkgmgr via flake')
+
+if [[ "${CARCH}" == "x86_64" ]]; then
+  depends=('nix')
+  optdepends=()
+fi
+
 makedepends=('rsync')
 
 install=${pkgname}.install
