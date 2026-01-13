@@ -49,11 +49,7 @@ install_nix_with_retry() {
   if [[ -n "$run_as" ]]; then
     chown "$run_as:$run_as" "$installer" 2>/dev/null || true
     echo "[init-nix] Running installer as user '$run_as' ($mode_flag)..."
-    if command -v sudo >/dev/null 2>&1; then
-      sudo -u "$run_as" bash -lc "sh '$installer' $mode_flag"
-    else
-      su - "$run_as" -c "sh '$installer' $mode_flag"
-    fi
+    su - "$run_as" -s /bin/bash -c "bash -lc \"sh '$installer' $mode_flag\""
   else
     echo "[init-nix] Running installer as current user ($mode_flag)..."
     sh "$installer" "$mode_flag"

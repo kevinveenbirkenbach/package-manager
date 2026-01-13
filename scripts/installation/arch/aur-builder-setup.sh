@@ -38,11 +38,7 @@ echo "[aur-builder-setup] Configuring sudoers for aur_builder..."
 ${ROOT_CMD} bash -c "echo '%aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman' > /etc/sudoers.d/aur_builder"
 ${ROOT_CMD} chmod 0440 /etc/sudoers.d/aur_builder
 
-if command -v sudo >/dev/null 2>&1; then
-  RUN_AS_AUR=(sudo -u aur_builder bash -lc)
-else
-  RUN_AS_AUR=(su - aur_builder -c)
-fi
+RUN_AS_AUR=(su - aur_builder -s /bin/bash -c)
 
 echo "[aur-builder-setup] Ensuring yay is installed for aur_builder..."
 
