@@ -1,3 +1,8 @@
+## [1.9.4] - 2026-01-13
+
+* fix(ci): replace sudo with su for user switching to avoid PAM failures in minimal container images
+
+
 ## [1.9.3] - 2026-01-07
 
 * Made the Nix dependency optional on non-x86_64 architectures to avoid broken Arch Linux ARM repository packages.

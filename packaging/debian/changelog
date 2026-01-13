@@ -1,3 +1,9 @@
+package-manager (1.9.4-1) unstable; urgency=medium
+
+  * fix(ci): replace sudo with su for user switching to avoid PAM failures in minimal container images
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 13 Jan 2026 14:48:50 +0100
+
 package-manager (1.9.3-1) unstable; urgency=medium
 
   * Made the Nix dependency optional on non-x86_64 architectures to avoid broken Arch Linux ARM repository packages.
