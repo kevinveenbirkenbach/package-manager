@@ -29,7 +29,11 @@ def pull_args(
     try:
         run(["pull", *extra], cwd=cwd, preview=preview)
     except GitRunError as exc:
+        details = getattr(exc, "output", None) or getattr(exc, "stderr", None) or ""
         raise GitPullArgsError(
-            f"Failed to run `git pull` with args={extra!r}.",
+            (
+                f"Failed to run `git pull` with args={extra!r} "
+                f"in cwd={cwd!r}.\n{details}"
+            ).rstrip(),
             cwd=cwd,
         ) from exc
