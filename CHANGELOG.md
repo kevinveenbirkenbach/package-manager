@@ -1,3 +1,8 @@
+## [1.9.5] - 2026-01-16
+
+* Release patch: improve git pull error diagnostics
+
+
 ## [1.9.4] - 2026-01-13
 
 * fix(ci): replace sudo with su for user switching to avoid PAM failures in minimal container images

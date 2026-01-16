@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.9.4
+Version:        1.9.5
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Fri Jan 16 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.5-1
+- Release patch: improve git pull error diagnostics
+
 * Tue Jan 13 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.4-1
 - fix(ci): replace sudo with su for user switching to avoid PAM failures in minimal container images
 
