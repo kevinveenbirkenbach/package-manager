@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.9.5
+Version:        1.10.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Jan 20 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.10.0-1
+- Automated release.
+
 * Fri Jan 16 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.9.5-1
 - Release patch: improve git pull error diagnostics
 

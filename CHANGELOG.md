@@ -1,3 +1,8 @@
+## [1.10.0] - 2026-01-20
+
+* Automated release.
+
+
 ## [1.9.5] - 2026-01-16
 
 * Release patch: improve git pull error diagnostics

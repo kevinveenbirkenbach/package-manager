@@ -1,3 +1,9 @@
+package-manager (1.10.0-1) unstable; urgency=medium
+
+  * Automated release.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 20 Jan 2026 10:44:58 +0100
+
 package-manager (1.9.5-1) unstable; urgency=medium
 
   * Release patch: improve git pull error diagnostics
