@@ -24,6 +24,12 @@ COPY scripts/installation/ scripts/installation/
 # Install distro-specific build dependencies (including make)
 RUN bash scripts/installation/dependencies.sh
 
+# ------------------------------------------------------------
+# Image cleanup (reduce final size)
+# ------------------------------------------------------------
+COPY scripts/docker/slim.sh /usr/local/bin/slim.sh
+RUN chmod +x /usr/local/bin/slim.sh && /usr/local/bin/slim.sh
+
 # Virgin default
 CMD ["bash"]
 
@@ -52,4 +58,10 @@ COPY scripts/docker/entry.sh /usr/local/bin/docker-entry.sh
 
 WORKDIR /opt/src/pkgmgr
 ENTRYPOINT ["/usr/local/bin/docker-entry.sh"]
+
+# ------------------------------------------------------------
+# Image cleanup (reduce final size)
+# ------------------------------------------------------------
+RUN /usr/local/bin/slim.sh
+
 CMD ["pkgmgr", "--help"]
