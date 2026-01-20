@@ -1,7 +1,6 @@
 ## [1.10.0] - 2026-01-20
 
-* Automated release.
-
+* Introduce safe verbose image cleanup to reduce Docker image size and build artifacts
 
 ## [1.9.5] - 2026-01-16
 
