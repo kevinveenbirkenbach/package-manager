@@ -24,12 +24,6 @@ COPY scripts/installation/ scripts/installation/
 # Install distro-specific build dependencies (including make)
 RUN bash scripts/installation/dependencies.sh
 
-# ------------------------------------------------------------
-# Image cleanup (reduce final size)
-# ------------------------------------------------------------
-COPY scripts/docker/slim.sh /usr/local/bin/slim.sh
-RUN chmod +x /usr/local/bin/slim.sh && /usr/local/bin/slim.sh
-
 # Virgin default
 CMD ["bash"]
 
@@ -39,6 +33,7 @@ CMD ["bash"]
 # - inherits from virgin
 # - builds + installs pkgmgr
 # - sets entrypoint + default cmd
+# - NOTE: does NOT run slim.sh (that is done in slim stage)
 # ============================================================
 FROM virgin AS full
 
@@ -58,10 +53,16 @@ COPY scripts/docker/entry.sh /usr/local/bin/docker-entry.sh
 
 WORKDIR /opt/src/pkgmgr
 ENTRYPOINT ["/usr/local/bin/docker-entry.sh"]
-
-# ------------------------------------------------------------
-# Image cleanup (reduce final size)
-# ------------------------------------------------------------
-RUN /usr/local/bin/slim.sh
-
 CMD ["pkgmgr", "--help"]
+
+
+# ============================================================
+# Target: slim
+# - based on full
+# - runs slim.sh
+# ============================================================
+FROM full AS slim
+
+COPY scripts/docker/slim.sh /usr/local/bin/slim.sh
+RUN chmod +x /usr/local/bin/slim.sh
+RUN /usr/local/bin/slim.sh

@@ -33,7 +33,7 @@ Usage: PKGMGR_DISTRO=<distro> $0 [options]
 Build options:
   --missing             Build only if the image does not already exist (local build only)
   --no-cache            Build with --no-cache
-  --target <name>       Build a specific Dockerfile target (e.g. virgin)
+  --target <name>       Build a specific Dockerfile target (e.g. virgin, slim)
   --tag <image>         Override the output image tag (default: ${default_tag})
 
 Publish options:
@@ -47,7 +47,7 @@ Publish options:
 
 Notes:
 - --publish implies --push and requires --registry, --owner, and --version.
-- Local build (no --push) uses "docker build" and creates local images like "pkgmgr-arch" / "pkgmgr-arch-virgin".
+- Local build (no --push) uses "docker build" and creates local images like "pkgmgr-arch" / "pkgmgr-arch-virgin" / "pkgmgr-arch-slim".
 EOF
 }
 
@@ -57,7 +57,7 @@ while [[ $# -gt 0 ]]; do
     --missing)  MISSING_ONLY=1; shift ;;
     --target)
       TARGET="${2:-}"
-      [[ -n "${TARGET}" ]] || { echo "ERROR: --target requires a value (e.g. virgin)"; exit 2; }
+      [[ -n "${TARGET}" ]] || { echo "ERROR: --target requires a value (e.g. virgin|slim)"; exit 2; }
       shift 2
       ;;
     --tag)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Publish all distro images (full + virgin) to a registry via image.sh --publish
+# Publish all distro images (full + virgin + slim) to a registry via image.sh --publish
 #
 # Required env:
 #   OWNER      (e.g. GITHUB_REPOSITORY_OWNER)
@@ -11,6 +11,9 @@ set -euo pipefail
 #   REGISTRY   (default: ghcr.io)
 #   IS_STABLE  (default: false)
 #   DISTROS    (default: "arch debian ubuntu fedora centos")
+#
+# Notes:
+# - This expects Dockerfile targets: virgin, full (default), slim
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -33,7 +36,10 @@ for d in ${DISTROS}; do
   echo "[publish] PKGMGR_DISTRO=${d}"
   echo "============================================================"
 
+  # ----------------------------------------------------------
   # virgin
+  # -> ghcr.io/<owner>/pkgmgr-<distro>-virgin:{latest,<version>,stable?}
+  # ----------------------------------------------------------
   PKGMGR_DISTRO="${d}" bash "${SCRIPT_DIR}/image.sh" \
     --publish \
     --registry "${REGISTRY}" \
@@ -42,13 +48,29 @@ for d in ${DISTROS}; do
     --stable "${IS_STABLE}" \
     --target virgin
 
+  # ----------------------------------------------------------
   # full (default target)
+  # -> ghcr.io/<owner>/pkgmgr-<distro>:{latest,<version>,stable?}
+  # ----------------------------------------------------------
   PKGMGR_DISTRO="${d}" bash "${SCRIPT_DIR}/image.sh" \
     --publish \
     --registry "${REGISTRY}" \
     --owner "${OWNER}" \
     --version "${VERSION}" \
     --stable "${IS_STABLE}"
+
+  # ----------------------------------------------------------
+  # slim
+  # -> ghcr.io/<owner>/pkgmgr-<distro>-slim:{latest,<version>,stable?}
+  # + alias for default distro: ghcr.io/<owner>/pkgmgr-slim:{...}
+  # ----------------------------------------------------------
+  PKGMGR_DISTRO="${d}" bash "${SCRIPT_DIR}/image.sh" \
+    --publish \
+    --registry "${REGISTRY}" \
+    --owner "${OWNER}" \
+    --version "${VERSION}" \
+    --stable "${IS_STABLE}" \
+    --target slim
 done
 
 echo
