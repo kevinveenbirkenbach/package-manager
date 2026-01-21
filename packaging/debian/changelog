@@ -1,3 +1,9 @@
+package-manager (1.11.0-1) unstable; urgency=medium
+
+  * Adds a dedicated slim Docker image for pkgmgr and publishes slim variants for all supported distros.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Wed, 21 Jan 2026 01:18:31 +0100
+
 package-manager (1.10.0-1) unstable; urgency=medium
 
   * Automated release.

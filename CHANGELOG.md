@@ -1,3 +1,8 @@
+## [1.11.0] - 2026-01-21
+
+* Adds a dedicated slim Docker image for pkgmgr and publishes slim variants for all supported distros.
+
+
 ## [1.10.0] - 2026-01-20
 
 * Introduce safe verbose image cleanup to reduce Docker image size and build artifacts
