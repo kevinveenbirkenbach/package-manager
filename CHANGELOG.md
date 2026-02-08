@@ -1,3 +1,8 @@
+## [1.11.2] - 2026-02-08
+
+* Removes the v* tag trigger from the mark-stable workflow so it runs only on branch pushes and avoids duplicate executions during releases.
+
+
 ## [1.11.1] - 2026-02-08
 
 * Implements pushing the branch and the version tag together in a single command so the CI release workflow can reliably detect the version tag on HEAD.
