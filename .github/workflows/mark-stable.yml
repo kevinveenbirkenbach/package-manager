@@ -1,5 +1,9 @@
 name: Mark stable commit
 
+concurrency:
+  group: mark-${{ github.repository }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
 on:
   push:
     branches:
