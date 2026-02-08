@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.11.0
+Version:        1.11.1
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sun Feb 08 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.11.1-1
+- Implements pushing the branch and the version tag together in a single command so the CI release workflow can reliably detect the version tag on HEAD.
+
 * Wed Jan 21 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.11.0-1
 - Adds a dedicated slim Docker image for pkgmgr and publishes slim variants for all supported distros.
 

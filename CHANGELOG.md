@@ -1,3 +1,8 @@
+## [1.11.1] - 2026-02-08
+
+* Implements pushing the branch and the version tag together in a single command so the CI release workflow can reliably detect the version tag on HEAD.
+
+
 ## [1.11.0] - 2026-01-21
 
 * Adds a dedicated slim Docker image for pkgmgr and publishes slim variants for all supported distros.
