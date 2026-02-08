@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.11.2
+Version:        1.12.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sun Feb 08 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.12.0-1
+- Adds explicit concurrency groups to the CI and mark-stable workflows to prevent overlapping runs on the same branch and make pipeline execution more predictable.
+
 * Sun Feb 08 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.11.2-1
 - Removes the v* tag trigger from the mark-stable workflow so it runs only on branch pushes and avoids duplicate executions during releases.
 

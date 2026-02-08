@@ -1,3 +1,8 @@
+## [1.12.0] - 2026-02-08
+
+* Adds explicit concurrency groups to the CI and mark-stable workflows to prevent overlapping runs on the same branch and make pipeline execution more predictable.
+
+
 ## [1.11.2] - 2026-02-08
 
 * Removes the v* tag trigger from the mark-stable workflow so it runs only on branch pushes and avoids duplicate executions during releases.

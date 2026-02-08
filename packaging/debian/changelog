@@ -1,3 +1,9 @@
+package-manager (1.12.0-1) unstable; urgency=medium
+
+  * Adds explicit concurrency groups to the CI and mark-stable workflows to prevent overlapping runs on the same branch and make pipeline execution more predictable.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Sun, 08 Feb 2026 18:26:25 +0100
+
 package-manager (1.11.2-1) unstable; urgency=medium
 
   * Removes the v* tag trigger from the mark-stable workflow so it runs only on branch pushes and avoids duplicate executions during releases.
