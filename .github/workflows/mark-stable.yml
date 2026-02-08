@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main          # still run tests for main
-    tags:
-      - 'v*'          # run tests for version tags (e.g. v0.9.1)
-
 jobs:
   test-unit:
     uses: ./.github/workflows/test-unit.yml
