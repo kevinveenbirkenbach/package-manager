@@ -1,3 +1,8 @@
+## [1.12.1] - 2026-02-14
+
+* pkgmgr now prefers distro-managed nix binaries on Arch before profile/PATH resolution, preventing libllhttp mismatch failures after pacman system upgrades.
+
+
 ## [1.12.0] - 2026-02-08
 
 * Adds explicit concurrency groups to the CI and mark-stable workflows to prevent overlapping runs on the same branch and make pipeline execution more predictable.

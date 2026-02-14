@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.12.0
+Version:        1.12.1
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sat Feb 14 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.12.1-1
+- pkgmgr now prefers distro-managed nix binaries on Arch before profile/PATH resolution, preventing libllhttp mismatch failures after pacman system upgrades.
+
 * Sun Feb 08 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.12.0-1
 - Adds explicit concurrency groups to the CI and mark-stable workflows to prevent overlapping runs on the same branch and make pipeline execution more predictable.
 
