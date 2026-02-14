@@ -36,16 +36,17 @@ real_exe() {
 
 # Resolve nix binary path robustly (works across distros + Arch /usr/sbin)
 resolve_nix_bin() {
-  local nix_cmd=""
-  nix_cmd="$(command -v nix 2>/dev/null || true)"
-  [[ -n "$nix_cmd" ]] && real_exe "$nix_cmd" && return 0
-
-  # IMPORTANT: prefer system locations before /usr/local to avoid self-symlink traps
+  # IMPORTANT: prefer distro-managed locations first.
+  # This avoids pinning /usr/local/bin/nix to a stale user-profile nix binary.
   [[ -x /usr/sbin/nix ]]      && { echo "/usr/sbin/nix"; return 0; } # Arch package can land here
   [[ -x /usr/bin/nix ]]       && { echo "/usr/bin/nix"; return 0; }
   [[ -x /bin/nix ]]           && { echo "/bin/nix"; return 0; }
 
-  # /usr/local last, and only if it resolves to a real executable
+  local nix_cmd=""
+  nix_cmd="$(command -v nix 2>/dev/null || true)"
+  [[ -n "$nix_cmd" ]] && real_exe "$nix_cmd" && return 0
+
+  # /usr/local after system locations, and only if it resolves to a real executable
   [[ -e /usr/local/bin/nix ]] && real_exe "/usr/local/bin/nix" && return 0
 
   [[ -x /nix/var/nix/profiles/default/bin/nix ]] && {
