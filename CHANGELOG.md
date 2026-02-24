@@ -1,3 +1,8 @@
+## [1.12.5] - 2026-02-24
+
+* The stable-tag workflow now waits up to two hours for a successful main-branch CI run on the same commit before updating stable.
+
+
 ## [1.12.4] - 2026-02-24
 
 * The release pipeline now updates the stable tag only for v* tags after a successful CI run on main for the same commit, while avoiding duplicate test executions.
