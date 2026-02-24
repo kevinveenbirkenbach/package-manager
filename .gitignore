@@ -24,10 +24,9 @@ package-manager-*
 .DS_Store
 Thumbs.db
 
-# Nix Cache to speed up tests
+# Nix cache to speed up tests
 .nix/
 .nix-dev-installed
-flake.lock
 
 # Ignore logs
 *.log
