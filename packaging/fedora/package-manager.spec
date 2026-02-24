@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.12.1
+Version:        1.12.2
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Feb 24 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.12.2-1
+- Removed infinito-sphinx package
+
 * Sat Feb 14 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.12.1-1
 - pkgmgr now prefers distro-managed nix binaries on Arch before profile/PATH resolution, preventing libllhttp mismatch failures after pacman system upgrades.
 

@@ -1,3 +1,8 @@
+## [1.12.2] - 2026-02-24
+
+* Removed infinito-sphinx package
+
+
 ## [1.12.1] - 2026-02-14
 
 * pkgmgr now prefers distro-managed nix binaries on Arch before profile/PATH resolution, preventing libllhttp mismatch failures after pacman system upgrades.
