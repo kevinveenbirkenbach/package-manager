@@ -6,56 +6,62 @@ concurrency:
 
 on:
   push:
-    branches:
-      - main          # still run tests for main
+    tags:
+      - 'v*'
 jobs:
-  test-unit:
-    uses: ./.github/workflows/test-unit.yml
-
-  test-integration:
-    uses: ./.github/workflows/test-integration.yml
-
-  test-env-virtual:
-    uses: ./.github/workflows/test-env-virtual.yml
-
-  test-env-nix:
-    uses: ./.github/workflows/test-env-nix.yml
-
-  test-e2e:
-    uses: ./.github/workflows/test-e2e.yml
-
-  test-virgin-user:
-    uses: ./.github/workflows/test-virgin-user.yml
-
-  test-virgin-root:
-    uses: ./.github/workflows/test-virgin-root.yml
-
-  lint-shell:
-    uses: ./.github/workflows/lint-shell.yml
-
-  lint-python:
-    uses: ./.github/workflows/lint-python.yml
-
   mark-stable:
-    needs:
-      - lint-shell
-      - lint-python
-      - test-unit
-      - test-integration
-      - test-env-nix
-      - test-env-virtual
-      - test-e2e
-      - test-virgin-user
-      - test-virgin-root
     runs-on: ubuntu-latest
 
-    # Only run this job if the push is for a version tag (v*)
-    if: startsWith(github.ref, 'refs/tags/v')
-
     permissions:
-      contents: write  # Required to move/update the tag
+      actions: read
+      contents: write
 
     steps:
+      - name: Wait for CI success on main for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          SHA="${GITHUB_SHA}"
+          API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${SHA}&event=push&per_page=20"
+
+          STATUS=""
+          CONCLUSION=""
+
+          echo "Waiting for CI on main for ${SHA}..."
+          for attempt in $(seq 1 30); do
+            RESPONSE="$(curl -fsSL \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "${API_URL}")"
+
+            STATUS="$(printf '%s' "${RESPONSE}" | jq -r '.workflow_runs[] | select(.head_branch=="main") | .status' | head -n1)"
+            CONCLUSION="$(printf '%s' "${RESPONSE}" | jq -r '.workflow_runs[] | select(.head_branch=="main") | .conclusion' | head -n1)"
+
+            if [[ -n "${STATUS}" ]]; then
+              echo "CI status=${STATUS} conclusion=${CONCLUSION:-none} (attempt ${attempt}/30)"
+            else
+              echo "No CI run for main found yet (attempt ${attempt}/30)"
+            fi
+
+            if [[ "${STATUS}" == "completed" ]]; then
+              if [[ "${CONCLUSION}" == "success" ]]; then
+                echo "CI succeeded for ${SHA}."
+                break
+              fi
+              echo "CI failed for ${SHA} (conclusion=${CONCLUSION})."
+              exit 1
+            fi
+
+            sleep 20
+          done
+
+          if [[ "${STATUS}" != "completed" || "${CONCLUSION}" != "success" ]]; then
+            echo "Timed out waiting for successful CI on main for ${SHA}."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
