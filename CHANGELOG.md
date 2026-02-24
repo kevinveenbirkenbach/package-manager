@@ -1,3 +1,8 @@
+## [1.12.4] - 2026-02-24
+
+* The release pipeline now updates the stable tag only for v* tags after a successful CI run on main for the same commit, while avoiding duplicate test executions.
+
+
 ## [1.12.3] - 2026-02-24
 
 * Stabilized Nix-based builds by switching to nixos-25.11 and committing flake.lock, ensuring reproducible pkgmgr test/runtime environments (with pip) and avoiding transient sphinx/Python 3.11 breakage.

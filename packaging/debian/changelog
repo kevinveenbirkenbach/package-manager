@@ -1,3 +1,9 @@
+package-manager (1.12.4-1) unstable; urgency=medium
+
+  * The release pipeline now updates the stable tag only for v* tags after a successful CI run on main for the same commit, while avoiding duplicate test executions.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Tue, 24 Feb 2026 09:32:01 +0100
+
 package-manager (1.12.3-1) unstable; urgency=medium
 
   * Stabilized Nix-based builds by switching to nixos-25.11 and committing flake.lock, ensuring reproducible pkgmgr test/runtime environments (with pip) and avoiding transient sphinx/Python 3.11 breakage.

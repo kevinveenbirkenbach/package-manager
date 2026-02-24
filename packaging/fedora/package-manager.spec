@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.12.3
+Version:        1.12.4
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Tue Feb 24 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.12.4-1
+- The release pipeline now updates the stable tag only for v* tags after a successful CI run on main for the same commit, while avoiding duplicate test executions.
+
 * Tue Feb 24 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.12.3-1
 - Stabilized Nix-based builds by switching to nixos-25.11 and committing flake.lock, ensuring reproducible pkgmgr test/runtime environments (with pip) and avoiding transient sphinx/Python 3.11 breakage.
 
