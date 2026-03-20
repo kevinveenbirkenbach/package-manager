@@ -51,6 +51,8 @@
               pyPkgs.pyyaml
               pyPkgs.jinja2
               pyPkgs.pip
+              pkgs.git
+              pkgs.gnupg
             ];
 
             doCheck = false;
@@ -87,6 +89,7 @@
             buildInputs = [
               pythonWithDeps
               pkgs.git
+              pkgs.gnupg
               ansiblePkg
             ];
 

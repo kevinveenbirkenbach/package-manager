@@ -77,6 +77,23 @@ class TestVerifyRepository(unittest.TestCase):
         self.assertEqual(commit, "")
         self.assertEqual(key, "")
 
+    def test_verified_gpg_query_error_does_not_add_missing_key_fallback(self) -> None:
+        repo = {"verified": {"commit": None, "gpg_keys": ["ABC"]}}
+        with (
+            patch("pkgmgr.core.repository.verify.get_head_commit", return_value=""),
+            patch(
+                "pkgmgr.core.repository.verify.get_latest_signing_key",
+                side_effect=GitLatestSigningKeyQueryError("cannot run gpg"),
+            ),
+        ):
+            ok, errors, commit, key = verify_repository(repo, "/tmp/repo", mode="local")
+
+        self.assertFalse(ok)
+        self.assertIn("cannot run gpg", " ".join(errors))
+        self.assertFalse(any("no signing key was found" in e for e in errors))
+        self.assertEqual(commit, "")
+        self.assertEqual(key, "")
+
     def test_strict_pull_collects_remote_error_message(self) -> None:
         repo = {"verified": {"commit": "expected", "gpg_keys": None}}
         with (

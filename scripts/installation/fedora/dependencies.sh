@@ -6,6 +6,7 @@ echo "[fedora/dependencies] Installing Fedora build dependencies..."
 dnf -y update
 dnf -y install \
   git \
+  gnupg2 \
   rsync \
   rpm-build \
   make \

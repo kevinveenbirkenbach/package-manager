@@ -16,6 +16,7 @@ fi
 pacman -S --noconfirm --needed \
   base-devel \
   git \
+  gnupg \
   rsync \
   curl \
   ca-certificates \

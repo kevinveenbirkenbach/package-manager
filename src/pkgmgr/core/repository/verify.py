@@ -16,6 +16,7 @@ def verify_repository(repo, repo_dir, mode="local", no_verification=False):
 
     commit_hash = ""
     signing_key = ""
+    signing_key_query_failed = False
 
     # best-effort info collection
     try:
@@ -59,6 +60,7 @@ def verify_repository(repo, repo_dir, mode="local", no_verification=False):
     except GitLatestSigningKeyQueryError as exc:
         error_details.append(str(exc))
         signing_key = ""
+        signing_key_query_failed = True
 
     commit_check_passed = True
     gpg_check_passed = True
@@ -78,9 +80,10 @@ def verify_repository(repo, repo_dir, mode="local", no_verification=False):
     if expected_gpg_keys:
         if not signing_key:
             gpg_check_passed = False
-            error_details.append(
-                f"Expected one of GPG keys: {expected_gpg_keys}, but no signing key was found."
-            )
+            if not signing_key_query_failed:
+                error_details.append(
+                    f"Expected one of GPG keys: {expected_gpg_keys}, but no signing key was found."
+                )
         elif signing_key not in expected_gpg_keys:
             gpg_check_passed = False
             error_details.append(
