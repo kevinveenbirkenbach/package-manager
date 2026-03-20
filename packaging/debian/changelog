@@ -1,3 +1,9 @@
+package-manager (1.13.1-1) unstable; urgency=medium
+
+  * Fixed misleading GPG verification failures by adding explicit git and gnupg runtime dependencies and surfacing signing-key lookup errors accurately.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Fri, 20 Mar 2026 02:57:25 +0100
+
 package-manager (1.13.0-1) unstable; urgency=medium
 
   * Set CentOS docker image to latest

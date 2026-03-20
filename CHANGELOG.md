@@ -1,3 +1,8 @@
+## [1.13.1] - 2026-03-20
+
+* Fixed misleading GPG verification failures by adding explicit git and gnupg runtime dependencies and surfacing signing-key lookup errors accurately.
+
+
 ## [1.13.0] - 2026-03-20
 
 * Set CentOS docker image to latest
