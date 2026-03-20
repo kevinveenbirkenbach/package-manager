@@ -1,3 +1,8 @@
+## [1.13.0] - 2026-03-20
+
+* Set CentOS docker image to latest
+
+
 ## [1.12.5] - 2026-02-24
 
 * The stable-tag workflow now waits up to two hours for a successful main-branch CI run on the same commit before updating stable.

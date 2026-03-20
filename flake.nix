@@ -32,7 +32,7 @@
         rec {
           pkgmgr = pyPkgs.buildPythonApplication {
             pname   = "package-manager";
-            version = "1.12.5";
+            version = "1.13.0";
 
             # Use the git repo as source
             src = ./.;

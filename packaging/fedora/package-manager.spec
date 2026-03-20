@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.12.5
+Version:        1.13.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Fri Mar 20 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.13.0-1
+- Set CentOS docker image to latest
+
 * Tue Feb 24 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.12.5-1
 - The stable-tag workflow now waits up to two hours for a successful main-branch CI run on the same commit before updating stable.
 
