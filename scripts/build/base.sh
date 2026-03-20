@@ -5,7 +5,7 @@ set -euo pipefail
 : "${BASE_IMAGE_DEBIAN:=debian:stable-slim}"
 : "${BASE_IMAGE_UBUNTU:=ubuntu:latest}"
 : "${BASE_IMAGE_FEDORA:=fedora:latest}"
-: "${BASE_IMAGE_CENTOS:=quay.io/centos/centos:stream9}"
+: "${BASE_IMAGE_CENTOS:=quay.io/centos/centos:latest}"
 
 resolve_base_image() {
   local PKGMGR_DISTRO="$1"
