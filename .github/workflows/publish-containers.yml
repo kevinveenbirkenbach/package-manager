@@ -21,34 +21,20 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout workflow_run commit and refresh tags
-        run: |
-          set -euo pipefail
-          git checkout -f "${{ github.event.workflow_run.head_sha }}"
-          git fetch --tags --force
-          git tag --list 'stable' 'v*' --sort=version:refname | tail -n 20
+        env:
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: bash scripts/github/publish-containers/checkout-workflow-run-commit.sh
+
+      - name: Check whether tagged commit is on main
+        id: branch-check
+        env:
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: bash scripts/github/common/check-tagged-commit-on-main.sh
 
       - name: Compute version and stable flag
         id: info
-        run: |
-          set -euo pipefail
-          SHA="$(git rev-parse HEAD)"
-
-          V_TAG="$(git tag --points-at "${SHA}" --list 'v*' | sort -V | tail -n1)"
-          if [[ -z "${V_TAG}" ]]; then
-            echo "No version tag found for ${SHA}. Skipping publish."
-            echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          VERSION="${V_TAG#v}"
-
-          STABLE_SHA="$(git rev-parse -q --verify refs/tags/stable^{commit} 2>/dev/null || true)"
-          IS_STABLE=false
-          [[ -n "${STABLE_SHA}" && "${STABLE_SHA}" == "${SHA}" ]] && IS_STABLE=true
-
-          echo "should_publish=true" >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "is_stable=${IS_STABLE}" >> "$GITHUB_OUTPUT"
+        if: steps.branch-check.outputs.is_on_main == 'true'
+        run: bash scripts/github/publish-containers/compute-publish-container-info.sh
 
       - name: Set up Docker Buildx
         if: ${{ steps.info.outputs.should_publish == 'true' }}
@@ -66,9 +52,8 @@ jobs:
 
       - name: Publish all images
         if: ${{ steps.info.outputs.should_publish == 'true' }}
-        run: |
-          set -euo pipefail
-          OWNER="${{ github.repository_owner }}" \
-          VERSION="${{ steps.info.outputs.version }}" \
-          IS_STABLE="${{ steps.info.outputs.is_stable }}" \
-          bash scripts/build/publish.sh
+        env:
+          OWNER: ${{ github.repository_owner }}
+          VERSION: ${{ steps.info.outputs.version }}
+          IS_STABLE: ${{ steps.info.outputs.is_stable }}
+        run: bash scripts/github/publish-containers/publish-container-images.sh
