@@ -62,7 +62,7 @@ rm -rf \
   %{buildroot}/usr/lib/package-manager/.gitkeep || true
 
 %post
-/usr/lib/package-manager/nix/init.sh || echo ">>> ERROR: /usr/lib/package-manager/nix/init.sh not found or not executable."
+/usr/lib/package-manager/nix/init.sh
 
 %postun
 echo ">>> package-manager removed. Nix itself was not removed."
