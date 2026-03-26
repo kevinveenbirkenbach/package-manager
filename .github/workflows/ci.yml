@@ -11,6 +11,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  security-codeql:
+    uses: ./.github/workflows/security-codeql.yml
+
   test-unit:
     uses: ./.github/workflows/test-unit.yml
 
@@ -37,3 +40,6 @@ jobs:
 
   lint-python:
     uses: ./.github/workflows/lint-python.yml
+
+  lint-docker:
+    uses: ./.github/workflows/lint-docker.yml
