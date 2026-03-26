@@ -12,6 +12,10 @@ concurrency:
 
 jobs:
   security-codeql:
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
     uses: ./.github/workflows/security-codeql.yml
 
   test-unit:
@@ -42,4 +46,7 @@ jobs:
     uses: ./.github/workflows/lint-python.yml
 
   lint-docker:
+    permissions:
+      contents: read
+      security-events: write
     uses: ./.github/workflows/lint-docker.yml
