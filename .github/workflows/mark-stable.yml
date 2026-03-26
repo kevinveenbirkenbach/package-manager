@@ -1,8 +1,8 @@
 name: Mark stable commit
 
 concurrency:
-  group: mark-${{ github.repository }}-${{ github.ref_name }}
-  cancel-in-progress: false
+  group: mark-stable-${{ github.repository }}-main
+  cancel-in-progress: true
 
 on:
   push:
@@ -11,109 +11,29 @@ on:
 jobs:
   mark-stable:
     runs-on: ubuntu-latest
+    timeout-minutes: 330
 
     permissions:
       actions: read
       contents: write
 
     steps:
-      - name: Wait for CI success on main for this commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          SHA="${GITHUB_SHA}"
-          API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${SHA}&event=push&per_page=20"
-          WAIT_INTERVAL_SECONDS=20
-          MAX_ATTEMPTS=360 # 2 hours max wait
-
-          STATUS=""
-          CONCLUSION=""
-
-          echo "Waiting for CI on main for ${SHA} (up to 2 hours)..."
-          for attempt in $(seq 1 "${MAX_ATTEMPTS}"); do
-            RESPONSE="$(curl -fsSL \
-              -H "Authorization: Bearer ${GH_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              "${API_URL}")"
-
-            STATUS="$(printf '%s' "${RESPONSE}" | jq -r '.workflow_runs[] | select(.head_branch=="main") | .status' | head -n1)"
-            CONCLUSION="$(printf '%s' "${RESPONSE}" | jq -r '.workflow_runs[] | select(.head_branch=="main") | .conclusion' | head -n1)"
-
-            if [[ -n "${STATUS}" ]]; then
-              echo "CI status=${STATUS} conclusion=${CONCLUSION:-none} (attempt ${attempt}/${MAX_ATTEMPTS})"
-            else
-              echo "No CI run for main found yet (attempt ${attempt}/${MAX_ATTEMPTS})"
-            fi
-
-            if [[ "${STATUS}" == "completed" ]]; then
-              if [[ "${CONCLUSION}" == "success" ]]; then
-                echo "CI succeeded for ${SHA}."
-                break
-              fi
-              echo "CI failed for ${SHA} (conclusion=${CONCLUSION})."
-              exit 1
-            fi
-
-            sleep "${WAIT_INTERVAL_SECONDS}"
-          done
-
-          if [[ "${STATUS}" != "completed" || "${CONCLUSION}" != "success" ]]; then
-            echo "Timed out waiting for successful CI on main for ${SHA}."
-            exit 1
-          fi
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          fetch-tags: true  # We need all tags for version comparison
+          fetch-tags: true  # We need tags and main history for version comparison
+
+      - name: Check whether tagged commit is on main
+        id: branch-check
+        run: bash scripts/github/check-tagged-commit-on-main.sh
+
+      - name: Wait for CI success on main for this commit
+        if: steps.branch-check.outputs.is_on_main == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/github/wait-for-main-ci-success.sh
 
       - name: Move 'stable' tag only if this version is the highest
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          echo "Ref: $GITHUB_REF"
-          echo "SHA: $GITHUB_SHA"
-
-          VERSION="${GITHUB_REF#refs/tags/}"
-          echo "Current version tag: ${VERSION}"
-
-          echo "Collecting all version tags..."
-          ALL_V_TAGS="$(git tag --list 'v*' || true)"
-
-          if [[ -z "${ALL_V_TAGS}" ]]; then
-            echo "No version tags found. Skipping stable update."
-            exit 0
-          fi
-
-          echo "All version tags:"
-          echo "${ALL_V_TAGS}"
-
-          # Determine highest version using natural version sorting
-          LATEST_TAG="$(printf '%s\n' ${ALL_V_TAGS} | sort -V | tail -n1)"
-
-          echo "Highest version tag: ${LATEST_TAG}"
-
-          if [[ "${VERSION}" != "${LATEST_TAG}" ]]; then
-            echo "Current version ${VERSION} is NOT the highest version."
-            echo "Stable tag will NOT be updated."
-            exit 0
-          fi
-
-          echo "Current version ${VERSION} IS the highest version."
-          echo "Updating 'stable' tag..."
-
-          # Delete existing stable tag (local + remote)
-          git tag -d stable 2>/dev/null || true
-          git push origin :refs/tags/stable || true
-
-          # Create new stable tag
-          git tag stable "$GITHUB_SHA"
-          git push origin stable
-
-          echo "✅ Stable tag updated to ${VERSION}."
+        if: steps.branch-check.outputs.is_on_main == 'true'
+        run: bash scripts/github/mark-stable-if-highest-version.sh
