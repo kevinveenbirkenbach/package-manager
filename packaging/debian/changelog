@@ -1,3 +1,9 @@
+package-manager (1.13.2-1) unstable; urgency=medium
+
+  * Fail fast with a clear error when the Nix bootstrap or nix binary is unavailable instead of continuing with a broken startup path.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Thu, 26 Mar 2026 12:26:55 +0100
+
 package-manager (1.13.1-1) unstable; urgency=medium
 
   * Fixed misleading GPG verification failures by adding explicit git and gnupg runtime dependencies and surfacing signing-key lookup errors accurately.

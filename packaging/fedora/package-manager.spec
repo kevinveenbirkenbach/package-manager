@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.13.1
+Version:        1.13.2
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Thu Mar 26 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.13.2-1
+- Fail fast with a clear error when the Nix bootstrap or nix binary is unavailable instead of continuing with a broken startup path.
+
 * Fri Mar 20 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.13.1-1
 - Fixed misleading GPG verification failures by adding explicit git and gnupg runtime dependencies and surfacing signing-key lookup errors accurately.
 

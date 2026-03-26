@@ -1,3 +1,8 @@
+## [1.13.2] - 2026-03-26
+
+* Fail fast with a clear error when the Nix bootstrap or nix binary is unavailable instead of continuing with a broken startup path.
+
+
 ## [1.13.1] - 2026-03-20
 
 * Fixed misleading GPG verification failures by adding explicit git and gnupg runtime dependencies and surfacing signing-key lookup errors accurately.
