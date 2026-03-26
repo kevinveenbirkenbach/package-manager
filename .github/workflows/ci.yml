@@ -6,6 +6,9 @@ on:
       - '**'
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: global-ci-${{ github.repository }}-${{ github.ref_name }}
   cancel-in-progress: false
@@ -19,30 +22,48 @@ jobs:
     uses: ./.github/workflows/security-codeql.yml
 
   test-unit:
+    permissions:
+      contents: read
     uses: ./.github/workflows/test-unit.yml
 
   test-integration:
+    permissions:
+      contents: read
     uses: ./.github/workflows/test-integration.yml
 
   test-env-virtual:
+    permissions:
+      contents: read
     uses: ./.github/workflows/test-env-virtual.yml
 
   test-env-nix:
+    permissions:
+      contents: read
     uses: ./.github/workflows/test-env-nix.yml
 
   test-e2e:
+    permissions:
+      contents: read
     uses: ./.github/workflows/test-e2e.yml
 
   test-virgin-user:
+    permissions:
+      contents: read
     uses: ./.github/workflows/test-virgin-user.yml
 
   test-virgin-root:
+    permissions:
+      contents: read
     uses: ./.github/workflows/test-virgin-root.yml
 
   lint-shell:
+    permissions:
+      contents: read
     uses: ./.github/workflows/lint-shell.yml
 
   lint-python:
+    permissions:
+      contents: read
     uses: ./.github/workflows/lint-python.yml
 
   lint-docker:

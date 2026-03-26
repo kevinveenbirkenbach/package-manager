@@ -3,6 +3,9 @@ name: Test End-To-End
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   test-e2e:
     runs-on: ubuntu-latest

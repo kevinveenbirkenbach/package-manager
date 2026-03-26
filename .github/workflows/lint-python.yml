@@ -3,6 +3,9 @@ name: Ruff (Python code sniffer)
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   lint-python:
     runs-on: ubuntu-latest

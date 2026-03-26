@@ -3,6 +3,9 @@ name: Test Virgin Nix (flake only)
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   test-env-nix:
     runs-on: ubuntu-latest

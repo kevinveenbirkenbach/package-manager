@@ -43,10 +43,10 @@ WORKDIR /build
 COPY . .
 
 # Build and install distro-native package-manager package
-RUN set -euo pipefail; \
+RUN set -eu; \
   echo "Building and installing package-manager via make install..."; \
   make install; \
-  cd /; rm -rf /build
+  rm -rf /build
 
 # Entry point
 COPY scripts/docker/entry.sh /usr/local/bin/docker-entry.sh
@@ -64,5 +64,4 @@ CMD ["pkgmgr", "--help"]
 FROM full AS slim
 
 COPY scripts/docker/slim.sh /usr/local/bin/slim.sh
-RUN chmod +x /usr/local/bin/slim.sh
-RUN /usr/local/bin/slim.sh
+RUN chmod +x /usr/local/bin/slim.sh && /usr/local/bin/slim.sh

@@ -3,6 +3,9 @@ name: Test Virgin Root
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   test-virgin-root:
     runs-on: ubuntu-latest

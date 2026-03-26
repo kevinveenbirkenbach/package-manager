@@ -3,6 +3,9 @@ name: Test Code Integration
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   test-integration:
     runs-on: ubuntu-latest
