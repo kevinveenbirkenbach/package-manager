@@ -37,8 +37,14 @@ fi
 # ---------------------------------------------------------------------------
 if ! command -v nix >/dev/null 2>&1; then
   if [[ -x "${FLAKE_DIR}/nix/init.sh" ]]; then
-    "${FLAKE_DIR}/nix/init.sh" || true
+    "${FLAKE_DIR}/nix/init.sh"
   fi
+fi
+
+if ! command -v nix >/dev/null 2>&1; then
+  echo "[launcher] ERROR: 'nix' binary not found on PATH after init." >&2
+  echo "[launcher] Nix is required to run pkgmgr (no Python fallback)." >&2
+  exit 1
 fi
 
 # ---------------------------------------------------------------------------
@@ -51,7 +57,3 @@ if declare -F run_with_github_403_retry >/dev/null; then
 else
   exec nix run "${FLAKE_DIR}#pkgmgr" -- "$@"
 fi
-
-echo "[launcher] ERROR: 'nix' binary not found on PATH after init."
-echo "[launcher] Nix is required to run pkgmgr (no Python fallback)."
-exit 1
