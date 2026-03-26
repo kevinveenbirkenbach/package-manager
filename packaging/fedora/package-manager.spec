@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.13.2
+Version:        1.13.3
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,13 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Thu Mar 26 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.13.3-1
+- CI pipelines now include automated security scanning (CodeQL, Docker lint), increasing detection of vulnerabilities and misconfigurations
+* Workflow permissions were tightened and fixed, ensuring secure and reliable execution of reusable workflows
+* Publishing and “stable” tagging are now restricted to the `main` branch, preventing accidental releases from other branches
+* Stale CI runs are automatically cancelled, reducing wasted resources and speeding up feedback cycles
+* Overall CI reliability and security posture improved, with fewer false positives and more consistent pipeline results
+
 * Thu Mar 26 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.13.2-1
 - Fail fast with a clear error when the Nix bootstrap or nix binary is unavailable instead of continuing with a broken startup path.
 
