@@ -12,6 +12,7 @@ from pkgmgr.cli.context import CLIContext
 from pkgmgr.actions.repository.clone import clone_repos
 from pkgmgr.actions.proxy import exec_proxy_command
 from pkgmgr.actions.repository.pull import pull_with_verification
+from pkgmgr.actions.repository.push import push_in_parallel
 from pkgmgr.core.repository.selected import get_selected_repos
 from pkgmgr.core.repository.dir import get_repo_dir
 
@@ -177,6 +178,17 @@ def register_proxy_commands(
                     default=False,
                     help="Disable verification via commit/gpg",
                 )
+            if subcommand in ("pull", "push"):
+                parser.add_argument(
+                    "-j",
+                    "--jobs",
+                    type=int,
+                    default=min(os.cpu_count() or 4, 8),
+                    help=(
+                        f"Number of parallel {subcommand}s "
+                        "(default: min(cpu_count, 8)). Use 1 for sequential."
+                    ),
+                )
             if subcommand == "clone":
                 parser.add_argument(
                     "--clone-mode",
@@ -234,6 +246,16 @@ def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
                 args.extra_args,
                 args.no_verification,
                 args.preview,
+                jobs=args.jobs,
+            )
+        elif args.command == "push":
+            push_in_parallel(
+                selected,
+                ctx.repositories_base_dir,
+                ctx.all_repositories,
+                args.extra_args,
+                args.preview,
+                jobs=args.jobs,
             )
         else:
             exec_proxy_command(

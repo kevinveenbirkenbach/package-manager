@@ -19,6 +19,7 @@ from .pull import GitPullError, pull
 from .pull_args import GitPullArgsError, pull_args
 from .pull_ff_only import GitPullFfOnlyError, pull_ff_only
 from .push import GitPushError, push
+from .push_args import GitPushArgsError, push_args
 from .push_upstream import GitPushUpstreamError, push_upstream
 from .set_remote_url import GitSetRemoteUrlError, set_remote_url
 from .tag_annotated import GitTagAnnotatedError, tag_annotated
@@ -34,6 +35,7 @@ __all__ = [
     "pull_ff_only",
     "merge_no_ff",
     "push",
+    "push_args",
     "commit",
     "delete_local_branch",
     "delete_remote_branch",
@@ -56,6 +58,7 @@ __all__ = [
     "GitPullFfOnlyError",
     "GitMergeError",
     "GitPushError",
+    "GitPushArgsError",
     "GitCommitError",
     "GitDeleteLocalBranchError",
     "GitDeleteRemoteBranchError",
