@@ -2,8 +2,8 @@
 set -euo pipefail
 
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
-  echo "[installation/install] Warning: Installation is just possible via root."
-  exit 0
+  echo "[installation/install] ERROR: Installation requires root. Re-run with sudo." >&2
+  exit 1
 fi
 
 echo "[installation] Running as root (EUID=0)."

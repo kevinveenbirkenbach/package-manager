@@ -47,7 +47,7 @@ echo "[arch/package] Using 'aur_builder' user for makepkg..."
 chown -R aur_builder:aur_builder "${BUILD_ROOT}"
 
 echo "[arch/package] Running makepkg in: ${PKG_BUILD_DIR}"
-su aur_builder -c "cd '${PKG_BUILD_DIR}' && rm -f package-manager-*.pkg.tar.* && makepkg --noconfirm --clean --nodeps"
+runuser -u aur_builder -- bash -c "cd '${PKG_BUILD_DIR}' && rm -f package-manager-*.pkg.tar.* && makepkg --noconfirm --clean --nodeps"
 
 echo "[arch/package] Installing generated Arch package..."
 pkg_path="$(find "${PKG_BUILD_DIR}" -maxdepth 1 -type f -name 'package-manager-*.pkg.tar.*' | head -n1)"
