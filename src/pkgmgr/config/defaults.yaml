@@ -6,16 +6,6 @@ directories:
   binaries:     ~/.local/bin/
 repositories:
 - account: kevinveenbirkenbach
-  alias: arc
-  provider: github.com
-  repository: analysis-ready-code
-  description: Analysis-Ready Code (ARC) is a Python utility that recursively scans directories and transforms source code into a streamlined, analysis-ready format by removing comments, filtering files, and compressing content—perfect for AI and automated code analysis.
-  homepage: https://github.com/kevinveenbirkenbach/analysis-ready-code
-  verified: 
-    gpg_keys:
-      - 44D8F11FD62F878E
-      - B5690EEEBB952194
-- account: kevinveenbirkenbach
   description: A configurable Python package manager that automates repository tasks—including cloning, installation, updates, and status reporting—based on a YAML configuration file for streamlined software management which gives you access to the Kevin Veen-Birkenbach Code Universe.
   homepage: https://github.com/kevinveenbirkenbach/package-manager
   provider: github.com
@@ -274,12 +264,11 @@ repositories:
     gpg_keys:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
-- account: kevinveenbirkenbach
-  alias: infinito
+- account: infinito-nexus
   provider: github.com
   description: Infinito.nexus streamlines Linux-based system setups and Docker image administration, perfect for servers and PCs. It offers extensive solutions for system initialization, admin tools, backups, monitoring, updates, driver management, security, and VPNs.
   homepage: https://infinito.nexus
-  repository: infinito-nexus
+  repository: core
   verified:
     gpg_keys:
       - 44D8F11FD62F878E
