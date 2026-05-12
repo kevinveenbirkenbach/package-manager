@@ -40,6 +40,10 @@
             # Build using pyproject.toml
             format = "pyproject";
 
+            # Clear any stale wheels carried in from the source tree so
+            # pypaInstallPhase doesn't collide on bin/pkgmgr.
+            preBuild = "rm -rf dist";
+
             # Build backend requirements from [build-system]
             nativeBuildInputs = [
               pyPkgs.setuptools
