@@ -1,5 +1,8 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(*)"
+    ],
     "ask": [
       "Skill(update-config)",
       "Skill(update-config:*)"
@@ -7,6 +10,7 @@
   },
   "sandbox": {
     "enabled": true,
+    "failIfUnavailable": true,
     "autoAllowBashIfSandboxed": true
   }
 }
