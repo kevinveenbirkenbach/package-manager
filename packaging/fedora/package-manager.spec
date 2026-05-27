@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.13.3
+Version:        1.13.4
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,35 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Wed May 27 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.13.4-1
+- Changed
+
+* pkgmgr release now derives the distro-package name from existing
+  packaging metadata instead of the repository folder name. The lookup
+  order is packaging/debian/control Package field, then
+  packaging/arch/PKGBUILD pkgname value, then RPM spec Name field, then
+  folder basename as legacy fallback. Renaming a repository folder (for
+  example infinito-nexus to infinito-nexus-core) no longer silently
+  flips the debian/changelog top entry and the RPM changelog stanza to
+  a new identifier. Those keep matching the authoritative Package,
+  pkgname, or Name value in the packaging files, which is what apt,
+  pacman, and dnf index against.
+
+Added
+
+* RepoPaths gains a debian_control slot that is discovered alongside
+  debian_changelog under both packaging/debian (new layout) and debian
+  (legacy layout).
+* pkgmgr.actions.release.package_name.resolve_package_name centralises
+  the priority chain and is unit-tested under
+  tests/unit/pkgmgr/actions/release/test_package_name.py.
+
+Fixed
+
+* dpkg-source --before-build no longer fails with the message about
+  source package having two conflicting values after a repo-folder
+  rename, because the changelog and control file stay in agreement.
+
 * Thu Mar 26 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.13.3-1
 - CI pipelines now include automated security scanning (CodeQL, Docker lint), increasing detection of vulnerabilities and misconfigurations
 * Workflow permissions were tightened and fixed, ensuring secure and reliable execution of reusable workflows

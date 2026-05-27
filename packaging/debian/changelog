@@ -1,3 +1,35 @@
+package-manager (1.13.4-1) unstable; urgency=medium
+
+  * Changed
+
+* pkgmgr release now derives the distro-package name from existing
+  packaging metadata instead of the repository folder name. The lookup
+  order is packaging/debian/control Package field, then
+  packaging/arch/PKGBUILD pkgname value, then RPM spec Name field, then
+  folder basename as legacy fallback. Renaming a repository folder (for
+  example infinito-nexus to infinito-nexus-core) no longer silently
+  flips the debian/changelog top entry and the RPM changelog stanza to
+  a new identifier. Those keep matching the authoritative Package,
+  pkgname, or Name value in the packaging files, which is what apt,
+  pacman, and dnf index against.
+
+Added
+
+* RepoPaths gains a debian_control slot that is discovered alongside
+  debian_changelog under both packaging/debian (new layout) and debian
+  (legacy layout).
+* pkgmgr.actions.release.package_name.resolve_package_name centralises
+  the priority chain and is unit-tested under
+  tests/unit/pkgmgr/actions/release/test_package_name.py.
+
+Fixed
+
+* dpkg-source --before-build no longer fails with the message about
+  source package having two conflicting values after a repo-folder
+  rename, because the changelog and control file stay in agreement.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Wed, 27 May 2026 20:32:39 +0200
+
 package-manager (1.13.3-1) unstable; urgency=medium
 
   * CI pipelines now include automated security scanning (CodeQL, Docker lint), increasing detection of vulnerabilities and misconfigurations
