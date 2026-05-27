@@ -83,9 +83,7 @@ def run_on_repos(
 
     if failed:
         if effective_jobs > 1:
-            print(
-                f"\n[SUMMARY] {len(failed)} of {len(repos)} {op_name}(s) failed:"
-            )
+            print(f"\n[SUMMARY] {len(failed)} of {len(repos)} {op_name}(s) failed:")
             for ident, _msg in failed:
                 print(f"  - {ident}")
         sys.exit(1)

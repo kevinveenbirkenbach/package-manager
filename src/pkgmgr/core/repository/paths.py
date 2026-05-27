@@ -36,6 +36,7 @@ class RepoPaths:
     # Packaging-related files
     arch_pkgbuild: Optional[str]
     debian_changelog: Optional[str]
+    debian_control: Optional[str]
     rpm_spec: Optional[str]
 
 
@@ -102,6 +103,13 @@ def resolve_repo_paths(repo_dir: str) -> RepoPaths:
         ]
     )
 
+    debian_control = _first_existing(
+        [
+            os.path.join(repo_dir, "packaging", "debian", "control"),
+            os.path.join(repo_dir, "debian", "control"),
+        ]
+    )
+
     # RPM spec: prefer the canonical file, else first spec in packaging/fedora, else first spec in repo root.
     rpm_spec = _first_existing(
         [
@@ -122,5 +130,6 @@ def resolve_repo_paths(repo_dir: str) -> RepoPaths:
         changelog_md=changelog_md,
         arch_pkgbuild=arch_pkgbuild,
         debian_changelog=debian_changelog,
+        debian_control=debian_control,
         rpm_spec=rpm_spec,
     )

@@ -24,6 +24,7 @@ from .git_ops import (
     is_highest_version_tag,
     update_latest_tag,
 )
+from .package_name import resolve_package_name
 from .prompts import confirm_proceed_release, should_delete_branch
 from .versioning import bump_semver, determine_current_version
 
@@ -90,7 +91,7 @@ def _release_impl(
         if changelog_message.strip():
             effective_message = changelog_message.strip()
 
-    package_name = os.path.basename(repo_root) or "package-manager"
+    package_name = resolve_package_name(paths)
 
     if paths.debian_changelog:
         update_debian_changelog(

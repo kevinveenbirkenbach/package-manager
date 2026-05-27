@@ -28,7 +28,10 @@ def _verify_one(
 ) -> Tuple[bool, bool, List[str]]:
     """Returns (has_verified_info, verified_ok, errors)."""
     verified_ok, errors, _commit, _key = verify_repository(
-        repo, repo_dir, mode="pull", no_verification=no_verification,
+        repo,
+        repo_dir,
+        mode="pull",
+        no_verification=no_verification,
     )
     return (bool(repo.get("verified")), verified_ok, errors)
 
@@ -56,9 +59,7 @@ def _verify_all(
             for repo, _ident, rd in candidates
         ]
         results = [f.result() for f in futures]
-    return [
-        (ident, rd, *res) for (_repo, ident, rd), res in zip(candidates, results)
-    ]
+    return [(ident, rd, *res) for (_repo, ident, rd), res in zip(candidates, results)]
 
 
 def pull_with_verification(
@@ -95,7 +96,12 @@ def pull_with_verification(
 
     approved: List[RepoRef] = []
     for ident, rd, has_verified_info, verified_ok, errors in verify_results:
-        if not preview and not no_verification and has_verified_info and not verified_ok:
+        if (
+            not preview
+            and not no_verification
+            and has_verified_info
+            and not verified_ok
+        ):
             print(f"Warning: Verification failed for {ident}:")
             for err in errors:
                 print(f"  - {err}")
