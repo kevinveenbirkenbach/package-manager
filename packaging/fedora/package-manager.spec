@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.13.4
+Version:        1.14.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,47 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Wed May 27 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.14.0-1
+- Added
+
+* New release --retry mode re-deploys the HEAD release without
+  re-tagging or modifying any files. It re-pushes the existing version
+  tag, re-aligns the floating latest tag, and (unless --no-publish)
+  re-runs publish. Use this to recover from a release whose post-tag
+  push or PyPI upload failed mid-flight. The release_type argument
+  becomes optional under --retry.
+* New module pkgmgr.actions.release.retry hosts the retry_release
+  helper so the workflow orchestrator stays focused on the forward
+  path.
+* RepoPaths now exposes a debian_control slot, discovered alongside
+  debian_changelog under both packaging/debian and the legacy debian
+  layout.
+* pkgmgr.actions.release.package_name.resolve_package_name centralises
+  the distro-name lookup chain and is unit-tested under
+  tests/unit/pkgmgr/actions/release/test_package_name.py.
+* tests/unit/pkgmgr/actions/release/test_retry.py covers routing,
+  idempotent push, latest-tag re-alignment, missing-tag error path,
+  and branch-detection fallback.
+
+Changed
+
+* pkgmgr release now derives the distro-package name from existing
+  packaging metadata instead of the repository folder name. The lookup
+  order is packaging/debian/control Package field, then
+  packaging/arch/PKGBUILD pkgname value, then RPM spec Name field,
+  then folder basename as legacy fallback. Renaming a repository
+  folder no longer silently flips the debian/changelog top entry and
+  the RPM changelog stanza to a new identifier. Those keep matching
+  the authoritative value in the packaging files, which is what apt,
+  pacman, and dnf index against.
+
+Fixed
+
+* dpkg-source --before-build no longer fails with the message about
+  source package having two conflicting values after a repo-folder
+  rename, because the changelog and control file stay in agreement
+  on the next release.
+
 * Wed May 27 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.13.4-1
 - Changed
 
