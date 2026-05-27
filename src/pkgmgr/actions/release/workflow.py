@@ -26,6 +26,7 @@ from .git_ops import (
 )
 from .package_name import resolve_package_name
 from .prompts import confirm_proceed_release, should_delete_branch
+from .retry import retry_release
 from .versioning import bump_semver, determine_current_version
 
 
@@ -199,7 +200,12 @@ def release(
     preview: bool = False,
     force: bool = False,
     close: bool = False,
+    retry: bool = False,
 ) -> None:
+    if retry:
+        retry_release(pyproject_path=pyproject_path, preview=preview)
+        return
+
     if preview:
         _release_impl(
             pyproject_path=pyproject_path,

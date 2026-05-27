@@ -24,8 +24,12 @@ def add_release_subparser(
 
     release_parser.add_argument(
         "release_type",
+        nargs="?",
         choices=["major", "minor", "patch"],
-        help="Type of version increment for the release (major, minor, patch).",
+        help=(
+            "Type of version increment for the release (major, minor, patch). "
+            "Omit when `--retry` is set."
+        ),
     )
 
     release_parser.add_argument(
@@ -60,4 +64,16 @@ def add_release_subparser(
         "--no-publish",
         action="store_true",
         help="Do not run publish automatically after a successful release.",
+    )
+
+    release_parser.add_argument(
+        "--retry",
+        action="store_true",
+        help=(
+            "Re-deploy the existing HEAD release without re-tagging or "
+            "modifying any files: re-push the existing version tag, "
+            "re-align the floating `latest` tag, and (unless --no-publish) "
+            "re-run publish. Use this to recover from a release whose "
+            "post-tag push or PyPI upload failed mid-flight."
+        ),
     )

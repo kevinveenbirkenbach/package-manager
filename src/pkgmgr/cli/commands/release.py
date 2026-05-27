@@ -49,7 +49,19 @@ def handle_release(
             print(f"[WARN] Skipping repository {identifier}: directory missing.")
             continue
 
-        print(f"[pkgmgr] Running release for repository {identifier}...")
+        retry = bool(getattr(args, "retry", False))
+        if retry and args.release_type:
+            print(
+                f"[WARN] Ignoring release_type '{args.release_type}' for {identifier} — --retry skips version bumps."
+            )
+        if not retry and not args.release_type:
+            print(
+                f"[WARN] Skipping {identifier}: release_type is required unless --retry is set."
+            )
+            continue
+
+        action_label = "retry-release" if retry else "release"
+        print(f"[pkgmgr] Running {action_label} for repository {identifier}...")
 
         cwd_before = os.getcwd()
         try:
@@ -58,11 +70,12 @@ def handle_release(
             run_release(
                 pyproject_path="pyproject.toml",
                 changelog_path="CHANGELOG.md",
-                release_type=args.release_type,
+                release_type=args.release_type or "patch",
                 message=args.message or None,
                 preview=getattr(args, "preview", False),
                 force=getattr(args, "force", False),
                 close=getattr(args, "close", False),
+                retry=retry,
             )
 
             if not getattr(args, "no_publish", False):
