@@ -1,3 +1,9 @@
+# Changelog
+
+## [1.15.1] - 2026-05-28
+
+* Insert pkgmgr release changelog entry under the H1 instead of above it. Fixes the markdownlint MD041 (first-line-h1) and MD012 (no-multiple-blanks) regressions that previously trashed every CHANGELOG.md after a release.
+
 ## [1.15.0] - 2026-05-28
 
 * Add pkgmgr archive subcommand: promote fully-checked NNN-topic.md spec files into the directorys README Archive section and delete the source files. Lookup pattern, README path, and template handling are configurable. Extracted from infinito-nexus-core so every kpmx-managed repo gets the same archival flow.

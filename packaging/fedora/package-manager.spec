@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.15.0
+Version:        1.15.1
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Thu May 28 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.15.1-1
+- Insert pkgmgr release changelog entry under the H1 instead of above it. Fixes the markdownlint MD041 (first-line-h1) and MD012 (no-multiple-blanks) regressions that previously trashed every CHANGELOG.md after a release.
+
 * Thu May 28 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.15.0-1
 - Add pkgmgr archive subcommand: promote fully-checked NNN-topic.md spec files into the directorys README Archive section and delete the source files. Lookup pattern, README path, and template handling are configurable. Extracted from infinito-nexus-core so every kpmx-managed repo gets the same archival flow.
 
