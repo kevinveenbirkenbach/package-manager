@@ -265,6 +265,7 @@ repositories:
       - 44D8F11FD62F878E
       - B5690EEEBB952194
 - account: infinito-nexus
+  alias: infinito
   provider: github.com
   description: Infinito.nexus streamlines Linux-based system setups and Docker image administration, perfect for servers and PCs. It offers extensive solutions for system initialization, admin tools, backups, monitoring, updates, driver management, security, and VPNs.
   homepage: https://infinito.nexus
