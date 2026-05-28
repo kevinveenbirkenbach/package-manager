@@ -1,3 +1,4 @@
+from .archive import handle_archive
 from .repos import handle_repos_command
 from .config import handle_config
 from .tools import handle_tools_command
@@ -10,6 +11,7 @@ from .branch import handle_branch
 from .mirror import handle_mirror_command
 
 __all__ = [
+    "handle_archive",
     "handle_repos_command",
     "handle_config",
     "handle_tools_command",

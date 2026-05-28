@@ -10,6 +10,7 @@ from pkgmgr.core.repository.selected import get_selected_repos
 from pkgmgr.core.repository.dir import get_repo_dir
 
 from pkgmgr.cli.commands import (
+    handle_archive,
     handle_repos_command,
     handle_tools_command,
     handle_release,
@@ -58,6 +59,10 @@ def _select_repo_for_current_directory(ctx: CLIContext) -> List[Dict[str, Any]]:
 
 def dispatch_command(args, ctx: CLIContext) -> None:
     if maybe_handle_proxy(args, ctx):
+        return
+
+    if args.command == "archive":
+        handle_archive(args, ctx)
         return
 
     commands_with_selection = {

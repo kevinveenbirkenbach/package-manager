@@ -112,6 +112,7 @@ class TestReleaseCommand(unittest.TestCase):
             preview=False,
             force=True,
             close=True,
+            retry=False,
         )
 
     @patch("pkgmgr.cli.commands.release.os.path.isdir", return_value=True)
@@ -160,6 +161,7 @@ class TestReleaseCommand(unittest.TestCase):
             preview=True,
             force=False,
             close=False,
+            retry=False,
         )
 
     @patch("pkgmgr.cli.commands.release.run_release")
