@@ -1,3 +1,8 @@
+## [1.15.0] - 2026-05-28
+
+* Add pkgmgr archive subcommand: promote fully-checked NNN-topic.md spec files into the directorys README Archive section and delete the source files. Lookup pattern, README path, and template handling are configurable. Extracted from infinito-nexus-core so every kpmx-managed repo gets the same archival flow.
+
+
 ## [1.14.0] - 2026-05-27
 
 * Added
