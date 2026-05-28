@@ -1,10 +1,49 @@
 from __future__ import annotations
 
 import os
+import re
 from datetime import date
 from typing import Optional
 
 from .editor import _open_editor_for_changelog
+
+H1_RE = re.compile(r"^#\s+\S", re.MULTILINE)
+H2_RE = re.compile(r"^##\s+\S", re.MULTILINE)
+
+
+def _insert_after_h1(existing: str, entry: str) -> str:
+    """Place *entry* after the H1 (and any intro prose), above the first H2.
+
+    If the file has no H1 we synthesise ``# Changelog`` so the resulting
+    document is markdown-lint-clean (MD041 first-line-h1).
+    If the file has no H2 yet we append *entry* after the H1 block.
+    Existing behaviour for legacy headerless files (file starts with
+    ``## ``) is preserved: *entry* is prepended unchanged.
+    """
+    if not existing.strip():
+        return f"# Changelog\n\n{entry}"
+
+    if not H1_RE.search(existing):
+        # Legacy layout: file starts with `## [version]` and has no H1.
+        # Synthesise the H1 so the merged file is lint-clean.
+        return f"# Changelog\n\n{entry}{existing.lstrip()}"
+
+    # File has an H1. Find the first H2 (existing release section).
+    h2_match = H2_RE.search(existing)
+    if h2_match is None:
+        # H1 + optional intro but no release entries yet — append entry
+        # after a single blank line.
+        suffix = (
+            ""
+            if existing.endswith("\n\n")
+            else ("\n" if existing.endswith("\n") else "\n\n")
+        )
+        return f"{existing}{suffix}{entry}"
+
+    # Insert new entry just before the first H2.
+    head = existing[: h2_match.start()].rstrip("\n") + "\n\n"
+    tail = existing[h2_match.start() :]
+    return f"{head}{entry}{tail}"
 
 
 def update_changelog(
@@ -13,9 +52,11 @@ def update_changelog(
     message: Optional[str] = None,
     preview: bool = False,
 ) -> str:
-    """
-    Prepend a new release section to CHANGELOG.md with the new version,
-    current date, and a message.
+    """Insert a new release entry into CHANGELOG.md.
+
+    The entry is placed after the documents H1 heading (creating one if
+    missing) and above any existing release entries, so the result stays
+    markdown-lint-clean (MD041 first-line-h1, MD012 no-multiple-blanks).
     """
     today = date.today().isoformat()
 
@@ -32,8 +73,7 @@ def update_changelog(
             else:
                 message = editor_message
 
-    header = f"## [{new_version}] - {today}\n"
-    header += f"\n* {message}\n\n"
+    entry = f"## [{new_version}] - {today}\n\n* {message}\n\n"
 
     if os.path.exists(changelog_path):
         try:
@@ -45,14 +85,14 @@ def update_changelog(
     else:
         changelog = ""
 
-    new_changelog = header + "\n" + changelog if changelog else header
+    new_changelog = _insert_after_h1(changelog, entry)
 
     print("\n================ CHANGELOG ENTRY ================")
-    print(header.rstrip())
+    print(entry.rstrip())
     print("=================================================\n")
 
     if preview:
-        print(f"[PREVIEW] Would prepend new entry for {new_version} to CHANGELOG.md")
+        print(f"[PREVIEW] Would insert new entry for {new_version} into CHANGELOG.md")
         return message
 
     with open(changelog_path, "w", encoding="utf-8") as f:

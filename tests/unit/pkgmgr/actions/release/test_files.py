@@ -256,7 +256,7 @@ class TestUpdateSpecVersion(unittest.TestCase):
 
 
 class TestUpdateChangelog(unittest.TestCase):
-    def test_update_changelog_creates_file_if_missing(self) -> None:
+    def test_update_changelog_creates_file_with_h1_if_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "CHANGELOG.md")
             self.assertFalse(os.path.exists(path))
@@ -267,10 +267,35 @@ class TestUpdateChangelog(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-        self.assertIn("## [1.2.3]", content)
+        # New file must lead with an H1 so markdownlint MD041 is happy.
+        self.assertTrue(content.startswith("# Changelog\n\n## [1.2.3]"))
         self.assertIn("First release", content)
 
-    def test_update_changelog_prepends_entry_to_existing_content(self) -> None:
+    def test_update_changelog_inserts_below_existing_h1(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "CHANGELOG.md")
+            existing = "# Changelog\n\n## [0.1.0] - 2024-01-01\n\n* Initial content\n"
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(existing)
+
+            update_changelog(path, "1.0.0", message="Second release", preview=False)
+
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+        # H1 still on top, new entry above the existing one.
+        self.assertTrue(content.startswith("# Changelog\n\n## [1.0.0]"))
+        # Exactly one H1.
+        self.assertEqual(
+            content.count("\n# Changelog\n") + content.startswith("# Changelog\n"), 1
+        )
+        # Old entry still present, after the new one.
+        self.assertLess(
+            content.index("## [1.0.0]"),
+            content.index("## [0.1.0]"),
+        )
+
+    def test_update_changelog_legacy_headerless_gets_h1_synthesized(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "CHANGELOG.md")
             with open(path, "w", encoding="utf-8") as f:
@@ -281,7 +306,8 @@ class TestUpdateChangelog(unittest.TestCase):
             with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-        self.assertTrue(content.startswith("## [1.0.0]"))
+        # An H1 is added so MD041 is satisfied even for legacy files.
+        self.assertTrue(content.startswith("# Changelog\n\n## [1.0.0]"))
         self.assertIn("## [0.1.0] - 2024-01-01", content)
 
     def test_update_changelog_preview_does_not_write(self) -> None:
