@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.15.1
+Version:        1.15.2
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,9 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Thu May 28 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.15.2-1
+- Restore `infinito` as an alias for the infinito-nexus/core repository so `pkgmgr install infinito` (and friends) resolves again.
+
 * Thu May 28 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.15.1-1
 - Insert pkgmgr release changelog entry under the H1 instead of above it. Fixes the markdownlint MD041 (first-line-h1) and MD012 (no-multiple-blanks) regressions that previously trashed every CHANGELOG.md after a release.
 
