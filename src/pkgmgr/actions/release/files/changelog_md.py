@@ -73,7 +73,8 @@ def update_changelog(
             else:
                 message = editor_message
 
-    entry = f"## [{new_version}] - {today}\n\n* {message}\n\n"
+    body = message.strip() if message and message.strip() else f"Release {new_version}."
+    entry = f"## [{new_version}] - {today}\n\n{body}\n\n"
 
     if os.path.exists(changelog_path):
         try:

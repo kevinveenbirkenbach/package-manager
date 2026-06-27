@@ -30,11 +30,18 @@ def update_spec_changelog(
     date_str = now.strftime("%a %b %d %Y")
 
     author_name, author_email = _get_debian_author()
-    body_line = message.strip() if message else f"Automated release {new_version}."
+    body = (
+        message.strip()
+        if message and message.strip()
+        else f"Automated release {new_version}."
+    )
+    dashed_body = "\n".join(
+        f"- {line}" if line.strip() else line for line in body.split("\n")
+    )
 
     stanza = (
         f"* {date_str} {author_name} <{author_email}> - {debian_version}\n"
-        f"- {body_line}\n\n"
+        f"{dashed_body}\n\n"
     )
 
     marker = "%changelog"

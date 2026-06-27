@@ -47,10 +47,17 @@ def update_debian_changelog(
     author_name, author_email = _get_debian_author()
 
     first_line = f"{package_name} ({debian_version}) unstable; urgency=medium"
-    body_line = message.strip() if message else f"Automated release {new_version}."
+    body = (
+        message.strip()
+        if message and message.strip()
+        else f"Automated release {new_version}."
+    )
+    indented_body = "\n".join(
+        f"  {line}" if line.strip() else line for line in body.split("\n")
+    )
     stanza = (
         f"{first_line}\n\n"
-        f"  * {body_line}\n\n"
+        f"{indented_body}\n\n"
         f" -- {author_name} <{author_email}>  {date_str}\n\n"
     )
 

@@ -310,6 +310,17 @@ class TestUpdateChangelog(unittest.TestCase):
         self.assertTrue(content.startswith("# Changelog\n\n## [1.0.0]"))
         self.assertIn("## [0.1.0] - 2024-01-01", content)
 
+    def test_update_changelog_does_not_inject_a_leading_bullet(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "CHANGELOG.md")
+            update_changelog(path, "1.2.3", message="* Provided bullet", preview=False)
+
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertIn("\n\n* Provided bullet\n", content)
+        self.assertNotIn("* * Provided bullet", content)
+
     def test_update_changelog_preview_does_not_write(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "CHANGELOG.md")
@@ -349,7 +360,7 @@ class TestUpdateDebianChangelog(unittest.TestCase):
                 content = f.read()
 
         self.assertIn("package-manager (1.2.3-1) unstable; urgency=medium", content)
-        self.assertIn("  * Test debian entry", content)
+        self.assertIn("  Test debian entry", content)
         self.assertIn("Test Maintainer <test@example.com>", content)
         self.assertIn("existing content", content)
 
@@ -377,6 +388,44 @@ class TestUpdateDebianChangelog(unittest.TestCase):
                 content = f.read()
 
         self.assertEqual(content, original)
+
+    def test_update_debian_changelog_indents_every_line_of_multiline_message(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "changelog")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("existing content\n")
+
+            with patch.dict(
+                os.environ,
+                {"DEBFULLNAME": "Test Maintainer", "DEBEMAIL": "test@example.com"},
+                clear=False,
+            ):
+                update_debian_changelog(
+                    debian_changelog_path=path,
+                    package_name="package-manager",
+                    new_version="1.2.3",
+                    message="* First bullet\n\n* Second bullet",
+                    preview=False,
+                )
+
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertIn("  * First bullet", content)
+        self.assertIn("  * Second bullet", content)
+        stanza = content.split(" -- ", 1)[0]
+        body_lines = [
+            line
+            for line in stanza.splitlines()
+            if line.strip() and not line.startswith("package-manager (")
+        ]
+        for line in body_lines:
+            self.assertTrue(
+                line.startswith("  "),
+                msg=f"un-indented debian change line: {line!r}",
+            )
 
 
 class TestUpdateSpecChangelog(unittest.TestCase):
@@ -463,6 +512,56 @@ class TestUpdateSpecChangelog(unittest.TestCase):
                 content = f.read()
 
         self.assertEqual(content, original)
+
+    def test_update_spec_changelog_dashes_every_line_of_multiline_message(
+        self,
+    ) -> None:
+        original = (
+            textwrap.dedent(
+                """
+                Name: package-manager
+                Version: 0.1.0
+                Release: 5%{?dist}
+
+                %changelog
+                * Mon Jan 01 2024 Old Maintainer <old@example.com> - 0.1.0-1
+                - Old entry
+                """
+            ).strip()
+            + "\n"
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "package-manager.spec")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(original)
+
+            with patch.dict(
+                os.environ,
+                {"DEBFULLNAME": "Test Maintainer", "DEBEMAIL": "test@example.com"},
+                clear=False,
+            ):
+                update_spec_changelog(
+                    spec_path=path,
+                    package_name="package-manager",
+                    new_version="1.2.3",
+                    message="* First bullet\n\n* Second bullet",
+                    preview=False,
+                )
+
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertIn("- * First bullet", content)
+        self.assertIn("- * Second bullet", content)
+        new_section = content.split("- Old entry", 1)[0].split("%changelog", 1)[1]
+        for line in new_section.splitlines():
+            if not line.strip() or line.startswith("* "):
+                continue
+            self.assertTrue(
+                line.startswith("- "),
+                msg=f"rpm body line would be read as a new entry: {line!r}",
+            )
 
 
 if __name__ == "__main__":
