@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        1.15.2
+Version:        1.16.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,11 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sun Jun 28 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.16.0-1
+- * New *code-scanning* command: *pkgmgr code-scanning* downloads a repository's GitHub code scanning alerts and analysis metadata via the *gh* CLI into a timestamped directory (default */tmp/<repo>/code-scanner/<timestamp>*), together with a readable summary, for offline analysis.
+- * The release flow now lints and normalises the changelog message before writing it: a leading heading becomes bold, inline code becomes italic, and the entry is validated against the repository's markdown rules, re-prompting interactively until it is clean.
+- * The Debian changelog and the RPM *%changelog* now mirror the full multi-line message correctly — every change line is indented or dash-prefixed — fixing a package build failure where un-indented bodies broke *dpkg-buildpackage* and *rpmspec*; the changelog entry no longer gains an auto-inserted leading bullet.
+
 * Thu May 28 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 1.15.2-1
 - Restore `infinito` as an alias for the infinito-nexus/core repository so `pkgmgr install infinito` (and friends) resolves again.
 
