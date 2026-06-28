@@ -321,6 +321,24 @@ class TestUpdateChangelog(unittest.TestCase):
         self.assertIn("\n\n* Provided bullet\n", content)
         self.assertNotIn("* * Provided bullet", content)
 
+    def test_update_changelog_transforms_heading_and_inline_code(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "CHANGELOG.md")
+            update_changelog(
+                path,
+                "1.2.3",
+                message="# Summary\n\n* uses `foo` tool",
+                preview=False,
+            )
+
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertIn("**Summary**", content)
+        self.assertIn("*foo*", content)
+        self.assertNotIn("# Summary", content)
+        self.assertNotIn("`foo`", content)
+
     def test_update_changelog_preview_does_not_write(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "CHANGELOG.md")

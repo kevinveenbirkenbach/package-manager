@@ -16,9 +16,10 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
     ) as tmp:
         tmp_path = tmp.name
         tmp.write(
-            "# Write the changelog entry for this release.\n"
-            "# Lines starting with '#' will be ignored.\n"
-            "# Empty result will fall back to a generic message.\n\n"
+            "; Write the changelog entry for this release.\n"
+            "; Lines starting with ';' are ignored.\n"
+            "; A leading '#' becomes bold; `code` becomes italic.\n"
+            "; Empty result will fall back to a generic message.\n\n"
         )
         if initial_message:
             tmp.write(initial_message.strip() + "\n")
@@ -41,5 +42,5 @@ def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
         except OSError:
             pass
 
-    lines = [line for line in content.splitlines() if not line.strip().startswith("#")]
+    lines = [line for line in content.splitlines() if not line.strip().startswith(";")]
     return "\n".join(lines).strip()

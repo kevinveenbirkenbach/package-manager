@@ -2,9 +2,15 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from datetime import date
 from typing import Optional
 
+from .changelog_lint import (
+    ChangelogLintError,
+    lint_changelog_entry,
+    transform_changelog_message,
+)
 from .editor import _open_editor_for_changelog
 
 H1_RE = re.compile(r"^#\s+\S", re.MULTILINE)
@@ -60,31 +66,49 @@ def update_changelog(
     """
     today = date.today().isoformat()
 
-    if message is None:
-        if preview:
-            message = "Automated release."
-        else:
-            print(
-                "\n[INFO] No release message provided, opening editor for changelog entry...\n"
+    def _entry_for(raw: str) -> tuple[str, str]:
+        body = transform_changelog_message(raw).strip() or f"Release {new_version}"
+        return body, f"## [{new_version}] - {today}\n\n{body}\n\n"
+
+    def _print_findings(findings: list[str]) -> None:
+        print("\n[ERROR] Changelog entry is not markdown-lint clean:")
+        for finding in findings:
+            print(f"  - {finding}")
+        print()
+
+    if message is not None:
+        body, entry = _entry_for(message)
+        findings = lint_changelog_entry(changelog_path, entry)
+        if findings:
+            _print_findings(findings)
+            raise ChangelogLintError(
+                "Provided changelog message is not markdown-lint clean."
             )
-            editor_message = _open_editor_for_changelog()
-            if not editor_message:
-                message = "Automated release."
-            else:
-                message = editor_message
+    elif preview or not sys.stdin.isatty():
+        body, entry = _entry_for(message or f"Release {new_version}")
+    else:
+        attempt: Optional[str] = None
+        while True:
+            print(
+                "\n[INFO] Provide the changelog entry — a leading '#' becomes "
+                "bold, `code` becomes italic.\n"
+            )
+            raw = _open_editor_for_changelog(attempt)
+            body, entry = _entry_for(raw or f"Release {new_version}")
+            findings = lint_changelog_entry(changelog_path, entry)
+            if not findings:
+                break
+            _print_findings(findings)
+            attempt = body
+            print("[INFO] Re-opening the editor so you can fix the entry...")
 
-    body = message.strip() if message and message.strip() else f"Release {new_version}."
-    entry = f"## [{new_version}] - {today}\n\n{body}\n\n"
-
+    changelog = ""
     if os.path.exists(changelog_path):
         try:
             with open(changelog_path, "r", encoding="utf-8") as f:
                 changelog = f.read()
         except Exception as exc:
             print(f"[WARN] Could not read existing CHANGELOG.md: {exc}")
-            changelog = ""
-    else:
-        changelog = ""
 
     new_changelog = _insert_after_h1(changelog, entry)
 
@@ -94,10 +118,10 @@ def update_changelog(
 
     if preview:
         print(f"[PREVIEW] Would insert new entry for {new_version} into CHANGELOG.md")
-        return message
+        return body
 
     with open(changelog_path, "w", encoding="utf-8") as f:
         f.write(new_changelog)
 
     print(f"Updated CHANGELOG.md with version {new_version}")
-    return message
+    return body

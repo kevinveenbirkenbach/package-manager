@@ -88,9 +88,8 @@ def _release_impl(
         print("[INFO] No RPM spec file found. Skipping spec version update.")
 
     effective_message: Optional[str] = message
-    if effective_message is None and isinstance(changelog_message, str):
-        if changelog_message.strip():
-            effective_message = changelog_message.strip()
+    if isinstance(changelog_message, str) and changelog_message.strip():
+        effective_message = changelog_message.strip()
 
     package_name = resolve_package_name(paths)
 
