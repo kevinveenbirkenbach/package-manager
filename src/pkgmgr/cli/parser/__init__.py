@@ -7,6 +7,7 @@ from pkgmgr.cli.proxy import register_proxy_commands
 from .archive_cmd import add_archive_subparser
 from .branch_cmd import add_branch_subparsers
 from .changelog_cmd import add_changelog_subparser
+from .code_scanning_cmd import add_code_scanning_subparser
 from .common import SortedSubParsersAction
 from .config_cmd import add_config_subparsers
 from .install_update import add_install_update_subparsers
@@ -67,6 +68,7 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     add_make_subparsers(subparsers)
     add_mirror_subparsers(subparsers)
     add_archive_subparser(subparsers)
+    add_code_scanning_subparser(subparsers)
 
     register_proxy_commands(subparsers)
     return parser

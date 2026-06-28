@@ -11,6 +11,7 @@ from pkgmgr.core.repository.dir import get_repo_dir
 
 from pkgmgr.cli.commands import (
     handle_archive,
+    handle_code_scanning,
     handle_repos_command,
     handle_tools_command,
     handle_release,
@@ -63,6 +64,10 @@ def dispatch_command(args, ctx: CLIContext) -> None:
 
     if args.command == "archive":
         handle_archive(args, ctx)
+        return
+
+    if args.command == "code-scanning":
+        handle_code_scanning(args, ctx)
         return
 
     commands_with_selection = {
