@@ -2,6 +2,7 @@
         build build-no-cache build-no-cache-all build-missing \
 		delete-volumes purge \
         test test-unit test-e2e test-integration test-env-virtual test-env-nix \
+        lint \
 		setup setup-venv setup-nix
 
 # Distro
@@ -83,6 +84,13 @@ build-no-cache-all:
 	done
 
 # ------------------------------------------------------------
+# Lint targets (run on the host, not in a container)
+# ------------------------------------------------------------
+
+lint:
+	@bash scripts/lint/python.sh
+
+# ------------------------------------------------------------
 # Test targets (delegated to scripts/test)
 # ------------------------------------------------------------
 
@@ -101,8 +109,8 @@ test-env-virtual: build-missing
 test-env-nix: build-missing
 	@bash scripts/test/test-env-nix.sh
 
-# Combined test target for local + CI (unit + integration + e2e)
-test: test-env-virtual test-unit test-integration test-e2e
+# Combined test target for local + CI (lint + unit + integration + e2e)
+test: lint test-env-virtual test-unit test-integration test-e2e
 
 delete-volumes: 
 	@docker volume rm "pkgmgr_nix_store_${PKGMGR_DISTRO}" "pkgmgr_nix_cache_${PKGMGR_DISTRO}" || echo "No volumes to delete."
