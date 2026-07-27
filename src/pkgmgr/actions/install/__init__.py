@@ -230,7 +230,7 @@ def install_repos(
                     f"[Warning] install: repository {identifier} failed (exit={code}). Continuing..."
                 )
             continue
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - batch boundary: one repository must never abort the run
             failures.append((identifier, f"unexpected error: {exc}"))
             if not quiet:
                 print(

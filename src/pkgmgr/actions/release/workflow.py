@@ -186,7 +186,7 @@ def _release_impl(
         print(f"[INFO] Deleting branch {branch} after successful release...")
         try:
             close_branch(name=branch, base_branch="main", cwd=".")
-        except Exception as exc:
+        except (RuntimeError, GitRunError) as exc:
             print(f"[WARN] Failed to close branch {branch} automatically: {exc}")
 
 

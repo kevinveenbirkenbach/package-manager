@@ -46,7 +46,7 @@ def get_installed_python_version(*candidates: str) -> InstalledVersion | None:
     """
     try:
         from importlib import metadata as importlib_metadata
-    except Exception:
+    except ImportError:
         return None
 
     candidates = _unique_candidates(candidates)
@@ -62,13 +62,13 @@ def get_installed_python_version(*candidates: str) -> InstalledVersion | None:
         try:
             version = importlib_metadata.version(name)
             return InstalledVersion(name=name, version=version)
-        except Exception:
+        except importlib_metadata.PackageNotFoundError:
             continue
 
     # 2) Fallback: scan distributions (last resort)
     try:
         dists = importlib_metadata.distributions()
-    except Exception:
+    except (OSError, ImportError):
         return None
 
     norm_candidates = {_normalize(c) for c in candidates}
@@ -145,7 +145,7 @@ def get_installed_nix_profile_version(*candidates: str) -> InstalledVersion | No
                             guess = _extract_version_from_store_path(sp)
                             if guess:
                                 return InstalledVersion(name=name, version=guess)
-        except Exception:
+        except (json.JSONDecodeError, AttributeError):
             pass
 
     # Fallback: text mode

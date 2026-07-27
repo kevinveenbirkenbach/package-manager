@@ -34,13 +34,11 @@ def _open_editor_for_changelog(initial_message: str | None = None) -> str:
         )
 
     try:
-        with open(tmp_path, "r", encoding="utf-8") as f:
+        with open(tmp_path, encoding="utf-8") as f:
             content = f.read()
     finally:
-        try:
+        with contextlib.suppress(OSError):
             os.remove(tmp_path)
-        except OSError:
-            pass
 
     lines = [line for line in content.splitlines() if not line.strip().startswith(";")]
     return "\n".join(lines).strip()

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pkgmgr.cli.context import CLIContext
+from pkgmgr.core.git import GitRunError
 from pkgmgr.core.git.queries import get_tags
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
@@ -116,7 +117,7 @@ def handle_version(
         if not repo_dir:
             try:
                 repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
-            except Exception:
+            except (AttributeError, KeyError, TypeError):
                 repo_dir = None
 
         if not repo_dir or not os.path.isdir(repo_dir):
@@ -150,11 +151,11 @@ def handle_version(
 
         try:
             tags = get_tags(cwd=repo_dir)
-        except Exception as exc:
+        except GitRunError as exc:
             print(f"[ERROR] Could not read git tags: {exc}")
             tags = []
 
-        latest_tag_info: Optional[Tuple[str, SemVer]] = (
+        latest_tag_info: tuple[str, SemVer] | None = (
             find_latest_version(tags) if tags else None
         )
 

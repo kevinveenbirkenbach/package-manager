@@ -119,7 +119,7 @@ def handle_repos_command(
         for repository in selected:
             try:
                 repo_dir = _resolve_repository_directory(repository, ctx)
-            except Exception as exc:
+            except (AttributeError, KeyError, TypeError, ValueError) as exc:
                 ident = (
                     f"{repository.get('provider', '?')}/"
                     f"{repository.get('account', '?')}/"

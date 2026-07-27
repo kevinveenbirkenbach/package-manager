@@ -83,10 +83,8 @@ def _markdownlint(reference_path: str, document: str) -> list[str]:
         ]
         return findings or [output.strip() or "markdown-lint reported an error"]
     finally:
-        try:
+        with contextlib.suppress(OSError):
             os.remove(tmp_path)
-        except OSError:
-            pass
 
 
 def _builtin_lint(document: str) -> list[str]:

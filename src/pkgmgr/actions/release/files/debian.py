@@ -68,9 +68,9 @@ def update_debian_changelog(
         return
 
     try:
-        with open(debian_changelog_path, "r", encoding="utf-8") as f:
+        with open(debian_changelog_path, encoding="utf-8") as f:
             existing = f.read()
-    except Exception as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         print(f"[WARN] Could not read debian/changelog: {exc}")
         existing = ""
 

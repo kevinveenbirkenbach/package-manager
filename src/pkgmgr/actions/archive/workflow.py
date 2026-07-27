@@ -102,10 +102,8 @@ def run_archive(
 
     if not dry_run:
         for path, _title in archived:
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 path.unlink()
-            except FileNotFoundError:
-                pass
 
     return ArchivePlan(
         archived=archived,

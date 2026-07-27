@@ -21,7 +21,7 @@ class TestIntegrationChangelogCommands(unittest.TestCase):
         """
         try:
             repo_dir = _load_pkgmgr_repo_dir()
-        except Exception:
+        except (OSError, RuntimeError, ValueError):
             repo_dir = None
 
         if repo_dir is not None and not os.path.isdir(repo_dir):

@@ -22,7 +22,7 @@ def read_pyproject_version(repo_dir: str) -> str | None:
 
     try:
         import tomllib  # Python 3.11+
-    except Exception:
+    except ImportError:
         import tomli as tomllib  # type: ignore
 
     try:
@@ -31,11 +31,11 @@ def read_pyproject_version(repo_dir: str) -> str | None:
         project = data.get("project") or {}
         version = project.get("version")
         return str(version).strip() if version else None
-    except Exception:
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
         return None
 
 
-def read_pyproject_project_name(repo_dir: str) -> Optional[str]:
+def read_pyproject_project_name(repo_dir: str) -> str | None:
     """
     Read distribution name from pyproject.toml ([project].name).
 
@@ -49,7 +49,7 @@ def read_pyproject_project_name(repo_dir: str) -> Optional[str]:
 
     try:
         import tomllib  # Python 3.11+
-    except Exception:
+    except ImportError:
         import tomli as tomllib  # type: ignore
 
     try:
@@ -58,11 +58,11 @@ def read_pyproject_project_name(repo_dir: str) -> Optional[str]:
         project = data.get("project") or {}
         name = project.get("name")
         return str(name).strip() if name else None
-    except Exception:
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
         return None
 
 
-def read_flake_version(repo_dir: str) -> Optional[str]:
+def read_flake_version(repo_dir: str) -> str | None:
     """
     Read the version from flake.nix in repo_dir, if present.
 
@@ -75,9 +75,9 @@ def read_flake_version(repo_dir: str) -> Optional[str]:
         return None
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             text = f.read()
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         return None
 
     match = re.search(r'version\s*=\s*"([^"]+)"', text)
@@ -102,9 +102,9 @@ def read_pkgbuild_version(repo_dir: str) -> str | None:
         return None
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             text = f.read()
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         return None
 
     ver_match = re.search(r"^pkgver\s*=\s*(.+)$", text, re.MULTILINE)
@@ -148,13 +148,13 @@ def read_debian_changelog_version(repo_dir: str) -> str | None:
                 if match:
                     return match.group(1).strip() or None
                 break
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         return None
 
     return None
 
 
-def read_spec_version(repo_dir: str) -> Optional[str]:
+def read_spec_version(repo_dir: str) -> str | None:
     """
     Read the version from an RPM spec file.
 
@@ -174,9 +174,9 @@ def read_spec_version(repo_dir: str) -> Optional[str]:
         return None
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             text = f.read()
-    except Exception:
+    except (OSError, UnicodeDecodeError):
         return None
 
     ver_match = re.search(r"^Version:\s*(.+)$", text, re.MULTILINE)
@@ -205,18 +205,18 @@ def read_ansible_galaxy_version(repo_dir: str) -> str | None:
     galaxy_yml = os.path.join(repo_dir, "galaxy.yml")
     if os.path.isfile(galaxy_yml):
         try:
-            with open(galaxy_yml, "r", encoding="utf-8") as f:
+            with open(galaxy_yml, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
             version = data.get("version")
             if isinstance(version, str) and version.strip():
                 return version.strip()
-        except Exception:
+        except (OSError, UnicodeDecodeError, yaml.YAMLError):
             pass
 
     meta_yml = os.path.join(repo_dir, "meta", "main.yml")
     if os.path.isfile(meta_yml):
         try:
-            with open(meta_yml, "r", encoding="utf-8") as f:
+            with open(meta_yml, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
 
             galaxy_info = data.get("galaxy_info") or {}
@@ -228,7 +228,7 @@ def read_ansible_galaxy_version(repo_dir: str) -> str | None:
             version = data.get("version")
             if isinstance(version, str) and version.strip():
                 return version.strip()
-        except Exception:
+        except (OSError, UnicodeDecodeError, yaml.YAMLError):
             return None
 
     return None

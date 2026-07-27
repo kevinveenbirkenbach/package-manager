@@ -12,18 +12,18 @@ from .providers.github import GitHubProvider
 class ProviderRegistry:
     """Resolve the correct provider implementation for a host."""
 
-    providers: List[RemoteProvider]
+    providers: list[RemoteProvider]
 
     @classmethod
     def default(cls) -> ProviderRegistry:
         # Order matters: more specific providers first; fallback providers last.
         return cls(providers=[GitHubProvider(), GiteaProvider()])
 
-    def resolve(self, host: str) -> Optional[RemoteProvider]:
+    def resolve(self, host: str) -> RemoteProvider | None:
         for p in self.providers:
             try:
                 if p.can_handle(host):
                     return p
-            except Exception:
+            except (AttributeError, TypeError, ValueError):
                 continue
         return None

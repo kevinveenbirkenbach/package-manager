@@ -117,20 +117,20 @@ def _proxy_has_explicit_selection(args: argparse.Namespace) -> bool:
 
 def _select_repo_for_current_directory(
     ctx: CLIContext,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Heuristic: find the repository whose local directory matches the
     current working directory or is the closest parent.
     """
     cwd = os.path.abspath(os.getcwd())
-    candidates: List[tuple[str, Dict[str, Any]]] = []
+    candidates: list[tuple[str, dict[str, Any]]] = []
 
     for repo in ctx.all_repositories:
         repo_dir = repo.get("directory")
         if not repo_dir:
             try:
                 repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
-            except Exception:
+            except (AttributeError, KeyError, TypeError):
                 repo_dir = None
         if not repo_dir:
             continue

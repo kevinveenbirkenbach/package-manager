@@ -36,7 +36,7 @@ class ArchPkgbuildInstaller(BaseInstaller):
         try:
             if hasattr(os, "geteuid") and os.geteuid() == 0:
                 return False
-        except Exception:
+        except (AttributeError, OSError):
             # On non-POSIX platforms just ignore this check.
             pass
 

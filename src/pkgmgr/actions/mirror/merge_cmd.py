@@ -35,10 +35,10 @@ def _load_user_config(path: str) -> dict[str, object]:
         return {}
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
             return data if isinstance(data, dict) else {}
-    except Exception:
+    except (OSError, UnicodeDecodeError, yaml.YAMLError):
         return {}
 
 

@@ -28,7 +28,7 @@ def delete_repos(selected_repos, repositories_base_dir, all_repos, preview=False
                         print(
                             f"Deleted repository directory '{repo_dir}' for {repo_identifier}."
                         )
-                    except Exception as e:
+                    except OSError as e:
                         print(f"Error deleting '{repo_dir}' for {repo_identifier}: {e}")
             else:
                 print(f"Skipped deletion of '{repo_dir}' for {repo_identifier}.")

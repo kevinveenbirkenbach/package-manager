@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from pkgmgr.core.git.queries import get_repo_root
 
 try:
     from jinja2 import Environment, FileSystemLoader, StrictUndefined
-except Exception as exc:  # pragma: no cover
+except ImportError as exc: # pragma: no cover
     Environment = None  # type: ignore
     FileSystemLoader = None  # type: ignore
     StrictUndefined = None  # type: ignore

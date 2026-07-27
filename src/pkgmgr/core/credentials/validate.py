@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import http.client
 import json
 import urllib.request
 
@@ -32,7 +33,7 @@ def validate_token(provider_kind: str, host: str, token: str) -> bool:
                 # Optional: parse to ensure body is JSON
                 _ = json.loads(resp.read().decode("utf-8"))
                 return True
-        except Exception:
+        except (OSError, http.client.HTTPException, json.JSONDecodeError, UnicodeDecodeError):
             return False
 
     # Unknown provider: don't hard-fail validation (conservative default)

@@ -194,11 +194,11 @@ def _load_defaults_from_package_or_project() -> dict[str, Any]:
     """
     try:
         import pkgmgr  # type: ignore
-    except Exception:
+    except ImportError:
         return {"directories": {}, "repositories": []}
 
     pkg_root = Path(pkgmgr.__file__).resolve().parent
-    candidates: List[Path] = []
+    candidates: list[Path] = []
 
     # Always prefer package-internal config dir
     candidates.append(pkg_root / "config")

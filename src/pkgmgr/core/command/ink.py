@@ -69,7 +69,7 @@ def create_ink(
     try:
         if os.path.realpath(command).startswith(os.path.realpath(repo_dir)):
             os.chmod(command, 0o755)
-    except Exception as e:
+    except OSError as e:
         if not quiet:
             print(f"Failed to set permissions on '{command}': {e}")
 
@@ -106,6 +106,6 @@ def create_ink(
             os.symlink(link_path, alias_link_path)
             if not quiet:
                 print(f"Alias '{alias_name}' created → {repo_identifier}")
-        except Exception as e:
+        except OSError as e:
             if not quiet:
                 print(f"Error creating alias '{alias_name}': {e}")

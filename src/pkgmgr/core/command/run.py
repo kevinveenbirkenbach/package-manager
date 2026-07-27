@@ -61,10 +61,8 @@ def run_command(
                 line = stream.readline()
                 if line == "":
                     # EOF: stop watching this stream
-                    try:
+                    with contextlib.suppress(Exception):
                         sel.unregister(stream)
-                    except Exception:
-                        pass
                     continue
 
                 if which == "stdout":
@@ -78,14 +76,10 @@ def run_command(
         try:
             sel.close()
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 process.stdout.close()
-            except Exception:
-                pass
-            try:
+            with contextlib.suppress(Exception):
                 process.stderr.close()
-            except Exception:
-                pass
 
     returncode = process.wait()
 

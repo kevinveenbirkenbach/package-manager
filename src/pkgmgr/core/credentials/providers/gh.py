@@ -34,7 +34,7 @@ class GhTokenProvider:
                 stderr=subprocess.STDOUT,
                 text=True,
             ).strip()
-        except Exception:
+        except (OSError, subprocess.SubprocessError):
             return None
 
         if not out:

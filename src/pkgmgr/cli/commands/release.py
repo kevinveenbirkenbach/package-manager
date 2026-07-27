@@ -36,7 +36,7 @@ def handle_release(
             repo_dir = repo.get("directory") or get_repo_dir(
                 ctx.repositories_base_dir, repo
             )
-        except Exception as exc:
+        except (AttributeError, KeyError, TypeError) as exc:
             print(
                 f"[WARN] Skipping repository {identifier}: failed to resolve directory: {exc}"
             )

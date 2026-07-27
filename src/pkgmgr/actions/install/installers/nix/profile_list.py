@@ -35,12 +35,12 @@ class NixProfileListReader:
             sp = m.group(2)
             try:
                 idx = int(idx_s)
-            except Exception:
+            except ValueError:
                 continue
             entries.append((idx, self._store_prefix(sp)))
 
         seen: set[int] = set()
-        uniq: List[Tuple[int, str]] = []
+        uniq: list[tuple[int, str]] = []
         for idx, sp in entries:
             if idx not in seen:
                 seen.add(idx)

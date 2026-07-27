@@ -21,7 +21,7 @@ def coerce_index(key: str, entry: dict[str, Any]) -> int | None:
     if k.isdigit():
         try:
             return int(k)
-        except Exception:
+        except ValueError:
             return None
 
     # 2) Explicit index fields (schema-dependent)
@@ -32,7 +32,7 @@ def coerce_index(key: str, entry: dict[str, Any]) -> int | None:
         if isinstance(v, str) and v.strip().isdigit():
             try:
                 return int(v.strip())
-            except Exception:
+            except ValueError:
                 pass
 
     # 3) Last resort: extract trailing number from key if it looks like "<name>-<n>"
@@ -40,13 +40,13 @@ def coerce_index(key: str, entry: dict[str, Any]) -> int | None:
     if m:
         try:
             return int(m.group(1))
-        except Exception:
+        except ValueError:
             return None
 
     return None
 
 
-def iter_store_paths(entry: Dict[str, Any]) -> Iterable[str]:
+def iter_store_paths(entry: dict[str, Any]) -> Iterable[str]:
     """
     Yield all possible store paths from a nix profile JSON entry.
 

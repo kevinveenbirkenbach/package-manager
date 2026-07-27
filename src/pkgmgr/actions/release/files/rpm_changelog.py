@@ -18,9 +18,9 @@ def update_spec_changelog(
         return
 
     try:
-        with open(spec_path, "r", encoding="utf-8") as f:
+        with open(spec_path, encoding="utf-8") as f:
             content = f.read()
-    except Exception as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         print(f"[WARN] Could not read spec file for changelog update: {exc}")
         return
 
@@ -63,7 +63,7 @@ def update_spec_changelog(
     try:
         with open(spec_path, "w", encoding="utf-8") as f:
             f.write(new_content)
-    except Exception as exc:
+    except (OSError, UnicodeEncodeError) as exc:
         print(f"[WARN] Failed to write updated spec changelog section: {exc}")
         return
 

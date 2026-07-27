@@ -12,9 +12,9 @@ def update_pkgbuild_version(
         return
 
     try:
-        with open(pkgbuild_path, "r", encoding="utf-8") as f:
+        with open(pkgbuild_path, encoding="utf-8") as f:
             content = f.read()
-    except Exception as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         print(f"[WARN] Could not read PKGBUILD: {exc}")
         return
 

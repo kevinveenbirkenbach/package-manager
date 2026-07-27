@@ -12,9 +12,9 @@ def update_flake_version(
         return
 
     try:
-        with open(flake_path, "r", encoding="utf-8") as f:
+        with open(flake_path, encoding="utf-8") as f:
             content = f.read()
-    except Exception as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         print(f"[WARN] Could not read flake.nix: {exc}")
         return
 

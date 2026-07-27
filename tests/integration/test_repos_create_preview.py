@@ -13,7 +13,7 @@ class TestIntegrationReposCreatePreview(unittest.TestCase):
         # Import lazily to avoid hard-failing if the CLI module/function name differs.
         try:
             repos_mod = importlib.import_module("pkgmgr.cli.commands.repos")
-        except Exception as exc:
+        except ImportError as exc:
             self.skipTest(f"CLI module not available: {exc}")
 
         handle = getattr(repos_mod, "handle_repos_command", None)

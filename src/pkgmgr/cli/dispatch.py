@@ -43,7 +43,7 @@ def _select_repo_for_current_directory(ctx: CLIContext) -> list[dict[str, Any]]:
         if not repo_dir:
             try:
                 repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
-            except Exception:
+            except (AttributeError, KeyError, TypeError):
                 continue
 
         repo_dir = os.path.abspath(os.path.expanduser(repo_dir))

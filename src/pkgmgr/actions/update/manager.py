@@ -57,7 +57,7 @@ class UpdateManager:
                         f"[Warning] update: pull failed for {identifier} (exit={code}). Continuing..."
                     )
                 continue
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - batch boundary: one repository must never abort the run
                 failures.append((identifier, f"pull failed: {exc}"))
                 if not quiet:
                     print(
@@ -88,7 +88,7 @@ class UpdateManager:
                         f"[Warning] update: install failed for {identifier} (exit={code}). Continuing..."
                     )
                 continue
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - batch boundary: one repository must never abort the run
                 failures.append((identifier, f"install failed: {exc}"))
                 if not quiet:
                     print(

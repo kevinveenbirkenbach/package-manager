@@ -50,19 +50,19 @@ class HttpClient:
             ) as resp:
                 raw = resp.read().decode("utf-8", errors="replace")
 
-                parsed: Optional[Dict[str, Any]] = None
+                parsed: dict[str, Any] | None = None
                 if raw:
                     try:
                         loaded = json.loads(raw)
                         parsed = loaded if isinstance(loaded, dict) else None
-                    except Exception:
+                    except json.JSONDecodeError:
                         parsed = None
 
                 return HttpResponse(status=int(resp.status), text=raw, json=parsed)
         except urllib.error.HTTPError as exc:
             try:
                 body = exc.read().decode("utf-8", errors="replace")
-            except Exception:
+            except (OSError, ValueError):
                 body = ""
             raise HttpError(status=int(exc.code), message=str(exc), body=body) from exc
         except urllib.error.URLError as exc:

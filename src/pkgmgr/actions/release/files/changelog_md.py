@@ -104,9 +104,9 @@ def update_changelog(
     changelog = ""
     if os.path.exists(changelog_path):
         try:
-            with open(changelog_path, "r", encoding="utf-8") as f:
+            with open(changelog_path, encoding="utf-8") as f:
                 changelog = f.read()
-        except Exception as exc:
+        except (OSError, UnicodeDecodeError) as exc:
             print(f"[WARN] Could not read existing CHANGELOG.md: {exc}")
 
     new_changelog = _insert_after_h1(changelog, entry)

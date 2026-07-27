@@ -2,22 +2,23 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pkgmgr.actions.changelog import generate_changelog
 from pkgmgr.cli.context import CLIContext
+from pkgmgr.core.git import GitRunError
 from pkgmgr.core.git.queries import get_tags
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.version.semver import extract_semver_from_tags
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def _find_previous_and_current_tag(
-    tags: List[str],
-    target_tag: Optional[str] = None,
-) -> Tuple[Optional[str], Optional[str]]:
+    tags: list[str],
+    target_tag: str | None = None,
+) -> tuple[str | None, str | None]:
     """
     Given a list of tags and an optional target tag, determine
     (previous_tag, current_tag) on the SemVer axis.
@@ -93,7 +94,7 @@ def handle_changelog(
         if not repo_dir:
             try:
                 repo_dir = get_repo_dir(ctx.repositories_base_dir, repo)
-            except Exception:
+            except (AttributeError, KeyError, TypeError):
                 repo_dir = None
 
         identifier = get_repo_identifier(repo, ctx.all_repositories)
@@ -113,12 +114,12 @@ def handle_changelog(
 
         try:
             tags = get_tags(cwd=repo_dir)
-        except Exception as exc:
+        except GitRunError as exc:
             print(f"[ERROR] Could not read git tags: {exc}")
             tags = []
 
-        from_ref: Optional[str] = None
-        to_ref: Optional[str] = None
+        from_ref: str | None = None
+        to_ref: str | None = None
 
         if range_arg:
             # Explicit range provided
