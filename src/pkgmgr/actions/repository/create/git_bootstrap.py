@@ -10,10 +10,12 @@ from pkgmgr.core.git.commands import (
     push_upstream,
 )
 
+DEFAULT_BRANCH = "main"
+
 
 class GitBootstrapper:
     def init_repo(self, repo_dir: str, preview: bool) -> None:
-        init(cwd=repo_dir, preview=preview)
+        init(initial_branch=DEFAULT_BRANCH, cwd=repo_dir, preview=preview)
         add_all(cwd=repo_dir, preview=preview)
         try:
             commit("Initial commit", cwd=repo_dir, preview=preview)
@@ -21,15 +23,8 @@ class GitBootstrapper:
             print(f"[WARN] Initial commit failed (continuing): {exc}")
 
     def push_default_branch(self, repo_dir: str, preview: bool) -> None:
+        branch_move(DEFAULT_BRANCH, cwd=repo_dir, preview=preview)
         try:
-            branch_move("main", cwd=repo_dir, preview=preview)
-            push_upstream("origin", "main", cwd=repo_dir, preview=preview)
-            return
-        except GitPushUpstreamError:
-            pass
-
-        try:
-            branch_move("master", cwd=repo_dir, preview=preview)
-            push_upstream("origin", "master", cwd=repo_dir, preview=preview)
+            push_upstream("origin", DEFAULT_BRANCH, cwd=repo_dir, preview=preview)
         except GitPushUpstreamError as exc:
             print(f"[WARN] Push failed: {exc}")
