@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 End-to-end style integration tests for the `pkgmgr release` CLI command.
@@ -141,8 +140,8 @@ class TestIntegrationReleaseCommand(unittest.TestCase):
         This test intentionally does not mock anything to exercise the real
         CLI parser wiring in main.py.
         """
-        import io
         import contextlib
+        import io
 
         original_argv = list(sys.argv)
         buf = io.StringIO()

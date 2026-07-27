@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
 import sys
 from typing import Any, Dict, List
 
-from pkgmgr.cli.context import CLIContext
 from pkgmgr.actions.install import install_repos
+from pkgmgr.actions.repository.create import create_repo
 from pkgmgr.actions.repository.deinstall import deinstall_repos
 from pkgmgr.actions.repository.delete import delete_repos
-from pkgmgr.actions.repository.status import status_repos
 from pkgmgr.actions.repository.list import list_repositories
-from pkgmgr.actions.repository.create import create_repo
+from pkgmgr.actions.repository.status import status_repos
+from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.command.run import run_command
 from pkgmgr.core.repository.dir import get_repo_dir
 

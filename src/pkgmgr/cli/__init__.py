@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import os
@@ -6,8 +5,8 @@ import os
 from pkgmgr.core.config.load import load_config
 
 from .context import CLIContext
-from .parser import create_parser
 from .dispatch import dispatch_command
+from .parser import create_parser
 
 __all__ = ["CLIContext", "create_parser", "dispatch_command", "main"]
 

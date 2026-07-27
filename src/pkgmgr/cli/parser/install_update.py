@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import argparse
 
 from pkgmgr.cli.parser.common import (
-    add_install_update_arguments,
     add_identifier_arguments,
+    add_install_update_arguments,
 )
 
 

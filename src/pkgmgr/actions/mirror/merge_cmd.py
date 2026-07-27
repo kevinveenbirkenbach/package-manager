@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 import yaml
 
@@ -10,7 +10,6 @@ from pkgmgr.core.config.save import save_user_config
 from .context import build_context
 from .io import write_mirrors_file
 from .types import MirrorMap, Repository
-
 
 # -----------------------------------------------------------------------------
 # Helpers

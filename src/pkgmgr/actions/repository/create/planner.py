@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 from .model import RepoParts
 

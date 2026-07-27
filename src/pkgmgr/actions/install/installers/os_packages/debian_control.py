@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Installer for Debian/Ubuntu packages defined via debian/control.

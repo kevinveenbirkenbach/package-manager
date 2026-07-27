@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Integration tests for recursive capability resolution and installer shadowing.
@@ -17,7 +16,8 @@ import os
 import shutil
 import tempfile
 import unittest
-from typing import List, Sequence, Tuple
+from collections.abc import Sequence
+from typing import List, Tuple
 from unittest.mock import patch
 
 import pkgmgr.actions.install as install_mod
@@ -28,7 +28,6 @@ from pkgmgr.actions.install.installers.os_packages.arch_pkgbuild import (
     ArchPkgbuildInstaller,
 )
 from pkgmgr.actions.install.installers.python import PythonInstaller
-
 
 InstallerSpec = Tuple[str, object]
 

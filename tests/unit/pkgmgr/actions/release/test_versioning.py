@@ -3,11 +3,11 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.core.version.semver import SemVer
 from pkgmgr.actions.release.versioning import (
-    determine_current_version,
     bump_semver,
+    determine_current_version,
 )
+from pkgmgr.core.version.semver import SemVer
 
 
 class TestDetermineCurrentVersion(unittest.TestCase):

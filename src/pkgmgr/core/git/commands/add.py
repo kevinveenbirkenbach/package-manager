@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Sequence, Union
+from collections.abc import Iterable, Sequence
+from typing import List, Union
 
-from ..errors import GitRunError, GitCommandError
+from ..errors import GitCommandError, GitRunError
 from ..run import run
 
 

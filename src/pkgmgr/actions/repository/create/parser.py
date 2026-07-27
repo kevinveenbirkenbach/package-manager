@@ -58,7 +58,7 @@ def _split_host_port(host: str) -> Tuple[str, str | None]:
 
 
 def _strip_git_suffix(name: str) -> str:
-    return name[:-4] if name.endswith(".git") else name
+    return name.removesuffix(".git")
 
 
 def _ensure_valid_repo_name(name: str) -> None:

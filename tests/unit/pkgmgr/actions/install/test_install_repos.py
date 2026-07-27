@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import os
 import unittest
@@ -7,7 +6,6 @@ from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
 from pkgmgr.actions.install import install_repos
-
 
 Repository = Dict[str, Any]
 

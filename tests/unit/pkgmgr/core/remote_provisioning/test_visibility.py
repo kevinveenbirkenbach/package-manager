@@ -4,6 +4,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock
 
+from pkgmgr.core.remote_provisioning.http.errors import HttpError
 from pkgmgr.core.remote_provisioning.types import (
     AuthError,
     NetworkError,
@@ -16,7 +17,6 @@ from pkgmgr.core.remote_provisioning.visibility import (
     VisibilityOptions,
     set_repo_visibility,
 )
-from pkgmgr.core.remote_provisioning.http.errors import HttpError
 
 
 class TestSetRepoVisibility(unittest.TestCase):

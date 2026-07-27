@@ -5,9 +5,9 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Tuple
 
 from pkgmgr.actions.repository._parallel import RepoRef, run_on_repos
-from pkgmgr.core.git.commands import pull_args, GitPullArgsError
-from pkgmgr.core.repository.identifier import get_repo_identifier
+from pkgmgr.core.git.commands import GitPullArgsError, pull_args
 from pkgmgr.core.repository.dir import get_repo_dir
+from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.verify import verify_repository
 
 Repository = Dict[str, Any]

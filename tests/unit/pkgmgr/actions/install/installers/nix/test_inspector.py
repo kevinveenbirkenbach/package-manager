@@ -4,7 +4,8 @@ import json
 import unittest
 
 from pkgmgr.actions.install.installers.nix.profile import NixProfileInspector
-from ._fakes import FakeRunResult, FakeRunner
+
+from ._fakes import FakeRunner, FakeRunResult
 
 
 class TestNixProfileInspector(unittest.TestCase):

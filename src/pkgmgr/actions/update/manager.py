@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Tuple
+from collections.abc import Iterable
+from typing import Any, List, Tuple
 
 from pkgmgr.actions.update.system_updater import SystemUpdater
 

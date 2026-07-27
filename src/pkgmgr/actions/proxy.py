@@ -1,8 +1,9 @@
 import os
-from pkgmgr.core.repository.identifier import get_repo_identifier
-from pkgmgr.core.repository.dir import get_repo_dir
-from pkgmgr.core.command.run import run_command
 import sys
+
+from pkgmgr.core.command.run import run_command
+from pkgmgr.core.repository.dir import get_repo_dir
+from pkgmgr.core.repository.identifier import get_repo_identifier
 
 
 def exec_proxy_command(

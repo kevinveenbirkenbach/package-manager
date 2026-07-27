@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import unittest
 
-from pkgmgr.actions.install.installers.nix.profile.models import NixProfileEntry
 from pkgmgr.actions.install.installers.nix.profile.matcher import (
     entry_matches_output,
     entry_matches_store_path,
 )
+from pkgmgr.actions.install.installers.nix.profile.models import NixProfileEntry
 
 
 class TestMatcher(unittest.TestCase):

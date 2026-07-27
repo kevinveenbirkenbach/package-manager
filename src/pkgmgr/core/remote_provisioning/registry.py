@@ -16,7 +16,7 @@ class ProviderRegistry:
     providers: List[RemoteProvider]
 
     @classmethod
-    def default(cls) -> "ProviderRegistry":
+    def default(cls) -> ProviderRegistry:
         # Order matters: more specific providers first; fallback providers last.
         return cls(providers=[GitHubProvider(), GiteaProvider()])
 

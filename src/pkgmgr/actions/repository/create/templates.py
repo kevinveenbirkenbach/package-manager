@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 from pkgmgr.core.git.queries import get_repo_root
 

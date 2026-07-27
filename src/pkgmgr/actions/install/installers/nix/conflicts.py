@@ -33,7 +33,7 @@ class NixConflictResolver:
 
     def resolve(
         self,
-        ctx: "RepoContext",
+        ctx: RepoContext,
         install_cmd: str,
         stdout: str,
         stderr: str,

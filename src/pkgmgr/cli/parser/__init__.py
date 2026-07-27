@@ -74,4 +74,4 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     return parser
 
 
-__all__ = ["create_parser", "SortedSubParsersAction"]
+__all__ = ["SortedSubParsersAction", "create_parser"]

@@ -8,8 +8,9 @@ Installation pipeline orchestration for repositories.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Sequence, Set
+from typing import Optional, Set
 
 from pkgmgr.actions.install.context import RepoContext
 from pkgmgr.actions.install.installers.base import BaseInstaller

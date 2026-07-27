@@ -1,16 +1,16 @@
 # tests/unit/pkgmgr/test_capabilities.py
 
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 from pkgmgr.actions.install.capabilities import (
-    PythonRuntimeCapability,
+    LAYER_ORDER,
+    CapabilityMatcher,
     MakeInstallCapability,
     NixFlakeCapability,
-    CapabilityMatcher,
+    PythonRuntimeCapability,
     detect_capabilities,
     resolve_effective_capabilities,
-    LAYER_ORDER,
 )
 
 

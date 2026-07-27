@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
@@ -37,7 +36,7 @@ class OSReleaseInfo:
     pretty_name: str = ""
 
     @staticmethod
-    def load() -> "OSReleaseInfo":
+    def load() -> OSReleaseInfo:
         data = read_os_release()
         return OSReleaseInfo(
             id=(data.get("ID") or "").lower(),

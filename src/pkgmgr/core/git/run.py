@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 from typing import List
 
-from .errors import GitRunError, GitNotRepositoryError
+from .errors import GitNotRepositoryError, GitRunError
 
 
 def _is_not_repo_error(stderr: str) -> bool:

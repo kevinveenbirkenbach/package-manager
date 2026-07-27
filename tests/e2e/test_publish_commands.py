@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import unittest
 
-
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 

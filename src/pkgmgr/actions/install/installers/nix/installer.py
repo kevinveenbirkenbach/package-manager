@@ -28,7 +28,7 @@ class NixFlakeInstaller(BaseInstaller):
         # Newer nix rejects numeric indices; we learn this at runtime and cache the decision.
         self._indices_supported: bool | None = None
 
-    def supports(self, ctx: "RepoContext") -> bool:
+    def supports(self, ctx: RepoContext) -> bool:
         if os.environ.get("PKGMGR_DISABLE_NIX_FLAKE_INSTALLER") == "1":
             if not ctx.quiet:
                 print(
@@ -42,13 +42,13 @@ class NixFlakeInstaller(BaseInstaller):
 
         return os.path.exists(os.path.join(ctx.repo_dir, self.FLAKE_FILE))
 
-    def _profile_outputs(self, ctx: "RepoContext") -> List[Tuple[str, bool]]:
+    def _profile_outputs(self, ctx: RepoContext) -> List[Tuple[str, bool]]:
         # (output_name, allow_failure)
         if ctx.identifier in {"pkgmgr", "package-manager"}:
             return [("pkgmgr", False), ("default", True)]
         return [("default", False)]
 
-    def run(self, ctx: "RepoContext") -> None:
+    def run(self, ctx: RepoContext) -> None:
         if not self.supports(ctx):
             return
 
@@ -68,7 +68,7 @@ class NixFlakeInstaller(BaseInstaller):
             else:
                 self._install_only(ctx, output, allow_failure)
 
-    def _installable(self, ctx: "RepoContext", output: str) -> str:
+    def _installable(self, ctx: RepoContext, output: str) -> str:
         return f"{ctx.repo_dir}#{output}"
 
     # ---------------------------------------------------------------------
@@ -76,7 +76,7 @@ class NixFlakeInstaller(BaseInstaller):
     # ---------------------------------------------------------------------
 
     def _install_only(
-        self, ctx: "RepoContext", output: str, allow_failure: bool
+        self, ctx: RepoContext, output: str, allow_failure: bool
     ) -> None:
         install_cmd = f"nix profile install {self._installable(ctx, output)}"
 
@@ -162,7 +162,7 @@ class NixFlakeInstaller(BaseInstaller):
     # ---------------------------------------------------------------------
 
     def _force_upgrade_output(
-        self, ctx: "RepoContext", output: str, allow_failure: bool
+        self, ctx: RepoContext, output: str, allow_failure: bool
     ) -> None:
         # Prefer token path if indices unsupported (new nix)
         if self._indices_supported is False:
@@ -215,7 +215,7 @@ class NixFlakeInstaller(BaseInstaller):
         s = (stderr or "").lower()
         return "no longer supports indices" in s or "does not support indices" in s
 
-    def _upgrade_index(self, ctx: "RepoContext", idx: int) -> bool:
+    def _upgrade_index(self, ctx: RepoContext, idx: int) -> bool:
         cmd = f"nix profile upgrade --refresh {idx}"
         res = self._runner.run(ctx, cmd, allow_failure=True)
 
@@ -228,7 +228,7 @@ class NixFlakeInstaller(BaseInstaller):
 
         return res.returncode == 0
 
-    def _remove_index(self, ctx: "RepoContext", idx: int) -> None:
+    def _remove_index(self, ctx: RepoContext, idx: int) -> None:
         res = self._runner.run(ctx, f"nix profile remove {idx}", allow_failure=True)
 
         if self._stderr_says_indices_unsupported(getattr(res, "stderr", "")):
@@ -237,7 +237,7 @@ class NixFlakeInstaller(BaseInstaller):
         if self._indices_supported is None:
             self._indices_supported = True
 
-    def _remove_tokens_for_output(self, ctx: "RepoContext", output: str) -> None:
+    def _remove_tokens_for_output(self, ctx: RepoContext, output: str) -> None:
         tokens = self._profile.find_remove_tokens_for_output(ctx, self._runner, output)
         if not tokens:
             return

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import subprocess
-
 from typing import TYPE_CHECKING
 
 from .types import RunResult
@@ -16,7 +15,7 @@ class CommandRunner:
     Supports preview mode and compact failure output logging.
     """
 
-    def run(self, ctx: "RepoContext", cmd: str, allow_failure: bool) -> RunResult:
+    def run(self, ctx: RepoContext, cmd: str, allow_failure: bool) -> RunResult:
         repo_dir = getattr(ctx, "repo_dir", None) or getattr(ctx, "repo_path", None)
         preview = bool(getattr(ctx, "preview", False))
         quiet = bool(getattr(ctx, "quiet", False))

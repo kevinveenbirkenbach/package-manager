@@ -6,8 +6,8 @@ import sys
 import unittest
 
 from test_version_commands import (
-    _load_pkgmgr_repo_dir,
     PROJECT_ROOT,
+    _load_pkgmgr_repo_dir,
 )
 
 

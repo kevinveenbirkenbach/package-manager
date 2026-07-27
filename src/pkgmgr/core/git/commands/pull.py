@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import GitRunError, GitCommandError
+from ..errors import GitCommandError, GitRunError
 from ..run import run
 
 

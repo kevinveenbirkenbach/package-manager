@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import patch
 
 from pkgmgr.actions.branch.drop_branch import drop_branch
-from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.commands import GitDeleteRemoteBranchError
+from pkgmgr.core.git.errors import GitRunError
 
 
 class TestDropBranch(unittest.TestCase):

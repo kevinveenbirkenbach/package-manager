@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Capability detection for pkgmgr.
@@ -35,7 +34,8 @@ from __future__ import annotations
 import glob
 import os
 from abc import ABC, abstractmethod
-from typing import Iterable, TYPE_CHECKING, Optional
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from pkgmgr.actions.install.context import RepoContext
@@ -100,7 +100,7 @@ class CapabilityMatcher(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def is_provided(self, ctx: "RepoContext", layer: str) -> bool:
+    def is_provided(self, ctx: RepoContext, layer: str) -> bool:
         """
         Return True if this capability is actually provided by the given layer
         for this repository.
@@ -133,7 +133,7 @@ class PythonRuntimeCapability(CapabilityMatcher):
         # OS packages may wrap Python builds, but must explicitly prove it
         return layer in {"python", "nix", "os-packages"}
 
-    def is_provided(self, ctx: "RepoContext", layer: str) -> bool:
+    def is_provided(self, ctx: RepoContext, layer: str) -> bool:
         repo_dir = ctx.repo_dir
 
         if layer == "python":
@@ -208,7 +208,7 @@ class MakeInstallCapability(CapabilityMatcher):
     def applies_to_layer(self, layer: str) -> bool:
         return layer in {"makefile", "python", "nix", "os-packages"}
 
-    def is_provided(self, ctx: "RepoContext", layer: str) -> bool:
+    def is_provided(self, ctx: RepoContext, layer: str) -> bool:
         repo_dir = ctx.repo_dir
 
         if layer == "makefile":
@@ -274,7 +274,7 @@ class NixFlakeCapability(CapabilityMatcher):
         # Only Nix itself and OS packages that explicitly wrap Nix
         return layer in {"nix", "os-packages"}
 
-    def is_provided(self, ctx: "RepoContext", layer: str) -> bool:
+    def is_provided(self, ctx: RepoContext, layer: str) -> bool:
         repo_dir = ctx.repo_dir
 
         if layer == "nix":
@@ -328,7 +328,7 @@ LAYER_ORDER: list[str] = [
 
 
 def detect_capabilities(
-    ctx: "RepoContext",
+    ctx: RepoContext,
     layers: Iterable[str],
 ) -> dict[str, set[str]]:
     """
@@ -359,7 +359,7 @@ def detect_capabilities(
 
 
 def resolve_effective_capabilities(
-    ctx: "RepoContext",
+    ctx: RepoContext,
     layers: Optional[Iterable[str]] = None,
 ) -> dict[str, set[str]]:
     """

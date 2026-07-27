@@ -2,27 +2,26 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import List, Dict, Any
-
-from pkgmgr.cli.context import CLIContext
-from pkgmgr.cli.proxy import maybe_handle_proxy
-from pkgmgr.core.repository.selected import get_selected_repos
-from pkgmgr.core.repository.dir import get_repo_dir
+from typing import Any, Dict, List
 
 from pkgmgr.cli.commands import (
     handle_archive,
+    handle_branch,
+    handle_changelog,
     handle_code_scanning,
-    handle_repos_command,
-    handle_tools_command,
-    handle_release,
-    handle_publish,
-    handle_version,
     handle_config,
     handle_make,
-    handle_changelog,
-    handle_branch,
     handle_mirror_command,
+    handle_publish,
+    handle_release,
+    handle_repos_command,
+    handle_tools_command,
+    handle_version,
 )
+from pkgmgr.cli.context import CLIContext
+from pkgmgr.cli.proxy import maybe_handle_proxy
+from pkgmgr.core.repository.dir import get_repo_dir
+from pkgmgr.core.repository.selected import get_selected_repos
 
 
 def _has_explicit_selection(args) -> bool:

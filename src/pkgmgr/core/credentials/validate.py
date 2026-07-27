@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import urllib.request
 import json
+import urllib.request
 
 
 def validate_token(provider_kind: str, host: str, token: str) -> bool:

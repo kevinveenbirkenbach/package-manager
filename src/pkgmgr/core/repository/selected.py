@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
 import os
 import re
-from typing import Any, Dict, List, Sequence
+from collections.abc import Sequence
+from typing import Any, Dict, List
 
-from pkgmgr.core.repository.resolve import resolve_repos
 from pkgmgr.core.repository.ignored import filter_ignored
+from pkgmgr.core.repository.resolve import resolve_repos
 
 Repository = Dict[str, Any]
 

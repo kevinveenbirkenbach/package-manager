@@ -4,7 +4,7 @@ from __future__ import annotations
 import io
 import unittest
 from contextlib import redirect_stdout
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from pkgmgr.actions.mirror.visibility_cmd import set_mirror_visibility
 

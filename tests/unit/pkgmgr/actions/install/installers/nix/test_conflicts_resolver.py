@@ -3,7 +3,8 @@ from __future__ import annotations
 import unittest
 
 from pkgmgr.actions.install.installers.nix.conflicts import NixConflictResolver
-from ._fakes import FakeRunResult, FakeRunner, FakeRetry
+
+from ._fakes import FakeRetry, FakeRunner, FakeRunResult
 
 
 class DummyCtx:

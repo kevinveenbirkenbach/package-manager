@@ -1,6 +1,6 @@
 from __future__ import annotations
 
 # expose subpackages for patch() / resolve_name() friendliness
-from . import release as release  # noqa: F401
+from . import release as release
 
 __all__ = ["release"]

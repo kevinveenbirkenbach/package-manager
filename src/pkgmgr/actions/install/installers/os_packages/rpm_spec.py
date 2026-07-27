@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Installer for RPM-based packages defined in *.spec files.
@@ -202,9 +201,7 @@ class RpmSpecInstaller(BaseInstaller):
 
         if shutil.which("dnf") is not None:
             cmd = f"sudo dnf builddep -y {spec_basename}"
-        elif shutil.which("yum-builddep") is not None:
-            cmd = f"sudo yum-builddep -y {spec_basename}"
-        elif shutil.which("yum") is not None:
+        elif shutil.which("yum-builddep") is not None or shutil.which("yum") is not None:
             cmd = f"sudo yum-builddep -y {spec_basename}"
         else:
             print(

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 DEFAULT_FILENAME_PATTERN = re.compile(r"^\d{3}-[^/]+\.md$")
 TEMPLATE_FILENAME = "000-template.md"

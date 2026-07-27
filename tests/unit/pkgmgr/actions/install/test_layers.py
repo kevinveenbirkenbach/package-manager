@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import os
 import unittest
 
 from pkgmgr.actions.install.layers import (
-    CliLayer,
     CLI_LAYERS,
+    CliLayer,
     classify_command_layer,
     layer_priority,
 )

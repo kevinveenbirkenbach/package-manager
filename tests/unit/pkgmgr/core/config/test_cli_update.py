@@ -82,9 +82,8 @@ class UpdateDefaultConfigsTests(unittest.TestCase):
             # Patch the source dir finder to our temp source_dir
             with patch.object(
                 config_cmd, "_find_defaults_source_dir", return_value=str(source_dir)
-            ):
-                with patch.dict(os.environ, {"HOME": str(home)}):
-                    config_cmd._update_default_configs(user_config_path)
+            ), patch.dict(os.environ, {"HOME": str(home)}):
+                config_cmd._update_default_configs(user_config_path)
 
             self.assertTrue((dest_cfg_dir / "a.yaml").is_file())
             self.assertTrue((dest_cfg_dir / "b.yml").is_file())
@@ -102,9 +101,8 @@ class UpdateDefaultConfigsTests(unittest.TestCase):
 
             with patch.object(
                 config_cmd, "_find_defaults_source_dir", return_value=str(source_dir)
-            ):
-                with patch.dict(os.environ, {"HOME": str(home)}):
-                    config_cmd._update_default_configs(user_config_path)
+            ), patch.dict(os.environ, {"HOME": str(home)}):
+                config_cmd._update_default_configs(user_config_path)
 
             self.assertEqual(
                 (dest_cfg_dir / "config.yaml").read_text(encoding="utf-8"),
@@ -122,10 +120,8 @@ class UpdateDefaultConfigsTests(unittest.TestCase):
             buf = io.StringIO()
             with patch.object(
                 config_cmd, "_find_defaults_source_dir", return_value=None
-            ):
-                with patch("sys.stdout", buf):
-                    with patch.dict(os.environ, {"HOME": str(home)}):
-                        config_cmd._update_default_configs(user_config_path)
+            ), patch("sys.stdout", buf), patch.dict(os.environ, {"HOME": str(home)}):
+                config_cmd._update_default_configs(user_config_path)
 
             out = buf.getvalue()
             self.assertIn("[WARN] No config directory found", out)

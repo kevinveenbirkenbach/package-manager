@@ -18,24 +18,24 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from pkgmgr.core.repository.identifier import get_repo_identifier
-from pkgmgr.core.repository.dir import get_repo_dir
-from pkgmgr.core.repository.verify import verify_repository
-from pkgmgr.actions.repository.clone import clone_repos
 from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.installers.makefile import (
+    MakefileInstaller,
+)
+from pkgmgr.actions.install.installers.nix import (
+    NixFlakeInstaller,
+)
 from pkgmgr.actions.install.installers.os_packages import (
     ArchPkgbuildInstaller,
     DebianControlInstaller,
     RpmSpecInstaller,
 )
-from pkgmgr.actions.install.installers.nix import (
-    NixFlakeInstaller,
-)
 from pkgmgr.actions.install.installers.python import PythonInstaller
-from pkgmgr.actions.install.installers.makefile import (
-    MakefileInstaller,
-)
 from pkgmgr.actions.install.pipeline import InstallationPipeline
+from pkgmgr.actions.repository.clone import clone_repos
+from pkgmgr.core.repository.dir import get_repo_dir
+from pkgmgr.core.repository.identifier import get_repo_identifier
+from pkgmgr.core.repository.verify import verify_repository
 
 Repository = Dict[str, Any]
 

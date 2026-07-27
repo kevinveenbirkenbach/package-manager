@@ -4,13 +4,12 @@ import os
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
+from pkgmgr.actions.changelog import generate_changelog
 from pkgmgr.cli.context import CLIContext
+from pkgmgr.core.git.queries import get_tags
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
-from pkgmgr.core.git.queries import get_tags
 from pkgmgr.core.version.semver import extract_semver_from_tags
-from pkgmgr.actions.changelog import generate_changelog
-
 
 Repository = Dict[str, Any]
 

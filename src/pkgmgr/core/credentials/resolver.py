@@ -59,18 +59,18 @@ class TokenResolver:
         print("[WARN] Keyring support is not available.", file=sys.stderr)
         print(f"       {msg}", file=sys.stderr)
         print("       Tokens will NOT be persisted securely.", file=sys.stderr)
-        print("", file=sys.stderr)
+        print(file=sys.stderr)
         print(
             "       To enable secure token storage, install python-keyring:",
             file=sys.stderr,
         )
         print("         pip install keyring", file=sys.stderr)
-        print("", file=sys.stderr)
+        print(file=sys.stderr)
         print("       Or install via system packages:", file=sys.stderr)
         print("         sudo apt install python3-keyring", file=sys.stderr)
         print("         sudo pacman -S python-keyring", file=sys.stderr)
         print("         sudo dnf install python3-keyring", file=sys.stderr)
-        print("", file=sys.stderr)
+        print(file=sys.stderr)
 
     def _prompt_and_maybe_store(
         self,

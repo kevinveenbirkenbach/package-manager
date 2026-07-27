@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import sys
 
+from pkgmgr.actions.branch import close_branch, drop_branch, open_branch
 from pkgmgr.cli.context import CLIContext
-from pkgmgr.actions.branch import open_branch, close_branch, drop_branch
 
 
 def handle_branch(args, ctx: CLIContext) -> None:

@@ -4,8 +4,8 @@ import unittest
 from unittest.mock import patch
 
 from pkgmgr.actions.changelog import generate_changelog
-from pkgmgr.core.git.queries import GitChangelogQueryError
 from pkgmgr.cli.commands.changelog import _find_previous_and_current_tag
+from pkgmgr.core.git.queries import GitChangelogQueryError
 
 
 class TestGenerateChangelog(unittest.TestCase):

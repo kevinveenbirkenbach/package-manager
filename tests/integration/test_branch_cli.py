@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Integration tests for the `pkgmgr branch` CLI wiring.
@@ -16,8 +15,8 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from pkgmgr.cli.parser import create_parser
 from pkgmgr.cli.commands.branch import handle_branch
+from pkgmgr.cli.parser import create_parser
 
 
 class TestBranchCLI(unittest.TestCase):

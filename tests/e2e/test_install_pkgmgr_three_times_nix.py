@@ -1,8 +1,9 @@
 import os
-from tests.e2e._util import run
 import tempfile
 import unittest
 from pathlib import Path
+
+from tests.e2e._util import run
 
 
 class TestPkgmgrInstallThreeTimesNix(unittest.TestCase):

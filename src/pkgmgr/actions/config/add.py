@@ -1,5 +1,7 @@
-import yaml
 import os
+
+import yaml
+
 from pkgmgr.core.config.save import save_user_config
 
 

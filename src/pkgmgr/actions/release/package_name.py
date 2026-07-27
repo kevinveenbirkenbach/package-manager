@@ -28,7 +28,6 @@ from typing import Optional
 
 from pkgmgr.core.repository.paths import RepoPaths
 
-
 _DEBIAN_PACKAGE_RE = re.compile(r"^Package:\s*(\S+)\s*$", re.MULTILINE)
 _PKGBUILD_NAME_RE = re.compile(r"^pkgname=([^\s#]+)\s*$", re.MULTILINE)
 _RPM_NAME_RE = re.compile(r"^Name:\s*(\S+)\s*$", re.MULTILINE)

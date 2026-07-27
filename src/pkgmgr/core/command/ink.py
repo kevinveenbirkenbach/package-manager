@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import os
-from pkgmgr.core.repository.identifier import get_repo_identifier
+
 from pkgmgr.core.repository.dir import get_repo_dir
+from pkgmgr.core.repository.identifier import get_repo_identifier
 
 
 def create_ink(

@@ -5,20 +5,20 @@
 from __future__ import annotations
 
 import os
-import sys
 import shutil
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
 
-from pkgmgr.cli.context import CLIContext
-from pkgmgr.actions.config.init import config_init
 from pkgmgr.actions.config.add import interactive_add
-from pkgmgr.core.repository.resolve import resolve_repos
-from pkgmgr.core.config.save import save_user_config
+from pkgmgr.actions.config.init import config_init
 from pkgmgr.actions.config.show import show_config
+from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.command.run import run_command
+from pkgmgr.core.config.save import save_user_config
+from pkgmgr.core.repository.resolve import resolve_repos
 
 
 def _load_user_config(user_config_path: str) -> Dict[str, Any]:

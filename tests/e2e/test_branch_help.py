@@ -4,7 +4,7 @@ import io
 import runpy
 import sys
 import unittest
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 
 
 def _run_pkgmgr_help(argv_tail: list[str]) -> str:

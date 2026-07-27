@@ -19,7 +19,7 @@ class NixProfileListReader:
         m = re.match(r"^(/nix/store/[0-9a-z]{32}-[^/ \t]+)", raw)
         return m.group(1) if m else raw
 
-    def entries(self, ctx: "RepoContext") -> List[Tuple[int, str]]:
+    def entries(self, ctx: RepoContext) -> List[Tuple[int, str]]:
         res = self._runner.run(ctx, "nix profile list", allow_failure=True)
         if res.returncode != 0:
             return []
@@ -49,7 +49,7 @@ class NixProfileListReader:
         return uniq
 
     def indices_matching_store_prefixes(
-        self, ctx: "RepoContext", prefixes: List[str]
+        self, ctx: RepoContext, prefixes: List[str]
     ) -> List[int]:
         prefixes = [self._store_prefix(p) for p in prefixes if p]
         prefixes = [p for p in prefixes if p]

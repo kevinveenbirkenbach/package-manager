@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List
 
 from .matcher import (
     entry_matches_output,
@@ -29,7 +29,7 @@ class NixProfileInspector:
       - find_remove_tokens_for_store_prefixes()
     """
 
-    def list_json(self, ctx: "RepoContext", runner: "CommandRunner") -> dict[str, Any]:
+    def list_json(self, ctx: RepoContext, runner: CommandRunner) -> dict[str, Any]:
         res = runner.run(ctx, "nix profile list --json", allow_failure=False)
         raw = extract_stdout_text(res)
         return parse_profile_list_json(raw)
@@ -40,8 +40,8 @@ class NixProfileInspector:
 
     def find_installed_indices_for_output(
         self,
-        ctx: "RepoContext",
-        runner: "CommandRunner",
+        ctx: RepoContext,
+        runner: CommandRunner,
         output: str,
     ) -> List[int]:
         data = self.list_json(ctx, runner)
@@ -58,8 +58,8 @@ class NixProfileInspector:
 
     def find_indices_by_store_path(
         self,
-        ctx: "RepoContext",
-        runner: "CommandRunner",
+        ctx: RepoContext,
+        runner: CommandRunner,
         store_path: str,
     ) -> List[int]:
         needle = (store_path or "").strip()
@@ -84,8 +84,8 @@ class NixProfileInspector:
 
     def find_remove_tokens_for_output(
         self,
-        ctx: "RepoContext",
-        runner: "CommandRunner",
+        ctx: RepoContext,
+        runner: CommandRunner,
         output: str,
     ) -> List[str]:
         """
@@ -128,8 +128,8 @@ class NixProfileInspector:
 
     def find_remove_tokens_for_store_prefixes(
         self,
-        ctx: "RepoContext",
-        runner: "CommandRunner",
+        ctx: RepoContext,
+        runner: CommandRunner,
         prefixes: List[str],
     ) -> List[str]:
         """

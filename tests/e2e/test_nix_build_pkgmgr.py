@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 E2E test to inspect the Nix environment and build the pkgmgr flake
@@ -21,7 +20,6 @@ from __future__ import annotations
 import os
 import subprocess
 import unittest
-
 
 # Resolve project root (the repo where flake.nix lives, e.g. /src)
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))

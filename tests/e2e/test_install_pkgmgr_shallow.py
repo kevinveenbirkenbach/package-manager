@@ -1,8 +1,8 @@
-import runpy
-import sys
 import os
-import unittest
+import runpy
 import subprocess
+import sys
+import unittest
 
 
 def nix_profile_list_debug(label: str) -> None:

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Version discovery and bumping helpers for the release workflow.
@@ -10,10 +9,10 @@ from __future__ import annotations
 from pkgmgr.core.git.queries import get_tags
 from pkgmgr.core.version.semver import (
     SemVer,
-    find_latest_version,
     bump_major,
     bump_minor,
     bump_patch,
+    find_latest_version,
 )
 
 

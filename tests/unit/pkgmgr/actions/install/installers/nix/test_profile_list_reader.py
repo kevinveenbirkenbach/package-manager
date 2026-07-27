@@ -3,7 +3,8 @@ from __future__ import annotations
 import unittest
 
 from pkgmgr.actions.install.installers.nix.profile_list import NixProfileListReader
-from ._fakes import FakeRunResult, FakeRunner
+
+from ._fakes import FakeRunner, FakeRunResult
 
 
 class TestNixProfileListReader(unittest.TestCase):

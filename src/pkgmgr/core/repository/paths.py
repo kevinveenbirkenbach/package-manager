@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Central repository path resolver.
@@ -19,8 +18,9 @@ should use this module instead of hardcoding paths.
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Optional
+from typing import Optional
 
 
 @dataclass(frozen=True)

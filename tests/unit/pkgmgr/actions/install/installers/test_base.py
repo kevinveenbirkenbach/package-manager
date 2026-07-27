@@ -1,8 +1,9 @@
 # tests/unit/pkgmgr/installers/test_base.py
 
 import unittest
-from pkgmgr.actions.install.installers.base import BaseInstaller
+
 from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.installers.base import BaseInstaller
 
 
 class DummyInstaller(BaseInstaller):

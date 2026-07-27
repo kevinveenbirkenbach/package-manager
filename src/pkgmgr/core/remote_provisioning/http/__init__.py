@@ -2,4 +2,4 @@
 from .client import HttpClient, HttpResponse
 from .errors import HttpError
 
-__all__ = ["HttpClient", "HttpResponse", "HttpError"]
+__all__ = ["HttpClient", "HttpError", "HttpResponse"]

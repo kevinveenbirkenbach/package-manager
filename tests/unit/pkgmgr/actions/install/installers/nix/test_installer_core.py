@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from pkgmgr.actions.install.installers.nix.installer import NixFlakeInstaller
+
 from ._fakes import FakeRunResult
 
 

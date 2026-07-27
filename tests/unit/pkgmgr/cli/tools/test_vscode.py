@@ -54,9 +54,9 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
                 "pkgmgr.cli.tools.vscode.get_repo_identifier",
                 return_value="github.com/x/y",
             ),
+            self.assertRaises(RuntimeError) as cm,
         ):
-            with self.assertRaises(RuntimeError) as cm:
-                open_vscode_workspace(ctx, selected)
+            open_vscode_workspace(ctx, selected)
 
         msg = str(cm.exception)
         self.assertIn("not yet identified", msg)

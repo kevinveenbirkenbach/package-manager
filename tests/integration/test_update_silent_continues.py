@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
@@ -42,7 +41,6 @@ class TestUpdateSilentContinues(unittest.TestCase):
             pull_calls.append(repo["repository"])
             if repo["repository"] == "repo-a":
                 raise SystemExit(2)
-            return None
 
         def install_side_effect(selected_repos, *_args, **kwargs):
             repo = selected_repos[0]
@@ -51,7 +49,6 @@ class TestUpdateSilentContinues(unittest.TestCase):
             )
             if repo["repository"] == "repo-b":
                 raise SystemExit(3)
-            return None
 
         # Patch at the exact import locations used inside UpdateManager.run()
         with (

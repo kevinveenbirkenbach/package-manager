@@ -11,8 +11,8 @@ from unittest.mock import patch
 
 import yaml
 
-from pkgmgr.core.config.load import load_config
 from pkgmgr.cli.commands import config as config_cmd
+from pkgmgr.core.config.load import load_config
 
 
 class ConfigDefaultsIntegrationTest(unittest.TestCase):

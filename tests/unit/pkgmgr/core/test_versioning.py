@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import unittest
 
 from pkgmgr.core.version.semver import (
     SemVer,
-    is_semver_tag,
-    extract_semver_from_tags,
-    find_latest_version,
     bump_major,
     bump_minor,
     bump_patch,
+    extract_semver_from_tags,
+    find_latest_version,
+    is_semver_tag,
 )
 
 
@@ -30,9 +29,8 @@ class TestSemVer(unittest.TestCase):
     def test_semver_parse_invalid(self):
         invalid_values = ["", "1", "1.2", "1.2.3.4", "a.b.c", "v1.2.x"]
         for value in invalid_values:
-            with self.subTest(value=value):
-                with self.assertRaises(ValueError):
-                    SemVer.parse(value)
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                SemVer.parse(value)
 
     def test_semver_to_tag_and_str(self):
         ver = SemVer(1, 2, 3)

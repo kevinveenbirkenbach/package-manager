@@ -30,7 +30,7 @@ class CodeScanningResult:
     files: List[str] = field(default_factory=list)
 
 
-def _gh(args: List[str]) -> "subprocess.CompletedProcess[str]":
+def _gh(args: List[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["gh", *args], capture_output=True, text=True)
 
 

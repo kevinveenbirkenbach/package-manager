@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import random
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .types import RunResult
 
 if TYPE_CHECKING:
     from pkgmgr.actions.install.context import RepoContext
+
     from .runner import CommandRunner
 
 
@@ -31,8 +33,8 @@ class GitHubRateLimitRetry:
 
     def run_with_retry(
         self,
-        ctx: "RepoContext",
-        runner: "CommandRunner",
+        ctx: RepoContext,
+        runner: CommandRunner,
         install_cmd: str,
     ) -> RunResult:
         quiet = bool(getattr(ctx, "quiet", False))

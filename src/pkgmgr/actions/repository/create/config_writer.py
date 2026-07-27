@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, Any, Set
+from typing import Any, Dict, Set
 
 import yaml
 

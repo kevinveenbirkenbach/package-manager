@@ -10,11 +10,11 @@ from .types import (
 )
 
 __all__ = [
-    "TokenResolver",
-    "ResolutionOptions",
     "CredentialError",
-    "NoCredentialsError",
     "KeyringUnavailableError",
+    "NoCredentialsError",
+    "ResolutionOptions",
     "TokenRequest",
+    "TokenResolver",
     "TokenResult",
 ]

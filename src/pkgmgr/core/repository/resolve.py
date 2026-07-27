@@ -13,9 +13,7 @@ def resolve_repos(identifiers: [], all_repos: []):
             full_id = (
                 f"{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}"
             )
-            if ident == full_id:
-                matches.append(repo)
-            elif ident == repo.get("alias"):
+            if ident == full_id or ident == repo.get("alias"):
                 matches.append(repo)
             elif ident == repo.get("repository"):
                 # Only match if repository name is unique among all_repos.

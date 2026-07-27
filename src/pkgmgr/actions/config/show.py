@@ -1,4 +1,5 @@
 import yaml
+
 from pkgmgr.core.config.load import load_config
 
 

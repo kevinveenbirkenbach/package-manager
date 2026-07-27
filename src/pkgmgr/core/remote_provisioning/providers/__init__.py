@@ -3,4 +3,4 @@ from .base import RemoteProvider
 from .gitea import GiteaProvider
 from .github import GitHubProvider
 
-__all__ = ["RemoteProvider", "GiteaProvider", "GitHubProvider"]
+__all__ = ["GitHubProvider", "GiteaProvider", "RemoteProvider"]

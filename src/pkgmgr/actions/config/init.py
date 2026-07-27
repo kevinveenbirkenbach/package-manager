@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Initialize user configuration by scanning the repositories base directory.
@@ -55,7 +54,7 @@ def config_init(
 
     print("[INIT] Scanning repository base directory:")
     print(f"       {repositories_base_dir}")
-    print("")
+    print()
 
     if not os.path.isdir(repositories_base_dir):
         print(f"[ERROR] Base directory does not exist: {repositories_base_dir}")
@@ -153,7 +152,7 @@ def config_init(
 
                 new_entries.append(entry)
 
-            print("")  # blank line between accounts
+            print()  # blank line between accounts
 
     # ------------------------------------------------------------
     # Summary

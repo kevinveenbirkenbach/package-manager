@@ -2,7 +2,7 @@
 
 import os
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 from pkgmgr.actions.install.context import RepoContext
 from pkgmgr.actions.install.installers.makefile import MakefileInstaller

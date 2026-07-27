@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Unit tests for pkgmgr.cli.commands.release.
@@ -14,12 +13,11 @@ These tests focus on the wiring layer:
 
 from __future__ import annotations
 
-from types import SimpleNamespace
-from typing import List
-from unittest.mock import patch, call
-
 import argparse
 import unittest
+from types import SimpleNamespace
+from typing import List
+from unittest.mock import call, patch
 
 
 class TestReleaseCommand(unittest.TestCase):

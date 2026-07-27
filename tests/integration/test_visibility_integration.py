@@ -14,7 +14,6 @@ from pkgmgr.actions.mirror.setup_cmd import setup_mirrors
 from pkgmgr.actions.mirror.visibility_cmd import set_mirror_visibility
 from pkgmgr.core.remote_provisioning.types import RepoSpec
 
-
 Repository = Dict[str, Any]
 
 

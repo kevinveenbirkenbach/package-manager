@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional
 
-from pkgmgr.core.git.commands import clone as git_clone, GitCloneError
+from pkgmgr.core.git.commands import GitCloneError
+from pkgmgr.core.git.commands import clone as git_clone
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.verify import verify_repository

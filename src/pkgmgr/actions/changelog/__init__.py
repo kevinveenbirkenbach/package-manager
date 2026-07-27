@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Helpers to generate changelog information from Git history.
@@ -10,8 +9,8 @@ from __future__ import annotations
 from typing import Optional
 
 from pkgmgr.core.git.queries import (
-    get_changelog,
     GitChangelogQueryError,
+    get_changelog,
 )
 
 

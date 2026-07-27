@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Utilities for working with semantic versions (SemVer).
@@ -11,8 +10,9 @@ heavy dependencies.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 
 @dataclass(frozen=True, order=True)
@@ -24,15 +24,14 @@ class SemVer:
     patch: int
 
     @classmethod
-    def parse(cls, value: str) -> "SemVer":
+    def parse(cls, value: str) -> SemVer:
         """
         Parse a version string like '1.2.3' or 'v1.2.3' into a SemVer.
 
         Raises ValueError if the format is invalid.
         """
         text = value.strip()
-        if text.startswith("v"):
-            text = text[1:]
+        text = text.removeprefix("v")
 
         parts = text.split(".")
         if len(parts) != 3:

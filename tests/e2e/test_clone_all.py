@@ -16,8 +16,8 @@ import unittest
 
 from test_install_pkgmgr_shallow import (
     nix_profile_list_debug,
-    remove_pkgmgr_from_nix_profile,
     pkgmgr_help_debug,
+    remove_pkgmgr_from_nix_profile,
 )
 
 

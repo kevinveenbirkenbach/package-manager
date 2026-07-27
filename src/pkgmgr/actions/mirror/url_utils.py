@@ -1,8 +1,8 @@
 # src/pkgmgr/actions/mirror/url_utils.py
 from __future__ import annotations
 
-from urllib.parse import urlparse
 from typing import Optional, Tuple
+from urllib.parse import urlparse
 
 
 def hostport_from_git_url(url: str) -> Tuple[str, Optional[str]]:

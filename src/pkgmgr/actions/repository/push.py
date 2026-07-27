@@ -6,7 +6,7 @@ from pkgmgr.actions.repository._parallel import (
     resolve_repos,
     run_on_repos,
 )
-from pkgmgr.core.git.commands import push_args, GitPushArgsError
+from pkgmgr.core.git.commands import GitPushArgsError, push_args
 
 Repository = Dict[str, Any]
 

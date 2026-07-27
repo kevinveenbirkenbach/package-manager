@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import patch
 
 from pkgmgr.actions.branch.close_branch import close_branch
-from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.commands import GitDeleteRemoteBranchError
+from pkgmgr.core.git.errors import GitRunError
 
 
 class TestCloseBranch(unittest.TestCase):

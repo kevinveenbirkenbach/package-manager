@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pkgmgr.core.git.queries import (
+    GitLatestSigningKeyQueryError,
+    GitRemoteHeadCommitQueryError,
     get_head_commit,
     get_latest_signing_key,
     get_remote_head_commit,
-    GitLatestSigningKeyQueryError,
-    GitRemoteHeadCommitQueryError,
 )
 
 

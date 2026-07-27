@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from typing import Optional, Set
 
-from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.commands import (
     GitAddRemoteError,
     GitAddRemotePushUrlError,
@@ -12,6 +11,7 @@ from pkgmgr.core.git.commands import (
     add_remote_push_url,
     set_remote_url,
 )
+from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.queries import get_remote_push_urls, list_remotes
 
 from .types import MirrorMap, RepoMirrorContext, Repository

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Unit tests for pkgmgr.cli.commands.repos
@@ -30,9 +29,8 @@ from types import SimpleNamespace
 from typing import Any, Dict, List
 from unittest.mock import patch
 
-from pkgmgr.cli.context import CLIContext
 from pkgmgr.cli.commands.repos import handle_repos_command
-
+from pkgmgr.cli.context import CLIContext
 
 Repository = Dict[str, Any]
 

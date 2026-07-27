@@ -5,7 +5,7 @@ import unittest
 
 class TestReleasePackageInit(unittest.TestCase):
     def test_release_is_reexported(self) -> None:
-        from pkgmgr.actions.release import release  # noqa: F401
+        from pkgmgr.actions.release import release
 
         self.assertTrue(callable(release))
 

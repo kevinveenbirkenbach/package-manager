@@ -1,5 +1,6 @@
-import yaml
 import os
+
+import yaml
 
 
 def save_user_config(user_config, USER_CONFIG_PATH: str):

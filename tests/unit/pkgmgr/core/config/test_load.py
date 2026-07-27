@@ -12,9 +12,9 @@ import yaml
 
 from pkgmgr.core.config.load import (
     _deep_merge,
-    _merge_repo_lists,
-    _load_layer_dir,
     _load_defaults_from_package_or_project,
+    _load_layer_dir,
+    _merge_repo_lists,
     load_config,
 )
 

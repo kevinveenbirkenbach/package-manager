@@ -1,8 +1,9 @@
-from tests.e2e._util import run
+import os
 import tempfile
 import unittest
 from pathlib import Path
-import os
+
+from tests.e2e._util import run
 
 
 class TestPkgmgrInstallThreeTimesVenv(unittest.TestCase):

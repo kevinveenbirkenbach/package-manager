@@ -5,22 +5,22 @@ import sys
 from typing import Any, Dict, List, Optional, Tuple
 
 from pkgmgr.cli.context import CLIContext
+from pkgmgr.core.git.queries import get_tags
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
-from pkgmgr.core.git.queries import get_tags
-from pkgmgr.core.version.semver import SemVer, find_latest_version
 from pkgmgr.core.version.installed import (
-    get_installed_python_version,
     get_installed_nix_profile_version,
+    get_installed_python_version,
 )
+from pkgmgr.core.version.semver import SemVer, find_latest_version
 from pkgmgr.core.version.source import (
-    read_pyproject_version,
-    read_pyproject_project_name,
+    read_ansible_galaxy_version,
+    read_debian_changelog_version,
     read_flake_version,
     read_pkgbuild_version,
-    read_debian_changelog_version,
+    read_pyproject_project_name,
+    read_pyproject_version,
     read_spec_version,
-    read_ansible_galaxy_version,
 )
 
 Repository = Dict[str, Any]

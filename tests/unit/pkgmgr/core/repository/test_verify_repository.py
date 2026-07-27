@@ -118,6 +118,5 @@ class TestVerifyRepository(unittest.TestCase):
         with patch(
             "pkgmgr.core.repository.verify.get_head_commit",
             side_effect=GitNotRepositoryError("no repo"),
-        ):
-            with self.assertRaises(GitNotRepositoryError):
-                verify_repository(repo, "/tmp/no-repo", mode="local")
+        ), self.assertRaises(GitNotRepositoryError):
+            verify_repository(repo, "/tmp/no-repo", mode="local")

@@ -4,8 +4,9 @@ import json
 import re
 import shutil
 import subprocess
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Optional, Tuple
+from typing import Optional, Tuple
 
 
 @dataclass(frozen=True)
@@ -103,7 +104,7 @@ def _extract_version_from_store_path(path: str) -> Optional[str]:
     if "-" not in base:
         return None
     tail = base.split("-")[-1]
-    if re.match(r"\d+(\.\d+){0,3}([a-z0-9+._-]*)?$", tail, re.I):
+    if re.match(r"\d+(\.\d+){0,3}([a-z0-9+._-]*)?$", tail, re.IGNORECASE):
         return tail
     return None
 
@@ -158,7 +159,7 @@ def get_installed_nix_profile_version(*candidates: str) -> Optional[InstalledVer
         norm_line = _normalize(line)
         for c in norm_candidates:
             if c in norm_line:
-                m = re.search(r"\b\d+(\.\d+){0,3}[a-z0-9+._-]*\b", line, re.I)
+                m = re.search(r"\b\d+(\.\d+){0,3}[a-z0-9+._-]*\b", line, re.IGNORECASE)
                 if m:
                     return InstalledVersion(name=c, version=m.group(0))
                 if "/nix/store/" in line:

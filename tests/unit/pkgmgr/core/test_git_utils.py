@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import unittest
 from unittest.mock import patch
 
 from pkgmgr.core.git.errors import GitRunError
+from pkgmgr.core.git.queries import get_current_branch, get_head_commit, get_tags
 from pkgmgr.core.git.run import run
-from pkgmgr.core.git.queries import get_tags, get_head_commit, get_current_branch
 
 
 class TestGitRun(unittest.TestCase):

@@ -4,8 +4,8 @@ from __future__ import annotations
 import os
 import sys
 
-from pkgmgr.actions.install.installers.base import BaseInstaller
 from pkgmgr.actions.install.context import RepoContext
+from pkgmgr.actions.install.installers.base import BaseInstaller
 from pkgmgr.core.command.run import run_command
 
 

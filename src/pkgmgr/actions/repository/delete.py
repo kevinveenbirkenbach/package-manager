@@ -1,7 +1,8 @@
-import shutil
 import os
-from pkgmgr.core.repository.identifier import get_repo_identifier
+import shutil
+
 from pkgmgr.core.repository.dir import get_repo_dir
+from pkgmgr.core.repository.identifier import get_repo_identifier
 
 
 def delete_repos(selected_repos, repositories_base_dir, all_repos, preview=False):

@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pkgmgr.core.git.errors import GitRunError
-from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.git.commands import (
     GitDeleteRemoteBranchError,
     delete_local_branch,
     delete_remote_branch,
 )
-
-from pkgmgr.core.git.queries import resolve_base_branch
+from pkgmgr.core.git.errors import GitRunError
+from pkgmgr.core.git.queries import get_current_branch, resolve_base_branch
 
 
 def drop_branch(

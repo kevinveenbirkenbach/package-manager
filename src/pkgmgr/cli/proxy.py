@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
 import argparse
 import os
 import sys
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
-from pkgmgr.cli.context import CLIContext
-from pkgmgr.actions.repository.clone import clone_repos
 from pkgmgr.actions.proxy import exec_proxy_command
+from pkgmgr.actions.repository.clone import clone_repos
 from pkgmgr.actions.repository.pull import pull_with_verification
 from pkgmgr.actions.repository.push import push_in_parallel
-from pkgmgr.core.repository.selected import get_selected_repos
+from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.repository.dir import get_repo_dir
-
+from pkgmgr.core.repository.selected import get_selected_repos
 
 PROXY_COMMANDS: Dict[str, List[str]] = {
     "git": [

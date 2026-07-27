@@ -4,10 +4,10 @@ import unittest
 
 from pkgmgr.actions.repository.create.model import RepoParts
 from pkgmgr.actions.repository.create.parser import (
-    parse_identifier,
     _parse_git_url,
-    _strip_git_suffix,
     _split_host_port,
+    _strip_git_suffix,
+    parse_identifier,
 )
 
 
