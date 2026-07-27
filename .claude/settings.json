@@ -1,11 +1,12 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(*)"
-    ],
     "ask": [
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(git commit)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git push *)"
     ]
   },
   "sandbox": {
