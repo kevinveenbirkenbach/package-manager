@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from ..store_keys import build_keyring_key
-from ..types import KeyringUnavailableError, TokenRequest, TokenResult
+from ..types import (
+    KeyringOperationError,
+    KeyringUnavailableError,
+    TokenRequest,
+    TokenResult,
+)
 
 
 def _import_keyring():
@@ -41,10 +45,15 @@ class KeyringTokenProvider:
 
     source_name: str = "keyring"
 
-    def get(self, request: TokenRequest) -> Optional[TokenResult]:
+    def get(self, request: TokenRequest) -> TokenResult | None:
         keyring = _import_keyring()
         key = build_keyring_key(request.provider_kind, request.host, request.owner)
-        token = keyring.get_password(key.service, key.username)
+        try:
+            token = keyring.get_password(key.service, key.username)
+        except Exception as exc:
+            raise KeyringOperationError(
+                f"Reading the keyring entry for {key.service!r} failed."
+            ) from exc
         if token:
             return TokenResult(token=token.strip(), source=self.source_name)
         return None
@@ -52,4 +61,9 @@ class KeyringTokenProvider:
     def set(self, request: TokenRequest, token: str) -> None:
         keyring = _import_keyring()
         key = build_keyring_key(request.provider_kind, request.host, request.owner)
-        keyring.set_password(key.service, key.username, token)
+        try:
+            keyring.set_password(key.service, key.username, token)
+        except Exception as exc:
+            raise KeyringOperationError(
+                f"Writing the keyring entry for {key.service!r} failed."
+            ) from exc

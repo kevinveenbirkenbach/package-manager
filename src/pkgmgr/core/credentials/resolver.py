@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from typing import Optional
 
 from .providers.env import EnvTokenProvider
 from .providers.gh import GhTokenProvider
 from .providers.keyring import KeyringTokenProvider
 from .providers.prompt import PromptTokenProvider
 from .types import (
+    KeyringOperationError,
     KeyringUnavailableError,
     NoCredentialsError,
     TokenRequest,
@@ -76,7 +76,7 @@ class TokenResolver:
         self,
         request: TokenRequest,
         opts: ResolutionOptions,
-    ) -> Optional[TokenResult]:
+    ) -> TokenResult | None:
         """
         Prompt for a token and optionally store it in keyring.
         If keyring is unavailable, still return the token for this run.
@@ -93,8 +93,8 @@ class TokenResolver:
                 self._keyring.set(request, prompt_res.token)  # overwrite is fine
             except KeyringUnavailableError as exc:
                 self._warn_keyring_unavailable(exc)
-            except Exception:
-                # If keyring cannot store, still use token for this run.
+            except KeyringOperationError:
+                # Storing failed; the token is still valid for this run.
                 pass
 
         return prompt_res
@@ -103,8 +103,8 @@ class TokenResolver:
         self,
         provider_kind: str,
         host: str,
-        owner: Optional[str] = None,
-        options: Optional[ResolutionOptions] = None,
+        owner: str | None = None,
+        options: ResolutionOptions | None = None,
     ) -> TokenResult:
         opts = options or ResolutionOptions()
         request = TokenRequest(provider_kind=provider_kind, host=host, owner=owner)
@@ -135,8 +135,8 @@ class TokenResolver:
         except KeyringUnavailableError as exc:
             # Show a helpful warning once, then continue (prompt fallback).
             self._warn_keyring_unavailable(exc)
-        except Exception:
-            # Unknown keyring errors: do not block prompting; still avoid hard crash.
+        except KeyringOperationError:
+            # Reading failed; fall through to the prompt.
             pass
 
         # 3) Prompt (optional)

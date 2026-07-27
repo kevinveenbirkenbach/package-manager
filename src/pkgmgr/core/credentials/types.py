@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 class CredentialError(RuntimeError):
@@ -17,13 +16,17 @@ class KeyringUnavailableError(CredentialError):
     """Raised when keyring is requested but no backend is available."""
 
 
+class KeyringOperationError(CredentialError):
+    """Raised when a keyring read or write fails inside the backend."""
+
+
 @dataclass(frozen=True)
 class TokenRequest:
     """Parameters describing which token we need."""
 
     provider_kind: str  # e.g. "gitea", "github"
     host: str  # e.g. "git.example.org" or "github.com"
-    owner: Optional[str] = None  # optional org/user
+    owner: str | None = None  # optional org/user
 
 
 @dataclass(frozen=True)

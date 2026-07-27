@@ -3,6 +3,7 @@
 from .resolver import ResolutionOptions, TokenResolver
 from .types import (
     CredentialError,
+    KeyringOperationError,
     KeyringUnavailableError,
     NoCredentialsError,
     TokenRequest,
@@ -11,6 +12,7 @@ from .types import (
 
 __all__ = [
     "CredentialError",
+    "KeyringOperationError",
     "KeyringUnavailableError",
     "NoCredentialsError",
     "ResolutionOptions",
