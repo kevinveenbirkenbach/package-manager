@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from .runner import CommandRunner
 
@@ -19,12 +19,12 @@ class NixProfileListReader:
         m = re.match(r"^(/nix/store/[0-9a-z]{32}-[^/ \t]+)", raw)
         return m.group(1) if m else raw
 
-    def entries(self, ctx: RepoContext) -> List[Tuple[int, str]]:
+    def entries(self, ctx: RepoContext) -> list[tuple[int, str]]:
         res = self._runner.run(ctx, "nix profile list", allow_failure=True)
         if res.returncode != 0:
             return []
 
-        entries: List[Tuple[int, str]] = []
+        entries: list[tuple[int, str]] = []
         pat = re.compile(
             r"^\s*(\d+)\s+.*?(/nix/store/[0-9a-z]{32}-[^/ \t]+)",
             re.MULTILINE,
@@ -49,20 +49,20 @@ class NixProfileListReader:
         return uniq
 
     def indices_matching_store_prefixes(
-        self, ctx: RepoContext, prefixes: List[str]
-    ) -> List[int]:
+        self, ctx: RepoContext, prefixes: list[str]
+    ) -> list[int]:
         prefixes = [self._store_prefix(p) for p in prefixes if p]
         prefixes = [p for p in prefixes if p]
         if not prefixes:
             return []
 
-        hits: List[int] = []
+        hits: list[int] = []
         for idx, sp in self.entries(ctx):
             if any(sp == p for p in prefixes):
                 hits.append(idx)
 
         seen: set[int] = set()
-        uniq: List[int] = []
+        uniq: list[int] = []
         for i in hits:
             if i not in seen:
                 seen.add(i)

@@ -1,6 +1,4 @@
 # src/pkgmgr/actions/install/pipeline.py
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Installation pipeline orchestration for repositories.
@@ -10,7 +8,6 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Set
 
 from pkgmgr.actions.install.context import RepoContext
 from pkgmgr.actions.install.installers.base import BaseInstaller
@@ -25,8 +22,8 @@ from pkgmgr.core.command.resolve import resolve_command_for_repo
 
 @dataclass
 class CommandState:
-    command: Optional[str]
-    layer: Optional[CliLayer]
+    command: str | None
+    layer: CliLayer | None
 
 
 class CommandResolver:
@@ -84,7 +81,7 @@ class InstallationPipeline:
         else:
             repo.pop("command", None)
 
-        provided_capabilities: Set[str] = set()
+        provided_capabilities: set[str] = set()
 
         for installer in self._installers:
             layer_name = getattr(installer, "layer", None)

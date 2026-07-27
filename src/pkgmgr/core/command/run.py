@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+import contextlib
 import selectors
 import subprocess
 import sys
-from typing import List, Optional, Union
+from typing import Union
 
-CommandType = Union[str, List[str]]
+CommandType = Union[str, list[str]]
 
 
 def run_command(
     cmd: CommandType,
-    cwd: Optional[str] = None,
+    cwd: str | None = None,
     preview: bool = False,
     allow_failure: bool = False,
 ) -> subprocess.CompletedProcess:
@@ -48,8 +49,8 @@ def run_command(
     sel.register(process.stdout, selectors.EVENT_READ, data="stdout")
     sel.register(process.stderr, selectors.EVENT_READ, data="stderr")
 
-    stdout_lines: List[str] = []
-    stderr_lines: List[str] = []
+    stdout_lines: list[str] = []
+    stderr_lines: list[str] = []
 
     try:
         while sel.get_map():

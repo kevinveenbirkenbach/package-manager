@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 from .matcher import (
     entry_matches_output,
@@ -43,11 +43,11 @@ class NixProfileInspector:
         ctx: RepoContext,
         runner: CommandRunner,
         output: str,
-    ) -> List[int]:
+    ) -> list[int]:
         data = self.list_json(ctx, runner)
         entries = normalize_elements(data)
 
-        hits: List[int] = []
+        hits: list[int] = []
         for e in entries:
             if e.index is None:
                 continue
@@ -61,7 +61,7 @@ class NixProfileInspector:
         ctx: RepoContext,
         runner: CommandRunner,
         store_path: str,
-    ) -> List[int]:
+    ) -> list[int]:
         needle = (store_path or "").strip()
         if not needle:
             return []
@@ -69,7 +69,7 @@ class NixProfileInspector:
         data = self.list_json(ctx, runner)
         entries = normalize_elements(data)
 
-        hits: List[int] = []
+        hits: list[int] = []
         for e in entries:
             if e.index is None:
                 continue
@@ -87,7 +87,7 @@ class NixProfileInspector:
         ctx: RepoContext,
         runner: CommandRunner,
         output: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Returns profile remove tokens to remove entries matching a given output.
 
@@ -101,7 +101,7 @@ class NixProfileInspector:
         data = self.list_json(ctx, runner)
         entries = normalize_elements(data)
 
-        tokens: List[str] = [
+        tokens: list[str] = [
             out
         ]  # critical: matches nix's own suggestion for conflicts
 
@@ -119,7 +119,7 @@ class NixProfileInspector:
 
         # stable unique preserving order
         seen: set[str] = set()
-        uniq: List[str] = []
+        uniq: list[str] = []
         for t in tokens:
             if t and t not in seen:
                 uniq.append(t)
@@ -130,8 +130,8 @@ class NixProfileInspector:
         self,
         ctx: RepoContext,
         runner: CommandRunner,
-        prefixes: List[str],
-    ) -> List[str]:
+        prefixes: list[str],
+    ) -> list[str]:
         """
         Returns remove tokens for entries whose store path matches any prefix.
         """
@@ -143,7 +143,7 @@ class NixProfileInspector:
         data = self.list_json(ctx, runner)
         entries = normalize_elements(data)
 
-        tokens: List[str] = []
+        tokens: list[str] = []
         for e in entries:
             if not e.store_paths:
                 continue
@@ -156,7 +156,7 @@ class NixProfileInspector:
                     tokens.append(n)
 
         seen: set[str] = set()
-        uniq: List[str] = []
+        uniq: list[str] = []
         for t in tokens:
             if t and t not in seen:
                 uniq.append(t)

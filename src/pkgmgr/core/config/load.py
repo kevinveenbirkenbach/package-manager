@@ -1,6 +1,4 @@
 # src/pkgmgr/core/config/load.py
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Load and merge pkgmgr configuration.
@@ -38,11 +36,11 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import yaml
 
-Repo = Dict[str, Any]
+Repo = dict[str, Any]
 
 
 # ---------------------------------------------------------------------------
@@ -50,7 +48,7 @@ Repo = Dict[str, Any]
 # ---------------------------------------------------------------------------
 
 
-def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """
     Recursively merge two dictionaries.
 
@@ -64,7 +62,7 @@ def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any
     return base
 
 
-def _repo_key(repo: Repo) -> Tuple[str, str, str]:
+def _repo_key(repo: Repo) -> tuple[str, str, str]:
     """
     Normalised key for identifying a repository across config files.
     """
@@ -76,10 +74,10 @@ def _repo_key(repo: Repo) -> Tuple[str, str, str]:
 
 
 def _merge_repo_lists(
-    base_list: List[Repo],
-    new_list: List[Repo],
-    category_name: Optional[str] = None,
-) -> List[Repo]:
+    base_list: list[Repo],
+    new_list: list[Repo],
+    category_name: str | None = None,
+) -> list[Repo]:
     """
     Merge two repository lists, matching by (provider, account, repository).
 
@@ -87,7 +85,7 @@ def _merge_repo_lists(
     - If it exists, its fields are deep-merged (override wins).
     - If category_name is set, it is appended to repo["category_files"].
     """
-    index: Dict[Tuple[str, str, str], Repo] = {_repo_key(r): r for r in base_list}
+    index: dict[tuple[str, str, str], Repo] = {_repo_key(r): r for r in base_list}
 
     for src in new_list:
         key = _repo_key(src)
@@ -120,7 +118,7 @@ def _merge_repo_lists(
     return base_list
 
 
-def _load_yaml_file(path: Path) -> Dict[str, Any]:
+def _load_yaml_file(path: Path) -> dict[str, Any]:
     """
     Load a single YAML file as dict. Non-dicts yield {}.
     """
@@ -135,8 +133,8 @@ def _load_yaml_file(path: Path) -> Dict[str, Any]:
 
 def _load_layer_dir(
     config_dir: Path,
-    skip_filename: Optional[str] = None,
-) -> Dict[str, Any]:
+    skip_filename: str | None = None,
+) -> dict[str, Any]:
     """
     Load all *.yml/*.yaml from a directory as layered defaults.
 
@@ -148,7 +146,7 @@ def _load_layer_dir(
         "repositories": [...],
       }
     """
-    defaults: Dict[str, Any] = {"directories": {}, "repositories": []}
+    defaults: dict[str, Any] = {"directories": {}, "repositories": []}
 
     if not config_dir.is_dir():
         return defaults
@@ -186,7 +184,7 @@ def _load_layer_dir(
     return defaults
 
 
-def _load_defaults_from_package_or_project() -> Dict[str, Any]:
+def _load_defaults_from_package_or_project() -> dict[str, Any]:
     """
     Fallback: load default configs from possible install or dev layouts.
 
@@ -224,7 +222,7 @@ def _load_defaults_from_package_or_project() -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def load_config(user_config_path: str) -> Dict[str, Any]:
+def load_config(user_config_path: str) -> dict[str, Any]:
     """
     Load and merge configuration for pkgmgr.
 
@@ -258,14 +256,14 @@ def load_config(user_config_path: str) -> Dict[str, Any]:
     defaults.setdefault("repositories", [])
 
     # 4) User config
-    user_cfg: Dict[str, Any] = {}
+    user_cfg: dict[str, Any] = {}
     if user_cfg_path.is_file():
         user_cfg = _load_yaml_file(user_cfg_path)
     user_cfg.setdefault("directories", {})
     user_cfg.setdefault("repositories", [])
 
     # 5) Merge
-    merged: Dict[str, Any] = {}
+    merged: dict[str, Any] = {}
 
     merged["directories"] = {}
     _deep_merge(merged["directories"], defaults["directories"])

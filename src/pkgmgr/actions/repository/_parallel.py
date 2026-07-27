@@ -3,29 +3,29 @@ from __future__ import annotations
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable
 
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 
-Repository = Dict[str, Any]
-RepoRef = Tuple[str, str]
-OpResult = Tuple[bool, str]
+Repository = dict[str, Any]
+RepoRef = tuple[str, str]
+OpResult = tuple[bool, str]
 RepoOp = Callable[[str], OpResult]
 
 
 def resolve_repos(
-    selected_repos: List[Repository],
+    selected_repos: list[Repository],
     repositories_base_dir: str,
-    all_repos: List[Repository],
-) -> List[RepoRef]:
+    all_repos: list[Repository],
+) -> list[RepoRef]:
     """
     Resolve ``(identifier, repo_dir)`` pairs for ``selected_repos``.
 
     Repositories whose directory does not exist on disk are reported and
     skipped, matching the prior behavior of pull/push handlers.
     """
-    resolved: List[RepoRef] = []
+    resolved: list[RepoRef] = []
     for repo in selected_repos:
         ident = get_repo_identifier(repo, all_repos)
         rd = get_repo_dir(repositories_base_dir, repo)
@@ -37,7 +37,7 @@ def resolve_repos(
 
 
 def run_on_repos(
-    repos: List[RepoRef],
+    repos: list[RepoRef],
     op: RepoOp,
     *,
     jobs: int,
@@ -55,7 +55,7 @@ def run_on_repos(
         return
 
     effective_jobs = max(1, min(jobs, len(repos)))
-    failed: List[Tuple[str, str]] = []
+    failed: list[tuple[str, str]] = []
 
     if effective_jobs == 1:
         for ident, rd in repos:

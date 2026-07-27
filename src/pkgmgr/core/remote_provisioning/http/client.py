@@ -6,7 +6,7 @@ import ssl
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .errors import HttpError
 
@@ -15,7 +15,7 @@ from .errors import HttpError
 class HttpResponse:
     status: int
     text: str
-    json: Optional[Dict[str, Any]] = None
+    json: dict[str, Any] | None = None
 
 
 class HttpClient:
@@ -28,11 +28,11 @@ class HttpClient:
         self,
         method: str,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
-        payload: Optional[Dict[str, Any]] = None,
+        headers: dict[str, str] | None = None,
+        payload: dict[str, Any] | None = None,
     ) -> HttpResponse:
-        data: Optional[bytes] = None
-        final_headers: Dict[str, str] = dict(headers or {})
+        data: bytes | None = None
+        final_headers: dict[str, str] = dict(headers or {})
 
         if payload is not None:
             data = json.dumps(payload).encode("utf-8")

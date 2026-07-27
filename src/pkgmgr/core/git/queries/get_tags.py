@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import List
-
 from ..errors import GitRunError
 from ..run import run
 
 
-def get_tags(cwd: str = ".") -> List[str]:
+def get_tags(cwd: str = ".") -> list[str]:
     """
     Return a list of all tags in the repository in `cwd`.
 

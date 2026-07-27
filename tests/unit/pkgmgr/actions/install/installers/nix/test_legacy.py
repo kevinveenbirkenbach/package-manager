@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Unit tests for NixFlakeInstaller using unittest (no pytest).
 
@@ -19,7 +17,6 @@ import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from typing import List
 from unittest.mock import patch
 
 from pkgmgr.actions.install.installers.nix import NixFlakeInstaller
@@ -73,8 +70,8 @@ class TestNixFlakeInstaller(unittest.TestCase):
         which_patch.return_value = "/usr/bin/nix"
 
     @staticmethod
-    def _install_cmds_from_calls(call_args_list) -> List[str]:
-        cmds: List[str] = []
+    def _install_cmds_from_calls(call_args_list) -> list[str]:
+        cmds: list[str] = []
         for c in call_args_list:
             if not c.args:
                 continue

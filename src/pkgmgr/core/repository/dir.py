@@ -1,9 +1,9 @@
 import os
 import sys
-from typing import Any, Dict
+from typing import Any
 
 
-def get_repo_dir(repositories_base_dir: str, repo: Dict[str, Any]) -> str:
+def get_repo_dir(repositories_base_dir: str, repo: dict[str, Any]) -> str:
     """
     Build the local repository directory path from:
       repositories_base_dir/provider/account/repository

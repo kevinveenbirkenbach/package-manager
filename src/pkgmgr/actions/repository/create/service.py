@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict
+from typing import Any
 
 from pkgmgr.core.git.queries import get_config_value
 
@@ -17,7 +17,7 @@ class CreateRepoService:
     def __init__(
         self,
         *,
-        config_merged: Dict[str, Any],
+        config_merged: dict[str, Any],
         user_config_path: str,
         bin_dir: str,
     ):

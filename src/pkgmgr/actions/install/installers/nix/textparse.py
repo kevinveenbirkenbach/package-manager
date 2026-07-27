@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import List
 
 
 class NixConflictTextParser:
@@ -11,13 +10,13 @@ class NixConflictTextParser:
         m = re.match(r"^(/nix/store/[0-9a-z]{32}-[^/ \t]+)", raw)
         return m.group(1) if m else raw
 
-    def remove_tokens(self, text: str) -> List[str]:
+    def remove_tokens(self, text: str) -> list[str]:
         pat = re.compile(
             r"^\s*nix profile remove\s+([^\s'\"`]+|'[^']+'|\"[^\"]+\")\s*$",
             re.MULTILINE,
         )
 
-        tokens: List[str] = []
+        tokens: list[str] = []
         for m in pat.finditer(text or ""):
             t = (m.group(1) or "").strip()
             if (t.startswith("'") and t.endswith("'")) or (
@@ -28,7 +27,7 @@ class NixConflictTextParser:
                 tokens.append(t)
 
         seen: set[str] = set()
-        uniq: List[str] = []
+        uniq: list[str] = []
         for t in tokens:
             if t not in seen:
                 seen.add(t)
@@ -36,9 +35,9 @@ class NixConflictTextParser:
 
         return uniq
 
-    def existing_store_prefixes(self, text: str) -> List[str]:
+    def existing_store_prefixes(self, text: str) -> list[str]:
         lines = (text or "").splitlines()
-        prefixes: List[str] = []
+        prefixes: list[str] = []
 
         in_existing = False
         in_new = False
@@ -69,7 +68,7 @@ class NixConflictTextParser:
         norm = [self._store_prefix(p) for p in prefixes if p]
 
         seen: set[str] = set()
-        uniq: List[str] = []
+        uniq: list[str] = []
         for p in norm:
             if p and p not in seen:
                 seen.add(p)

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Optional
 
 from .debian import _get_debian_author
 
@@ -11,7 +10,7 @@ def update_spec_changelog(
     spec_path: str,
     package_name: str,
     new_version: str,
-    message: Optional[str] = None,
+    message: str | None = None,
     preview: bool = False,
 ) -> None:
     if not os.path.exists(spec_path):

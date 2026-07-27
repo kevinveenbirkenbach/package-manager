@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from pkgmgr.core.git.commands import (
     checkout,
     create_branch,
@@ -13,7 +11,7 @@ from pkgmgr.core.git.queries import resolve_base_branch
 
 
 def open_branch(
-    name: Optional[str],
+    name: str | None,
     base_branch: str = "main",
     fallback_base: str = "master",
     cwd: str = ".",

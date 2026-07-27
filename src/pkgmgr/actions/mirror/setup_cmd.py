@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pkgmgr.core.git.queries import probe_remote_reachable_detail
 from pkgmgr.core.remote_provisioning import ProviderHint, RepoSpec, set_repo_visibility
 from pkgmgr.core.remote_provisioning.visibility import VisibilityOptions
@@ -23,9 +21,7 @@ def _is_git_remote_url(url: str) -> bool:
         return True
     if u.startswith("ssh://"):
         return True
-    if (u.startswith("https://") or u.startswith("http://")) and u.endswith(".git"):
-        return True
-    return False
+    return bool((u.startswith(("https://", "http://"))) and u.endswith(".git"))
 
 
 def _provider_hint_from_host(host: str) -> str | None:
@@ -89,7 +85,7 @@ def _print_probe_result(name: str | None, url: str, *, cwd: str) -> None:
 def _setup_local_mirrors_for_repo(
     repo: Repository,
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     preview: bool,
 ) -> None:
     ctx = build_context(repo, repositories_base_dir, all_repos)
@@ -106,7 +102,7 @@ def _setup_local_mirrors_for_repo(
 def _setup_remote_mirrors_for_repo(
     repo: Repository,
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     preview: bool,
     ensure_remote: bool,
     ensure_visibility: str | None,
@@ -195,9 +191,9 @@ def _setup_remote_mirrors_for_repo(
 
 
 def setup_mirrors(
-    selected_repos: List[Repository],
+    selected_repos: list[Repository],
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     preview: bool = False,
     local: bool = True,
     remote: bool = True,

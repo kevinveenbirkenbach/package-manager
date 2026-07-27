@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
-
 """
 Base interface for all installer components in the pkgmgr installation pipeline.
 """
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional, Set
 
 from pkgmgr.actions.install.capabilities import CAPABILITY_MATCHERS
 from pkgmgr.actions.install.context import RepoContext
@@ -23,9 +21,9 @@ class BaseInstaller(ABC):
     #   Examples: "nix", "python", "makefile".
     #   This is used by capability matchers to decide which patterns to
     #   search for in the repository.
-    layer: Optional[str] = None
+    layer: str | None = None
 
-    def discover_capabilities(self, ctx: RepoContext) -> Set[str]:
+    def discover_capabilities(self, ctx: RepoContext) -> set[str]:
         """
         Determine which logical capabilities this installer will provide
         for this specific repository instance.
@@ -35,7 +33,7 @@ class BaseInstaller(ABC):
         Makefile, etc.) and decide, via string matching, whether a given
         capability is actually provided by this layer.
         """
-        caps: Set[str] = set()
+        caps: set[str] = set()
         if not self.layer:
             return caps
 

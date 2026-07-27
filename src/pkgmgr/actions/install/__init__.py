@@ -1,6 +1,4 @@
 # src/pkgmgr/actions/install/__init__.py
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 High-level entry point for repository installation.
@@ -16,7 +14,7 @@ Responsibilities:
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pkgmgr.actions.install.context import RepoContext
 from pkgmgr.actions.install.installers.makefile import (
@@ -37,7 +35,7 @@ from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.verify import verify_repository
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 INSTALLERS = [
     ArchPkgbuildInstaller(),
@@ -52,12 +50,12 @@ INSTALLERS = [
 def _ensure_repo_dir(
     repo: Repository,
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     preview: bool,
     no_verification: bool,
     clone_mode: str,
     identifier: str,
-) -> Optional[str]:
+) -> str | None:
     """
     Compute and, if necessary, clone the repository directory.
 
@@ -127,7 +125,7 @@ def _create_context(
     repo_dir: str,
     repositories_base_dir: str,
     bin_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     no_verification: bool,
     preview: bool,
     quiet: bool,
@@ -155,10 +153,10 @@ def _create_context(
 
 
 def install_repos(
-    selected_repos: List[Repository],
+    selected_repos: list[Repository],
     repositories_base_dir: str,
     bin_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     no_verification: bool,
     preview: bool,
     quiet: bool,
@@ -179,7 +177,7 @@ def install_repos(
     overall command never exits non-zero because of per-repository failures.
     """
     pipeline = InstallationPipeline(INSTALLERS)
-    failures: List[Tuple[str, str]] = []
+    failures: list[tuple[str, str]] = []
 
     for repo in selected_repos:
         identifier = get_repo_identifier(repo, all_repos)

@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Optional
 
 from pkgmgr.core.repository.paths import RepoPaths
 
@@ -33,17 +32,17 @@ _PKGBUILD_NAME_RE = re.compile(r"^pkgname=([^\s#]+)\s*$", re.MULTILINE)
 _RPM_NAME_RE = re.compile(r"^Name:\s*(\S+)\s*$", re.MULTILINE)
 
 
-def _read(path: Optional[str]) -> str:
+def _read(path: str | None) -> str:
     if not path or not os.path.isfile(path):
         return ""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return f.read()
     except OSError:
         return ""
 
 
-def _extract(pattern: re.Pattern[str], text: str) -> Optional[str]:
+def _extract(pattern: re.Pattern[str], text: str) -> str | None:
     if not text:
         return None
     match = pattern.search(text)

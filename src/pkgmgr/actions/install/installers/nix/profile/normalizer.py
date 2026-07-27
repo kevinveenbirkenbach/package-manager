@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .models import NixProfileEntry
 
 
-def coerce_index(key: str, entry: Dict[str, Any]) -> Optional[int]:
+def coerce_index(key: str, entry: dict[str, Any]) -> int | None:
     """
     Nix JSON schema varies:
       - elements keys might be "0", "1", ...
@@ -73,7 +73,7 @@ def iter_store_paths(entry: Dict[str, Any]) -> Iterable[str]:
 
     outs = entry.get("outputs")
     if isinstance(outs, dict):
-        for _, ov in outs.items():
+        for ov in outs.values():
             if isinstance(ov, dict):
                 p = ov.get("storePath")
                 if isinstance(p, str):
@@ -88,7 +88,7 @@ def normalize_store_path(store_path: str) -> str:
     return (store_path or "").strip()
 
 
-def normalize_elements(data: Dict[str, Any]) -> List[NixProfileEntry]:
+def normalize_elements(data: dict[str, Any]) -> list[NixProfileEntry]:
     """
     Converts nix profile list JSON into a list of normalized entries.
 
@@ -100,7 +100,7 @@ def normalize_elements(data: Dict[str, Any]) -> List[NixProfileEntry]:
     if not isinstance(elements, dict):
         return []
 
-    normalized: List[NixProfileEntry] = []
+    normalized: list[NixProfileEntry] = []
 
     for k, entry in elements.items():
         if not isinstance(entry, dict):
@@ -110,7 +110,7 @@ def normalize_elements(data: Dict[str, Any]) -> List[NixProfileEntry]:
         name = str(entry.get("name", "") or "")
         attr = str(entry.get("attrPath", "") or "")
 
-        store_paths: List[str] = []
+        store_paths: list[str] = []
         for p in iter_store_paths(entry):
             sp = normalize_store_path(p)
             if sp:

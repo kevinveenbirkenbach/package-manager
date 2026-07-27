@@ -1,7 +1,7 @@
 # src/pkgmgr/core/remote_provisioning/providers/gitea.py
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from ..http.client import HttpClient
 from ..http.errors import HttpError
@@ -25,11 +25,9 @@ class GiteaProvider(RemoteProvider):
         - If you add more providers later, tighten this heuristic or use provider hints.
         """
         h = host.lower()
-        if h in ("github.com", "api.github.com") or h.endswith(".github.com"):
-            return False
-        return True
+        return not (h in ("github.com", "api.github.com") or h.endswith(".github.com"))
 
-    def _headers(self, token: str) -> Dict[str, str]:
+    def _headers(self, token: str) -> dict[str, str]:
         """
         Gitea commonly supports:
           Authorization: token <TOKEN>
@@ -70,7 +68,7 @@ class GiteaProvider(RemoteProvider):
     def set_repo_private(self, token: str, spec: RepoSpec, *, private: bool) -> None:
         base = self._api_base(spec.host)
         url = f"{base}/api/v1/repos/{spec.owner}/{spec.name}"
-        payload: Dict[str, Any] = {"private": bool(private)}
+        payload: dict[str, Any] = {"private": bool(private)}
 
         resp = self._http.request_json(
             "PATCH",
@@ -88,7 +86,7 @@ class GiteaProvider(RemoteProvider):
     def create_repo(self, token: str, spec: RepoSpec) -> EnsureResult:
         base = self._api_base(spec.host)
 
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "name": spec.name,
             "private": bool(spec.private),
         }

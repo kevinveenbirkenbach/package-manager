@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from ..errors import GitQueryError, GitRunError
 from ..run import run
 
@@ -10,7 +8,7 @@ class GitTagsAtRefQueryError(GitQueryError):
     """Raised when querying tags for a ref fails."""
 
 
-def get_tags_at_ref(ref: str, *, cwd: str = ".") -> List[str]:
+def get_tags_at_ref(ref: str, *, cwd: str = ".") -> list[str]:
     """
     Return all git tags pointing at a given ref.
 

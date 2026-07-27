@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Optional
 
 import yaml
 
 from pkgmgr.core.repository.paths import resolve_repo_paths
 
 
-def read_pyproject_version(repo_dir: str) -> Optional[str]:
+def read_pyproject_version(repo_dir: str) -> str | None:
     """
     Read the version from pyproject.toml in repo_dir, if present.
 
@@ -88,7 +87,7 @@ def read_flake_version(repo_dir: str) -> Optional[str]:
     return match.group(1).strip() or None
 
 
-def read_pkgbuild_version(repo_dir: str) -> Optional[str]:
+def read_pkgbuild_version(repo_dir: str) -> str | None:
     """
     Read the version from PKGBUILD (preferring packaging/arch/PKGBUILD).
 
@@ -122,7 +121,7 @@ def read_pkgbuild_version(repo_dir: str) -> Optional[str]:
     return pkgver or None
 
 
-def read_debian_changelog_version(repo_dir: str) -> Optional[str]:
+def read_debian_changelog_version(repo_dir: str) -> str | None:
     """
     Read the latest version from debian changelog.
 
@@ -140,7 +139,7 @@ def read_debian_changelog_version(repo_dir: str) -> Optional[str]:
         return None
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
@@ -195,7 +194,7 @@ def read_spec_version(repo_dir: str) -> Optional[str]:
     return version or None
 
 
-def read_ansible_galaxy_version(repo_dir: str) -> Optional[str]:
+def read_ansible_galaxy_version(repo_dir: str) -> str | None:
     """
     Read the version from Ansible Galaxy metadata.
 

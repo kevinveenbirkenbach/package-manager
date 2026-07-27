@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pkgmgr.core.git.commands import GitCloneError
 from pkgmgr.core.git.commands import clone as git_clone
@@ -9,10 +9,10 @@ from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.verify import verify_repository
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
-def _build_clone_url(repo: Repository, clone_mode: str) -> Optional[str]:
+def _build_clone_url(repo: Repository, clone_mode: str) -> str | None:
     provider = repo.get("provider")
     account = repo.get("account")
     name = repo.get("repository")
@@ -34,9 +34,9 @@ def _build_clone_url(repo: Repository, clone_mode: str) -> Optional[str]:
 
 
 def clone_repos(
-    selected_repos: List[Repository],
+    selected_repos: list[Repository],
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     preview: bool,
     no_verification: bool,
     clone_mode: str,

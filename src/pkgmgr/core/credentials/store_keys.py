@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -14,7 +13,7 @@ class KeyringKey:
 
 
 def build_keyring_key(
-    provider_kind: str, host: str, owner: Optional[str]
+    provider_kind: str, host: str, owner: str | None
 ) -> KeyringKey:
     """Build a stable keyring key.
 
@@ -30,7 +29,7 @@ def build_keyring_key(
 
 
 def env_var_candidates(
-    provider_kind: str, host: str, owner: Optional[str]
+    provider_kind: str, host: str, owner: str | None
 ) -> list[str]:
     """Return a list of environment variable names to try.
 

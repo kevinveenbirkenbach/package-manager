@@ -27,14 +27,14 @@ class CodeScanningResult:
     repo: str
     output_dir: str
     alert_count: int
-    files: List[str] = field(default_factory=list)
+    files: list[str] = field(default_factory=list)
 
 
-def _gh(args: List[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["gh", *args], capture_output=True, text=True)
+def _gh(args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["gh", *args], capture_output=True, text=True, check=False)
 
 
-def _resolve_repo(repo: Optional[str]) -> str:
+def _resolve_repo(repo: str | None) -> str:
     if repo:
         return repo
     proc = _gh(["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"])
@@ -48,7 +48,7 @@ def _resolve_repo(repo: Optional[str]) -> str:
     return name
 
 
-def _fetch_json(endpoint: str, params: Optional[List[str]] = None) -> Any:
+def _fetch_json(endpoint: str, params: list[str] | None = None) -> Any:
     args = ["api", endpoint, "--paginate"]
     for param in params or []:
         args += ["-f", param]
@@ -74,7 +74,7 @@ def _alert_row(alert: dict) -> str:
     return f"- [{severity}] {rule_id} — {path}:{line} ({state})\n  {message}"
 
 
-def _build_summary(repo: str, generated_at: str, alerts: List[dict]) -> str:
+def _build_summary(repo: str, generated_at: str, alerts: list[dict]) -> str:
     by_severity: Counter = Counter()
     by_state: Counter = Counter()
     by_rule: Counter = Counter()
@@ -112,9 +112,9 @@ def _build_summary(repo: str, generated_at: str, alerts: List[dict]) -> str:
 
 
 def download_code_scanning(
-    repo: Optional[str] = None,
-    output_dir: Optional[str] = None,
-    state: Optional[str] = None,
+    repo: str | None = None,
+    output_dir: str | None = None,
+    state: str | None = None,
 ) -> CodeScanningResult:
     if not shutil.which("gh"):
         raise CodeScanningError("the GitHub CLI 'gh' is not installed or not on PATH")

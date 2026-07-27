@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 End-to-end tests for the `pkgmgr path` command.
 

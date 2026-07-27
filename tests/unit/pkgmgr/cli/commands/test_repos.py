@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Unit tests for pkgmgr.cli.commands.repos
 
@@ -26,17 +24,17 @@ import io
 import unittest
 from contextlib import redirect_stdout
 from types import SimpleNamespace
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import patch
 
 from pkgmgr.cli.commands.repos import handle_repos_command
 from pkgmgr.cli.context import CLIContext
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 class TestReposCommand(unittest.TestCase):
-    def _make_ctx(self, repositories: List[Repository]) -> CLIContext:
+    def _make_ctx(self, repositories: list[Repository]) -> CLIContext:
         """
         Helper to build a minimal CLIContext for tests.
         """
@@ -57,7 +55,7 @@ class TestReposCommand(unittest.TestCase):
         When repository["directory"] is present, handle_repos_command("path")
         should print this value directly without calling get_repo_dir().
         """
-        repos: List[Repository] = [
+        repos: list[Repository] = [
             {
                 "provider": "github.com",
                 "account": "kevinveenbirkenbach",
@@ -93,7 +91,7 @@ class TestReposCommand(unittest.TestCase):
         should call get_repo_dir(ctx.repositories_base_dir, repo) and print
         the returned value.
         """
-        repos: List[Repository] = [
+        repos: list[Repository] = [
             {
                 "provider": "github.com",
                 "account": "kevinveenbirkenbach",
@@ -155,7 +153,7 @@ class TestReposCommand(unittest.TestCase):
         'shell' should resolve the repository directory and pass it as cwd
         to run_command(), along with the full shell command string.
         """
-        repos: List[Repository] = [
+        repos: list[Repository] = [
             {
                 "provider": "github.com",
                 "account": "kevinveenbirkenbach",
@@ -196,7 +194,7 @@ class TestReposCommand(unittest.TestCase):
         """
         'shell' without -c/--command should print an error and exit with code 2.
         """
-        repos: List[Repository] = []
+        repos: list[Repository] = []
         ctx = self._make_ctx(repos)
 
         args = SimpleNamespace(

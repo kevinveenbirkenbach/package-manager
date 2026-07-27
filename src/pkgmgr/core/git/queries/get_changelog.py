@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from ..errors import GitQueryError, GitRunError
 from ..run import run
 
@@ -13,8 +11,8 @@ class GitChangelogQueryError(GitQueryError):
 def get_changelog(
     *,
     cwd: str,
-    from_ref: Optional[str] = None,
-    to_ref: Optional[str] = None,
+    from_ref: str | None = None,
+    to_ref: str | None = None,
     include_merges: bool = False,
 ) -> str:
     """

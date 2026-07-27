@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any
 
-Repository = Dict[str, Any]
-MirrorMap = Dict[str, str]
+Repository = dict[str, Any]
+MirrorMap = dict[str, str]
 
 
 @dataclass(frozen=True)

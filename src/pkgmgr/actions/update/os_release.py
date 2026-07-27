@@ -1,21 +1,18 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Dict
 
 
-def read_os_release(path: str = "/etc/os-release") -> Dict[str, str]:
+def read_os_release(path: str = "/etc/os-release") -> dict[str, str]:
     """
     Parse /etc/os-release into a dict. Returns empty dict if missing.
     """
     if not os.path.exists(path):
         return {}
 
-    result: Dict[str, str] = {}
-    with open(path, "r", encoding="utf-8") as f:
+    result: dict[str, str] = {}
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:

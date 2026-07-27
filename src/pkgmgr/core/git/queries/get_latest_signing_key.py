@@ -43,8 +43,7 @@ def get_latest_signing_key(*, cwd: str = ".") -> str:
             cmd,
             cwd=cwd,
             check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
         )
     except OSError as exc:

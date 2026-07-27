@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 from ..store_keys import env_var_candidates
 from ..types import TokenRequest, TokenResult
@@ -15,7 +14,7 @@ class EnvTokenProvider:
 
     source_name: str = "env"
 
-    def get(self, request: TokenRequest) -> Optional[TokenResult]:
+    def get(self, request: TokenRequest) -> TokenResult | None:
         for key in env_var_candidates(
             request.provider_kind, request.host, request.owner
         ):

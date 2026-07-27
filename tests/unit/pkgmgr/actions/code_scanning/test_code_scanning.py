@@ -87,9 +87,11 @@ class TestDownloadCodeScanning(unittest.TestCase):
         )
 
     def test_errors_when_gh_missing(self) -> None:
-        with mock.patch("pkgmgr.actions.code_scanning.shutil.which", return_value=None):
-            with self.assertRaises(CodeScanningError):
-                download_code_scanning(output_dir="/tmp/should-not-be-created")
+        with (
+            mock.patch("pkgmgr.actions.code_scanning.shutil.which", return_value=None),
+            self.assertRaises(CodeScanningError),
+        ):
+            download_code_scanning(output_dir="/tmp/should-not-be-created")
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pkgmgr.core.remote_provisioning import ProviderHint, RepoSpec, set_repo_visibility
 from pkgmgr.core.remote_provisioning.visibility import VisibilityOptions
 
@@ -20,9 +18,7 @@ def _is_git_remote_url(url: str) -> bool:
         return True
     if u.startswith("ssh://"):
         return True
-    if (u.startswith("https://") or u.startswith("http://")) and u.endswith(".git"):
-        return True
-    return False
+    return bool((u.startswith(("https://", "http://"))) and u.endswith(".git"))
 
 
 def _provider_hint_from_host(host: str) -> str | None:
@@ -66,9 +62,9 @@ def _apply_visibility_for_url(
 
 
 def set_mirror_visibility(
-    selected_repos: List[Repository],
+    selected_repos: list[Repository],
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     *,
     visibility: str,
     preview: bool = False,

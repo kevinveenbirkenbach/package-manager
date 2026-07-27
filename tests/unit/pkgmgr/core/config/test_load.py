@@ -256,9 +256,11 @@ class LoadConfigIntegrationUnitTests(unittest.TestCase):
             )
 
             fake_pkgmgr = types.SimpleNamespace(__file__=str(pkg_root / "__init__.py"))
-            with patch.dict(sys.modules, {"pkgmgr": fake_pkgmgr}):
-                with patch.dict(os.environ, {"HOME": str(home)}):
-                    merged = load_config(user_config_path)
+            with (
+                patch.dict(sys.modules, {"pkgmgr": fake_pkgmgr}),
+                patch.dict(os.environ, {"HOME": str(home)}),
+            ):
+                merged = load_config(user_config_path)
 
             # directories are merged: defaults then user
             self.assertEqual(merged["directories"]["repositories"], "/PKG/Repos")

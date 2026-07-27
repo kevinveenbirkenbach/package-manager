@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Tuple
 from urllib.parse import urlparse
 
 from .model import RepoParts
@@ -50,7 +49,7 @@ def _parse_git_url(url: str) -> RepoParts:
     return RepoParts(host=host, port=port, owner=owner, name=name)
 
 
-def _split_host_port(host: str) -> Tuple[str, str | None]:
+def _split_host_port(host: str) -> tuple[str, str | None]:
     if ":" in host:
         h, p = host.split(":", 1)
         return h, p or None

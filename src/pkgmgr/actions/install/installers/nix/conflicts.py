@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from .profile import NixProfileInspector
 from .retry import GitHubRateLimitRetry
@@ -49,7 +49,7 @@ class NixConflictResolver:
             store_prefixes = self._parser.existing_store_prefixes(combined)
 
             # 2) Resolve them to concrete remove tokens
-            tokens: List[str] = self._profile.find_remove_tokens_for_store_prefixes(
+            tokens: list[str] = self._profile.find_remove_tokens_for_store_prefixes(
                 ctx,
                 self._runner,
                 store_prefixes,

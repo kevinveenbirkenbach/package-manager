@@ -11,7 +11,6 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Optional
 
 from pkgmgr.actions.release.package_name import resolve_package_name
 from pkgmgr.core.repository.paths import RepoPaths
@@ -20,9 +19,9 @@ from pkgmgr.core.repository.paths import RepoPaths
 def _paths(
     repo_dir: str,
     *,
-    debian_control: Optional[str] = None,
-    arch_pkgbuild: Optional[str] = None,
-    rpm_spec: Optional[str] = None,
+    debian_control: str | None = None,
+    arch_pkgbuild: str | None = None,
+    rpm_spec: str | None = None,
 ) -> RepoPaths:
     return RepoPaths(
         repo_dir=repo_dir,

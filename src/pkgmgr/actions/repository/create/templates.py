@@ -25,7 +25,7 @@ class TemplateRenderer:
         self,
         *,
         repo_dir: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         preview: bool,
     ) -> None:
         if preview:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 EnsureStatus = Literal[
     "exists",
@@ -18,7 +18,7 @@ EnsureStatus = Literal[
 class ProviderHint:
     """Optional hint to force a provider kind."""
 
-    kind: Optional[str] = None  # e.g. "gitea" or "github"
+    kind: str | None = None  # e.g. "gitea" or "github"
 
 
 @dataclass(frozen=True)
@@ -30,14 +30,14 @@ class RepoSpec:
     name: str
     private: bool = True
     description: str = ""
-    default_branch: Optional[str] = None
+    default_branch: str | None = None
 
 
 @dataclass(frozen=True)
 class EnsureResult:
     status: EnsureStatus
     message: str
-    url: Optional[str] = None
+    url: str | None = None
 
 
 class RemoteProvisioningError(RuntimeError):

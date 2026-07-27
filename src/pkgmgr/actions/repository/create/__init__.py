@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .service import CreateRepoService
 
-RepositoryConfig = Dict[str, Any]
+RepositoryConfig = dict[str, Any]
 
 __all__ = [
     "CreateRepoService",

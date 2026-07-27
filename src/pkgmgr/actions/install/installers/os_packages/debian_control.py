@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Installer for Debian/Ubuntu packages defined via debian/control.
 
@@ -12,11 +10,11 @@ This installer:
 It is intended for Debian-based systems where dpkg-buildpackage and
 apt/dpkg tooling are available.
 """
+from __future__ import annotations
 
 import glob
 import os
 import shutil
-from typing import List, Optional
 
 from pkgmgr.actions.install.context import RepoContext
 from pkgmgr.actions.install.installers.base import BaseInstaller
@@ -55,7 +53,7 @@ class DebianControlInstaller(BaseInstaller):
 
         return os.path.exists(self._control_path(ctx))
 
-    def _find_built_debs(self, repo_dir: str) -> List[str]:
+    def _find_built_debs(self, repo_dir: str) -> list[str]:
         """
         Find .deb files built by dpkg-buildpackage.
 
@@ -66,7 +64,7 @@ class DebianControlInstaller(BaseInstaller):
         pattern = os.path.join(parent, "*.deb")
         return sorted(glob.glob(pattern))
 
-    def _privileged_prefix(self) -> Optional[str]:
+    def _privileged_prefix(self) -> str | None:
         """
         Determine how to run privileged commands:
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Capability detection for pkgmgr.
 
@@ -35,7 +33,7 @@ import glob
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pkgmgr.actions.install.context import RepoContext
@@ -46,12 +44,12 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-def _read_text_if_exists(path: str) -> Optional[str]:
+def _read_text_if_exists(path: str) -> str | None:
     """Read a file as UTF-8 text, returning None if it does not exist or fails."""
     if not os.path.exists(path):
         return None
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return f.read()
     except OSError:
         return None
@@ -75,12 +73,12 @@ def _scan_files_for_patterns(files: Iterable[str], patterns: Iterable[str]) -> b
     return False
 
 
-def _first_spec_file(repo_dir: str) -> Optional[str]:
+def _first_spec_file(repo_dir: str) -> str | None:
     """Return the first *.spec file in repo_dir, if any."""
     matches = glob.glob(os.path.join(repo_dir, "*.spec"))
     if not matches:
         return None
-    return sorted(matches)[0]
+    return min(matches)
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +214,7 @@ class MakeInstallCapability(CapabilityMatcher):
             if not os.path.exists(makefile):
                 return False
             try:
-                with open(makefile, "r", encoding="utf-8") as f:
+                with open(makefile, encoding="utf-8") as f:
                     for line in f:
                         if line.strip().startswith("install:"):
                             return True
@@ -360,7 +358,7 @@ def detect_capabilities(
 
 def resolve_effective_capabilities(
     ctx: RepoContext,
-    layers: Optional[Iterable[str]] = None,
+    layers: Iterable[str] | None = None,
 ) -> dict[str, set[str]]:
     """
     Resolve *effective* capabilities for each layer using a bottom-up strategy.
@@ -381,10 +379,7 @@ def resolve_effective_capabilities(
     This means *any* higher layer can overshadow a lower layer, not just
     a specific one like Nix. The resolver is completely generic.
     """
-    if layers is None:
-        layers_list = list(LAYER_ORDER)
-    else:
-        layers_list = list(layers)
+    layers_list = list(LAYER_ORDER) if layers is None else list(layers)
 
     raw_caps = detect_capabilities(ctx, layers_list)
     effective: dict[str, set[str]] = {layer: set() for layer in layers_list}

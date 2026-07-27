@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.actions.install import install_repos
 from pkgmgr.actions.repository.create import create_repo
@@ -15,7 +13,7 @@ from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.command.run import run_command
 from pkgmgr.core.repository.dir import get_repo_dir
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def _resolve_repository_directory(repository: Repository, ctx: CLIContext) -> str:
@@ -45,7 +43,7 @@ def _resolve_repository_directory(repository: Repository, ctx: CLIContext) -> st
 def handle_repos_command(
     args,
     ctx: CLIContext,
-    selected: List[Repository],
+    selected: list[Repository],
 ) -> None:
     """
     Handle core repository commands (install/update/deinstall/delete/status/list/path/shell/create).

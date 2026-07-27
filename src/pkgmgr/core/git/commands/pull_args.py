@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from ..errors import GitCommandError, GitRunError
 from ..run import run
 
@@ -11,7 +9,7 @@ class GitPullArgsError(GitCommandError):
 
 
 def pull_args(
-    args: List[str] | None = None,
+    args: list[str] | None = None,
     *,
     cwd: str = ".",
     preview: bool = False,

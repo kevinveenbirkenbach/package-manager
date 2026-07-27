@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 CLI integration tests for `pkgmgr mirror`.
 
@@ -21,7 +19,6 @@ import runpy
 import sys
 import unittest
 from contextlib import ExitStack, redirect_stderr, redirect_stdout
-from typing import Dict, List, Optional
 from unittest.mock import MagicMock, PropertyMock, patch
 
 
@@ -29,7 +26,7 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
     """Integration tests for `pkgmgr mirror` commands."""
 
     def _run_pkgmgr(
-        self, args: List[str], extra_env: Optional[Dict[str, str]] = None
+        self, args: list[str], extra_env: dict[str, str] | None = None
     ) -> str:
         """Execute pkgmgr with the given arguments and return captured output."""
         original_argv = list(sys.argv)
@@ -151,8 +148,7 @@ class TestIntegrationMirrorCommands(unittest.TestCase):
                         code = exc.code if isinstance(exc.code, int) else None
                         if code not in (0, None):
                             raise AssertionError(
-                                "%r failed with exit code %r.\n\nOutput:\n%s"
-                                % (cmd_repr, exc.code, buffer.getvalue())
+                                f"{cmd_repr!r} failed with exit code {exc.code!r}.\n\nOutput:\n{buffer.getvalue()}"
                             )
 
             return buffer.getvalue()

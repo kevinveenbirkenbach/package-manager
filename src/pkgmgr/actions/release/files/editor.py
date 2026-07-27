@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 import os
 import subprocess
 import tempfile
-from typing import Optional
 
 
-def _open_editor_for_changelog(initial_message: Optional[str] = None) -> str:
+def _open_editor_for_changelog(initial_message: str | None = None) -> str:
     editor = os.environ.get("EDITOR", "nano")
 
     with tempfile.NamedTemporaryFile(

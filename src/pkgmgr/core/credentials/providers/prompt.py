@@ -4,12 +4,11 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 from getpass import getpass
-from typing import Optional
 
 from ..types import TokenRequest, TokenResult
 
 
-def _token_help_url(provider_kind: str, host: str) -> Optional[str]:
+def _token_help_url(provider_kind: str, host: str) -> str | None:
     """
     Return a provider-specific URL where a user can create/get an API token.
 
@@ -51,7 +50,7 @@ class PromptTokenProvider:
 
     source_name: str = "prompt"
 
-    def get(self, request: TokenRequest) -> Optional[TokenResult]:
+    def get(self, request: TokenRequest) -> TokenResult | None:
         if not sys.stdin.isatty():
             return None
 

@@ -64,7 +64,7 @@ def _find_previous_and_current_tag(
 def handle_changelog(
     args,
     ctx: CLIContext,
-    selected: List[Repository],
+    selected: list[Repository],
 ) -> None:
     """
     Handle the 'changelog' command.

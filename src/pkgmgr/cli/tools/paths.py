@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.repository.dir import get_repo_dir
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def resolve_repository_path(repository: Repository, ctx: CLIContext) -> str:

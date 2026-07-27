@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from ..errors import GitRunError
 from ..run import run
 
@@ -17,7 +15,7 @@ def _is_missing_key_error(exc: GitRunError) -> bool:
     return "exit code: 1" in msg
 
 
-def get_config_value(key: str, *, cwd: str = ".") -> Optional[str]:
+def get_config_value(key: str, *, cwd: str = ".") -> str | None:
     """
     Return a value from `git config --get <key>`, or None if not set.
 

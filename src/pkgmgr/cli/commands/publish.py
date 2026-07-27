@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.actions.publish import publish
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
-def handle_publish(args, ctx: CLIContext, selected: List[Repository]) -> None:
+def handle_publish(args, ctx: CLIContext, selected: list[Repository]) -> None:
     if not selected:
         print("[pkgmgr] No repositories selected for publish.")
         return

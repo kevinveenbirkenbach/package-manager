@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import tempfile
 import unittest
@@ -134,9 +132,7 @@ class TestInstallReposIntegration(unittest.TestCase):
                     Make _ensure_repo_dir() believe that the repo directories
                     already exist so that it does not attempt cloning.
                     """
-                    if path in (repo_system_dir, repo_nix_dir):
-                        return True
-                    return False
+                    return path in (repo_system_dir, repo_nix_dir)
 
                 mock_resolve.side_effect = fake_resolve
                 mock_exists_install.side_effect = fake_exists_install

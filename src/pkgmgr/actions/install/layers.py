@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 CLI layer model for the pkgmgr installation pipeline.
 
@@ -18,7 +16,6 @@ from __future__ import annotations
 
 import os
 from enum import Enum
-from typing import Optional
 
 
 class CliLayer(str, Enum):
@@ -37,7 +34,7 @@ CLI_LAYERS: list[CliLayer] = [
 ]
 
 
-def layer_priority(layer: Optional[CliLayer]) -> int:
+def layer_priority(layer: CliLayer | None) -> int:
     """
     Return a numeric priority index for a given layer.
 
@@ -69,13 +66,11 @@ def classify_command_layer(command: str, repo_dir: str) -> CliLayer:
     home = os.path.expanduser("~")
 
     # OS package managers
-    if command_abs.startswith("/usr/") or command_abs.startswith("/bin/"):
+    if command_abs.startswith(("/usr/", "/bin/")):
         return CliLayer.OS_PACKAGES
 
     # Nix store / profile
-    if command_abs.startswith("/nix/store/") or command_abs.startswith(
-        os.path.join(home, ".nix-profile")
-    ):
+    if command_abs.startswith(("/nix/store/", os.path.join(home, ".nix-profile"))):
         return CliLayer.NIX
 
     # User-local bin

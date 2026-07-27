@@ -26,16 +26,14 @@ class MakefileInstaller(BaseInstaller):
 
     def _has_install_target(self, makefile_path: str) -> bool:
         try:
-            with open(makefile_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(makefile_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
         except OSError:
             return False
 
         if re.search(r"^install\s*:", content, flags=re.MULTILINE):
             return True
-        if re.search(r"^install-[a-zA-Z0-9_-]*\s*:", content, flags=re.MULTILINE):
-            return True
-        return False
+        return bool(re.search(r"^install-[a-zA-Z0-9_-]*\s*:", content, flags=re.MULTILINE))
 
     def run(self, ctx: RepoContext) -> None:
         makefile_path = os.path.join(ctx.repo_dir, self.MAKEFILE_NAME)

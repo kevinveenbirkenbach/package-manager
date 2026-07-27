@@ -132,7 +132,7 @@ class TestSetRepoVisibility(unittest.TestCase):
 
         self.assertEqual(res.status, "updated")
         provider.set_repo_private.assert_called_once()
-        args, kwargs = provider.set_repo_private.call_args
+        _args, kwargs = provider.set_repo_private.call_args
         self.assertEqual(kwargs.get("private"), False)
 
     def test_provider_hint_overrides_registry_resolution(self) -> None:

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pkgmgr.core.remote_provisioning import ProviderHint, RepoSpec, ensure_remote_repo
 from pkgmgr.core.remote_provisioning.ensure import EnsureOptions
 
@@ -64,7 +62,7 @@ def ensure_remote_repository_for_url(
 def ensure_remote_repository(
     repo: Repository,
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     preview: bool,
 ) -> None:
     """

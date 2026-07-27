@@ -36,9 +36,7 @@ class TestDeinstallRepos(unittest.TestCase):
             def exists_side_effect(path):
                 if path == "/home/u/.local/bin/demo":
                     return True
-                if path == "/repos/github.com/alice/demo/Makefile":
-                    return True
-                return False
+                return path == "/repos/github.com/alice/demo/Makefile"
 
             mock_exists.side_effect = exists_side_effect
 

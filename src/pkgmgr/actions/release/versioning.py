@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Version discovery and bumping helpers for the release workflow.
 """

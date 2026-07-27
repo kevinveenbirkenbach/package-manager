@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from pkgmgr.actions.mirror.io import write_mirrors_file
 from pkgmgr.actions.mirror.setup_cmd import setup_mirrors
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 class MirrorBootstrapper:

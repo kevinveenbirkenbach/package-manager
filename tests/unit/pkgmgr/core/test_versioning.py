@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import unittest
 
 from pkgmgr.core.version.semver import (

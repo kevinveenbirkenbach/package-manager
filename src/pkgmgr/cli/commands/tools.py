@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.cli.tools import open_vscode_workspace
 from pkgmgr.cli.tools.paths import resolve_repository_path
 from pkgmgr.core.command.run import run_command
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def handle_tools_command(
     args,
     ctx: CLIContext,
-    selected: List[Repository],
+    selected: list[Repository],
 ) -> None:
     # ------------------------------------------------------------------
     # nautilus "explore" command

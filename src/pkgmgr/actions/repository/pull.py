@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from pkgmgr.actions.repository._parallel import RepoRef, run_on_repos
 from pkgmgr.core.git.commands import GitPullArgsError, pull_args
@@ -10,10 +10,10 @@ from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 from pkgmgr.core.repository.verify import verify_repository
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
-def _pull_one(repo_dir: str, extra_args: List[str], preview: bool) -> Tuple[bool, str]:
+def _pull_one(repo_dir: str, extra_args: list[str], preview: bool) -> tuple[bool, str]:
     try:
         pull_args(extra_args, cwd=repo_dir, preview=preview)
         return (True, "")
@@ -25,7 +25,7 @@ def _verify_one(
     repo: Repository,
     repo_dir: str,
     no_verification: bool,
-) -> Tuple[bool, bool, List[str]]:
+) -> tuple[bool, bool, list[str]]:
     """Returns (has_verified_info, verified_ok, errors)."""
     verified_ok, errors, _commit, _key = verify_repository(
         repo,
@@ -37,10 +37,10 @@ def _verify_one(
 
 
 def _verify_all(
-    candidates: List[Tuple[Repository, str, str]],
+    candidates: list[tuple[Repository, str, str]],
     no_verification: bool,
     jobs: int,
-) -> List[Tuple[str, str, bool, bool, List[str]]]:
+) -> list[tuple[str, str, bool, bool, list[str]]]:
     """
     Verify all candidates (parallel if ``jobs > 1``), preserving input order.
 
@@ -63,10 +63,10 @@ def _verify_all(
 
 
 def pull_with_verification(
-    selected_repos: List[Repository],
+    selected_repos: list[Repository],
     repositories_base_dir: str,
-    all_repos: List[Repository],
-    extra_args: List[str],
+    all_repos: list[Repository],
+    extra_args: list[str],
     no_verification: bool,
     preview: bool,
     jobs: int = 1,
@@ -80,7 +80,7 @@ def pull_with_verification(
     - Approved repos are then pulled in parallel when ``jobs > 1``.
     - On any pull failure, prints a summary and exits with status 1.
     """
-    candidates: List[Tuple[Repository, str, str]] = []
+    candidates: list[tuple[Repository, str, str]] = []
     for repo in selected_repos:
         ident = get_repo_identifier(repo, all_repos)
         rd = get_repo_dir(repositories_base_dir, repo)
@@ -94,7 +94,7 @@ def pull_with_verification(
 
     verify_results = _verify_all(candidates, no_verification, jobs)
 
-    approved: List[RepoRef] = []
+    approved: list[RepoRef] = []
     for ident, rd, has_verified_info, verified_ok, errors in verify_results:
         if (
             not preview

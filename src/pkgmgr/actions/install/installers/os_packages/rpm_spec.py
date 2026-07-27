@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Installer for RPM-based packages defined in *.spec files.
 
@@ -13,12 +11,12 @@ This installer:
 
 It targets RPM-based systems (Fedora / RHEL / CentOS / Rocky / Alma, etc.).
 """
+from __future__ import annotations
 
 import glob
 import os
 import shutil
 import tarfile
-from typing import List, Optional, Tuple
 
 from pkgmgr.actions.install.context import RepoContext
 from pkgmgr.actions.install.installers.base import BaseInstaller
@@ -52,7 +50,7 @@ class RpmSpecInstaller(BaseInstaller):
 
         return has_dnf or has_yum or has_yum_builddep
 
-    def _spec_path(self, ctx: RepoContext) -> Optional[str]:
+    def _spec_path(self, ctx: RepoContext) -> str | None:
         """Return the first *.spec file in the repository root, if any."""
         pattern = os.path.join(ctx.repo_dir, "*.spec")
         matches = sorted(glob.glob(pattern))
@@ -91,7 +89,7 @@ class RpmSpecInstaller(BaseInstaller):
         for sub in ("BUILD", "BUILDROOT", "RPMS", "SOURCES", "SPECS", "SRPMS"):
             os.makedirs(os.path.join(topdir, sub), exist_ok=True)
 
-    def _parse_name_version(self, spec_path: str) -> Optional[Tuple[str, str]]:
+    def _parse_name_version(self, spec_path: str) -> tuple[str, str] | None:
         """
         Parse Name and Version from the given .spec file.
 
@@ -100,7 +98,7 @@ class RpmSpecInstaller(BaseInstaller):
         name = None
         version = None
 
-        with open(spec_path, "r", encoding="utf-8") as f:
+        with open(spec_path, encoding="utf-8") as f:
             for raw_line in f:
                 line = raw_line.strip()
                 # Ignore comments
@@ -182,7 +180,7 @@ class RpmSpecInstaller(BaseInstaller):
 
         return self._spec_path(ctx) is not None
 
-    def _find_built_rpms(self) -> List[str]:
+    def _find_built_rpms(self) -> list[str]:
         """
         Find RPMs built by rpmbuild.
 
@@ -212,7 +210,7 @@ class RpmSpecInstaller(BaseInstaller):
 
         run_command(cmd, cwd=ctx.repo_dir, preview=ctx.preview)
 
-    def _install_built_rpms(self, ctx: RepoContext, rpms: List[str]) -> None:
+    def _install_built_rpms(self, ctx: RepoContext, rpms: list[str]) -> None:
         """
         Install or upgrade the built RPMs.
 

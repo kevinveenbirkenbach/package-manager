@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Central repository path resolver.
 
@@ -20,7 +18,6 @@ from __future__ import annotations
 import os
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -31,23 +28,23 @@ class RepoPaths:
     flake_nix: str
 
     # Human changelog (typically Markdown)
-    changelog_md: Optional[str]
+    changelog_md: str | None
 
     # Packaging-related files
-    arch_pkgbuild: Optional[str]
-    debian_changelog: Optional[str]
-    debian_control: Optional[str]
-    rpm_spec: Optional[str]
+    arch_pkgbuild: str | None
+    debian_changelog: str | None
+    debian_control: str | None
+    rpm_spec: str | None
 
 
-def _first_existing(candidates: Iterable[str]) -> Optional[str]:
+def _first_existing(candidates: Iterable[str]) -> str | None:
     for p in candidates:
         if p and os.path.isfile(p):
             return p
     return None
 
 
-def _find_first_spec_in_dir(dir_path: str) -> Optional[str]:
+def _find_first_spec_in_dir(dir_path: str) -> str | None:
     if not os.path.isdir(dir_path):
         return None
     try:

@@ -33,9 +33,11 @@ class TestRunCommand(unittest.TestCase):
             "import sys; print('oops', file=sys.stderr); sys.exit(2)",
         ]
 
-        with patch.object(run_mod.sys, "exit", side_effect=SystemExit(2)) as exit_mock:
-            with self.assertRaises(SystemExit) as ctx:
-                run_mod.run_command(cmd, allow_failure=False)
+        with (
+            patch.object(run_mod.sys, "exit", side_effect=SystemExit(2)) as exit_mock,
+            self.assertRaises(SystemExit) as ctx,
+        ):
+            run_mod.run_command(cmd, allow_failure=False)
 
         self.assertEqual(ctx.exception.code, 2)
         exit_mock.assert_called_once_with(2)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import shutil
@@ -70,6 +71,7 @@ def _markdownlint(reference_path: str, document: str) -> list[str]:
             cwd=directory,
             capture_output=True,
             text=True,
+            check=False,
         )
         if proc.returncode == 0:
             return []

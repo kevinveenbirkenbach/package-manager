@@ -1,7 +1,7 @@
 # src/pkgmgr/core/remote_provisioning/providers/github.py
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from ..http.client import HttpClient
 from ..http.errors import HttpError
@@ -32,11 +32,11 @@ class GitHubProvider(RemoteProvider):
             return "https://api.github.com"
 
         # Enterprise instance:
-        if host.startswith("http://") or host.startswith("https://"):
+        if host.startswith(("http://", "https://")):
             return host.rstrip("/") + "/api/v3"
         return f"https://{host}/api/v3"
 
-    def _headers(self, token: str) -> Dict[str, str]:
+    def _headers(self, token: str) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
@@ -72,7 +72,7 @@ class GitHubProvider(RemoteProvider):
     def set_repo_private(self, token: str, spec: RepoSpec, *, private: bool) -> None:
         api = self._api_base(spec.host)
         url = f"{api}/repos/{spec.owner}/{spec.name}"
-        payload: Dict[str, Any] = {"private": bool(private)}
+        payload: dict[str, Any] = {"private": bool(private)}
 
         resp = self._http.request_json(
             "PATCH",
@@ -90,7 +90,7 @@ class GitHubProvider(RemoteProvider):
     def create_repo(self, token: str, spec: RepoSpec) -> EnsureResult:
         api = self._api_base(spec.host)
 
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "name": spec.name,
             "private": bool(spec.private),
         }

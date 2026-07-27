@@ -31,8 +31,7 @@ class CommandRunner:
                 shell=True,
                 cwd=repo_dir,
                 check=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
             )
         except Exception as e:

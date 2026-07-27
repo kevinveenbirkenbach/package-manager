@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Set
+from typing import Any
 
 import yaml
 
 from pkgmgr.core.command.alias import generate_alias
 from pkgmgr.core.config.save import save_user_config
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 class ConfigRepoWriter:
     def __init__(
         self,
         *,
-        config_merged: Dict[str, Any],
+        config_merged: dict[str, Any],
         user_config_path: str,
         bin_dir: str,
     ):
@@ -43,7 +43,7 @@ class ConfigRepoWriter:
             ):
                 return repo
 
-        existing_aliases: Set[str] = {
+        existing_aliases: set[str] = {
             str(r.get("alias")) for r in repositories if r.get("alias")
         }
 
@@ -70,7 +70,7 @@ class ConfigRepoWriter:
             return repo
 
         if os.path.exists(self.user_config_path):
-            with open(self.user_config_path, "r", encoding="utf-8") as f:
+            with open(self.user_config_path, encoding="utf-8") as f:
                 user_cfg = yaml.safe_load(f) or {}
         else:
             user_cfg = {}

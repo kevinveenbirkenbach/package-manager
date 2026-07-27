@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.actions.publish import publish as run_publish
 from pkgmgr.actions.release import release as run_release
@@ -12,13 +10,13 @@ from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def handle_release(
     args,
     ctx: CLIContext,
-    selected: List[Repository],
+    selected: list[Repository],
 ) -> None:
     if not selected:
         print("[pkgmgr] No repositories selected for release.")

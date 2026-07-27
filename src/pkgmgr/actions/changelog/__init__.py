@@ -1,12 +1,8 @@
-#!/usr/bin/env python3
-
 """
 Helpers to generate changelog information from Git history.
 """
 
 from __future__ import annotations
-
-from typing import Optional
 
 from pkgmgr.core.git.queries import (
     GitChangelogQueryError,
@@ -16,8 +12,8 @@ from pkgmgr.core.git.queries import (
 
 def generate_changelog(
     cwd: str,
-    from_ref: Optional[str] = None,
-    to_ref: Optional[str] = None,
+    from_ref: str | None = None,
+    to_ref: str | None = None,
     include_merges: bool = False,
 ) -> str:
     """

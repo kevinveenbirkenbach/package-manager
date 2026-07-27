@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any, List, Tuple
+from typing import Any
 
 from pkgmgr.actions.update.system_updater import SystemUpdater
 
@@ -37,7 +35,7 @@ class UpdateManager:
         from pkgmgr.actions.repository.pull import pull_with_verification
         from pkgmgr.core.repository.identifier import get_repo_identifier
 
-        failures: List[Tuple[str, str]] = []
+        failures: list[tuple[str, str]] = []
 
         for repo in list(selected_repos):
             identifier = get_repo_identifier(repo, all_repos)

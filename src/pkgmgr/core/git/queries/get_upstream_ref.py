@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from ..errors import GitRunError
 from ..run import run
 
 
-def get_upstream_ref(*, cwd: str = ".") -> Optional[str]:
+def get_upstream_ref(*, cwd: str = ".") -> str | None:
     """
     Return the configured upstream ref for the current branch, or None if none.
 

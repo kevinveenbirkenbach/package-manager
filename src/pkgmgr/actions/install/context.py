@@ -1,6 +1,4 @@
 # src/pkgmgr/actions/install/context.py
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Shared context object for repository installation steps.
@@ -10,19 +8,19 @@ they do not depend on global state or long parameter lists.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any
 
 
 @dataclass
 class RepoContext:
     """Container for all repository-related data used during installation."""
 
-    repo: Dict[str, Any]
+    repo: dict[str, Any]
     identifier: str
     repo_dir: str
     repositories_base_dir: str
     bin_dir: str
-    all_repos: List[Dict[str, Any]]
+    all_repos: list[dict[str, Any]]
 
     no_verification: bool
     preview: bool

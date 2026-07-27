@@ -12,7 +12,7 @@ def update_pyproject_version(
         return
 
     try:
-        with open(pyproject_path, "r", encoding="utf-8") as f:
+        with open(pyproject_path, encoding="utf-8") as f:
             content = f.read()
     except OSError as exc:
         print(f"[WARN] Could not read pyproject.toml: {exc}")

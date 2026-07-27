@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from ..errors import GitRunError
 from ..run import run
 
 
-def get_repo_root(*, cwd: str = ".") -> Optional[str]:
+def get_repo_root(*, cwd: str = ".") -> str | None:
     """
     Return the git repository root directory (top-level), or None if not available.
 

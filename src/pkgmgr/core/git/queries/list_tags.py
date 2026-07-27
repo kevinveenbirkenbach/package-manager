@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import List
-
 from ..run import run
 
 
-def list_tags(pattern: str = "*", *, cwd: str = ".") -> List[str]:
+def list_tags(pattern: str = "*", *, cwd: str = ".") -> list[str]:
     """
     List tags matching a pattern.
 

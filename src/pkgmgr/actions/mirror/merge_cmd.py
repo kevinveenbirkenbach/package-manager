@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, List, Optional, Tuple
 
 import yaml
 
@@ -16,7 +15,7 @@ from .types import MirrorMap, Repository
 # -----------------------------------------------------------------------------
 
 
-def _repo_key(repo: Repository) -> Tuple[str, str, str]:
+def _repo_key(repo: Repository) -> tuple[str, str, str]:
     """
     Normalised key for identifying a repository in config files.
     """
@@ -27,7 +26,7 @@ def _repo_key(repo: Repository) -> Tuple[str, str, str]:
     )
 
 
-def _load_user_config(path: str) -> Dict[str, object]:
+def _load_user_config(path: str) -> dict[str, object]:
     """
     Load a user config YAML file as dict.
     Non-dicts yield {}.
@@ -49,13 +48,13 @@ def _load_user_config(path: str) -> Dict[str, object]:
 
 
 def merge_mirrors(
-    selected_repos: List[Repository],
+    selected_repos: list[Repository],
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     source: str,
     target: str,
     preview: bool = False,
-    user_config_path: Optional[str] = None,
+    user_config_path: str | None = None,
 ) -> None:
     """
     Merge mirrors between config and MIRRORS file.
@@ -73,8 +72,8 @@ def merge_mirrors(
     """
 
     # Load user config once if we intend to write to it.
-    user_cfg: Optional[Dict[str, object]] = None
-    user_cfg_path_expanded: Optional[str] = None
+    user_cfg: dict[str, object] | None = None
+    user_cfg_path_expanded: str | None = None
 
     if target == "config" and user_config_path and not preview:
         user_cfg_path_expanded = os.path.expanduser(user_config_path)
@@ -129,7 +128,7 @@ def merge_mirrors(
 
             repos = user_cfg.get("repositories")
             target_key = _repo_key(repo)
-            existing_repo: Optional[Repository] = None
+            existing_repo: Repository | None = None
 
             # Find existing repo entry
             for entry in repos:

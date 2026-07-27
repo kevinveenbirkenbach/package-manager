@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Tuple
-
 from ..errors import GitRunError
 from ..run import run
 
@@ -91,7 +89,7 @@ def _format_reason(exc: GitRunError, *, url: str) -> str:
     return reason.strip()
 
 
-def probe_remote_reachable_detail(url: str, cwd: str = ".") -> Tuple[bool, str]:
+def probe_remote_reachable_detail(url: str, cwd: str = ".") -> tuple[bool, str]:
     """
     Probe whether a remote URL is reachable.
 

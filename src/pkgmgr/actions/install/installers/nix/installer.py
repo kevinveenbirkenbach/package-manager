@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import shutil
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from pkgmgr.actions.install.installers.base import BaseInstaller
 
@@ -42,7 +42,7 @@ class NixFlakeInstaller(BaseInstaller):
 
         return os.path.exists(os.path.join(ctx.repo_dir, self.FLAKE_FILE))
 
-    def _profile_outputs(self, ctx: RepoContext) -> List[Tuple[str, bool]]:
+    def _profile_outputs(self, ctx: RepoContext) -> list[tuple[str, bool]]:
         # (output_name, allow_failure)
         if ctx.identifier in {"pkgmgr", "package-manager"}:
             return [("pkgmgr", False), ("default", True)]

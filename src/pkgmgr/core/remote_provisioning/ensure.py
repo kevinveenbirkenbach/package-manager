@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from pkgmgr.core.credentials.resolver import ResolutionOptions, TokenResolver
 
@@ -45,10 +44,10 @@ def _raise_mapped_http_error(exc: HttpError, host: str) -> None:
 
 def ensure_remote_repo(
     spec: RepoSpec,
-    provider_hint: Optional[ProviderHint] = None,
-    options: Optional[EnsureOptions] = None,
-    registry: Optional[ProviderRegistry] = None,
-    token_resolver: Optional[TokenResolver] = None,
+    provider_hint: ProviderHint | None = None,
+    options: EnsureOptions | None = None,
+    registry: ProviderRegistry | None = None,
+    token_resolver: TokenResolver | None = None,
 ) -> EnsureResult:
     """Ensure that the remote repository exists (create if missing).
 

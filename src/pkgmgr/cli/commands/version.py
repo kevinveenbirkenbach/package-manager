@@ -23,7 +23,7 @@ from pkgmgr.core.version.source import (
     read_spec_version,
 )
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def _print_pkgmgr_self_version() -> None:
@@ -74,7 +74,7 @@ def _print_pkgmgr_self_version() -> None:
 def handle_version(
     args,
     ctx: CLIContext,
-    selected: List[Repository],
+    selected: list[Repository],
 ) -> None:
     """
     Handle the 'version' command.

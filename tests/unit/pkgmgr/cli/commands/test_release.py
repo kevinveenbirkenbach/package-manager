@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Unit tests for pkgmgr.cli.commands.release.
 
@@ -16,7 +14,6 @@ from __future__ import annotations
 import argparse
 import unittest
 from types import SimpleNamespace
-from typing import List
 from unittest.mock import call, patch
 
 
@@ -25,7 +22,7 @@ class TestReleaseCommand(unittest.TestCase):
     Tests for the `pkgmgr release` CLI wiring.
     """
 
-    def _make_ctx(self, all_repos: List[dict]) -> SimpleNamespace:
+    def _make_ctx(self, all_repos: list[dict]) -> SimpleNamespace:
         """
         Create a minimal CLIContext-like object for tests.
 
@@ -39,7 +36,7 @@ class TestReleaseCommand(unittest.TestCase):
             user_config_path="/tmp/config.yaml",
         )
 
-    def _parse_release_args(self, argv: List[str]) -> argparse.Namespace:
+    def _parse_release_args(self, argv: list[str]) -> argparse.Namespace:
         """
         Build a real top-level parser and parse the given argv list
         to obtain the Namespace for the `release` command.

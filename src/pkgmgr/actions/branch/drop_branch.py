@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from pkgmgr.core.git.commands import (
     GitDeleteRemoteBranchError,
     delete_local_branch,
@@ -12,7 +10,7 @@ from pkgmgr.core.git.queries import get_current_branch, resolve_base_branch
 
 
 def drop_branch(
-    name: Optional[str],
+    name: str | None,
     base_branch: str = "main",
     fallback_base: str = "master",
     cwd: str = ".",

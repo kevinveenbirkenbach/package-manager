@@ -15,10 +15,9 @@ from __future__ import annotations
 import runpy
 import sys
 import unittest
-from typing import List
 
 
-def _run_main(argv: List[str]) -> None:
+def _run_main(argv: list[str]) -> None:
     """
     Helper to run main.py with the given argv.
 

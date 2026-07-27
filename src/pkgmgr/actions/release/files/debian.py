@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Optional, Tuple
 
 from pkgmgr.core.git.queries import get_config_value
 
 
-def _get_debian_author() -> Tuple[str, str]:
+def _get_debian_author() -> tuple[str, str]:
     name = os.environ.get("DEBFULLNAME")
     email = os.environ.get("DEBEMAIL")
 
@@ -33,7 +32,7 @@ def update_debian_changelog(
     debian_changelog_path: str,
     package_name: str,
     new_version: str,
-    message: Optional[str] = None,
+    message: str | None = None,
     preview: bool = False,
 ) -> None:
     if not os.path.exists(debian_changelog_path):

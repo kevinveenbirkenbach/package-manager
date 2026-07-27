@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Initialize user configuration by scanning the repositories base directory.
 
@@ -22,7 +20,7 @@ For each discovered repository, the function:
 from __future__ import annotations
 
 import os
-from typing import Any, Dict
+from typing import Any
 
 from pkgmgr.core.command.alias import generate_alias
 from pkgmgr.core.config.save import save_user_config
@@ -30,8 +28,8 @@ from pkgmgr.core.git.queries import get_latest_commit
 
 
 def config_init(
-    user_config: Dict[str, Any],
-    defaults_config: Dict[str, Any],
+    user_config: dict[str, Any],
+    defaults_config: dict[str, Any],
     bin_dir: str,
     user_config_path: str,
 ) -> None:
@@ -128,7 +126,7 @@ def config_init(
                         "[WARN]       Could not read commit (not a git repo or no commits)."
                     )
 
-                entry: Dict[str, Any] = {
+                entry: dict[str, Any] = {
                     "provider": provider,
                     "account": account,
                     "repository": repo_name,

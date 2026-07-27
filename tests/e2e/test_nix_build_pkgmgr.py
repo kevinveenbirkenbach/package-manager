@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 E2E test to inspect the Nix environment and build the pkgmgr flake
 in *every* distro container.
@@ -36,6 +34,7 @@ def _run_cmd(cmd: list[str]) -> subprocess.CompletedProcess:
         cmd,
         text=True,
         capture_output=True,
+        check=False,
     )
     print("[STDOUT]\n", proc.stdout)
     print("[STDERR]\n", proc.stderr)

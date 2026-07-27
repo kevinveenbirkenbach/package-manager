@@ -5,10 +5,10 @@ import os
 import tempfile
 import unittest
 from types import SimpleNamespace
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import patch
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 class TestOpenVSCodeWorkspace(unittest.TestCase):
@@ -27,13 +27,15 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
         from pkgmgr.cli.tools.vscode import open_vscode_workspace
 
         ctx = SimpleNamespace(config_merged={}, all_repositories=[])
-        selected: List[Repository] = [
+        selected: list[Repository] = [
             {"provider": "github.com", "account": "x", "repository": "y"}
         ]
 
-        with patch("pkgmgr.cli.tools.vscode.shutil.which", return_value=None):
-            with self.assertRaises(RuntimeError) as cm:
-                open_vscode_workspace(ctx, selected)
+        with (
+            patch("pkgmgr.cli.tools.vscode.shutil.which", return_value=None),
+            self.assertRaises(RuntimeError) as cm,
+        ):
+            open_vscode_workspace(ctx, selected)
 
         self.assertIn("VS Code CLI ('code') not found", str(cm.exception))
 
@@ -44,7 +46,7 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
             config_merged={"directories": {"workspaces": "~/Workspaces"}},
             all_repositories=[],
         )
-        selected: List[Repository] = [
+        selected: list[Repository] = [
             {"provider": "github.com", "account": "x", "repository": "y"}
         ]
 
@@ -74,7 +76,7 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
                 all_repositories=[],
                 repositories_base_dir=os.path.join(tmp, "Repos"),
             )
-            selected: List[Repository] = [
+            selected: list[Repository] = [
                 {
                     "provider": "github.com",
                     "account": "kevin",
@@ -101,7 +103,7 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
             workspace_file = os.path.join(workspaces_dir, "dotlinker.code-workspace")
             self.assertTrue(os.path.exists(workspace_file))
 
-            with open(workspace_file, "r", encoding="utf-8") as f:
+            with open(workspace_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             self.assertEqual(data["folders"], [{"path": repo_path}])
@@ -125,7 +127,7 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
                 config_merged={"directories": {"workspaces": workspaces_dir}},
                 all_repositories=[],
             )
-            selected: List[Repository] = [
+            selected: list[Repository] = [
                 {
                     "provider": "github.com",
                     "account": "kevin",
@@ -149,7 +151,7 @@ class TestOpenVSCodeWorkspace(unittest.TestCase):
             ):
                 open_vscode_workspace(ctx, selected)
 
-            with open(workspace_file, "r", encoding="utf-8") as f:
+            with open(workspace_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             self.assertEqual(data, original)

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from ..errors import GitRunError
 from ..run import run
 
 
-def get_head_commit(cwd: str = ".") -> Optional[str]:
+def get_head_commit(cwd: str = ".") -> str | None:
     """
     Return the current HEAD commit hash, or None if it cannot be determined.
     """

@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import argparse
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.actions.proxy import exec_proxy_command
 from pkgmgr.actions.repository.clone import clone_repos
@@ -15,7 +13,7 @@ from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.selected import get_selected_repos
 
-PROXY_COMMANDS: Dict[str, List[str]] = {
+PROXY_COMMANDS: dict[str, list[str]] = {
     "git": [
         "pull",
         "push",

@@ -10,6 +10,7 @@ def run(cmd, *, cwd=None, env=None, shell=False) -> str:
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        check=False,
     )
 
     print("----- BEGIN COMMAND -----")

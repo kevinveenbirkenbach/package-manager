@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
 
@@ -12,7 +10,7 @@ from .types import MirrorMap, RepoMirrorContext, Repository
 def build_context(
     repo: Repository,
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
 ) -> RepoMirrorContext:
     """
     Build a RepoMirrorContext for a single repository.

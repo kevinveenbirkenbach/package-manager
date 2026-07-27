@@ -7,14 +7,14 @@ import tempfile
 import types
 import unittest
 from contextlib import redirect_stdout
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from unittest.mock import patch
 
 from pkgmgr.actions.mirror.setup_cmd import setup_mirrors
 from pkgmgr.actions.mirror.visibility_cmd import set_mirror_visibility
 from pkgmgr.core.remote_provisioning.types import RepoSpec
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 class _FakeRegistry:
@@ -45,13 +45,13 @@ class FakeProvider:
 
     def __init__(self) -> None:
         # maps (host, owner, name) -> private(bool)
-        self.privacy: Dict[Tuple[str, str, str], bool] = {}
-        self.calls: List[Tuple[str, Any]] = []
+        self.privacy: dict[tuple[str, str, str], bool] = {}
+        self.calls: list[tuple[str, Any]] = []
 
     def can_handle(self, host: str) -> bool:
         return True
 
-    def _candidate_hosts(self, host: str) -> List[str]:
+    def _candidate_hosts(self, host: str) -> list[str]:
         """
         Be tolerant against host normalization differences:
         - may contain scheme (https://...)
@@ -75,7 +75,7 @@ class FakeProvider:
                 candidates.append(c.split(":", 1)[0])
 
         # de-dup
-        out: List[str] = []
+        out: list[str] = []
         for c in candidates:
             if c not in out:
                 out.append(c)
@@ -94,7 +94,7 @@ class FakeProvider:
         self.privacy[(spec.host, spec.owner, spec.name)] = bool(spec.private)
         return types.SimpleNamespace(status="created", message="created", url=None)
 
-    def get_repo_private(self, token: str, spec: RepoSpec) -> Optional[bool]:
+    def get_repo_private(self, token: str, spec: RepoSpec) -> bool | None:
         self.calls.append(("get_repo_private", (token, spec)))
         for h in self._candidate_hosts(spec.host):
             key = (h, spec.owner, spec.name)
@@ -113,7 +113,7 @@ class FakeProvider:
         self.privacy[(spec.host, spec.owner, spec.name)] = bool(private)
 
 
-def _mk_ctx(*, identifier: str, repo_dir: str, mirrors: Dict[str, str]) -> Any:
+def _mk_ctx(*, identifier: str, repo_dir: str, mirrors: dict[str, str]) -> Any:
     return types.SimpleNamespace(
         identifier=identifier,
         repo_dir=repo_dir,

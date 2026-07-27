@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import subprocess
-from typing import List
 
 from .errors import GitNotRepositoryError, GitRunError
 
@@ -12,7 +11,7 @@ def _is_not_repo_error(stderr: str) -> bool:
 
 
 def run(
-    args: List[str],
+    args: list[str],
     *,
     cwd: str = ".",
     preview: bool = False,
@@ -36,8 +35,7 @@ def run(
             cmd,
             cwd=cwd,
             check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
         )
     except subprocess.CalledProcessError as exc:

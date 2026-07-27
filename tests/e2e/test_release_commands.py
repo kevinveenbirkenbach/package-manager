@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 End-to-end style integration tests for the `pkgmgr release` CLI command.
 
@@ -149,9 +147,12 @@ class TestIntegrationReleaseCommand(unittest.TestCase):
         try:
             sys.argv = ["pkgmgr", "release", "--help"]
             # argparse will call sys.exit(), so we expect a SystemExit here.
-            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
-                with self.assertRaises(SystemExit) as cm:
-                    runpy.run_module("pkgmgr", run_name="__main__")
+            with (
+                contextlib.redirect_stdout(buf),
+                contextlib.redirect_stderr(buf),
+                self.assertRaises(SystemExit) as cm,
+            ):
+                runpy.run_module("pkgmgr", run_name="__main__")
         finally:
             sys.argv = original_argv
 

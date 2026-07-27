@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from pkgmgr.core.credentials.resolver import ResolutionOptions, TokenResolver
 
@@ -47,10 +46,10 @@ def set_repo_visibility(
     spec: RepoSpec,
     *,
     private: bool,
-    provider_hint: Optional[ProviderHint] = None,
-    options: Optional[VisibilityOptions] = None,
-    registry: Optional[ProviderRegistry] = None,
-    token_resolver: Optional[TokenResolver] = None,
+    provider_hint: ProviderHint | None = None,
+    options: VisibilityOptions | None = None,
+    registry: ProviderRegistry | None = None,
+    token_resolver: TokenResolver | None = None,
 ) -> EnsureResult:
     """
     Set repository visibility (public/private) WITHOUT creating repositories.

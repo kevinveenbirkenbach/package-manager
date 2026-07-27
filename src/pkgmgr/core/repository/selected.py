@@ -1,16 +1,14 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import os
 import re
 from collections.abc import Sequence
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.core.repository.ignored import filter_ignored
 from pkgmgr.core.repository.resolve import resolve_repos
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def _compile_maybe_regex(pattern: str):
@@ -42,10 +40,7 @@ def _match_any(values: Sequence[str], pattern: str) -> bool:
     """
     Return True if any of the values matches the pattern.
     """
-    for v in values:
-        if _match_pattern(v, pattern):
-            return True
-    return False
+    return any(_match_pattern(v, pattern) for v in values)
 
 
 def _build_identifier_string(repo: Repository) -> str:
@@ -72,15 +67,15 @@ def _build_identifier_string(repo: Repository) -> str:
 
 
 def _apply_filters(
-    repos: List[Repository],
+    repos: list[Repository],
     string_pattern: str,
-    category_patterns: List[str],
-    tag_patterns: List[str],
-) -> List[Repository]:
+    category_patterns: list[str],
+    tag_patterns: list[str],
+) -> list[Repository]:
     if not string_pattern and not category_patterns and not tag_patterns:
         return repos
 
-    filtered: List[Repository] = []
+    filtered: list[Repository] = []
 
     for repo in repos:
         # String filter
@@ -91,7 +86,7 @@ def _apply_filters(
 
         # Category filter: only real categories, NOT tags
         if category_patterns:
-            cats: List[str] = []
+            cats: list[str] = []
             cats.extend(map(str, repo.get("category_files", [])))
             if "category" in repo:
                 cats.append(str(repo["category"]))
@@ -109,7 +104,7 @@ def _apply_filters(
 
         # Tag filter: YAML tags only
         if tag_patterns:
-            tags: List[str] = list(map(str, repo.get("tags", [])))
+            tags: list[str] = list(map(str, repo.get("tags", [])))
             if not tags:
                 continue
 
@@ -126,7 +121,7 @@ def _apply_filters(
     return filtered
 
 
-def _maybe_filter_ignored(args, repos: List[Repository]) -> List[Repository]:
+def _maybe_filter_ignored(args, repos: list[Repository]) -> list[Repository]:
     """
     Apply ignore filtering unless the caller explicitly opted to include ignored
     repositories (via args.include_ignored).
@@ -141,7 +136,7 @@ def _maybe_filter_ignored(args, repos: List[Repository]) -> List[Repository]:
     return filter_ignored(repos)
 
 
-def get_selected_repos(args, all_repositories: List[Repository]) -> List[Repository]:
+def get_selected_repos(args, all_repositories: list[Repository]) -> list[Repository]:
     """
     Compute the list of repositories selected by CLI arguments.
 
@@ -158,11 +153,11 @@ def get_selected_repos(args, all_repositories: List[Repository]) -> List[Reposit
     The ignore filter can be bypassed by setting args.include_ignored = True
     (e.g. via a CLI flag --include-ignored).
     """
-    identifiers: List[str] = getattr(args, "identifiers", []) or []
+    identifiers: list[str] = getattr(args, "identifiers", []) or []
     use_all: bool = bool(getattr(args, "all", False))
-    category_patterns: List[str] = getattr(args, "category", []) or []
+    category_patterns: list[str] = getattr(args, "category", []) or []
     string_pattern: str = getattr(args, "string", "") or ""
-    tag_patterns: List[str] = getattr(args, "tag", []) or []
+    tag_patterns: list[str] = getattr(args, "tag", []) or []
 
     has_filters = bool(category_patterns or string_pattern or tag_patterns)
 

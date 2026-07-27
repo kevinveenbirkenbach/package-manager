@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 
-def parse_profile_list_json(raw: str) -> Dict[str, Any]:
+def parse_profile_list_json(raw: str) -> dict[str, Any]:
     """
     Parse JSON output from `nix profile list --json`.
 

@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Set
-
 from ..run import run
 
 
-def get_remote_push_urls(remote: str, cwd: str = ".") -> Set[str]:
+def get_remote_push_urls(remote: str, cwd: str = ".") -> set[str]:
     """
     Return all push URLs configured for a remote.
 

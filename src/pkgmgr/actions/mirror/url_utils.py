@@ -1,11 +1,10 @@
 # src/pkgmgr/actions/mirror/url_utils.py
 from __future__ import annotations
 
-from typing import Optional, Tuple
 from urllib.parse import urlparse
 
 
-def hostport_from_git_url(url: str) -> Tuple[str, Optional[str]]:
+def hostport_from_git_url(url: str) -> tuple[str, str | None]:
     url = (url or "").strip()
     if not url:
         return "", None
@@ -58,7 +57,7 @@ def _strip_dot_git(name: str) -> str:
     return n
 
 
-def parse_repo_from_git_url(url: str) -> Tuple[str, Optional[str], Optional[str]]:
+def parse_repo_from_git_url(url: str) -> tuple[str, str | None, str | None]:
     """
     Parse (host, owner, repo_name) from common Git remote URLs.
 

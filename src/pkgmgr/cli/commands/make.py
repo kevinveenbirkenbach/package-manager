@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.actions.proxy import exec_proxy_command
 from pkgmgr.cli.context import CLIContext
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def handle_make(
     args,
     ctx: CLIContext,
-    selected: List[Repository],
+    selected: list[Repository],
 ) -> None:
     """
     Handle the 'make' command by delegating to exec_proxy_command.

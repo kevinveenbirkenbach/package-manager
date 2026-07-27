@@ -67,51 +67,53 @@ class ConfigDefaultsIntegrationTest(unittest.TestCase):
             # Provide fake pkgmgr module so your functions resolve pkg_root correctly
             fake_pkgmgr = types.SimpleNamespace(__file__=str(pkg_root / "__init__.py"))
 
-            with patch.dict(sys.modules, {"pkgmgr": fake_pkgmgr}):
-                with patch.dict(os.environ, {"HOME": str(home)}):
-                    # A) load_config should fall back to <pkg_root>/config/defaults.yaml
-                    merged = load_config(user_config_path)
+            with (
+                patch.dict(sys.modules, {"pkgmgr": fake_pkgmgr}),
+                patch.dict(os.environ, {"HOME": str(home)}),
+            ):
+                # A) load_config should fall back to <pkg_root>/config/defaults.yaml
+                merged = load_config(user_config_path)
 
-                    self.assertEqual(
-                        merged["directories"]["repositories"], "/opt/Repositories"
-                    )
-                    self.assertEqual(
-                        merged["directories"]["binaries"], "/usr/local/bin"
-                    )
+                self.assertEqual(
+                    merged["directories"]["repositories"], "/opt/Repositories"
+                )
+                self.assertEqual(
+                    merged["directories"]["binaries"], "/usr/local/bin"
+                )
 
-                    # user-only key must still exist (user config merges over defaults)
-                    self.assertEqual(merged["directories"]["user_only"], "/home/user")
+                # user-only key must still exist (user config merges over defaults)
+                self.assertEqual(merged["directories"]["user_only"], "/home/user")
 
-                    self.assertIn("repositories", merged)
-                    self.assertTrue(
-                        any(
-                            r.get("provider") == "github"
-                            and r.get("account") == "acme"
-                            and r.get("repository") == "demo"
-                            for r in merged["repositories"]
-                        )
+                self.assertIn("repositories", merged)
+                self.assertTrue(
+                    any(
+                        r.get("provider") == "github"
+                        and r.get("account") == "acme"
+                        and r.get("repository") == "demo"
+                        for r in merged["repositories"]
                     )
+                )
 
-                    # B) update_default_configs should copy defaults.yaml to ~/.config/pkgmgr/
-                    before_config_yaml = (user_cfg_dir / "config.yaml").read_text(
-                        encoding="utf-8"
-                    )
+                # B) update_default_configs should copy defaults.yaml to ~/.config/pkgmgr/
+                before_config_yaml = (user_cfg_dir / "config.yaml").read_text(
+                    encoding="utf-8"
+                )
 
-                    config_cmd._update_default_configs(user_config_path)
+                config_cmd._update_default_configs(user_config_path)
 
-                    self.assertTrue((user_cfg_dir / "defaults.yaml").is_file())
-                    copied_defaults = yaml.safe_load(
-                        (user_cfg_dir / "defaults.yaml").read_text(encoding="utf-8")
-                    )
-                    self.assertEqual(
-                        copied_defaults["directories"]["repositories"],
-                        "/opt/Repositories",
-                    )
+                self.assertTrue((user_cfg_dir / "defaults.yaml").is_file())
+                copied_defaults = yaml.safe_load(
+                    (user_cfg_dir / "defaults.yaml").read_text(encoding="utf-8")
+                )
+                self.assertEqual(
+                    copied_defaults["directories"]["repositories"],
+                    "/opt/Repositories",
+                )
 
-                    after_config_yaml = (user_cfg_dir / "config.yaml").read_text(
-                        encoding="utf-8"
-                    )
-                    self.assertEqual(after_config_yaml, before_config_yaml)
+                after_config_yaml = (user_cfg_dir / "config.yaml").read_text(
+                    encoding="utf-8"
+                )
+                self.assertEqual(after_config_yaml, before_config_yaml)
 
 
 if __name__ == "__main__":

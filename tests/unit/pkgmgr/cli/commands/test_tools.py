@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import unittest
 from types import SimpleNamespace
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import call, patch
 
 from pkgmgr.cli.commands.tools import handle_tools_command
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 class _Args:
@@ -29,7 +29,7 @@ class TestHandleToolsCommand(unittest.TestCase):
     """
 
     def setUp(self) -> None:
-        self.repos: List[Repository] = [
+        self.repos: list[Repository] = [
             {"alias": "repo1", "directory": "/tmp/repo1"},
             {"alias": "repo2", "directory": "/tmp/repo2"},
         ]

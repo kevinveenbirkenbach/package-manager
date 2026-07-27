@@ -37,7 +37,7 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
 
             update_pyproject_version(path, "1.2.3", preview=False)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn('version = "1.2.3"', content)
@@ -62,7 +62,7 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
 
             update_pyproject_version(path, "1.2.3", preview=True)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertEqual(content, original)
@@ -129,7 +129,7 @@ class TestUpdateFlakeVersion(unittest.TestCase):
 
             update_flake_version(path, "1.2.3", preview=False)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn('version = "1.2.3";', content)
@@ -144,7 +144,7 @@ class TestUpdateFlakeVersion(unittest.TestCase):
 
             update_flake_version(path, "1.2.3", preview=True)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertEqual(content, original)
@@ -170,7 +170,7 @@ class TestUpdatePkgbuildVersion(unittest.TestCase):
 
             update_pkgbuild_version(path, "1.2.3", preview=False)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn("pkgver=1.2.3", content)
@@ -196,7 +196,7 @@ class TestUpdatePkgbuildVersion(unittest.TestCase):
 
             update_pkgbuild_version(path, "1.2.3", preview=True)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertEqual(content, original)
@@ -222,7 +222,7 @@ class TestUpdateSpecVersion(unittest.TestCase):
 
             update_spec_version(path, "1.2.3", preview=False)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn("Version: 1.2.3", content)
@@ -249,7 +249,7 @@ class TestUpdateSpecVersion(unittest.TestCase):
 
             update_spec_version(path, "1.2.3", preview=True)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertEqual(content, original)
@@ -264,7 +264,7 @@ class TestUpdateChangelog(unittest.TestCase):
             update_changelog(path, "1.2.3", message="First release", preview=False)
 
             self.assertTrue(os.path.exists(path))
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         # New file must lead with an H1 so markdownlint MD041 is happy.
@@ -280,7 +280,7 @@ class TestUpdateChangelog(unittest.TestCase):
 
             update_changelog(path, "1.0.0", message="Second release", preview=False)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         # H1 still on top, new entry above the existing one.
@@ -303,7 +303,7 @@ class TestUpdateChangelog(unittest.TestCase):
 
             update_changelog(path, "1.0.0", message=None, preview=False)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         # An H1 is added so MD041 is satisfied even for legacy files.
@@ -315,7 +315,7 @@ class TestUpdateChangelog(unittest.TestCase):
             path = os.path.join(tmpdir, "CHANGELOG.md")
             update_changelog(path, "1.2.3", message="* Provided bullet", preview=False)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn("\n\n* Provided bullet\n", content)
@@ -331,7 +331,7 @@ class TestUpdateChangelog(unittest.TestCase):
                 preview=False,
             )
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn("**Summary**", content)
@@ -348,7 +348,7 @@ class TestUpdateChangelog(unittest.TestCase):
 
             update_changelog(path, "1.0.0", message="Preview only", preview=True)
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertEqual(content, original)
@@ -374,7 +374,7 @@ class TestUpdateDebianChangelog(unittest.TestCase):
                     preview=False,
                 )
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn("package-manager (1.2.3-1) unstable; urgency=medium", content)
@@ -402,7 +402,7 @@ class TestUpdateDebianChangelog(unittest.TestCase):
                     preview=True,
                 )
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertEqual(content, original)
@@ -428,7 +428,7 @@ class TestUpdateDebianChangelog(unittest.TestCase):
                     preview=False,
                 )
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn("  * First bullet", content)
@@ -484,7 +484,7 @@ class TestUpdateSpecChangelog(unittest.TestCase):
                     preview=False,
                 )
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn("%changelog", content)
@@ -526,7 +526,7 @@ class TestUpdateSpecChangelog(unittest.TestCase):
                     preview=True,
                 )
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertEqual(content, original)
@@ -567,7 +567,7 @@ class TestUpdateSpecChangelog(unittest.TestCase):
                     preview=False,
                 )
 
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
 
         self.assertIn("- * First bullet", content)

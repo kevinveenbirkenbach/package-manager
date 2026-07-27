@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 
 from pkgmgr.core.repository.dir import get_repo_dir

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from .models import NixProfileEntry
 
 
@@ -51,9 +49,9 @@ def entry_matches_store_path(entry: NixProfileEntry, store_path: str) -> bool:
     return any((p or "") == needle for p in entry.store_paths)
 
 
-def stable_unique_ints(values: List[int]) -> List[int]:
+def stable_unique_ints(values: list[int]) -> list[int]:
     seen: set[int] = set()
-    uniq: List[int] = []
+    uniq: list[int] = []
     for v in values:
         if v in seen:
             continue

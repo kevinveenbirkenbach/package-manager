@@ -45,7 +45,7 @@ class TestCliBranch(unittest.TestCase):
         handle_branch(args, ctx)
 
         mock_open_branch.assert_called_once()
-        call_args, call_kwargs = mock_open_branch.call_args
+        _call_args, call_kwargs = mock_open_branch.call_args
         self.assertEqual(call_kwargs.get("name"), "feature/cli-test")
         self.assertEqual(call_kwargs.get("base_branch"), "develop")
         self.assertEqual(call_kwargs.get("cwd"), ".")

@@ -6,7 +6,6 @@ import shutil
 import subprocess
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 
 @dataclass(frozen=True)
@@ -37,7 +36,7 @@ def _unique_candidates(names: Iterable[str]) -> list[str]:
     return out
 
 
-def get_installed_python_version(*candidates: str) -> Optional[InstalledVersion]:
+def get_installed_python_version(*candidates: str) -> InstalledVersion | None:
     """
     Detect installed Python package version in the CURRENT Python environment.
 
@@ -86,18 +85,17 @@ def get_installed_python_version(*candidates: str) -> Optional[InstalledVersion]
     return None
 
 
-def _run_nix(args: list[str]) -> Tuple[int, str, str]:
+def _run_nix(args: list[str]) -> tuple[int, str, str]:
     p = subprocess.run(
         args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         text=True,
         check=False,
     )
     return p.returncode, p.stdout or "", p.stderr or ""
 
 
-def _extract_version_from_store_path(path: str) -> Optional[str]:
+def _extract_version_from_store_path(path: str) -> str | None:
     if not path:
         return None
     base = path.rstrip("/").split("/")[-1]
@@ -109,7 +107,7 @@ def _extract_version_from_store_path(path: str) -> Optional[str]:
     return None
 
 
-def get_installed_nix_profile_version(*candidates: str) -> Optional[InstalledVersion]:
+def get_installed_nix_profile_version(*candidates: str) -> InstalledVersion | None:
     """
     Detect installed version from the current Nix profile.
 

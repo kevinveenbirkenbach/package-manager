@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Unit tests for the pkgmgr CLI (version command).
 
@@ -23,13 +21,13 @@ import tempfile
 import textwrap
 import unittest
 from contextlib import redirect_stdout
-from typing import Any, Dict, List
+from typing import Any
 from unittest import mock
 
 from pkgmgr import cli
 
 
-def _fake_config() -> Dict[str, Any]:
+def _fake_config() -> dict[str, Any]:
     """
     Provide a minimal configuration dict sufficient for cli.main()
     to start without touching real config files.
@@ -132,7 +130,7 @@ class TestCliVersion(unittest.TestCase):
 
     def _run_cli_version_and_capture(
         self,
-        extra_args: List[str] | None = None,
+        extra_args: list[str] | None = None,
     ) -> str:
         """
         Run 'pkgmgr version [extra_args]' via cli.main() and return captured stdout.

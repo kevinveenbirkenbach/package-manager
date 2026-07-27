@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional
 
 
 @dataclass(frozen=True)
@@ -11,7 +10,7 @@ class NixProfileEntry:
     """
 
     key: str
-    index: Optional[int]
+    index: int | None
     name: str
     attr_path: str
-    store_paths: List[str]
+    store_paths: list[str]

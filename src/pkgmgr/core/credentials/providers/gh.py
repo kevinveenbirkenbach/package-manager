@@ -3,7 +3,6 @@ from __future__ import annotations
 import shutil
 import subprocess
 from dataclasses import dataclass
-from typing import Optional
 
 from ..types import TokenRequest, TokenResult
 
@@ -18,7 +17,7 @@ class GhTokenProvider:
 
     source_name: str = "gh"
 
-    def get(self, request: TokenRequest) -> Optional[TokenResult]:
+    def get(self, request: TokenRequest) -> TokenResult | None:
         # Only meaningful for GitHub-like providers
         kind = (request.provider_kind or "").strip().lower()
         if kind not in ("github", "github.com"):

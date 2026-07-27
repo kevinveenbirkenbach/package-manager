@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-from typing import Optional, Tuple
 
 
 class SortedSubParsersAction(argparse._SubParsersAction):
@@ -19,8 +18,8 @@ class SortedSubParsersAction(argparse._SubParsersAction):
 def _has_action(
     parser: argparse.ArgumentParser,
     *,
-    positional: Optional[str] = None,
-    options: Tuple[str, ...] = (),
+    positional: str | None = None,
+    options: tuple[str, ...] = (),
 ) -> bool:
     """
     Check whether the parser already has an action.

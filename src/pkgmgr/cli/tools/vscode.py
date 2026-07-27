@@ -3,14 +3,14 @@ from __future__ import annotations
 import json
 import os
 import shutil
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.cli.tools.paths import resolve_repository_path
 from pkgmgr.core.command.run import run_command
 from pkgmgr.core.repository.identifier import get_repo_identifier
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def _ensure_vscode_cli_available() -> None:
@@ -26,7 +26,7 @@ def _ensure_vscode_cli_available() -> None:
         )
 
 
-def _ensure_identifiers_are_filename_safe(identifiers: List[str]) -> None:
+def _ensure_identifiers_are_filename_safe(identifiers: list[str]) -> None:
     """
     Ensure identifiers can be used in a filename.
 
@@ -52,14 +52,14 @@ def _resolve_workspaces_dir(ctx: CLIContext) -> str:
     return os.path.expanduser(directories_cfg.get("workspaces", "~/Workspaces"))
 
 
-def _build_workspace_filename(identifiers: List[str]) -> str:
+def _build_workspace_filename(identifiers: list[str]) -> str:
     sorted_identifiers = sorted(identifiers)
     return "_".join(sorted_identifiers) + ".code-workspace"
 
 
 def _build_workspace_data(
-    selected: List[Repository], ctx: CLIContext
-) -> Dict[str, Any]:
+    selected: list[Repository], ctx: CLIContext
+) -> dict[str, Any]:
     folders = [{"path": resolve_repository_path(repo, ctx)} for repo in selected]
     return {
         "folders": folders,
@@ -67,7 +67,7 @@ def _build_workspace_data(
     }
 
 
-def open_vscode_workspace(ctx: CLIContext, selected: List[Repository]) -> None:
+def open_vscode_workspace(ctx: CLIContext, selected: list[Repository]) -> None:
     """
     Create (if missing) and open a VS Code workspace for the selected repositories.
 

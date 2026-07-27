@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Pretty-print repository list with status, categories, tags and path.
 
@@ -15,9 +13,9 @@ from __future__ import annotations
 import os
 import re
 from textwrap import wrap
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 RESET = "\033[0m"
 BOLD = "\033[1m"
@@ -29,7 +27,7 @@ MAGENTA = "\033[35m"
 GREY = "\033[90m"
 
 
-def _compile_maybe_regex(pattern: str) -> Optional[re.Pattern[str]]:
+def _compile_maybe_regex(pattern: str) -> re.Pattern[str] | None:
     """
     If pattern is of the form /.../, return a compiled regex (case-insensitive).
     Otherwise return None.
@@ -88,7 +86,7 @@ def _compute_status(
     """
     Compute a human-readable status string, e.g. 'present,alias,ignored'.
     """
-    parts: List[str] = []
+    parts: list[str] = []
 
     exists = os.path.isdir(repo_dir)
     if exists:
@@ -128,7 +126,7 @@ def _color_status(status_padded: str) -> str:
     pad_spaces = len(status_padded) - len(core)
 
     plain_parts = core.split(",") if core else []
-    colored_parts: List[str] = []
+    colored_parts: list[str] = []
 
     for raw_part in plain_parts:
         name = raw_part.strip()
@@ -156,12 +154,12 @@ def _color_status(status_padded: str) -> str:
 
 
 def list_repositories(
-    repositories: List[Repository],
+    repositories: list[Repository],
     repositories_base_dir: str,
     binaries_dir: str,
     search_filter: str = "",
     status_filter: str = "",
-    extra_tags: Optional[List[str]] = None,
+    extra_tags: list[str] | None = None,
     show_description: bool = False,
 ) -> None:
     """
@@ -188,7 +186,7 @@ def list_repositories(
         extra_tags = []
 
     search_regex = _compile_maybe_regex(search_filter)
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------
     # Build rows
@@ -208,17 +206,7 @@ def list_repositories(
             continue
 
         if search_filter:
-            haystack = " ".join(
-                [
-                    identifier,
-                    alias,
-                    provider,
-                    account,
-                    description,
-                    homepage,
-                    repo_dir,
-                ]
-            )
+            haystack = f"{identifier} {alias} {provider} {account} {description} {homepage} {repo_dir}"
             if search_regex:
                 if not search_regex.search(haystack):
                     continue
@@ -226,13 +214,13 @@ def list_repositories(
                 if search_filter.lower() not in haystack.lower():
                     continue
 
-        categories: List[str] = []
+        categories: list[str] = []
         categories.extend(map(str, repo.get("category_files", [])))
         if repo.get("category"):
             categories.append(str(repo["category"]))
 
-        yaml_tags: List[str] = list(map(str, repo.get("tags", [])))
-        display_tags: List[str] = sorted(set(yaml_tags + list(map(str, extra_tags))))
+        yaml_tags: list[str] = list(map(str, repo.get("tags", [])))
+        display_tags: list[str] = sorted(set(yaml_tags + list(map(str, extra_tags))))
 
         rows.append(
             {

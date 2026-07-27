@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Fail when a hadolint SARIF report contains warnings or errors."""
 
 from __future__ import annotations

@@ -1,15 +1,17 @@
+from __future__ import annotations
+
 import os
 import shutil
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def _is_executable(path: str) -> bool:
     return os.path.exists(path) and os.access(path, os.X_OK)
 
 
-def _find_python_package_root(repo_dir: str) -> Optional[str]:
+def _find_python_package_root(repo_dir: str) -> str | None:
     """
     Detect a Python src-layout package:
 
@@ -29,19 +31,19 @@ def _find_python_package_root(repo_dir: str) -> Optional[str]:
     return None
 
 
-def _nix_binary_candidates(home: str, names: List[str]) -> List[str]:
+def _nix_binary_candidates(home: str, names: list[str]) -> list[str]:
     """
     Build possible Nix profile binary paths for a list of candidate names.
     """
     return [os.path.join(home, ".nix-profile", "bin", name) for name in names if name]
 
 
-def _path_binary_candidates(names: List[str]) -> List[str]:
+def _path_binary_candidates(names: list[str]) -> list[str]:
     """
     Resolve candidate names via PATH using shutil.which.
     Returns only existing, executable paths.
     """
-    binaries: List[str] = []
+    binaries: list[str] = []
     for name in names:
         if not name:
             continue
@@ -55,7 +57,7 @@ def resolve_command_for_repo(
     repo: Repository,
     repo_identifier: str,
     repo_dir: str,
-) -> Optional[str]:
+) -> str | None:
     """
     Resolve the executable command for a repository.
 
@@ -110,7 +112,7 @@ def resolve_command_for_repo(
     else:
         python_package_name = None
 
-    candidate_names: List[str] = []
+    candidate_names: list[str] = []
     seen: set[str] = set()
 
     for name in (
@@ -130,8 +132,8 @@ def resolve_command_for_repo(
     path_binaries = _path_binary_candidates(candidate_names)
 
     # b) Classify system (/usr/...) vs non-system
-    system_binary: Optional[str] = None
-    non_system_binary: Optional[str] = None
+    system_binary: str | None = None
+    non_system_binary: str | None = None
 
     for bin_path in path_binaries:
         if bin_path.startswith("/usr"):

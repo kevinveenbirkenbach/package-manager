@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Utilities for working with semantic versions (SemVer).
 
@@ -12,7 +10,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 
 @dataclass(frozen=True, order=True)
@@ -79,16 +76,16 @@ def is_semver_tag(tag: str) -> bool:
 
 def extract_semver_from_tags(
     tags: Iterable[str],
-    major: Optional[int] = None,
-    minor: Optional[int] = None,
-) -> List[Tuple[str, SemVer]]:
+    major: int | None = None,
+    minor: int | None = None,
+) -> list[tuple[str, SemVer]]:
     """
     Filter and parse tags that match SemVer, optionally restricted
     to a specific MAJOR or MAJOR.MINOR line.
 
     Returns a list of (tag_string, SemVer) pairs.
     """
-    result: List[Tuple[str, SemVer]] = []
+    result: list[tuple[str, SemVer]] = []
     for tag in tags:
         try:
             ver = SemVer.parse(tag)
@@ -108,9 +105,9 @@ def extract_semver_from_tags(
 
 def find_latest_version(
     tags: Iterable[str],
-    major: Optional[int] = None,
-    minor: Optional[int] = None,
-) -> Optional[Tuple[str, SemVer]]:
+    major: int | None = None,
+    minor: int | None = None,
+) -> tuple[str, SemVer] | None:
     """
     Find the latest SemVer tag from the given tags.
 

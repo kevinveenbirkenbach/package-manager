@@ -13,12 +13,12 @@ def resolve_repos(identifiers: [], all_repos: []):
             full_id = (
                 f"{repo.get('provider')}/{repo.get('account')}/{repo.get('repository')}"
             )
-            if ident == full_id or ident == repo.get("alias"):
-                matches.append(repo)
-            elif ident == repo.get("repository"):
+            if ident == full_id or ident == repo.get("alias") or (
+                ident == repo.get("repository")
                 # Only match if repository name is unique among all_repos.
-                if sum(1 for r in all_repos if r.get("repository") == ident) == 1:
-                    matches.append(repo)
+                and sum(1 for r in all_repos if r.get("repository") == ident) == 1
+            ):
+                matches.append(repo)
         if not matches:
             print(f"Identifier '{ident}' did not match any repository in config.")
         else:

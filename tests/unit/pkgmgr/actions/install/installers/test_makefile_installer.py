@@ -50,7 +50,6 @@ class TestMakefileInstaller(unittest.TestCase):
         # Ensure we checked the Makefile and then called make install.
         mock_file.assert_called_once_with(
             os.path.join(self.ctx.repo_dir, "Makefile"),
-            "r",
             encoding="utf-8",
             errors="ignore",
         )
@@ -77,7 +76,6 @@ class TestMakefileInstaller(unittest.TestCase):
         # We should have read the Makefile, but not called run_command().
         mock_file.assert_called_once_with(
             os.path.join(self.ctx.repo_dir, "Makefile"),
-            "r",
             encoding="utf-8",
             errors="ignore",
         )

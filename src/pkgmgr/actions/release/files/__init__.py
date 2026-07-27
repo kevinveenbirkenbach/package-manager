@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Backwards-compatible facade for the release file update helpers.
 

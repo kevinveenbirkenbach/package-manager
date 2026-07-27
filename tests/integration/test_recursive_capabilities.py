@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Integration tests for recursive capability resolution and installer shadowing.
 
@@ -17,7 +15,6 @@ import shutil
 import tempfile
 import unittest
 from collections.abc import Sequence
-from typing import List, Tuple
 from unittest.mock import patch
 
 import pkgmgr.actions.install as install_mod
@@ -29,7 +26,7 @@ from pkgmgr.actions.install.installers.os_packages.arch_pkgbuild import (
 )
 from pkgmgr.actions.install.installers.python import PythonInstaller
 
-InstallerSpec = Tuple[str, object]
+InstallerSpec = tuple[str, object]
 
 
 class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
@@ -54,7 +51,7 @@ class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
         repo_dir: str,
         installers: Sequence[InstallerSpec],
         selected_repos=None,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Run install_repos() with a custom INSTALLERS list and capture which
         installer labels actually run.
@@ -69,7 +66,7 @@ class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
         else:
             all_repos = selected_repos
 
-        called_installers: List[str] = []
+        called_installers: list[str] = []
 
         patched_installers = []
         for label, inst in installers:

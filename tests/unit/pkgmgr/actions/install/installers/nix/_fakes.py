@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -18,7 +18,7 @@ class FakeRunner:
       - Generic runner.run(ctx, cmd, allow_failure=...)
     """
 
-    def __init__(self, mapping: Optional[dict[str, Any]] = None, default: Any = None):
+    def __init__(self, mapping: dict[str, Any] | None = None, default: Any = None):
         self.mapping = mapping or {}
         self.default = default if default is not None else FakeRunResult(0, "", "")
         self.calls: list[tuple[Any, str, bool]] = []

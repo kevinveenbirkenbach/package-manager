@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.actions.mirror import (
     diff_mirrors,
@@ -13,13 +13,13 @@ from pkgmgr.actions.mirror import (
 )
 from pkgmgr.cli.context import CLIContext
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 def handle_mirror_command(
     ctx: CLIContext,
     args: Any,
-    selected: List[Repository],
+    selected: list[Repository],
 ) -> None:
     """
     Entry point for 'pkgmgr mirror' subcommands.

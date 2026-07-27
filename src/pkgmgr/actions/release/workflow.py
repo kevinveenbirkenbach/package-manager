@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Optional
 
 from pkgmgr.actions.branch import close_branch
 from pkgmgr.core.git import GitRunError, run
@@ -34,7 +33,7 @@ def _release_impl(
     pyproject_path: str = "pyproject.toml",
     changelog_path: str = "CHANGELOG.md",
     release_type: str = "patch",
-    message: Optional[str] = None,
+    message: str | None = None,
     preview: bool = False,
     close: bool = False,
     force: bool = False,
@@ -87,7 +86,7 @@ def _release_impl(
     else:
         print("[INFO] No RPM spec file found. Skipping spec version update.")
 
-    effective_message: Optional[str] = message
+    effective_message: str | None = message
     if isinstance(changelog_message, str) and changelog_message.strip():
         effective_message = changelog_message.strip()
 
@@ -195,7 +194,7 @@ def release(
     pyproject_path: str = "pyproject.toml",
     changelog_path: str = "CHANGELOG.md",
     release_type: str = "patch",
-    message: Optional[str] = None,
+    message: str | None = None,
     preview: bool = False,
     force: bool = False,
     close: bool = False,

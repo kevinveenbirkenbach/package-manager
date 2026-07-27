@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from ..errors import GitCommandError, GitRunError
 from ..run import run
 
@@ -11,7 +9,7 @@ class GitCloneError(GitCommandError):
 
 
 def clone(
-    args: List[str],
+    args: list[str],
     *,
     cwd: str = ".",
     preview: bool = False,

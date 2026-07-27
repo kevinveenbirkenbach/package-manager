@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from ..errors import GitRunError
 from ..run import run
 
 
-def get_current_branch(cwd: str = ".") -> Optional[str]:
+def get_current_branch(cwd: str = ".") -> str | None:
     """
     Return the current branch name, or None if it cannot be determined.
 

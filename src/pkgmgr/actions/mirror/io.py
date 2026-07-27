@@ -42,7 +42,7 @@ def read_mirrors_file(repo_dir: str, filename: str = "MIRRORS") -> MirrorMap:
         return mirrors
 
     try:
-        with open(path, "r", encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             for line in fh:
                 stripped = line.strip()
                 if not stripped or stripped.startswith("#"):

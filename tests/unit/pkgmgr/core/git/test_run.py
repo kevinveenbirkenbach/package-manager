@@ -38,9 +38,7 @@ class TestGitRun(unittest.TestCase):
         self.assertEqual(kwargs["cwd"], "/repo")
         self.assertTrue(kwargs["check"])
         self.assertTrue(kwargs["text"])
-        # ensure pipes are used (matches implementation intent)
-        self.assertIsNotNone(kwargs["stdout"])
-        self.assertIsNotNone(kwargs["stderr"])
+        self.assertTrue(kwargs["capture_output"])
 
     def test_failure_raises_giterror_with_details(self) -> None:
         # Build a CalledProcessError with stdout/stderr populated
@@ -57,9 +55,11 @@ class TestGitRun(unittest.TestCase):
         exc.stdout = "OUT!"
         exc.stderr = "ERR!"
 
-        with patch("pkgmgr.core.git.run.subprocess.run", side_effect=exc):
-            with self.assertRaises(GitRunError) as ctx:
-                run(["status"], cwd="/bad/repo", preview=False)
+        with (
+            patch("pkgmgr.core.git.run.subprocess.run", side_effect=exc),
+            self.assertRaises(GitRunError) as ctx,
+        ):
+            run(["status"], cwd="/bad/repo", preview=False)
 
         msg = str(ctx.exception)
         self.assertIn("Git command failed in '/bad/repo': git status", msg)

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 End-to-end tests for the `pkgmgr version` command.
 
@@ -25,7 +23,6 @@ import os
 import runpy
 import sys
 import unittest
-from typing import List
 
 from pkgmgr.core.config.load import load_config
 
@@ -54,7 +51,7 @@ def _load_pkgmgr_repo_dir() -> str:
     directories = cfg.get("directories", {})
     base_repos_dir = os.path.expanduser(directories.get("repositories", ""))
 
-    candidates: List[dict] = cfg.get("repositories", []) or []
+    candidates: list[dict] = cfg.get("repositories", []) or []
     for repo in candidates:
         repo_name = (repo.get("repository") or "").strip()
         alias = (repo.get("alias") or "").strip()

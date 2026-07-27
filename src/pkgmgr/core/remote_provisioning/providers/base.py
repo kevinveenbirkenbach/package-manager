@@ -49,6 +49,6 @@ class RemoteProvider(ABC):
     @staticmethod
     def _api_base(host: str) -> str:
         # Default to https. If you need http for local dev, store host as "http://..."
-        if host.startswith("http://") or host.startswith("https://"):
+        if host.startswith(("http://", "https://")):
             return host.rstrip("/")
         return f"https://{host}".rstrip("/")

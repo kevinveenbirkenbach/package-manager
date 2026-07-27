@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict
+from typing import Any
 
 from .model import RepoParts
 
@@ -38,7 +38,7 @@ class CreateRepoPlanner:
         *,
         author_name: str,
         author_email: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "provider": self.parts.host,
             "port": self.parts.port,

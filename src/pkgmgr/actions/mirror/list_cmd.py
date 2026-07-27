@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from typing import List
-
 from .context import build_context
 from .printing import print_header, print_named_mirrors
 from .types import Repository
 
 
 def list_mirrors(
-    selected_repos: List[Repository],
+    selected_repos: list[Repository],
     repositories_base_dir: str,
-    all_repos: List[Repository],
+    all_repos: list[Repository],
     source: str = "all",
 ) -> None:
     """

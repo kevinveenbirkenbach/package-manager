@@ -1,13 +1,11 @@
-#!/usr/bin/env python3
-
 import os
 import unittest
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from pkgmgr.actions.install import install_repos
 
-Repository = Dict[str, Any]
+Repository = dict[str, Any]
 
 
 class TestInstallReposOrchestration(unittest.TestCase):
@@ -27,7 +25,7 @@ class TestInstallReposOrchestration(unittest.TestCase):
             "alias": "repo-two",
             "verified": {"gpg_keys": ["FAKEKEY"]},
         }
-        self.all_repos: List[Repository] = [self.repo1, self.repo2]
+        self.all_repos: list[Repository] = [self.repo1, self.repo2]
 
     @patch("pkgmgr.actions.install.InstallationPipeline")
     @patch("pkgmgr.actions.install.clone_repos")

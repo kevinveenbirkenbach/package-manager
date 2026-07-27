@@ -30,7 +30,7 @@ def interactive_add(config, USER_CONFIG_PATH: str):
     confirm = input("Add this entry to user config? (y/N): ").strip().lower()
     if confirm == "y":
         if os.path.exists(USER_CONFIG_PATH):
-            with open(USER_CONFIG_PATH, "r") as f:
+            with open(USER_CONFIG_PATH) as f:
                 user_config = yaml.safe_load(f) or {}
         else:
             user_config = {"repositories": []}

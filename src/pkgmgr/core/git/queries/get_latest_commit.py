@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from ..errors import GitRunError
 from ..run import run
 
 
-def get_latest_commit(cwd: str = ".") -> Optional[str]:
+def get_latest_commit(cwd: str = ".") -> str | None:
     """
     Return the latest commit hash for the repository in `cwd`.
 

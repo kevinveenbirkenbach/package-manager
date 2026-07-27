@@ -54,9 +54,11 @@ class TestOpenBranch(unittest.TestCase):
         push_upstream.assert_called_once_with("origin", "auto-branch", cwd=".")
 
     def test_open_branch_rejects_empty_name(self) -> None:
-        with patch("builtins.input", return_value=""):
-            with self.assertRaises(RuntimeError):
-                open_branch(None)
+        with (
+            patch("builtins.input", return_value=""),
+            self.assertRaises(RuntimeError),
+        ):
+            open_branch(None)
 
 
 if __name__ == "__main__":

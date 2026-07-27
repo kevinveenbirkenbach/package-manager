@@ -1,6 +1,4 @@
 # src/pkgmgr/cli/commands/config.py
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from __future__ import annotations
 
@@ -8,7 +6,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml
 
@@ -21,7 +19,7 @@ from pkgmgr.core.config.save import save_user_config
 from pkgmgr.core.repository.resolve import resolve_repos
 
 
-def _load_user_config(user_config_path: str) -> Dict[str, Any]:
+def _load_user_config(user_config_path: str) -> dict[str, Any]:
     """
     Load the user config from ~/.config/pkgmgr/config.yaml
     (or whatever ctx.user_config_path is), creating the directory if needed.
@@ -32,12 +30,12 @@ def _load_user_config(user_config_path: str) -> Dict[str, Any]:
         os.makedirs(cfg_dir, exist_ok=True)
 
     if os.path.exists(user_config_path_expanded):
-        with open(user_config_path_expanded, "r", encoding="utf-8") as f:
+        with open(user_config_path_expanded, encoding="utf-8") as f:
             return yaml.safe_load(f) or {"repositories": []}
     return {"repositories": []}
 
 
-def _find_defaults_source_dir() -> Optional[str]:
+def _find_defaults_source_dir() -> str | None:
     """
     Find the directory inside the installed pkgmgr package that contains
     the default config files.
@@ -75,7 +73,7 @@ def _update_default_configs(user_config_path: str) -> None:
 
     for name in os.listdir(source_dir):
         lower = name.lower()
-        if not (lower.endswith(".yml") or lower.endswith(".yaml")):
+        if not (lower.endswith((".yml", ".yaml"))):
             continue
         if name == "config.yaml":
             continue

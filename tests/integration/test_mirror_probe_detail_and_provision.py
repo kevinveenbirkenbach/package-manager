@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 Integration test for mirror probing + provisioning after refactor.
 

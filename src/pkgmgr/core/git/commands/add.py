@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from typing import List, Union
+from typing import Union
 
 from ..errors import GitCommandError, GitRunError
 from ..run import run
@@ -14,7 +14,7 @@ class GitAddError(GitCommandError):
 PathLike = Union[str, Sequence[str], Iterable[str]]
 
 
-def _normalize_paths(paths: PathLike) -> List[str]:
+def _normalize_paths(paths: PathLike) -> list[str]:
     if isinstance(paths, str):
         return [paths]
     return [p for p in paths]

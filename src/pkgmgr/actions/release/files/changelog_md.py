@@ -4,7 +4,6 @@ import os
 import re
 import sys
 from datetime import date
-from typing import Optional
 
 from .changelog_lint import (
     ChangelogLintError,
@@ -55,7 +54,7 @@ def _insert_after_h1(existing: str, entry: str) -> str:
 def update_changelog(
     changelog_path: str,
     new_version: str,
-    message: Optional[str] = None,
+    message: str | None = None,
     preview: bool = False,
 ) -> str:
     """Insert a new release entry into CHANGELOG.md.
@@ -87,7 +86,7 @@ def update_changelog(
     elif preview or not sys.stdin.isatty():
         body, entry = _entry_for(message or f"Release {new_version}")
     else:
-        attempt: Optional[str] = None
+        attempt: str | None = None
         while True:
             print(
                 "\n[INFO] Provide the changelog entry — a leading '#' becomes "

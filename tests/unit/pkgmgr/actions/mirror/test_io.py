@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import os
@@ -61,13 +59,7 @@ class TestMirrorIO(unittest.TestCase):
             p = os.path.join(tmpdir, "MIRRORS")
             with open(p, "w", encoding="utf-8") as fh:
                 fh.write(
-                    "\n".join(
-                        [
-                            "https://github.com/alice/repo1",
-                            "https://github.com/alice/repo2",
-                            "ssh://git@git.veen.world:2201/alice/repo3.git",
-                        ]
-                    )
+                    "https://github.com/alice/repo1\nhttps://github.com/alice/repo2\nssh://git@git.veen.world:2201/alice/repo3.git"
                     + "\n"
                 )
 
@@ -99,7 +91,7 @@ class TestMirrorIO(unittest.TestCase):
             p = os.path.join(tmpdir, "MIRRORS")
             self.assertTrue(os.path.exists(p))
 
-            with open(p, "r", encoding="utf-8") as fh:
+            with open(p, encoding="utf-8") as fh:
                 content = fh.read()
 
         self.assertEqual(

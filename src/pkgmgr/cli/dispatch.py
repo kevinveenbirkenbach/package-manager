@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 from pkgmgr.cli.commands import (
     handle_archive,
@@ -34,7 +34,7 @@ def _has_explicit_selection(args) -> bool:
     )
 
 
-def _select_repo_for_current_directory(ctx: CLIContext) -> List[Dict[str, Any]]:
+def _select_repo_for_current_directory(ctx: CLIContext) -> list[dict[str, Any]]:
     cwd = os.path.abspath(os.getcwd())
     matches = []
 
