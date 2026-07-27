@@ -63,7 +63,7 @@ def update_changelog(
     missing) and above any existing release entries, so the result stays
     markdown-lint-clean (MD041 first-line-h1, MD012 no-multiple-blanks).
     """
-    today = date.today().isoformat()
+    today = date.today().isoformat()  # noqa: DTZ011 - changelog dates are local calendar dates
 
     def _entry_for(raw: str) -> tuple[str, str]:
         body = transform_changelog_message(raw).strip() or f"Release {new_version}"
