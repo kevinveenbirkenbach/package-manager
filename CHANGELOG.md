@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.16.1] - 2026-07-29
+
+* *pkgmgr repos create* now creates *main*-based repositories: *git init* is run with an explicit *-b main* instead of inheriting the host's *init.defaultBranch*, and a failed initial push no longer renames the branch back to *master*. *resolve_base_branch()* keeps its main → master fallback for existing repositories.
+* Failures are no longer swallowed: 46 blind *except Exception* handlers were narrowed to the exception types the guarded code can actually raise (*OSError*, *UnicodeDecodeError*, TOML/YAML decode errors, *ValueError*, *ImportError*, *subprocess.SubprocessError*, *GitRunError*, *PackageNotFoundError*). Three handlers stay open by design — the per-repository loops in *install* and *update* are batch boundaries where one failing repository must not abort the run.
+* Keyring backend errors now surface as the concrete *KeyringOperationError*, raised at the boundary in *KeyringTokenProvider.get/set* with the original exception preserved as *__cause__*, and kept distinct from *KeyringUnavailableError* ("no usable backend" vs. "backend present, call failed"). Both degradation paths are unchanged.
+* The *code-scanning* report stamps *generated_at* and its fallback output directory in UTC instead of a naive local timestamp.
+* New *make lint* target runs *ruff* on *src* and *tests* with the same invocation as the *lint-python* workflow, and *make test* now depends on it. Repository-wide formatting and typing modernisation (PEP 604 unions with *from __future__ import annotations*, builtin generics, shebangs stripped from 72 importable modules) — *ruff check src tests* passes.
+* New *tests/integration/test_error_path_degradation.py* drives 44 of the narrowed handlers into their except branch with real injected faults and asserts the documented degradation.
+
 ## [1.16.0] - 2026-06-28
 
 * New *code-scanning* command: *pkgmgr code-scanning* downloads a repository's GitHub code scanning alerts and analysis metadata via the *gh* CLI into a timestamped directory (default */tmp/<repo>/code-scanner/<timestamp>*), together with a readable summary, for offline analysis.
