@@ -26,8 +26,8 @@
       packages = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          python = pkgs.python311;
-          pyPkgs = pkgs.python311Packages;
+          python = pkgs.python312;
+          pyPkgs = pkgs.python312Packages;
         in
         rec {
           pkgmgr = pyPkgs.buildPythonApplication {
@@ -79,8 +79,8 @@
             if pkgs ? ansible-core then pkgs.ansible-core
             else pkgs.ansible;
 
-          # Use the same Python version as the package (3.11)
-          python = pkgs.python311;
+          # Use the same Python version as the package
+          python = pkgs.python312;
 
           pythonWithDeps = python.withPackages (ps: [
             ps.pip
@@ -95,6 +95,9 @@
               pkgs.git
               pkgs.gnupg
               ansiblePkg
+              pkgs.pkg-config
+              pkgs.openldap
+              pkgs.cyrus_sasl
             ];
 
             shellHook = ''
