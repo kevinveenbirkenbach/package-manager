@@ -81,13 +81,15 @@ class InstallationPipeline:
         else:
             repo.pop("command", None)
 
-        provided_capabilities: set[str] = set()
+        attempted: list[str] = []
 
         for installer in self._installers:
             layer_name = getattr(installer, "layer", None)
 
             if layer_name is None:
-                self._run_installer(installer, ctx, identifier, repo_dir, quiet)
+                if self._run_installer(installer, ctx, identifier, repo_dir, quiet):
+                    return
+                attempted.append(installer.__class__.__name__)
                 continue
 
             try:
@@ -120,15 +122,6 @@ class InstallationPipeline:
             if not installer.supports(ctx):
                 continue
 
-            caps = installer.discover_capabilities(ctx)
-            if caps and caps.issubset(provided_capabilities):
-                if not quiet:
-                    print(
-                        f"Skipping installer {installer.__class__.__name__} "
-                        f"for {identifier} – capabilities {caps} already provided."
-                    )
-                continue
-
             if not quiet:
                 if (
                     ctx.force_update
@@ -142,13 +135,17 @@ class InstallationPipeline:
                 else:
                     print(
                         f"[pkgmgr] Running installer {installer.__class__.__name__} "
-                        f"for {identifier} in '{repo_dir}' "
-                        f"(new capabilities: {caps or set()})..."
+                        f"for {identifier} in '{repo_dir}'..."
                     )
 
-            self._run_installer(installer, ctx, identifier, repo_dir, quiet)
-
-            provided_capabilities.update(caps)
+            if not self._run_installer(installer, ctx, identifier, repo_dir, quiet):
+                attempted.append(installer.__class__.__name__)
+                if not quiet:
+                    print(
+                        f"[pkgmgr] {installer.__class__.__name__} installed nothing "
+                        f"for {identifier}; falling back to the next hook."
+                    )
+                continue
 
             new_state = resolver.resolve()
             if new_state.command:
@@ -165,6 +162,13 @@ class InstallationPipeline:
                 repo.pop("command", None)
 
             state = new_state
+            return
+
+        if attempted:
+            raise SystemExit(
+                f"every installation hook failed for {identifier}: "
+                f"{', '.join(attempted)}"
+            )
 
     @staticmethod
     def _run_installer(
@@ -173,9 +177,11 @@ class InstallationPipeline:
         identifier: str,
         repo_dir: str,
         quiet: bool,
-    ) -> None:
+    ) -> bool:
+        """Run one hook. Returns whether it installed anything."""
         try:
             installer.run(ctx)
+            return True
         except SystemExit as exc:
             exit_code = exc.code if isinstance(exc.code, int) else str(exc.code)
             print(
@@ -193,4 +199,4 @@ class InstallationPipeline:
                 f"        pkgmgr install {identifier} "
                 "--clone-mode shallow --no-verification"
             )
-            raise
+            return False

@@ -21,11 +21,13 @@ class DummyInstaller(BaseInstaller):
         layer: str | None = None,
         supports_result: bool = True,
         capabilities: set[str] | None = None,
+        fails: bool = False,
     ) -> None:
         self._name = name
         self.layer = layer  # type: ignore[assignment]
         self._supports_result = supports_result
         self._capabilities = capabilities or set()
+        self._fails = fails
         self.ran = False
 
     def supports(self, ctx: RepoContext) -> bool:  # type: ignore[override]
@@ -33,6 +35,8 @@ class DummyInstaller(BaseInstaller):
 
     def run(self, ctx: RepoContext) -> None:  # type: ignore[override]
         self.ran = True
+        if self._fails:
+            raise SystemExit(2)
 
     def discover_capabilities(self, ctx: RepoContext) -> set[str]:  # type: ignore[override]
         return set(self._capabilities)
@@ -117,15 +121,12 @@ class TestInstallationPipeline(unittest.TestCase):
 
     @patch("pkgmgr.actions.install.pipeline.create_ink")
     @patch("pkgmgr.actions.install.pipeline.resolve_command_for_repo")
-    def test_capabilities_prevent_duplicate_installers(
+    def test_only_one_installation_hook_runs(
         self,
         mock_resolve_command_for_repo: MagicMock,
         mock_create_ink: MagicMock,
     ) -> None:
-        """
-        If one installer has already provided a set of capabilities,
-        a second installer advertising the same capabilities should be skipped.
-        """
+        """A repository is installed once, by the first hook that supports it."""
         mock_resolve_command_for_repo.return_value = None  # no CLI initially
 
         ctx = _minimal_context()
@@ -148,8 +149,102 @@ class TestInstallationPipeline(unittest.TestCase):
         self.assertTrue(first.ran, "First installer should run.")
         self.assertFalse(
             second.ran,
-            "Second installer with identical capabilities must be skipped.",
+            "A second installation hook must not run after the first one did.",
         )
+
+    @patch("pkgmgr.actions.install.pipeline.create_ink")
+    @patch("pkgmgr.actions.install.pipeline.resolve_command_for_repo")
+    def test_a_differing_second_hook_is_not_run_either(
+        self,
+        mock_resolve_command_for_repo: MagicMock,
+        mock_create_ink: MagicMock,
+    ) -> None:
+        """The rule is one hook, not one hook per capability."""
+        mock_resolve_command_for_repo.return_value = None
+
+        ctx = _minimal_context()
+        first = DummyInstaller(
+            "python-installer",
+            layer=CliLayer.PYTHON.value,
+            supports_result=True,
+            capabilities={"python-runtime"},
+        )
+        second = DummyInstaller(
+            "makefile-installer",
+            layer=CliLayer.MAKEFILE.value,
+            supports_result=True,
+            capabilities={"make-install"},
+        )
+
+        pipeline = InstallationPipeline([first, second])
+        pipeline.run(ctx)
+
+        self.assertTrue(first.ran, "The first supported hook should run.")
+        self.assertFalse(
+            second.ran,
+            "A hook advertising a different capability must not run either: "
+            "the project is already installed.",
+        )
+
+    @patch("pkgmgr.actions.install.pipeline.create_ink")
+    @patch("pkgmgr.actions.install.pipeline.resolve_command_for_repo")
+    def test_a_failed_hook_falls_back_to_the_next(
+        self,
+        mock_resolve_command_for_repo: MagicMock,
+        mock_create_ink: MagicMock,
+    ) -> None:
+        """A hook that fails installed nothing, so the next one gets its turn."""
+        mock_resolve_command_for_repo.return_value = None
+
+        ctx = _minimal_context()
+        broken = DummyInstaller(
+            "makefile-installer",
+            layer=CliLayer.MAKEFILE.value,
+            supports_result=True,
+            fails=True,
+        )
+        working = DummyInstaller(
+            "python-installer",
+            layer=CliLayer.PYTHON.value,
+            supports_result=True,
+        )
+
+        pipeline = InstallationPipeline([broken, working])
+        pipeline.run(ctx)
+
+        self.assertTrue(broken.ran, "The preferred hook should be tried first.")
+        self.assertTrue(
+            working.ran,
+            "The next hook must run when the preferred one installed nothing.",
+        )
+
+    @patch("pkgmgr.actions.install.pipeline.create_ink")
+    @patch("pkgmgr.actions.install.pipeline.resolve_command_for_repo")
+    def test_a_repository_whose_hooks_all_fail_is_reported(
+        self,
+        mock_resolve_command_for_repo: MagicMock,
+        mock_create_ink: MagicMock,
+    ) -> None:
+        """Falling back must not turn a broken repository into a silent pass."""
+        mock_resolve_command_for_repo.return_value = None
+
+        ctx = _minimal_context()
+        first = DummyInstaller(
+            "makefile-installer",
+            layer=CliLayer.MAKEFILE.value,
+            supports_result=True,
+            fails=True,
+        )
+        second = DummyInstaller(
+            "python-installer",
+            layer=CliLayer.PYTHON.value,
+            supports_result=True,
+            fails=True,
+        )
+
+        pipeline = InstallationPipeline([first, second])
+        with self.assertRaises(SystemExit):
+            pipeline.run(ctx)
 
 
 if __name__ == "__main__":

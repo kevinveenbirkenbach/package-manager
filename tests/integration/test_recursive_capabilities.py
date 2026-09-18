@@ -1,9 +1,5 @@
 """
-Integration tests for recursive capability resolution and installer shadowing.
-
-These tests verify that, given different repository layouts (Makefile, pyproject,
-flake.nix, PKGBUILD), only the expected installers are executed based on the
-capabilities provided by higher layers.
+Integration tests for installer selection across repository layouts.
 
 Layer order (strongest → weakest):
 
@@ -129,10 +125,8 @@ class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
             "With only a Makefile, the MakefileInstaller should run exactly once.",
         )
 
-    def test_python_and_makefile_both_run_when_caps_disjoint(self) -> None:
-        """
-        If Python and Makefile have disjoint capabilities, both installers run.
-        """
+    def test_only_the_first_supported_hook_runs(self) -> None:
+        """A repository with two usable hooks is installed by the first one."""
         repo_dir = self._new_repo()
 
         # pyproject.toml without any explicit "make install" hint
@@ -153,9 +147,8 @@ class TestRecursiveCapabilitiesIntegration(unittest.TestCase):
 
         self.assertEqual(
             called,
-            ["python", "makefile"],
-            "PythonInstaller and MakefileInstaller should both run when their "
-            "capabilities are disjoint.",
+            ["python"],
+            "Only the first supported hook may install the repository.",
         )
 
     def test_python_shadows_makefile_when_pyproject_mentions_make_install(self) -> None:

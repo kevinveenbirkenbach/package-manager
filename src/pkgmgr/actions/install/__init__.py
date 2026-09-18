@@ -38,13 +38,14 @@ from pkgmgr.core.repository.verify import verify_repository
 Repository = dict[str, Any]
 
 INSTALLERS = [
+    MakefileInstaller(),
     ArchPkgbuildInstaller(),
     DebianControlInstaller(),
     RpmSpecInstaller(),
     NixFlakeInstaller(),
     PythonInstaller(),
-    MakefileInstaller(),
 ]
+"""Preference order: the pipeline runs the first supported hook and stops."""
 
 
 def _ensure_repo_dir(
