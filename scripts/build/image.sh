@@ -10,7 +10,6 @@ source "${SCRIPT_DIR}/base.sh"
 
 NO_CACHE=0
 MISSING_ONLY=0
-TARGET=""
 IMAGE_TAG=""         # local image name or base tag (without registry)
 PUSH=0               # if 1 -> use buildx and push (requires docker buildx)
 PUBLISH=0            # if 1 -> push with semantic tags (latest/version/stable + arch aliases)
@@ -23,9 +22,6 @@ DEFAULT_DISTRO="arch"
 
 usage() {
   local default_tag="pkgmgr-${PKGMGR_DISTRO}"
-  if [[ -n "${TARGET:-}" ]]; then
-    default_tag="${default_tag}-${TARGET}"
-  fi
 
   cat <<EOF
 Usage: PKGMGR_DISTRO=<distro> $0 [options]
@@ -33,7 +29,6 @@ Usage: PKGMGR_DISTRO=<distro> $0 [options]
 Build options:
   --missing             Build only if the image does not already exist (local build only)
   --no-cache            Build with --no-cache
-  --target <name>       Build a specific Dockerfile target (e.g. virgin, slim)
   --tag <image>         Override the output image tag (default: ${default_tag})
 
 Publish options:
@@ -47,7 +42,7 @@ Publish options:
 
 Notes:
 - --publish implies --push and requires --registry, --owner, and --version.
-- Local build (no --push) uses "docker build" and creates local images like "pkgmgr-arch" / "pkgmgr-arch-virgin" / "pkgmgr-arch-slim".
+- Local build (no --push) uses "docker build" and creates a local image like "pkgmgr-arch".
 EOF
 }
 
@@ -55,11 +50,6 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-cache) NO_CACHE=1; shift ;;
     --missing)  MISSING_ONLY=1; shift ;;
-    --target)
-      TARGET="${2:-}"
-      [[ -n "${TARGET}" ]] || { echo "ERROR: --target requires a value (e.g. virgin|slim)"; exit 2; }
-      shift 2
-      ;;
     --tag)
       IMAGE_TAG="${2:-}"
       [[ -n "${IMAGE_TAG}" ]] || { echo "ERROR: --tag requires a value"; exit 2; }
@@ -104,9 +94,6 @@ done
 # Derive default local tag if not provided
 if [[ -z "${IMAGE_TAG}" ]]; then
   IMAGE_TAG="${REPO_PREFIX}-${PKGMGR_DISTRO}"
-  if [[ -n "${TARGET}" ]]; then
-    IMAGE_TAG="${IMAGE_TAG}-${TARGET}"
-  fi
 fi
 
 BASE_IMAGE="$(resolve_base_image "$PKGMGR_DISTRO")"
@@ -143,7 +130,7 @@ echo "------------------------------------------------------------"
 echo "[build] Building image"
 echo "distro     = ${PKGMGR_DISTRO}"
 echo "BASE_IMAGE = ${BASE_IMAGE}"
-if [[ -n "${TARGET}" ]]; then echo "target    = ${TARGET}"; fi
+echo "platforms = $(resolve_platforms "$PKGMGR_DISTRO")"
 if [[ "${NO_CACHE}" == "1" ]]; then echo "cache     = disabled"; fi
 if [[ "${PUSH}" == "1" ]]; then echo "push      = enabled"; fi
 if [[ "${PUBLISH}" == "1" ]]; then
@@ -162,23 +149,12 @@ if [[ "${NO_CACHE}" == "1" ]]; then
   build_args+=(--no-cache)
 fi
 
-if [[ -n "${TARGET}" ]]; then
-  build_args+=(--target "${TARGET}")
-fi
-
 compute_publish_tags() {
   local distro_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}-${PKGMGR_DISTRO}"
   local alias_tag_base=""
 
-  if [[ -n "${TARGET}" ]]; then
-    distro_tag_base="${distro_tag_base}-${TARGET}"
-  fi
-
   if [[ "${PKGMGR_DISTRO}" == "${DEFAULT_DISTRO}" ]]; then
     alias_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}"
-    if [[ -n "${TARGET}" ]]; then
-      alias_tag_base="${alias_tag_base}-${TARGET}"
-    fi
   fi
 
   local tags=()
@@ -211,6 +187,7 @@ if [[ "${PUSH}" == "1" ]]; then
     bx_args+=(-t "${IMAGE_TAG}")
   fi
 
+  bx_args+=(--platform "$(resolve_platforms "$PKGMGR_DISTRO")")
   bx_args+=("${build_args[@]}")
   bx_args+=(.)
 

@@ -17,20 +17,11 @@ export NIX_CONFIG
 
 # ------------------------------------------------------------
 # Base images
-# (kept for documentation/reference; actual build logic is in scripts/build)
+# Published by https://github.com/kevinveenbirkenbach/base-images and resolved
+# by scripts/build/base.sh; override the registry, owner or tag there.
 # ------------------------------------------------------------
-BASE_IMAGE_ARCH   := archlinux:latest
-BASE_IMAGE_DEBIAN := debian:stable-slim
-BASE_IMAGE_UBUNTU := ubuntu:latest
-BASE_IMAGE_FEDORA := fedora:latest
-BASE_IMAGE_CENTOS := quay.io/centos/centos:stream9
-
-# Make them available in scripts
-export BASE_IMAGE_ARCH  
-export BASE_IMAGE_DEBIAN
-export BASE_IMAGE_UBUNTU
-export BASE_IMAGE_FEDORA
-export BASE_IMAGE_CENTOS
+BASE_IMAGES_TAG ?= latest
+export BASE_IMAGES_TAG
 
 # PYthon Unittest Pattern
 TEST_PATTERN	:= test_*.py
@@ -63,17 +54,12 @@ setup-nix:
 # Docker build targets (delegated to scripts/build)
 # ------------------------------------------------------------
 build:
-	@bash scripts/build/image.sh --target virgin
 	@bash scripts/build/image.sh
 
-build-missing-virgin:
-	@bash scripts/build/image.sh --target virgin --missing
-
-build-missing: build-missing-virgin
+build-missing:
 	@bash scripts/build/image.sh --missing
 
 build-no-cache:
-	@bash scripts/build/image.sh --target virgin --no-cache
 	@bash scripts/build/image.sh --no-cache
 
 build-no-cache-all:
