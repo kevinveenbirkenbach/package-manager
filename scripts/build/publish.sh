@@ -11,9 +11,6 @@ set -euo pipefail
 #   REGISTRY   (default: ghcr.io)
 #   IS_STABLE  (default: false)
 #   DISTROS    (default: "arch debian ubuntu fedora centos")
-#
-# The `virgin` variant moved to https://github.com/kevinveenbirkenbach/base-images
-# and `slim` is gone: one image per distribution, no target to pick.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

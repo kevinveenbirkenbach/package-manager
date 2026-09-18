@@ -169,26 +169,31 @@ nix run github:kevinveenbirkenbach/package-manager#pkgmgr -- --help
 
 PKGMGR can be executed **inside Docker containers** for CI, testing and isolated
 workflows.
+
 ---
 
-#### Container types
+#### Container images
 
-Two container types are available.
+One image per distribution, each installing PKGMGR as a distro-native package
+on top of the matching base image from
+[base-images](https://github.com/kevinveenbirkenbach/base-images). Every image
+is a manifest list covering `linux/amd64` and `linux/arm64`.
 
+All images live under `ghcr.io/kevinveenbirkenbach/`:
 
-| Image type | Contains                      | Typical use             |
-| ---------- | ----------------------------- | ----------------------- |
-| **Virgin** | Base OS + system dependencies | Clean test environments |
-| **Stable** | PKGMGR + Nix (flakes enabled) | Ready-to-use workflows  |
+| Tag                         | Contains                           |
+| --------------------------- | ---------------------------------- |
+| `pkgmgr-<distro>:latest`    | newest build for that distribution |
+| `pkgmgr-<distro>:<version>` | one release                        |
+| `pkgmgr-<distro>:stable`    | newest release marked stable       |
 
-Example images:
+`<distro>` is one of `arch`, `debian`, `ubuntu`, `fedora`, `centos`. The Arch
+image is published without the suffix as well, so `pkgmgr:stable` and
+`pkgmgr-arch:stable` are the same image.
 
-* Virgin: `pkgmgr-arch-virgin`
-* Stable: `ghcr.io/kevinveenbirkenbach/pkgmgr:stable`
-
-
-Use **virgin images** for isolated test runs,
-use the **stable image** for fast, reproducible execution.
+For a clean environment that carries the system dependencies but no PKGMGR,
+pull `base-<distro>` from
+[base-images](https://github.com/kevinveenbirkenbach/base-images) directly.
 
 ---
 

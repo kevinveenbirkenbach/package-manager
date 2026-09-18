@@ -17,8 +17,6 @@ export NIX_CONFIG
 
 # ------------------------------------------------------------
 # Base images
-# Published by https://github.com/kevinveenbirkenbach/base-images and resolved
-# by scripts/build/base.sh; override the registry, owner or tag there.
 # ------------------------------------------------------------
 BASE_IMAGES_TAG ?= latest
 export BASE_IMAGES_TAG
