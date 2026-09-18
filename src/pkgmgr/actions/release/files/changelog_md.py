@@ -16,6 +16,11 @@ H1_RE = re.compile(r"^#\s+\S", re.MULTILINE)
 H2_RE = re.compile(r"^##\s+\S", re.MULTILINE)
 
 
+def _at_end_of_file(entry: str) -> str:
+    """Return *entry* without the blank line that separates it from a next one."""
+    return entry.rstrip("\n") + "\n"
+
+
 def _insert_after_h1(existing: str, entry: str) -> str:
     """Place *entry* after the H1 (and any intro prose), above the first H2.
 
@@ -26,7 +31,7 @@ def _insert_after_h1(existing: str, entry: str) -> str:
     ``## ``) is preserved: *entry* is prepended unchanged.
     """
     if not existing.strip():
-        return f"# Changelog\n\n{entry}"
+        return f"# Changelog\n\n{_at_end_of_file(entry)}"
 
     if not H1_RE.search(existing):
         # Legacy layout: file starts with `## [version]` and has no H1.
@@ -43,7 +48,7 @@ def _insert_after_h1(existing: str, entry: str) -> str:
             if existing.endswith("\n\n")
             else ("\n" if existing.endswith("\n") else "\n\n")
         )
-        return f"{existing}{suffix}{entry}"
+        return f"{existing}{suffix}{_at_end_of_file(entry)}"
 
     # Insert new entry just before the first H2.
     head = existing[: h2_match.start()].rstrip("\n") + "\n\n"
