@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.0.0] - 2026-09-18
+
+Breaking
+
+* The *virgin* and *slim* image variants are gone; both tag suffixes with them.
+* Building an image now requires the base images to exist in the registry.
+* *make build-missing-virgin* is removed; *build* targets build the one image.
+* The five *BASE_IMAGE_** overrides are gone; *BASE_IMAGES_TAG* replaces them.
+* *scripts/build/image.sh* loses its *--target* axis.
+* A repository is installed by one hook, no longer by pip and *make* both.
+
+Changed
+
+* *INSTALLERS* is a preference order led by *make install*, first success wins.
+* A failed hook falls back to the next; all failing exits with what was tried.
+* The *Dockerfile* builds *FROM ${BASE_IMAGE}*, resolved by *base.sh*.
+* Publishing pushes *--platform* manifest lists for amd64 and arm64.
+* *manjaro* can be built; *os_resolver.sh* already maps it onto arch.
+* The virgin workflows pull the base image instead of building it.
+* The Nix dev shell moves to Python 3.12 for *portfolio*'s *>=3.12* floor.
+* It gains *pkg-config*, *openldap* and *cyrus_sasl* for *python-ldap*.
+* *requires-python* for pkgmgr itself is unchanged at *>=3.9*.
+* The e2e sweep drops *--silent*, which hid the non-zero exit, not the output.
+* The README drops the *Virgin* type and the Nix claim the image never met.
+* It now lists the tags *compute_publish_tags()* pushes, alias included.
+* Dependabot covers pip and github-actions weekly on Monday.
+* A new *update-flake-lock* workflow opens a PR for *flake.lock* the same day.
+* *test_distro_dependency_scripts_install_gpg_tools* moves to base-images.
+* *scripts/docker/slim.sh* is deleted with the stage that ran it.
+
 ## [1.16.1] - 2026-07-29
 
 * *pkgmgr repos create* now creates *main*-based repositories: *git init* is run with an explicit *-b main* instead of inheriting the host's *init.defaultBranch*, and a failed initial push no longer renames the branch back to *master*. *resolve_base_branch()* keeps its main → master fallback for existing repositories.
