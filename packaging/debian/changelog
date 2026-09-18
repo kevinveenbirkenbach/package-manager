@@ -1,3 +1,12 @@
+package-manager (2.0.1-1) unstable; urgency=medium
+
+  * A release no longer ends *CHANGELOG.md* on a blank line, which is MD012.
+  * The entry's separator only belongs there when another entry follows it.
+  * Affects the first entry a file receives, so it shows on an opening release.
+  * Four tests cover the placements in *_insert_after_h1*, one per branch.
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Fri, 18 Sep 2026 17:15:35 +0200
+
 package-manager (2.0.0-1) unstable; urgency=medium
 
   Breaking

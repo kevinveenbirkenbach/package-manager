@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.0.0
+Version:        2.0.1
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,12 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Fri Sep 18 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.1-1
+- * A release no longer ends *CHANGELOG.md* on a blank line, which is MD012.
+- * The entry's separator only belongs there when another entry follows it.
+- * Affects the first entry a file receives, so it shows on an opening release.
+- * Four tests cover the placements in *_insert_after_h1*, one per branch.
+
 * Fri Sep 18 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.0-1
 - Breaking
 

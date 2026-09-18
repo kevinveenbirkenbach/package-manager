@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1] - 2026-09-18
+
+* A release no longer ends *CHANGELOG.md* on a blank line, which is MD012.
+* The entry's separator only belongs there when another entry follows it.
+* Affects the first entry a file receives, so it shows on an opening release.
+* Four tests cover the placements in *_insert_after_h1*, one per branch.
+
 ## [2.0.0] - 2026-09-18
 
 Breaking
