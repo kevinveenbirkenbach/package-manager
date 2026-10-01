@@ -80,6 +80,12 @@ def update_changelog(
             print(f"  - {finding}")
         print()
 
+    def _wait_for_reader() -> None:
+        try:
+            input("[INFO] Press Enter to re-open the editor and fix the entry...")
+        except EOFError:
+            print("[INFO] Re-opening the editor so you can fix the entry...")
+
     if message is not None:
         body, entry = _entry_for(message)
         findings = lint_changelog_entry(changelog_path, entry)
@@ -92,19 +98,21 @@ def update_changelog(
         body, entry = _entry_for(message or f"Release {new_version}")
     else:
         attempt: str | None = None
+        rejected: list[str] | None = None
         while True:
             print(
-                "\n[INFO] Provide the changelog entry — a leading '#' becomes "
-                "bold, `code` becomes italic.\n"
+                "\n[INFO] Provide the changelog entry - a leading '#' becomes "
+                "a sub-heading, `code` becomes italic.\n"
             )
-            raw = _open_editor_for_changelog(attempt)
+            raw = _open_editor_for_changelog(attempt, rejected)
             body, entry = _entry_for(raw or f"Release {new_version}")
             findings = lint_changelog_entry(changelog_path, entry)
             if not findings:
                 break
             _print_findings(findings)
             attempt = body
-            print("[INFO] Re-opening the editor so you can fix the entry...")
+            rejected = findings
+            _wait_for_reader()
 
     changelog = ""
     if os.path.exists(changelog_path):

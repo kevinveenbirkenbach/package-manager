@@ -334,9 +334,10 @@ class TestUpdateChangelog(unittest.TestCase):
             with open(path, encoding="utf-8") as f:
                 content = f.read()
 
-        self.assertIn("**Summary**", content)
+        self.assertIn("### Summary", content)
         self.assertIn("*foo*", content)
-        self.assertNotIn("# Summary", content)
+        self.assertNotIn("\n# Summary", content)
+        self.assertNotIn("\n## Summary", content)
         self.assertNotIn("`foo`", content)
 
     def test_update_changelog_preview_does_not_write(self) -> None:

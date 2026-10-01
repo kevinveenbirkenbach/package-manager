@@ -6,7 +6,14 @@ import subprocess
 import tempfile
 
 
-def _open_editor_for_changelog(initial_message: str | None = None) -> str:
+def _open_editor_for_changelog(
+    initial_message: str | None = None,
+    findings: list[str] | None = None,
+) -> str:
+    """Args:
+    initial_message: the previous attempt, pre-loaded for editing.
+    findings: why that attempt was rejected, shown above it.
+    """
     editor = os.environ.get("EDITOR", "nano")
 
     with tempfile.NamedTemporaryFile(
@@ -18,9 +25,15 @@ def _open_editor_for_changelog(initial_message: str | None = None) -> str:
         tmp.write(
             "; Write the changelog entry for this release.\n"
             "; Lines starting with ';' are ignored.\n"
-            "; A leading '#' becomes bold; `code` becomes italic.\n"
-            "; Empty result will fall back to a generic message.\n\n"
+            "; A leading '#' becomes a sub-heading; `code` becomes italic.\n"
+            "; Empty result will fall back to a generic message.\n"
         )
+        if findings:
+            tmp.write(";\n; markdown-lint rejected the previous entry:\n")
+            for finding in findings:
+                for line in str(finding).splitlines() or [""]:
+                    tmp.write(f";   {line}\n")
+        tmp.write("\n")
         if initial_message:
             tmp.write(initial_message.strip() + "\n")
         tmp.flush()

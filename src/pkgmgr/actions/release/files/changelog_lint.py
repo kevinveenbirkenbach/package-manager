@@ -7,10 +7,11 @@ import shutil
 import subprocess
 import tempfile
 
-_HEADING = re.compile(r"^\s*#{1,6}\s+(.*?)\s*#*\s*$")
+_HEADING = re.compile(r"^\s*(#{1,6})\s+(.*?)\s*#*\s*$")
 _INLINE_CODE = re.compile(r"`([^`\n]+)`")
 _FINDING = re.compile(r"\bMD\d{3}\b")
 _MULTI_BLANK = re.compile(r"\n{3,}")
+_ENTRY_LEVEL = 3
 
 
 class ChangelogLintError(RuntimeError):
@@ -20,10 +21,10 @@ class ChangelogLintError(RuntimeError):
 def transform_changelog_message(text: str) -> str:
     """Normalise a free-form release message into the changelog house style.
 
-    A leading ``#`` heading becomes a bold line of its own (markdown
-    headings inside an entry body would collide with the ``## [version]``
-    structure), and inline ``code`` spans become ``*italic*`` so the entry
-    stays free of backticks.
+    Headings are pushed below the ``## [version]`` line the entry is filed
+    under, so they nest instead of competing with it. Bolding them instead
+    would read as a heading to markdown-lint and fail MD036. Inline ``code``
+    spans become ``*italic*`` so the entry stays free of backticks.
     """
     text = _INLINE_CODE.sub(r"*\1*", text)
 
@@ -31,9 +32,10 @@ def transform_changelog_message(text: str) -> str:
     for line in text.split("\n"):
         heading = _HEADING.match(line)
         if heading:
+            level = max(len(heading.group(1)), _ENTRY_LEVEL)
             if out and out[-1].strip():
                 out.append("")
-            out.append(f"**{heading.group(1).strip()}**")
+            out.append(f"{'#' * level} {heading.group(2).strip()}")
             out.append("")
         else:
             out.append(line)
