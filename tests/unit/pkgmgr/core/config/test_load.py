@@ -242,9 +242,7 @@ class LoadConfigIntegrationUnitTests(unittest.TestCase):
             # Provide package defaults via fake pkgmgr + pkg_root/config
             root = Path(td) / "site-packages"
             pkg_root = root / "pkgmgr"
-            cfg_dir = (
-                root / "config"
-            )  # NOTE: load.py checks multiple roots, including pkg_root.parent (=site-packages)
+            cfg_dir = pkg_root / "config"
             pkg_root.mkdir(parents=True)
             cfg_dir.mkdir(parents=True)
 

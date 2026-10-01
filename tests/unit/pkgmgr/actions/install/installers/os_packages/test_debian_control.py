@@ -72,6 +72,8 @@ class TestDebianControlInstaller(unittest.TestCase):
                 return "/usr/bin/dpkg-buildpackage"
             if name == "apt-get":
                 return "/usr/bin/apt-get"
+            if name == "sudo":
+                return "/usr/bin/sudo"
             return None
 
         mock_which.side_effect = which_side_effect
