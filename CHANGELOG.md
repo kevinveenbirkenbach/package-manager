@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.0.2] - 2026-10-01
+
+Fixes a release flow that could reject every entry written for it.
+
+### Fixed
+
+- A heading in a changelog message became bold, which markdown-lint reads
+  back as a heading and refuses with MD036
+- Since the editor reopens on failure, no structured entry could ever pass
+- Headings now move below the release heading they are filed under
+- The lint findings reached nobody: the editor took over the terminal in the
+  same breath they were printed
+- They are held until Enter and repeated inside the editor, above the text
+- The Makefile installer accepted install-* as proof of an install target but
+  always ran plain make install
+- A repository with install-python and no install died on "No rule to make
+  target" instead of being skipped
+
+### Tests
+
+- transform and lint were covered separately, so a transform producing lint
+  errors went unseen; one test now runs the first through the second
+- Three tests were checking behaviour the code had already left behind
+
+### Dependencies
+
+- docker/login-action 3.7.0 to 4.6.0, setup-buildx-action 3.12.0 to 4.4.0
+- actions/setup-python 5 to 7
+- DeterminateSystems nix-installer-action 16 to 23, update-flake-lock 24 to 29
+
+### Upgrading
+
+- Nothing to do; a changelog entry written with headings now keeps them
+
 ## [2.0.1] - 2026-09-18
 
 * A release no longer ends *CHANGELOG.md* on a blank line, which is MD012.
