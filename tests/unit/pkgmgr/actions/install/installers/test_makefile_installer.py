@@ -81,6 +81,19 @@ class TestMakefileInstaller(unittest.TestCase):
         )
         mock_run_command.assert_not_called()
 
+    @patch("pkgmgr.actions.install.installers.makefile.run_command")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data="install-python:\n\tpip install -r requirements.txt\n",
+    )
+    @patch("os.path.exists", return_value=True)
+    def test_run_skips_a_makefile_that_only_has_a_prefixed_target(
+        self, mock_exists, mock_file, mock_run_command
+    ):
+        self.installer.run(self.ctx)
+        mock_run_command.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

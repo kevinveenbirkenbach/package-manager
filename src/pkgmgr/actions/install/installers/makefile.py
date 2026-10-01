@@ -31,9 +31,7 @@ class MakefileInstaller(BaseInstaller):
         except OSError:
             return False
 
-        if re.search(r"^install\s*:", content, flags=re.MULTILINE):
-            return True
-        return bool(re.search(r"^install-[a-zA-Z0-9_-]*\s*:", content, flags=re.MULTILINE))
+        return bool(re.search(r"^install\s*:", content, flags=re.MULTILINE))
 
     def run(self, ctx: RepoContext) -> None:
         makefile_path = os.path.join(ctx.repo_dir, self.MAKEFILE_NAME)
