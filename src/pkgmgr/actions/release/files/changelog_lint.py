@@ -6,10 +6,13 @@ import re
 import shutil
 import subprocess
 import tempfile
+from collections import Counter
 
 _HEADING = re.compile(r"^\s*(#{1,6})\s+(.*?)\s*#*\s*$")
 _INLINE_CODE = re.compile(r"`([^`\n]+)`")
 _FINDING = re.compile(r"\bMD\d{3}\b")
+_LOCATION = re.compile(r"^.*?:\d+(?::\d+)?\s+")
+_NON_DASH_ITEM = re.compile(r"^\s*[*+]\s")
 _MULTI_BLANK = re.compile(r"\n{3,}")
 _ENTRY_LEVEL = 3
 
@@ -59,6 +62,35 @@ def lint_changelog_entry(reference_path: str, entry: str) -> list[str]:
     return _builtin_lint(document)
 
 
+def lint_changelog_context(reference_path: str, existing: str, merged: str) -> list[str]:
+    """Return the findings *merged* has beyond those *existing* already has.
+
+    Args:
+        reference_path: path of the target CHANGELOG.md; its directory supplies
+            the markdownlint config.
+        existing: the target file before the entry is inserted.
+        merged: the target file with the entry inserted.
+
+    Returns:
+        Findings of *merged* that *existing* does not produce. Empty when
+        ``markdownlint-cli2`` is unavailable.
+    """
+    if not shutil.which("markdownlint-cli2"):
+        return []
+    known = Counter(
+        _LOCATION.sub("", finding)
+        for finding in (_markdownlint(reference_path, existing) if existing.strip() else [])
+    )
+    new: list[str] = []
+    for finding in _markdownlint(reference_path, merged):
+        key = _LOCATION.sub("", finding)
+        if known[key]:
+            known[key] -= 1
+        else:
+            new.append(finding)
+    return new
+
+
 def _markdownlint(reference_path: str, document: str) -> list[str]:
     directory = os.path.dirname(os.path.abspath(reference_path)) or "."
     fd, tmp_path = tempfile.mkstemp(
@@ -69,7 +101,7 @@ def _markdownlint(reference_path: str, document: str) -> list[str]:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             handle.write(document)
         proc = subprocess.run(
-            ["markdownlint-cli2", name],
+            ["markdownlint-cli2", "--no-globs", name],
             cwd=directory,
             capture_output=True,
             text=True,
@@ -96,6 +128,8 @@ def _builtin_lint(document: str) -> list[str]:
             errors.append(f"line {number}: trailing whitespace (MD009)")
         if "`" in line:
             errors.append(f"line {number}: backtick is not allowed (use *italic*)")
+        if _NON_DASH_ITEM.match(line):
+            errors.append(f"line {number}: list items use '-' (MD004)")
     if "\n\n\n" in document:
         errors.append("multiple consecutive blank lines (MD012)")
     return errors

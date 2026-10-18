@@ -7,6 +7,7 @@ from datetime import date
 
 from .changelog_lint import (
     ChangelogLintError,
+    lint_changelog_context,
     lint_changelog_entry,
     transform_changelog_message,
 )
@@ -86,9 +87,22 @@ def update_changelog(
         except EOFError:
             print("[INFO] Re-opening the editor so you can fix the entry...")
 
+    changelog = ""
+    if os.path.exists(changelog_path):
+        try:
+            with open(changelog_path, encoding="utf-8") as f:
+                changelog = f.read()
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"[WARN] Could not read existing CHANGELOG.md: {exc}")
+
+    def _findings_for(entry: str) -> list[str]:
+        return lint_changelog_entry(changelog_path, entry) or lint_changelog_context(
+            changelog_path, changelog, _insert_after_h1(changelog, entry)
+        )
+
     if message is not None:
         body, entry = _entry_for(message)
-        findings = lint_changelog_entry(changelog_path, entry)
+        findings = _findings_for(entry)
         if findings:
             _print_findings(findings)
             raise ChangelogLintError(
@@ -106,21 +120,13 @@ def update_changelog(
             )
             raw = _open_editor_for_changelog(attempt, rejected)
             body, entry = _entry_for(raw or f"Release {new_version}")
-            findings = lint_changelog_entry(changelog_path, entry)
+            findings = _findings_for(entry)
             if not findings:
                 break
             _print_findings(findings)
             attempt = body
             rejected = findings
             _wait_for_reader()
-
-    changelog = ""
-    if os.path.exists(changelog_path):
-        try:
-            with open(changelog_path, encoding="utf-8") as f:
-                changelog = f.read()
-        except (OSError, UnicodeDecodeError) as exc:
-            print(f"[WARN] Could not read existing CHANGELOG.md: {exc}")
 
     new_changelog = _insert_after_h1(changelog, entry)
 

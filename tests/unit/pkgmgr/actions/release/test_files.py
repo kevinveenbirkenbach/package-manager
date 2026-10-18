@@ -313,13 +313,13 @@ class TestUpdateChangelog(unittest.TestCase):
     def test_update_changelog_does_not_inject_a_leading_bullet(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "CHANGELOG.md")
-            update_changelog(path, "1.2.3", message="* Provided bullet", preview=False)
+            update_changelog(path, "1.2.3", message="- Provided bullet", preview=False)
 
             with open(path, encoding="utf-8") as f:
                 content = f.read()
 
-        self.assertIn("\n\n* Provided bullet\n", content)
-        self.assertNotIn("* * Provided bullet", content)
+        self.assertIn("\n\n- Provided bullet\n", content)
+        self.assertNotIn("- - Provided bullet", content)
 
     def test_update_changelog_transforms_heading_and_inline_code(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -327,7 +327,7 @@ class TestUpdateChangelog(unittest.TestCase):
             update_changelog(
                 path,
                 "1.2.3",
-                message="# Summary\n\n* uses `foo` tool",
+                message="# Summary\n\n- uses `foo` tool",
                 preview=False,
             )
 
