@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.3] - 2026-10-18
+
+Fixed:
+
+- Release: the entry is linted inside the CHANGELOG.md it lands in
+- Release: a list marker that breaks the file's consistency is caught (MD004)
+- Release: findings the file already has are not blamed on the entry
+- Release: *--no-globs* keeps the target repo's other files out of the lint
+- Release: without markdownlint-cli2, list items must use dash bullets
+
+Upgrade notes:
+
+- Release: write list items with dash bullets when markdownlint-cli2 is absent
+
 ## [2.0.2] - 2026-10-01
 
 Fixes a release flow that could reject every entry written for it.

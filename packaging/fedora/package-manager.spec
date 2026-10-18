@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.0.2
+Version:        2.0.3
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,19 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sun Oct 18 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.3-1
+- Fixed:
+
+- - Release: the entry is linted inside the CHANGELOG.md it lands in
+- - Release: a list marker that breaks the file's consistency is caught (MD004)
+- - Release: findings the file already has are not blamed on the entry
+- - Release: *--no-globs* keeps the target repo's other files out of the lint
+- - Release: without markdownlint-cli2, list items must use dash bullets
+
+- Upgrade notes:
+
+- - Release: write list items with dash bullets when markdownlint-cli2 is absent
+
 * Thu Oct 01 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.2-1
 - Fixes a release flow that could reject every entry written for it.
 

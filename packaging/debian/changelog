@@ -1,3 +1,19 @@
+package-manager (2.0.3-1) unstable; urgency=medium
+
+  Fixed:
+
+  - Release: the entry is linted inside the CHANGELOG.md it lands in
+  - Release: a list marker that breaks the file's consistency is caught (MD004)
+  - Release: findings the file already has are not blamed on the entry
+  - Release: *--no-globs* keeps the target repo's other files out of the lint
+  - Release: without markdownlint-cli2, list items must use dash bullets
+
+  Upgrade notes:
+
+  - Release: write list items with dash bullets when markdownlint-cli2 is absent
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Sun, 18 Oct 2026 23:33:52 +0200
+
 package-manager (2.0.2-1) unstable; urgency=medium
 
   Fixes a release flow that could reject every entry written for it.
