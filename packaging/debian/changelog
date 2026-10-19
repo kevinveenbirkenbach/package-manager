@@ -1,3 +1,17 @@
+package-manager (2.0.4-1) unstable; urgency=medium
+
+  Fixed:
+
+  - CI: Python lint passes again on ruff 0.17 and still on 0.16
+  - CI: actions bumped: *actions/checkout* v7, *hadolint-action* 3.5.0
+
+  Upgrade notes:
+
+  - 2.0.3 was never marked *stable* nor published to GHCR: its CI failed
+  - Release: write list items with dash bullets when markdownlint-cli2 is absent
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Mon, 19 Oct 2026 10:06:02 +0200
+
 package-manager (2.0.3-1) unstable; urgency=medium
 
   Fixed:

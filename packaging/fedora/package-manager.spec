@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.0.3
+Version:        2.0.4
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,17 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Mon Oct 19 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.4-1
+- Fixed:
+
+- - CI: Python lint passes again on ruff 0.17 and still on 0.16
+- - CI: actions bumped: *actions/checkout* v7, *hadolint-action* 3.5.0
+
+- Upgrade notes:
+
+- - 2.0.3 was never marked *stable* nor published to GHCR: its CI failed
+- - Release: write list items with dash bullets when markdownlint-cli2 is absent
+
 * Sun Oct 18 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.3-1
 - Fixed:
 

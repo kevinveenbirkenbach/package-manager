@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.4] - 2026-10-19
+
+Fixed:
+
+- CI: Python lint passes again on ruff 0.17 and still on 0.16
+- CI: actions bumped: *actions/checkout* v7, *hadolint-action* 3.5.0
+
+Upgrade notes:
+
+- 2.0.3 was never marked *stable* nor published to GHCR: its CI failed
+- Release: write list items with dash bullets when markdownlint-cli2 is absent
+
 ## [2.0.3] - 2026-10-18
 
 Fixed:
