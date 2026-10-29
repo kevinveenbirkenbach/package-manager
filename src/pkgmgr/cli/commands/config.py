@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -14,7 +15,6 @@ from pkgmgr.actions.config.add import interactive_add
 from pkgmgr.actions.config.init import config_init
 from pkgmgr.actions.config.show import show_config
 from pkgmgr.cli.context import CLIContext
-from pkgmgr.core.command.run import run_command
 from pkgmgr.core.config.save import save_user_config
 from pkgmgr.core.repository.resolve import resolve_repos
 
@@ -108,7 +108,9 @@ def handle_config(args, ctx: CLIContext) -> None:
         return
 
     if args.subcommand == "edit":
-        run_command(f"nano {user_config_path}")
+        returncode = subprocess.call(["nano", os.path.expanduser(user_config_path)])
+        if returncode != 0:
+            sys.exit(returncode)
         return
 
     if args.subcommand == "init":
