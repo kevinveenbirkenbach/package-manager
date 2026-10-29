@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.5] - 2026-10-29
+
+Fixed:
+
+- Config: *pkgmgr config edit* opens nano instead of aborting without a TTY
+- Config: *pkgmgr config edit* exits with the editor's code when it fails
+
 ## [2.0.4] - 2026-10-19
 
 Fixed:

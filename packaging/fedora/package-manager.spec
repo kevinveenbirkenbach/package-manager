@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.0.4
+Version:        2.0.5
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,12 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Thu Oct 29 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.5-1
+- Fixed:
+
+- - Config: *pkgmgr config edit* opens nano instead of aborting without a TTY
+- - Config: *pkgmgr config edit* exits with the editor's code when it fails
+
 * Mon Oct 19 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.4-1
 - Fixed:
 
