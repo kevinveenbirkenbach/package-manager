@@ -232,3 +232,40 @@ def read_ansible_galaxy_version(repo_dir: str) -> str | None:
             return None
 
     return None
+
+
+def read_cargo_version(repo_dir: str) -> str | None:
+    """
+    Read [package].version from Cargo.toml in repo_dir, if present.
+    """
+    path = os.path.join(repo_dir, "Cargo.toml")
+    if not os.path.isfile(path):
+        return None
+
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib  # type: ignore
+
+    try:
+        with open(path, "rb") as f:
+            version = (tomllib.load(f).get("package") or {}).get("version")
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
+        return None
+    return version.strip() if isinstance(version, str) and version.strip() else None
+
+
+def read_changelog_version(repo_dir: str) -> str | None:
+    """
+    Read the newest release from CHANGELOG.md ("## [X.Y.Z] - date").
+    """
+    path = os.path.join(repo_dir, "CHANGELOG.md")
+    if not os.path.isfile(path):
+        return None
+
+    try:
+        with open(path, encoding="utf-8") as f:
+            match = re.search(r"(?m)^##\s+\[(v?\d+\.\d+\.\d+)\]", f.read())
+    except (OSError, UnicodeDecodeError):
+        return None
+    return match.group(1).strip() if match else None

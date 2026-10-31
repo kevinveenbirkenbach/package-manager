@@ -49,7 +49,8 @@ def _release_impl(
     # Pull BEFORE making any modifications
     ensure_clean_and_synced(preview=preview)
 
-    current_ver = determine_current_version()
+    repo_root = os.path.dirname(os.path.abspath(pyproject_path))
+    current_ver = determine_current_version(repo_root)
     new_ver = bump_semver(current_ver, release_type)
     new_ver_str = str(new_ver)
     new_tag = new_ver.to_tag(with_prefix=True)
@@ -59,7 +60,6 @@ def _release_impl(
     print(f"Current version: {current_ver}")
     print(f"New version:     {new_ver_str} ({release_type})")
 
-    repo_root = os.path.dirname(os.path.abspath(pyproject_path))
     paths = resolve_repo_paths(repo_root)
 
     # --- Update versioned files ------------------------------------------------
