@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.1.0
+Version:        2.1.1
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,17 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sat Oct 31 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.1.1-1
+- Fixed:
+
+- - Release: tool-only or dynamic-version pyproject.toml is skipped, no crash
+
+- Upgrade notes:
+
+- - Container: no 2.1.0 image reached GHCR; the two notes below carry over
+- - Release: a version file ahead of the newest tag now raises the next version
+- - Branch: *gc --apply* and *purge* refuse to run inside a PID sandbox
+
 * Sat Oct 31 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.1.0-1
 - Added:
 
