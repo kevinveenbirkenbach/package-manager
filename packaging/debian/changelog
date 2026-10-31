@@ -1,3 +1,23 @@
+package-manager (2.1.0-1) unstable; urgency=medium
+
+  Added:
+
+  - Branch: *pkgmgr branch gc* removes merged clean branches, worktrees, stacks
+  - Branch: *gc* only prints its plan; *--apply* acts, *--json* for scripts
+  - Branch: *pkgmgr branch purge* deletes unmerged or dirty items after y/N
+  - Release: Cargo.toml version and its Cargo.lock entry follow the release
+
+  Changed:
+
+  - Release: starts from the highest version in the tag and all version files
+
+  Upgrade notes:
+
+  - Release: a version file ahead of the newest tag now raises the next version
+  - Branch: *gc --apply* and *purge* refuse to run inside a PID sandbox
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Sat, 31 Oct 2026 14:38:54 +0100
+
 package-manager (2.0.5-1) unstable; urgency=medium
 
   Fixed:

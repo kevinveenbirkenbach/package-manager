@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.0.5
+Version:        2.1.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,23 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sat Oct 31 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.1.0-1
+- Added:
+
+- - Branch: *pkgmgr branch gc* removes merged clean branches, worktrees, stacks
+- - Branch: *gc* only prints its plan; *--apply* acts, *--json* for scripts
+- - Branch: *pkgmgr branch purge* deletes unmerged or dirty items after y/N
+- - Release: Cargo.toml version and its Cargo.lock entry follow the release
+
+- Changed:
+
+- - Release: starts from the highest version in the tag and all version files
+
+- Upgrade notes:
+
+- - Release: a version file ahead of the newest tag now raises the next version
+- - Branch: *gc --apply* and *purge* refuse to run inside a PID sandbox
+
 * Thu Oct 29 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.0.5-1
 - Fixed:
 
