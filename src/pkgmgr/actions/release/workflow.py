@@ -10,6 +10,7 @@ from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.repository.paths import resolve_repo_paths
 
 from .files import (
+    update_cargo_version,
     update_changelog,
     update_debian_changelog,
     update_flake_version,
@@ -74,6 +75,8 @@ def _release_impl(
 
     update_flake_version(paths.flake_nix, new_ver_str, preview=preview)
 
+    cargo_files = update_cargo_version(repo_root, new_ver_str, preview=preview)
+
     if paths.arch_pkgbuild:
         update_pkgbuild_version(paths.arch_pkgbuild, new_ver_str, preview=preview)
     else:
@@ -124,6 +127,7 @@ def _release_impl(
         paths.arch_pkgbuild,
         paths.rpm_spec,
         paths.debian_changelog,
+        *cargo_files,
     ]
     existing_files = [
         p for p in files_to_add if isinstance(p, str) and p and os.path.exists(p)
