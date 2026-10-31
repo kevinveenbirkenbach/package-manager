@@ -96,3 +96,47 @@ def add_branch_subparsers(
         action="store_true",
         help="Skip confirmation prompt and drop the branch directly",
     )
+
+    branch_gc = branch_subparsers.add_parser(
+        "gc",
+        help=(
+            "Remove merged and clean branches with their worktrees and compose "
+            "stacks (dry-run unless --apply)"
+        ),
+    )
+    branch_gc.add_argument(
+        "--apply",
+        action="store_true",
+        help="Execute the plan instead of only printing it",
+    )
+    branch_gc.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the plan as JSON",
+    )
+
+    branch_purge = branch_subparsers.add_parser(
+        "purge",
+        help="Delete unmerged or dirty branches after a confirmation per item",
+    )
+
+    for sub in (branch_gc, branch_purge):
+        sub.add_argument(
+            "--all",
+            action="store_true",
+            help="Scan every pkgmgr-managed repository instead of the current one",
+        )
+        sub.add_argument(
+            "--branch",
+            action="append",
+            default=[],
+            metavar="NAME",
+            help="Only this branch (or worktree path); repeatable",
+        )
+        sub.add_argument(
+            "--exclude",
+            action="append",
+            default=[],
+            metavar="NAME",
+            help="Skip this branch (or worktree path); repeatable",
+        )
