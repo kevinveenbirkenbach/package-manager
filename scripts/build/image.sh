@@ -18,6 +18,8 @@ OWNER=""             # e.g. github org/user
 REPO_PREFIX="pkgmgr" # image base name (pkgmgr)
 VERSION=""           # X.Y.Z (required for --publish)
 IS_STABLE="false"    # "true" -> publish stable tags
+PLATFORM=""          # e.g. linux/arm64 -> build and push only this platform
+MERGE=0              # if 1 -> join the per-platform tags of --version under the publish tags
 DEFAULT_DISTRO="arch"
 
 usage() {
@@ -39,9 +41,12 @@ Publish options:
   --repo-prefix <name>  Image base name (default: pkgmgr)
   --version <X.Y.Z>     Version for --publish
   --stable <true|false> Whether to publish :stable tags (default: false)
+  --platform <os/arch>  Build and push only this platform; with --publish as <version>-<arch>
+  --merge               Join the <version>-<arch> tags of all platforms under the publish tags
 
 Notes:
 - --publish implies --push and requires --registry, --owner, and --version.
+- --platform requires --push; --merge requires --publish and builds nothing.
 - Local build (no --push) uses "docker build" and creates a local image like "pkgmgr-arch".
 EOF
 }
@@ -82,6 +87,12 @@ while [[ $# -gt 0 ]]; do
       [[ -n "${IS_STABLE}" ]] || { echo "ERROR: --stable requires a value (true|false)"; exit 2; }
       shift 2
       ;;
+    --platform)
+      PLATFORM="${2:-}"
+      [[ -n "${PLATFORM}" ]] || { echo "ERROR: --platform requires a value"; exit 2; }
+      shift 2
+      ;;
+    --merge) MERGE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *)
       echo "ERROR: Unknown argument: $1" >&2
@@ -117,6 +128,19 @@ if [[ "${PUBLISH}" == "1" ]]; then
   [[ -n "${VERSION}" ]]  || { echo "ERROR: --publish requires --version"; exit 2; }
 fi
 
+if [[ -n "${PLATFORM}" ]]; then
+  [[ "${PUSH}" == "1" ]] || { echo "ERROR: --platform requires --push or --publish"; exit 2; }
+  [[ ",$(resolve_platforms "$PKGMGR_DISTRO")," == *",${PLATFORM},"* ]] \
+    || { echo "ERROR: ${PKGMGR_DISTRO} offers no platform ${PLATFORM}"; exit 2; }
+fi
+
+if [[ "${MERGE}" == "1" ]]; then
+  [[ "${PUBLISH}" == "1" ]] || { echo "ERROR: --merge requires --publish"; exit 2; }
+  [[ -z "${PLATFORM}" ]]    || { echo "ERROR: --merge and --platform exclude each other"; exit 2; }
+fi
+
+DISTRO_TAG_BASE="${REGISTRY}/${OWNER}/${REPO_PREFIX}-${PKGMGR_DISTRO}"
+
 # Guard: --push without --publish requires fully-qualified --tag
 if [[ "${PUSH}" == "1" && "${PUBLISH}" != "1" ]]; then
   if [[ "${IMAGE_TAG}" != */* ]]; then
@@ -130,7 +154,7 @@ echo "------------------------------------------------------------"
 echo "[build] Building image"
 echo "distro     = ${PKGMGR_DISTRO}"
 echo "BASE_IMAGE = ${BASE_IMAGE}"
-echo "platforms = $(resolve_platforms "$PKGMGR_DISTRO")"
+echo "platforms = ${PLATFORM:-$(resolve_platforms "$PKGMGR_DISTRO")}"
 if [[ "${NO_CACHE}" == "1" ]]; then echo "cache     = disabled"; fi
 if [[ "${PUSH}" == "1" ]]; then echo "push      = enabled"; fi
 if [[ "${PUBLISH}" == "1" ]]; then
@@ -150,7 +174,7 @@ if [[ "${NO_CACHE}" == "1" ]]; then
 fi
 
 compute_publish_tags() {
-  local distro_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}-${PKGMGR_DISTRO}"
+  local distro_tag_base="${DISTRO_TAG_BASE}"
   local alias_tag_base=""
 
   if [[ "${PKGMGR_DISTRO}" == "${DEFAULT_DISTRO}" ]]; then
@@ -176,10 +200,26 @@ compute_publish_tags() {
   printf '%s\n' "${tags[@]}"
 }
 
-if [[ "${PUSH}" == "1" ]]; then
+if [[ "${MERGE}" == "1" ]]; then
+  merge_args=(docker buildx imagetools create)
+  while IFS= read -r t; do
+    merge_args+=(-t "$t")
+  done < <(compute_publish_tags)
+
+  IFS=',' read -ra platforms <<< "$(resolve_platforms "$PKGMGR_DISTRO")"
+  for p in "${platforms[@]}"; do
+    merge_args+=("${DISTRO_TAG_BASE}:${VERSION}-${p#*/}")
+  done
+
+  echo "[build] Running: ${merge_args[*]}"
+  "${merge_args[@]}"
+  docker buildx imagetools inspect "${DISTRO_TAG_BASE}:${VERSION}"
+elif [[ "${PUSH}" == "1" ]]; then
   bx_args=(docker buildx build --push)
 
-  if [[ "${PUBLISH}" == "1" ]]; then
+  if [[ "${PUBLISH}" == "1" && -n "${PLATFORM}" ]]; then
+    bx_args+=(-t "${DISTRO_TAG_BASE}:${VERSION}-${PLATFORM#*/}")
+  elif [[ "${PUBLISH}" == "1" ]]; then
     while IFS= read -r t; do
       bx_args+=(-t "$t")
     done < <(compute_publish_tags)
@@ -187,7 +227,7 @@ if [[ "${PUSH}" == "1" ]]; then
     bx_args+=(-t "${IMAGE_TAG}")
   fi
 
-  bx_args+=(--platform "$(resolve_platforms "$PKGMGR_DISTRO")")
+  bx_args+=(--platform "${PLATFORM:-$(resolve_platforms "$PKGMGR_DISTRO")}")
   bx_args+=("${build_args[@]}")
   bx_args+=(.)
 

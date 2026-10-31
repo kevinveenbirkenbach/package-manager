@@ -14,6 +14,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# shellcheck source=./scripts/build/base.sh
+source "${SCRIPT_DIR}/base.sh"
+
 REGISTRY="${REGISTRY:-ghcr.io}"
 IS_STABLE="${IS_STABLE:-false}"
 DISTROS="${DISTROS:-arch debian ubuntu fedora centos}"
@@ -33,12 +36,23 @@ for d in ${DISTROS}; do
   echo "[publish] PKGMGR_DISTRO=${d}"
   echo "============================================================"
 
+  IFS=',' read -ra platforms <<< "$(resolve_platforms "${d}")"
+  for p in "${platforms[@]}"; do
+    PKGMGR_DISTRO="${d}" bash "${SCRIPT_DIR}/image.sh" \
+      --publish \
+      --registry "${REGISTRY}" \
+      --owner "${OWNER}" \
+      --version "${VERSION}" \
+      --platform "${p}"
+  done
+
   PKGMGR_DISTRO="${d}" bash "${SCRIPT_DIR}/image.sh" \
     --publish \
     --registry "${REGISTRY}" \
     --owner "${OWNER}" \
     --version "${VERSION}" \
-    --stable "${IS_STABLE}"
+    --stable "${IS_STABLE}" \
+    --merge
 done
 
 echo
