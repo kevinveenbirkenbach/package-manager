@@ -8,8 +8,9 @@ from typing import Any
 from pkgmgr.actions.proxy import exec_proxy_command
 from pkgmgr.actions.repository.clone import clone_repos
 from pkgmgr.actions.repository.pull import pull_with_verification
-from pkgmgr.actions.repository.push import push_in_parallel
+from pkgmgr.actions.repository.push import push_in_parallel, push_repo_dirs
 from pkgmgr.cli.context import CLIContext
+from pkgmgr.core.git import GitRunError, run
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.selected import get_selected_repos
 
@@ -185,6 +186,16 @@ def register_proxy_commands(
                         "(default: min(cpu_count, 8)). Use 1 for sequential."
                     ),
                 )
+            if subcommand == "push":
+                parser.add_argument(
+                    "--rewrite",
+                    action="store_true",
+                    default=False,
+                    help=(
+                        "Deliberate history rewrite: replace commits the remote "
+                        "already has (amend, squash, drop); leases still apply."
+                    ),
+                )
             if subcommand == "clone":
                 parser.add_argument(
                     "--clone-mode",
@@ -208,6 +219,21 @@ def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
 
     if args.command not in all_proxy_subcommands:
         return False
+
+    if args.command == "push" and not _proxy_has_explicit_selection(args):
+        try:
+            toplevel = run(["rev-parse", "--show-toplevel"])
+        except GitRunError:
+            print("[ERROR] Current directory is not inside a git checkout.")
+            sys.exit(1)
+        push_repo_dirs(
+            [(toplevel, toplevel)],
+            args.extra_args,
+            args.preview,
+            jobs=args.jobs,
+            rewrite=args.rewrite,
+        )
+        sys.exit(0)
 
     # Default semantics: without explicit selection → repo of current folder.
     if _proxy_has_explicit_selection(args):
@@ -252,6 +278,7 @@ def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
                 args.extra_args,
                 args.preview,
                 jobs=args.jobs,
+                rewrite=args.rewrite,
             )
         else:
             exec_proxy_command(

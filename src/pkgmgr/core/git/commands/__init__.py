@@ -19,7 +19,6 @@ from .pull import GitPullError, pull
 from .pull_args import GitPullArgsError, pull_args
 from .pull_ff_only import GitPullFfOnlyError, pull_ff_only
 from .push import GitPushError, push
-from .push_args import GitPushArgsError, push_args
 from .push_upstream import GitPushUpstreamError, push_upstream
 from .set_remote_url import GitSetRemoteUrlError, set_remote_url
 from .tag_annotated import GitTagAnnotatedError, tag_annotated
@@ -43,7 +42,6 @@ __all__ = [
     "GitPullArgsError",
     "GitPullError",
     "GitPullFfOnlyError",
-    "GitPushArgsError",
     "GitPushError",
     "GitPushUpstreamError",
     "GitSetRemoteUrlError",
@@ -67,7 +65,6 @@ __all__ = [
     "pull_args",
     "pull_ff_only",
     "push",
-    "push_args",
     "push_upstream",
     "set_remote_url",
     "tag_annotated",

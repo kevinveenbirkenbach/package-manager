@@ -65,7 +65,7 @@ class TestReleaseRetry(unittest.TestCase):
 class TestRetryRelease(unittest.TestCase):
     @patch("pkgmgr.actions.release.retry.update_latest_tag")
     @patch("pkgmgr.actions.release.retry.is_highest_version_tag", return_value=True)
-    @patch("pkgmgr.actions.release.retry.run")
+    @patch("pkgmgr.actions.release.retry.push_branch")
     @patch("pkgmgr.actions.release.retry.head_semver_tags")
     @patch(
         "pkgmgr.actions.release.retry.get_current_branch",
@@ -75,7 +75,7 @@ class TestRetryRelease(unittest.TestCase):
         self,
         _mock_branch,
         mock_head_tags,
-        mock_run,
+        mock_push,
         _mock_highest,
         mock_update_latest,
     ) -> None:
@@ -83,14 +83,12 @@ class TestRetryRelease(unittest.TestCase):
 
         retry_release(pyproject_path="pyproject.toml", preview=False)
 
-        mock_run.assert_called_once_with(
-            ["push", "origin", "release-fix", "v1.13.4"], preview=False
-        )
+        mock_push.assert_called_once_with(".", [], refs=("v1.13.4",), preview=False)
         mock_update_latest.assert_called_once_with("v1.13.4", preview=False)
 
     @patch("pkgmgr.actions.release.retry.update_latest_tag")
     @patch("pkgmgr.actions.release.retry.is_highest_version_tag", return_value=False)
-    @patch("pkgmgr.actions.release.retry.run")
+    @patch("pkgmgr.actions.release.retry.push_branch")
     @patch("pkgmgr.actions.release.retry.head_semver_tags")
     @patch(
         "pkgmgr.actions.release.retry.get_current_branch",
@@ -100,7 +98,7 @@ class TestRetryRelease(unittest.TestCase):
         self,
         _mock_branch,
         mock_head_tags,
-        _mock_run,
+        _mock_push,
         _mock_highest,
         mock_update_latest,
     ) -> None:
@@ -127,7 +125,7 @@ class TestRetryRelease(unittest.TestCase):
 
     @patch("pkgmgr.actions.release.retry.update_latest_tag")
     @patch("pkgmgr.actions.release.retry.is_highest_version_tag", return_value=True)
-    @patch("pkgmgr.actions.release.retry.run")
+    @patch("pkgmgr.actions.release.retry.push_branch")
     @patch("pkgmgr.actions.release.retry.head_semver_tags")
     @patch(
         "pkgmgr.actions.release.retry.get_current_branch",
@@ -137,7 +135,7 @@ class TestRetryRelease(unittest.TestCase):
         self,
         _mock_branch,
         mock_head_tags,
-        mock_run,
+        mock_push,
         _mock_highest,
         _mock_update_latest,
     ) -> None:
@@ -145,9 +143,7 @@ class TestRetryRelease(unittest.TestCase):
 
         retry_release(pyproject_path="pyproject.toml", preview=False)
 
-        mock_run.assert_called_once_with(
-            ["push", "origin", "main", "v2.0.0"], preview=False
-        )
+        mock_push.assert_called_once_with(".", [], refs=("v2.0.0",), preview=False)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ the side effects downstream are incomplete.
 `retry_release` re-runs the idempotent tail of that flow so a botched
 release can be re-pushed without touching code or recreating tags:
 
-  * `git push origin <branch> <tag>` for the existing HEAD tag
+  * push the branch and the existing HEAD tag through `pkgmgr push`'s leases
   * re-align the floating `latest` tag if HEAD tag is the highest
 
 Publishing (PyPI etc.) stays the caller's responsibility — the publish
@@ -23,7 +23,8 @@ from __future__ import annotations
 import os
 
 from pkgmgr.actions.publish.git_tags import head_semver_tags
-from pkgmgr.core.git import GitRunError, run
+from pkgmgr.actions.repository.push import push_branch
+from pkgmgr.core.git import GitRunError
 from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.version.semver import SemVer
 
@@ -50,7 +51,7 @@ def retry_release(
     tag = max(tags, key=SemVer.parse)
     print(f"Re-pushing existing tag: {tag}")
 
-    run(["push", "origin", branch, tag], preview=preview)
+    push_branch(".", [], refs=(tag,), preview=preview)
 
     try:
         if is_highest_version_tag(tag):

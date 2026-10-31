@@ -4,7 +4,8 @@ import os
 import sys
 
 from pkgmgr.actions.branch import close_branch
-from pkgmgr.core.git import GitRunError, run
+from pkgmgr.actions.repository.push import push_branch, sign_unpushed
+from pkgmgr.core.git import GitRunError
 from pkgmgr.core.git.commands import add, commit, tag_annotated
 from pkgmgr.core.git.queries import get_current_branch
 from pkgmgr.core.repository.paths import resolve_repo_paths
@@ -136,8 +137,9 @@ def _release_impl(
     if preview:
         add(existing_files, preview=True)
         commit(commit_msg, all=True, preview=True)
+        sign_unpushed(".", preview=True)
         tag_annotated(new_tag, tag_msg, preview=True)
-        run(["push", "origin", branch, new_tag], preview=True)
+        push_branch(".", [], refs=(new_tag,), preview=True)
 
         if is_highest_version_tag(new_tag):
             update_latest_tag(new_tag, preview=True)
@@ -157,10 +159,10 @@ def _release_impl(
 
     add(existing_files, preview=False)
     commit(commit_msg, all=True, preview=False)
+    sign_unpushed(".", preview=False)
     tag_annotated(new_tag, tag_msg, preview=False)
 
-    # Push branch and ONLY the newly created version tag in one command (no --tags)
-    run(["push", "origin", branch, new_tag], preview=False)
+    push_branch(".", [], refs=(new_tag,), preview=False)
 
     # Update 'latest' only if this is the highest version tag
     try:
