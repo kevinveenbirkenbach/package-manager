@@ -3,6 +3,11 @@ from __future__ import annotations
 import os
 import re
 
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib  # type: ignore
+
 
 def update_pyproject_version(
     pyproject_path: str, new_version: str, preview: bool = False
@@ -16,6 +21,11 @@ def update_pyproject_version(
             content = f.read()
     except OSError as exc:
         print(f"[WARN] Could not read pyproject.toml: {exc}")
+        return
+
+    project = tomllib.loads(content).get("project")
+    if project is None or "version" in project.get("dynamic", []):
+        print("[INFO] pyproject.toml declares no static version, skipping.")
         return
 
     m = re.search(r"(?ms)^\s*\[project\]\s*$.*?(?=^\s*\[|\Z)", content)

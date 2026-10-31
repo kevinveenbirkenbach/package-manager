@@ -88,12 +88,15 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
 
         self.assertIn("Missing version key", str(cm.exception))
 
-    def test_update_pyproject_version_raises_when_project_section_missing(self) -> None:
+    def test_update_pyproject_version_skips_tool_only_pyproject(self) -> None:
         original = (
             textwrap.dedent(
                 """
-                name = "example"
-                version = "0.1.0"
+                [dependency-groups]
+                lint = ["ruff==0.17.3"]
+
+                [tool.ruff]
+                line-length = 88
                 """
             ).strip()
             + "\n"
@@ -104,10 +107,38 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
             with open(path, "w", encoding="utf-8") as f:
                 f.write(original)
 
-            with self.assertRaises(RuntimeError) as cm:
-                update_pyproject_version(path, "1.2.3", preview=False)
+            update_pyproject_version(path, "1.2.3", preview=False)
 
-        self.assertIn("Missing [project] section", str(cm.exception))
+            with open(path, encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertEqual(content, original)
+
+    def test_update_pyproject_version_skips_dynamic_version(self) -> None:
+        original = (
+            textwrap.dedent(
+                """
+                [project]
+                name = "example"
+                dynamic = [
+                  "version",
+                ]
+                """
+            ).strip()
+            + "\n"
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "pyproject.toml")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(original)
+
+            update_pyproject_version(path, "1.2.3", preview=False)
+
+            with open(path, encoding="utf-8") as f:
+                content = f.read()
+
+        self.assertEqual(content, original)
 
     def test_update_pyproject_version_missing_file_is_skipped(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
