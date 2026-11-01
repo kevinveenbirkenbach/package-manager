@@ -80,8 +80,26 @@ class TestPushMirrorLeases(unittest.TestCase):
     def _push(self, rewrite: bool = False) -> str:
         with redirect_stdout(io.StringIO()) as out:
             sign_unpushed(self.repo)
-            push_branch(self.repo, [], rewrite=rewrite)
+            push_branch(self.repo, [], sign=True, rewrite=rewrite)
         return out.getvalue()
+
+    def _cli_push(self, cwd: str, *argv: str) -> None:
+        ctx = CLIContext(
+            config_merged={},
+            repositories_base_dir=os.path.join(self.root, "base"),
+            all_repositories=[],
+            binaries_dir=os.path.join(self.root, "bin"),
+            user_config_path=os.path.join(self.root, "config.yaml"),
+        )
+        args = create_parser("pkgmgr").parse_args(["push", "-j", "1", *argv])
+        prev = os.getcwd()
+        os.chdir(cwd)
+        self.addCleanup(os.chdir, prev)
+
+        with redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as cm:
+            maybe_handle_proxy(args, ctx)
+
+        self.assertEqual(cm.exception.code, 0)
 
     def _tip(self, bare: str, ref: str = "refs/heads/main") -> str:
         return subprocess.run(
@@ -164,22 +182,9 @@ class TestPushMirrorLeases(unittest.TestCase):
         worktree = os.path.join(self.root, "wt")
         git(self.repo, "worktree", "add", "-q", "-b", "feature", worktree)
         head_before = self._commit("feature", worktree)
-        ctx = CLIContext(
-            config_merged={},
-            repositories_base_dir=os.path.join(self.root, "base"),
-            all_repositories=[],
-            binaries_dir=os.path.join(self.root, "bin"),
-            user_config_path=os.path.join(self.root, "config.yaml"),
-        )
-        args = create_parser("pkgmgr").parse_args(["push", "-j", "1"])
-        cwd = os.getcwd()
-        os.chdir(worktree)
-        self.addCleanup(os.chdir, cwd)
 
-        with redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as cm:
-            maybe_handle_proxy(args, ctx)
+        self._cli_push(worktree)
 
-        self.assertEqual(cm.exception.code, 0)
         head = git(worktree, "rev-parse", "HEAD")
         self.assertNotEqual(head, head_before)
         self.assertEqual(self._tip(self.canonical, "refs/heads/feature"), head)
@@ -187,6 +192,16 @@ class TestPushMirrorLeases(unittest.TestCase):
         self.assertEqual(
             git(worktree, "rev-parse", "--abbrev-ref", "@{u}"), "origin/feature"
         )
+
+    def test_no_sign_pushes_unsigned_commits_to_every_url(self) -> None:
+        unsigned = self._commit("feature")
+
+        self._cli_push(self.repo, "--no-sign")
+
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD"), unsigned)
+        self.assertEqual(self._tip(self.canonical), unsigned)
+        self.assertEqual(self._tip(self.mirror), unsigned)
+        self.assertEqual(git(self.repo, "log", "-1", "--format=%G?"), "N")
 
     def test_release_retry_refuses_unsigned_range(self) -> None:
         self._commit("release")

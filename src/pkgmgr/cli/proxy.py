@@ -196,6 +196,15 @@ def register_proxy_commands(
                         "already has (amend, squash, drop); leases still apply."
                     ),
                 )
+                parser.add_argument(
+                    "--no-sign",
+                    action="store_true",
+                    default=False,
+                    help=(
+                        "Push unsigned commits as they are instead of re-signing "
+                        "them; leases still apply."
+                    ),
+                )
             if subcommand == "clone":
                 parser.add_argument(
                     "--clone-mode",
@@ -230,6 +239,7 @@ def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
             [(toplevel, toplevel)],
             args.extra_args,
             args.preview,
+            not args.no_sign,
             jobs=args.jobs,
             rewrite=args.rewrite,
         )
@@ -277,6 +287,7 @@ def maybe_handle_proxy(args: argparse.Namespace, ctx: CLIContext) -> bool:
                 ctx.all_repositories,
                 args.extra_args,
                 args.preview,
+                not args.no_sign,
                 jobs=args.jobs,
                 rewrite=args.rewrite,
             )

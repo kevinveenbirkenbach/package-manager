@@ -129,6 +129,7 @@ def push_branch(
     repo_dir: str,
     extra_args: list[str],
     *,
+    sign: bool,
     refs: tuple[str, ...] = (),
     rewrite: bool = False,
     preview: bool = False,
@@ -144,18 +145,20 @@ def push_branch(
     Args:
       repo_dir: checkout whose current branch is pushed.
       extra_args: flags appended to every `git push`.
+      sign: refuse unsigned commits in the push range; False pushes them as they are.
       refs: extra refs (e.g. a release tag) pushed to every URL.
       rewrite: replace commits of the old canonical tip; the fetch URL skips
         the cherry check, mirrors only refuse commits the old tip never had.
       preview: print the pushes instead of running them.
     """
     branch, remote = _push_target(repo_dir)
-    _base, signatures = _unpushed_signatures(repo_dir, remote)
-    if not preview and any(s != "G" for s in signatures):
-        raise PushRefusedError(
-            f"{repo_dir}: {sum(s != 'G' for s in signatures)} unsigned commit(s) "
-            "in the push range; run `pkgmgr push` to sign them"
-        )
+    if sign:
+        _base, signatures = _unpushed_signatures(repo_dir, remote)
+        if not preview and any(s != "G" for s in signatures):
+            raise PushRefusedError(
+                f"{repo_dir}: {sum(s != 'G' for s in signatures)} unsigned commit(s) "
+                "in the push range; run `pkgmgr push` to sign them"
+            )
 
     head = run(["rev-parse", "HEAD"], cwd=repo_dir)
     fetch_url = run(["remote", "get-url", remote], cwd=repo_dir)
@@ -216,11 +219,12 @@ def push_branch(
 
 
 def _push_one(
-    repo_dir: str, extra_args: list[str], rewrite: bool, preview: bool
+    repo_dir: str, extra_args: list[str], sign: bool, rewrite: bool, preview: bool
 ) -> tuple[bool, str]:
     try:
-        sign_unpushed(repo_dir, preview=preview)
-        push_branch(repo_dir, extra_args, rewrite=rewrite, preview=preview)
+        if sign:
+            sign_unpushed(repo_dir, preview=preview)
+        push_branch(repo_dir, extra_args, sign=sign, rewrite=rewrite, preview=preview)
         return (True, "")
     except (GitRunError, PushRefusedError) as exc:
         return (False, str(exc))
@@ -230,6 +234,7 @@ def push_repo_dirs(
     repos: list[RepoRef],
     extra_args: list[str],
     preview: bool,
+    sign: bool,
     jobs: int = 1,
     rewrite: bool = False,
 ) -> None:
@@ -238,7 +243,7 @@ def push_repo_dirs(
     """
     run_on_repos(
         repos,
-        lambda rd: _push_one(rd, extra_args, rewrite, preview),
+        lambda rd: _push_one(rd, extra_args, sign, rewrite, preview),
         jobs=jobs,
         op_name="push",
     )
@@ -250,6 +255,7 @@ def push_in_parallel(
     all_repos: list[Repository],
     extra_args: list[str],
     preview: bool,
+    sign: bool,
     jobs: int = 1,
     rewrite: bool = False,
 ) -> None:
@@ -260,6 +266,7 @@ def push_in_parallel(
         resolve_repos(selected_repos, repositories_base_dir, all_repos),
         extra_args,
         preview,
+        sign,
         jobs=jobs,
         rewrite=rewrite,
     )

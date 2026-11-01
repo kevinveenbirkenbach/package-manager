@@ -83,7 +83,9 @@ class TestRetryRelease(unittest.TestCase):
 
         retry_release(pyproject_path="pyproject.toml", preview=False)
 
-        mock_push.assert_called_once_with(".", [], refs=("v1.13.4",), preview=False)
+        mock_push.assert_called_once_with(
+            ".", [], sign=True, refs=("v1.13.4",), preview=False
+        )
         mock_update_latest.assert_called_once_with("v1.13.4", preview=False)
 
     @patch("pkgmgr.actions.release.retry.update_latest_tag")
@@ -143,7 +145,9 @@ class TestRetryRelease(unittest.TestCase):
 
         retry_release(pyproject_path="pyproject.toml", preview=False)
 
-        mock_push.assert_called_once_with(".", [], refs=("v2.0.0",), preview=False)
+        mock_push.assert_called_once_with(
+            ".", [], sign=True, refs=("v2.0.0",), preview=False
+        )
 
 
 if __name__ == "__main__":

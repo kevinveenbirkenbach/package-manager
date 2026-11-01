@@ -51,7 +51,7 @@ def retry_release(
     tag = max(tags, key=SemVer.parse)
     print(f"Re-pushing existing tag: {tag}")
 
-    push_branch(".", [], refs=(tag,), preview=preview)
+    push_branch(".", [], sign=True, refs=(tag,), preview=preview)
 
     try:
         if is_highest_version_tag(tag):
