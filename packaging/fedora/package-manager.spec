@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.2.0
+Version:        2.3.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,14 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sun Nov 01 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.3.0-1
+- Added:
+
+- - Branch: *gc --merged-into REF* treats items merged into REF as merged
+- - Branch: *--merged-into* is repeatable, protects REF and works for *purge*
+- - Branch: *--sizes* adds each worktree's disk usage to the plan
+- - Branch: *--min-age HOURS* skips items with a commit or index that recent
+
 * Sun Nov 01 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.2.0-1
 - Added:
 

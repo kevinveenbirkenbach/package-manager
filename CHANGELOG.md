@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.3.0] - 2026-11-01
+
+Added:
+
+- Branch: *gc --merged-into REF* treats items merged into REF as merged
+- Branch: *--merged-into* is repeatable, protects REF and works for *purge*
+- Branch: *--sizes* adds each worktree's disk usage to the plan
+- Branch: *--min-age HOURS* skips items with a commit or index that recent
+
 ## [2.2.0] - 2026-11-01
 
 Added:
