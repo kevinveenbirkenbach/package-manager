@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.2.0] - 2026-11-01
+
+Added:
+
+- Push: *--no-sign* pushes unsigned commits as they are; leases still apply
+- Push: *--rewrite* replaces commits a remote already has (amend, squash)
+
+Changed:
+
+- Push: *pkgmgr push* signs every unpushed unsigned commit before pushing
+- Push: each pushurl gets its own lease; mirrors no longer fail as stale
+- Push: a commit that exists only on a mirror stops the push, nothing lost
+- Push: without a selection it pushes the current checkout or worktree
+- Release: signs before tagging and pushes branch and tag like *pkgmgr push*
+
+Fixed:
+
+- Container: images build on native amd64 and arm64 runners, not QEMU
+
+Upgrade notes:
+
+- Push: needs a working signing key; pass *--no-sign* to push unsigned
+- Container: no 2.1.0 or 2.1.1 image reached GHCR; notes below carry over
+- Release: a version file ahead of the newest tag now raises the next version
+- Branch: *gc --apply* and *purge* refuse to run inside a PID sandbox
+
 ## [2.1.1] - 2026-10-31
 
 Fixed:
