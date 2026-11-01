@@ -32,7 +32,9 @@ def handle_branch(args, ctx: CLIContext) -> None:
       - pkgmgr branch close [<name>] [--base <branch>] [--force|-f]
       - pkgmgr branch drop  [<name>] [--base <branch>] [--force|-f]
       - pkgmgr branch gc    [--apply] [--json] [--all] [--branch N]... [--exclude N]...
+                            [--merged-into REF]... [--sizes] [--min-age HOURS]
       - pkgmgr branch purge [--all] [--branch N]... [--exclude N]...
+                            [--merged-into REF]... [--sizes] [--min-age HOURS]
     """
     if args.subcommand in ("gc", "purge"):
         try:
@@ -40,16 +42,17 @@ def handle_branch(args, ctx: CLIContext) -> None:
         except GitBaseError as exc:
             print(f"Not inside a git repository: {exc}", file=sys.stderr)
             sys.exit(2)
+        options = {
+            "include": args.branch,
+            "exclude": args.exclude,
+            "merged_into": args.merged_into,
+            "sizes": args.sizes,
+            "min_age": args.min_age,
+        }
         if args.subcommand == "gc":
-            code = branch_gc(
-                roots,
-                apply=args.apply,
-                as_json=args.json,
-                include=args.branch,
-                exclude=args.exclude,
-            )
+            code = branch_gc(roots, apply=args.apply, as_json=args.json, **options)
         else:
-            code = branch_purge(roots, include=args.branch, exclude=args.exclude)
+            code = branch_purge(roots, **options)
         sys.exit(code)
 
     if args.subcommand == "open":

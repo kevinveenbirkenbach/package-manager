@@ -140,3 +140,25 @@ def add_branch_subparsers(
             metavar="NAME",
             help="Skip this branch (or worktree path); repeatable",
         )
+        sub.add_argument(
+            "--merged-into",
+            action="append",
+            default=[],
+            metavar="REF",
+            help=(
+                "Also count an item as merged when its commits are in REF (an "
+                "integration line); REF is protected and a checkout at its tip "
+                "counts as fresh; repeatable"
+            ),
+        )
+        sub.add_argument(
+            "--sizes",
+            action="store_true",
+            help="Measure each worktree's disk usage (du) into the plan",
+        )
+        sub.add_argument(
+            "--min-age",
+            type=float,
+            metavar="HOURS",
+            help="Skip items whose newest commit or worktree index is younger",
+        )

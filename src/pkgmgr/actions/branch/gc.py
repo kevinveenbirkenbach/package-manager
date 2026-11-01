@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 
@@ -63,6 +64,8 @@ class Item:
     images: list[str] = field(default_factory=list)
     state: str = ""
     merged_by: str | None = None
+    merged_into: str | None = None
+    size_bytes: int | None = None
     skip: str | None = None
     actions: list[str] = field(default_factory=list)
     reason: str = ""
@@ -88,6 +91,9 @@ class Repo:
     forge: ForgeFacts
     containers: list[Container] | None
     host_ns: bool
+    lines: dict[str, tuple[str, set[str]]]
+    sizes: bool
+    min_age: float | None
     warnings: list[str] = field(default_factory=list)
     items: list[Item] = field(default_factory=list)
 
@@ -234,11 +240,51 @@ def _is_ancestor(sha: str, ref: str, repo_root: str) -> bool:
     return True
 
 
+def _in_line(repo: Repo, sha: str) -> str | None:
+    for line, (tip, first_parent) in repo.lines.items():
+        if sha == tip:
+            continue
+        if sha in first_parent or _is_ancestor(sha, line, repo.repo):
+            return line
+    return None
+
+
 def _merged_by(repo: Repo, sha: str) -> str | None:
     if sha not in repo.first_parent and _is_ancestor(sha, repo.default, repo.repo):
         return "ancestor"
     number = repo.forge.merged_heads.get(sha)
-    return f"pr#{number}" if number else None
+    if number:
+        return f"pr#{number}"
+    line = _in_line(repo, sha)
+    return f"line:{line}" if line else None
+
+
+def _du_bytes(path: str) -> int | None:
+    out = subprocess.run(
+        ["du", "-sk", path], check=False, capture_output=True, text=True
+    ).stdout.split()
+    return int(out[0]) * 1024 if out and out[0].isdigit() else None
+
+
+def _age_hours(repo: Repo, shas: list[str], tree: Worktree | None) -> float:
+    stamps = [
+        int(run(["log", "-1", "--format=%ct", sha], cwd=repo.repo)) for sha in shas
+    ]
+    if tree and os.path.isfile(os.path.join(tree.path, ".git")):
+        with open(os.path.join(tree.path, ".git"), encoding="utf-8") as fh:
+            index = os.path.join(fh.read().strip().removeprefix("gitdir: "), "index")
+        if os.path.isfile(index):
+            stamps.append(int(os.path.getmtime(index)))
+    return (time.time() - max(stamps)) / 3600
+
+
+def _human(size: int) -> str:
+    value = float(size)
+    for unit in ("K", "M", "G"):
+        value /= 1024
+        if value < 1024:
+            return f"{value:.1f}{unit}"
+    return f"{value / 1024:.1f}T"
 
 
 def _skip(
@@ -331,9 +377,20 @@ def _build(
             (verdict for verdict in verdicts.values() if verdict != "ancestor"),
             "ancestor",
         )
+        item.merged_into = (
+            item.merged_by.removeprefix("line:")
+            if item.merged_by.startswith("line:")
+            else repo.default
+        )
         item.reason = f"merged by {item.merged_by}"
 
+    if repo.sizes and checkout and not tree.main:
+        item.size_bytes = _du_bytes(tree.path)
     item.skip = _skip(repo, item, tree, checkout, cwds)
+    if item.skip is None and repo.min_age is not None and verdicts:
+        age = _age_hours(repo, list(verdicts), tree if checkout else None)
+        if age < repo.min_age:
+            item.skip = f"younger than {repo.min_age:g} h"
     for project in item.compose_projects:
         item.actions += [f"compose-down:{project}", f"images:{project}"]
     if tree:
@@ -386,9 +443,51 @@ def _stale(repo_root: str) -> list[Item]:
     return items
 
 
+def _lines(
+    repo_root: str, refs: list[str], remotes: list[str], warnings: list[str]
+) -> tuple[dict[str, tuple[str, set[str]]], set[str]]:
+    lines: dict[str, tuple[str, set[str]]] = {}
+    names: set[str] = set()
+    for ref in refs:
+        try:
+            tip = run(
+                ["rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"], cwd=repo_root
+            )
+        except GitRunError:
+            warnings.append(f"merged-into ref {ref} not found")
+            continue
+        first_parent = set(
+            run(["rev-list", "--first-parent", ref], cwd=repo_root).splitlines()
+        )
+        lines[ref] = (tip, first_parent)
+        owner = next((r for r in remotes if ref.startswith(r + "/")), None)
+        names.add(ref[len(owner) + 1 :] if owner else ref)
+    return lines, names
+
+
 def plan_repo(
-    repo_root: str, containers: list[Container] | None, host_ns: bool
+    repo_root: str,
+    containers: list[Container] | None,
+    host_ns: bool,
+    *,
+    merged_into: list[str],
+    sizes: bool,
+    min_age: float | None,
 ) -> Repo:
+    """
+    Scan one repository and classify every branch and worktree.
+
+    Args:
+        repo_root: main worktree root of the repository.
+        containers: compose containers on the host; None when docker is unavailable.
+        host_ns: whether this process runs in the host PID namespace.
+        merged_into: integration lines (refs) that also count as merged; each is protected.
+        sizes: measure each worktree's disk usage into size_bytes.
+        min_age: skip items whose newest commit or worktree index is younger (hours).
+
+    Returns:
+        The repository with its classified items.
+    """
     warnings: list[str] = []
     try:
         # Auto-maintenance runs worktree-prune, which deletes the metadata of
@@ -422,18 +521,28 @@ def plan_repo(
     )
     if forge.unavailable:
         warnings.append(f"forge unavailable: {forge.unavailable}")
+    lines, line_names = _lines(repo_root, merged_into, remotes, warnings)
 
     repo = Repo(
         repo=repo_root,
         default=default,
         remotes=remotes,
-        protected={default, *ALWAYS_PROTECTED, *head_names, *forge.protected},
+        protected={
+            default,
+            *ALWAYS_PROTECTED,
+            *head_names,
+            *forge.protected,
+            *line_names,
+        },
         first_parent=set(
             run(["rev-list", "--first-parent", default], cwd=repo_root).splitlines()
         ),
         forge=forge,
         containers=containers,
         host_ns=host_ns,
+        lines=lines,
+        sizes=sizes,
+        min_age=min_age,
         warnings=warnings,
     )
     repo.items = _items(repo)
@@ -546,6 +655,8 @@ def _line(item: Item) -> str:
         parts.append(item.skip)
     if item.worktree and item.state != "stale":
         parts.append(f"worktree {item.worktree}")
+    if item.size_bytes is not None:
+        parts.append(f"size {_human(item.size_bytes)}")
     if item.compose_projects:
         parts.append("stack " + ", ".join(item.compose_projects))
     if item.remotes:
@@ -566,6 +677,7 @@ def _render(
                         {
                             "repo": repo.repo,
                             "default": repo.default,
+                            "merged_into": list(repo.lines),
                             "warnings": repo.warnings,
                             "items": [asdict(i) for i in repo.items if chosen(i)],
                         }
@@ -591,11 +703,14 @@ def _render(
 
 
 def _prepare(
-    repo_roots: list[str], include: list[str], exclude: list[str]
+    repo_roots: list[str],
+    include: list[str],
+    exclude: list[str],
+    options: dict,
 ) -> tuple[list[Repo], bool, Callable[[Item], bool]] | None:
     host_ns = host_pid_namespace()
     containers = list_compose_containers()
-    repos = [plan_repo(root, containers, host_ns) for root in repo_roots]
+    repos = [plan_repo(root, containers, host_ns, **options) for root in repo_roots]
     unknown = [
         name
         for name in include
@@ -633,6 +748,9 @@ def branch_gc(
     as_json: bool,
     include: list[str],
     exclude: list[str],
+    merged_into: list[str],
+    sizes: bool,
+    min_age: float | None,
 ) -> int:
     """
     Plan, and with apply=True execute, the cleanup of merged and clean branches.
@@ -643,6 +761,9 @@ def branch_gc(
         as_json: print the plan as JSON instead of text lines.
         include: only items whose branch or worktree path matches one of these.
         exclude: drop items whose branch or worktree path matches one of these.
+        merged_into: integration lines (refs) that also count as merged.
+        sizes: measure each worktree's disk usage into the plan.
+        min_age: skip items younger than this many hours.
 
     Returns:
         0 on success, 1 when an applied item failed, 2 when refused.
@@ -650,7 +771,8 @@ def branch_gc(
     if apply and not host_pid_namespace():
         print(REFUSAL, file=sys.stderr)
         return 2
-    prepared = _prepare(repo_roots, include, exclude)
+    options = {"merged_into": merged_into, "sizes": sizes, "min_age": min_age}
+    prepared = _prepare(repo_roots, include, exclude, options)
     if prepared is None:
         return 2
     repos, host_ns, chosen = prepared
@@ -669,7 +791,13 @@ def branch_gc(
 
 
 def branch_purge(
-    repo_roots: list[str], *, include: list[str], exclude: list[str]
+    repo_roots: list[str],
+    *,
+    include: list[str],
+    exclude: list[str],
+    merged_into: list[str],
+    sizes: bool,
+    min_age: float | None,
 ) -> int:
     """
     Delete unmerged or dirty items after a y/N confirmation per item.
@@ -678,6 +806,9 @@ def branch_purge(
         repo_roots: main worktree roots of the repositories to scan.
         include: only items whose branch or worktree path matches one of these.
         exclude: drop items whose branch or worktree path matches one of these.
+        merged_into: integration lines (refs) that also count as merged.
+        sizes: measure each worktree's disk usage into the prompt line.
+        min_age: skip items younger than this many hours.
 
     Returns:
         0 on success, 1 when a confirmed item failed, 2 when refused.
@@ -685,7 +816,8 @@ def branch_purge(
     if not host_pid_namespace():
         print(REFUSAL, file=sys.stderr)
         return 2
-    prepared = _prepare(repo_roots, include, exclude)
+    options = {"merged_into": merged_into, "sizes": sizes, "min_age": min_age}
+    prepared = _prepare(repo_roots, include, exclude, options)
     if prepared is None:
         return 2
     repos, _, chosen = prepared

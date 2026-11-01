@@ -98,12 +98,40 @@ class TestBranchGc(unittest.TestCase):
     def _lock(self, reason: str) -> None:
         git(self.repo, "worktree", "lock", "--reason", reason, self.locked_wt)
 
-    def _plan(self, host_ns: bool, cwds: dict[int, str]) -> gc.Repo:
+    def _plan(
+        self,
+        host_ns: bool,
+        cwds: dict[int, str],
+        merged_into: list[str] | None = None,
+        sizes: bool = False,
+        min_age: float | None = None,
+    ) -> gc.Repo:
         with (
             patch.object(gc, "fetch_forge_facts", return_value=self.forge),
             patch.object(gc, "_process_cwds", return_value=cwds),
         ):
-            return gc.plan_repo(self.repo, [], host_ns)
+            return gc.plan_repo(
+                self.repo,
+                [],
+                host_ns,
+                merged_into=merged_into or [],
+                sizes=sizes,
+                min_age=min_age,
+            )
+
+    def _integration_line(self) -> str:
+        git(self.repo, "checkout", "-b", "line", "main")
+        self._commit("line-base")
+        git(self.repo, "checkout", "-b", "feat", "line")
+        self._commit("feat")
+        git(self.repo, "checkout", "line")
+        git(self.repo, "merge", "--no-ff", "-m", "merge feat", "feat")
+        git(self.repo, "push", "origin", "line", "feat")
+        git(self.repo, "branch", "start", "line")
+        git(self.repo, "checkout", "main")
+        feat_wt = os.path.join(self.root, "wt-feat")
+        git(self.repo, "worktree", "add", feat_wt, "feat")
+        return feat_wt
 
     def _items(self, plan: gc.Repo) -> dict[str, gc.Item]:
         return {item.branch: item for item in plan.items if item.branch}
@@ -126,6 +154,43 @@ class TestBranchGc(unittest.TestCase):
         self.assertEqual(items["wip"].state, "unmerged")
         self.assertEqual(items["wip"].skip, "open-pr #3")
         self.assertEqual(items["dirty"].state, "dirty")
+
+    def test_merged_into_counts_commits_in_an_integration_line(self) -> None:
+        self._integration_line()
+        before = self._items(self._plan(host_ns=True, cwds={}))
+        self.assertEqual(before["feat"].state, "unmerged")
+        self.assertIsNone(before["feat"].merged_into)
+
+        for ref in ("line", "origin/line"):
+            with self.subTest(ref=ref):
+                items = self._items(
+                    self._plan(host_ns=True, cwds={}, merged_into=[ref])
+                )
+                self.assertEqual(items["feat"].state, "merged-clean")
+                self.assertEqual(items["feat"].merged_by, f"line:{ref}")
+                self.assertEqual(items["feat"].merged_into, ref)
+                self.assertTrue(items["feat"].eligible)
+                self.assertEqual(items["line"].state, "protected")
+                self.assertEqual(items["start"].state, "unmerged")
+                self.assertEqual(items["merged"].merged_into, "origin/main")
+
+    def test_unknown_merged_into_ref_is_a_warning(self) -> None:
+        plan = self._plan(host_ns=True, cwds={}, merged_into=["no-such-line"])
+
+        self.assertIn("merged-into ref no-such-line not found", plan.warnings)
+        self.assertEqual(self._items(plan)["merged"].state, "merged-clean")
+
+    def test_sizes_and_min_age(self) -> None:
+        items = self._items(self._plan(host_ns=True, cwds={}, sizes=True))
+        self.assertGreater(items["merged"].size_bytes, 0)
+        self.assertIsNone(items["squashed"].size_bytes)
+        self.assertIn("size ", gc._line(items["merged"]))
+
+        young = self._items(self._plan(host_ns=True, cwds={}, min_age=1000))
+        self.assertEqual(young["merged"].skip, "younger than 1000 h")
+        self.assertFalse(young["merged"].eligible)
+        old = self._items(self._plan(host_ns=True, cwds={}, min_age=0))
+        self.assertIsNone(old["merged"].skip)
 
     def test_busy_worktree_is_skipped(self) -> None:
         cwds = {4242: os.path.join(self.merged_wt, "sub")}
@@ -276,16 +341,34 @@ class TestBranchGc(unittest.TestCase):
             redirect_stdout(out),
         ):
             code = gc.branch_gc(
-                [self.repo], apply=False, as_json=True, include=["merged"], exclude=[]
+                [self.repo],
+                apply=False,
+                as_json=True,
+                include=["merged"],
+                exclude=[],
+                merged_into=["origin/main"],
+                sizes=True,
+                min_age=None,
             )
         data = json.loads(out.getvalue())
 
         self.assertEqual(code, 0)
-        self.assertEqual([i["branch"] for i in data["repos"][0]["items"]], ["merged"])
+        self.assertEqual(data["repos"][0]["merged_into"], ["origin/main"])
+        items = data["repos"][0]["items"]
+        self.assertEqual([i["branch"] for i in items], ["merged"])
+        self.assertEqual(items[0]["merged_into"], "origin/main")
+        self.assertGreater(items[0]["size_bytes"], 0)
         with patch.object(gc, "host_pid_namespace", return_value=False):
             self.assertEqual(
                 gc.branch_gc(
-                    [self.repo], apply=True, as_json=False, include=[], exclude=[]
+                    [self.repo],
+                    apply=True,
+                    as_json=False,
+                    include=[],
+                    exclude=[],
+                    merged_into=[],
+                    sizes=False,
+                    min_age=None,
                 ),
                 2,
             )
@@ -303,6 +386,13 @@ class TestBranchGc(unittest.TestCase):
                 "b",
                 "--exclude",
                 "c",
+                "--merged-into",
+                "origin/line",
+                "--merged-into",
+                "fork/line",
+                "--sizes",
+                "--min-age",
+                "24",
             ]
         )
         with (
@@ -314,7 +404,14 @@ class TestBranchGc(unittest.TestCase):
 
         self.assertEqual(exit_ctx.exception.code, 1)
         run_gc.assert_called_once_with(
-            [self.repo], apply=True, as_json=True, include=["a", "b"], exclude=["c"]
+            [self.repo],
+            apply=True,
+            as_json=True,
+            include=["a", "b"],
+            exclude=["c"],
+            merged_into=["origin/line", "fork/line"],
+            sizes=True,
+            min_age=24.0,
         )
 
 
