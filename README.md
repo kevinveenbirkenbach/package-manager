@@ -181,15 +181,49 @@ is a manifest list covering `linux/amd64` and `linux/arm64`.
 
 All images live under `ghcr.io/kevinveenbirkenbach/`:
 
-| Tag                         | Contains                           |
-| --------------------------- | ---------------------------------- |
-| `pkgmgr-<distro>:latest`    | newest build for that distribution |
-| `pkgmgr-<distro>:<version>` | one release                        |
-| `pkgmgr-<distro>:stable`    | newest release marked stable       |
+| Tag                                   | Contains                                                  |
+| ------------------------------------- | --------------------------------------------------------- |
+| `pkgmgr-<distro>:latest`              | newest build of the newest release on `main`              |
+| `pkgmgr-<distro>:stable`              | newest build of the release the git tag `stable` marks    |
+| `pkgmgr-<distro>:<major>`             | newest build of the newest release of that major          |
+| `pkgmgr-<distro>:<major>.<minor>`     | newest build of the newest release of that minor          |
+| `pkgmgr-<distro>:<version>`           | newest build of that release                              |
+| `pkgmgr-<distro>:<version>.<unix-ts>` | one build, never moves                                    |
 
 `<distro>` is one of `arch`, `debian`, `ubuntu`, `fedora`, `centos`. The Arch
 image is published without the suffix as well, so `pkgmgr:stable` and
 `pkgmgr-arch:stable` are the same image.
+
+`<version>` is the PKGMGR release and `<unix-ts>` the build time, so
+`2.3.0.1767225600` is a full version an updater can order and pin. Every tag of
+one build points at the same image.
+
+`stable` moves only once "Mark stable commit" has moved the git tag `stable`,
+which it does after every test of that release passed. Every day at 03:00 UTC,
+after the daily 00:00 UTC build of base-images, and on demand through the
+workflow's manual trigger, two releases are rebuilt on the newest base image:
+
+- the newest `vX.Y.Z` release on `main`, moving `latest`, its prefixes and
+  `<version>`, and adding `<version>.<unix-ts>`;
+- the release the git tag `stable` marks, when that is an older one, moving
+  `stable` and `<version>`, adding its own `<version>.<unix-ts>`, and moving a
+  prefix only while it is still the newest release of that prefix.
+
+With newest `2.4.0` and stable `2.3.0`, `2.4.0` takes `latest`, `2` and `2.4`,
+and `2.3.0` takes `stable` and `2.3`. A security update in base-images thereby
+reaches whoever pinned a major, a minor, a release or follows `stable`.
+
+Each release is compared with its own published `<version>`. A rebuild whose
+installed packages equal it pushes nothing, since a new timestamp tag would make
+every pin bump for no change; a tag of that release that does not show the
+published build yet, such as `stable` right after "Mark stable commit", is moved
+without a new timestamp.
+
+A rebuild runs the build scripts of the release it rebuilds, not those of
+`main`, so the skip and the tag rules above only hold for releases tagged after
+this scheme landed. The scripts of an earlier release know no aliases: its merge
+step fails and leaves its tags where they are, until a newer release replaces
+it as the newest and the stable one.
 
 For a clean environment that carries the system dependencies but no PKGMGR,
 pull `base-<distro>` from

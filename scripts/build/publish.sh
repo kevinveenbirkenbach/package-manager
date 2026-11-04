@@ -6,10 +6,10 @@ set -euo pipefail
 # Required env:
 #   OWNER      (e.g. GITHUB_REPOSITORY_OWNER)
 #   VERSION    (e.g. 1.2.3)
+#   ALIASES    moving tags besides VERSION, space separated, may be empty (e.g. "latest 1 1.2 stable")
 #
 # Optional env:
 #   REGISTRY   (default: ghcr.io)
-#   IS_STABLE  (default: false)
 #   DISTROS    (default: "arch debian ubuntu fedora centos")
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -18,16 +18,16 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/base.sh"
 
 REGISTRY="${REGISTRY:-ghcr.io}"
-IS_STABLE="${IS_STABLE:-false}"
 DISTROS="${DISTROS:-arch debian ubuntu fedora centos}"
 
 : "${OWNER:?Environment variable OWNER must be set (e.g. github.repository_owner)}"
 : "${VERSION:?Environment variable VERSION must be set (e.g. 1.2.3)}"
+: "${ALIASES?Environment variable ALIASES must be set, empty for none (e.g. \"latest 1 1.2 stable\")}"
 
 echo "[publish] REGISTRY=${REGISTRY}"
 echo "[publish] OWNER=${OWNER}"
 echo "[publish] VERSION=${VERSION}"
-echo "[publish] IS_STABLE=${IS_STABLE}"
+echo "[publish] ALIASES=${ALIASES}"
 echo "[publish] DISTROS=${DISTROS}"
 
 for d in ${DISTROS}; do
@@ -51,7 +51,7 @@ for d in ${DISTROS}; do
     --registry "${REGISTRY}" \
     --owner "${OWNER}" \
     --version "${VERSION}" \
-    --stable "${IS_STABLE}" \
+    --aliases "${ALIASES}" \
     --merge
 done
 

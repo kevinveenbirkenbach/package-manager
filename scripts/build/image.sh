@@ -12,12 +12,13 @@ NO_CACHE=0
 MISSING_ONLY=0
 IMAGE_TAG=""         # local image name or base tag (without registry)
 PUSH=0               # if 1 -> use buildx and push (requires docker buildx)
-PUBLISH=0            # if 1 -> push with semantic tags (latest/version/stable + arch aliases)
+PUBLISH=0            # if 1 -> push <version>, <version>.<unix-ts> and the --aliases, plus arch aliases
 REGISTRY=""          # e.g. ghcr.io
 OWNER=""             # e.g. github org/user
 REPO_PREFIX="pkgmgr" # image base name (pkgmgr)
 VERSION=""           # X.Y.Z (required for --publish)
-IS_STABLE="false"    # "true" -> publish stable tags
+ALIASES=""           # moving tags besides <version>, e.g. "latest 2 2.4 stable"
+ALIASES_SET=0        # 1 once --aliases was given, also when empty
 PLATFORM=""          # e.g. linux/arm64 -> build and push only this platform
 MERGE=0              # if 1 -> join the per-platform tags of --version under the publish tags
 DEFAULT_DISTRO="arch"
@@ -35,17 +36,23 @@ Build options:
 
 Publish options:
   --push                Push the built image (uses docker buildx build --push)
-  --publish             Publish semantic tags (latest, <version>, optional stable) + arch aliases
+  --publish             Publish <version>, <version>.<unix-ts> and every --aliases tag, plus arch
+                        aliases
   --registry <reg>      Registry (e.g. ghcr.io)
   --owner <owner>       Registry namespace (e.g. \${GITHUB_REPOSITORY_OWNER})
   --repo-prefix <name>  Image base name (default: pkgmgr)
   --version <X.Y.Z>     Version for --publish
-  --stable <true|false> Whether to publish :stable tags (default: false)
-  --platform <os/arch>  Build and push only this platform; with --publish as <version>-<arch>
-  --merge               Join the <version>-<arch> tags of all platforms under the publish tags
+  --aliases "<tags>"    Moving tags besides <version>, space separated, may be empty
+                        (e.g. "latest 2 2.4 stable")
+  --platform <os/arch>  Build and push only this platform; with --publish as <version>-<arch>,
+                        skipped when its package set equals the published <version>
+  --merge               Join the <version>-<arch> tags of all platforms under the publish tags;
+                        when <version> already joins exactly these images, only the aliases
+                        that do not are moved and no <version>.<unix-ts> is added
 
 Notes:
 - --publish implies --push and requires --registry, --owner, and --version.
+- --publish without --platform requires --aliases.
 - --platform requires --push; --merge requires --publish and builds nothing.
 - Local build (no --push) uses "docker build" and creates a local image like "pkgmgr-arch".
 EOF
@@ -82,9 +89,10 @@ while [[ $# -gt 0 ]]; do
       [[ -n "${VERSION}" ]] || { echo "ERROR: --version requires a value"; exit 2; }
       shift 2
       ;;
-    --stable)
-      IS_STABLE="${2:-}"
-      [[ -n "${IS_STABLE}" ]] || { echo "ERROR: --stable requires a value (true|false)"; exit 2; }
+    --aliases)
+      [[ $# -ge 2 ]] || { echo "ERROR: --aliases requires a value, empty for none"; exit 2; }
+      ALIASES="$2"
+      ALIASES_SET=1
       shift 2
       ;;
     --platform)
@@ -126,6 +134,8 @@ if [[ "${PUBLISH}" == "1" ]]; then
   [[ -n "${REGISTRY}" ]] || { echo "ERROR: --publish requires --registry"; exit 2; }
   [[ -n "${OWNER}" ]]    || { echo "ERROR: --publish requires --owner"; exit 2; }
   [[ -n "${VERSION}" ]]  || { echo "ERROR: --publish requires --version"; exit 2; }
+  [[ -n "${PLATFORM}" || "${ALIASES_SET}" == "1" ]] \
+    || { echo "ERROR: --publish without --platform requires --aliases"; exit 2; }
 fi
 
 if [[ -n "${PLATFORM}" ]]; then
@@ -140,6 +150,7 @@ if [[ "${MERGE}" == "1" ]]; then
 fi
 
 DISTRO_TAG_BASE="${REGISTRY}/${OWNER}/${REPO_PREFIX}-${PKGMGR_DISTRO}"
+STAMP="$(date -u +%s)"
 
 # Guard: --push without --publish requires fully-qualified --tag
 if [[ "${PUSH}" == "1" && "${PUBLISH}" != "1" ]]; then
@@ -162,7 +173,8 @@ if [[ "${PUBLISH}" == "1" ]]; then
   echo "registry  = ${REGISTRY}"
   echo "owner     = ${OWNER}"
   echo "version   = ${VERSION}"
-  echo "stable    = ${IS_STABLE}"
+  echo "stamp     = ${STAMP}"
+  echo "aliases   = ${ALIASES}"
 fi
 echo "------------------------------------------------------------"
 
@@ -173,48 +185,97 @@ if [[ "${NO_CACHE}" == "1" ]]; then
   build_args+=(--no-cache)
 fi
 
-compute_publish_tags() {
-  local distro_tag_base="${DISTRO_TAG_BASE}"
-  local alias_tag_base=""
-
+publish_bases() {
+  echo "${DISTRO_TAG_BASE}"
   if [[ "${PKGMGR_DISTRO}" == "${DEFAULT_DISTRO}" ]]; then
-    alias_tag_base="${REGISTRY}/${OWNER}/${REPO_PREFIX}"
+    echo "${REGISTRY}/${OWNER}/${REPO_PREFIX}"
   fi
+}
 
-  local tags=()
-  tags+=("${distro_tag_base}:latest")
-  tags+=("${distro_tag_base}:${VERSION}")
+moving_tags() {
+  local base alias
+  local -a aliases
+  read -ra aliases <<< "${ALIASES}"
+  while read -r base; do
+    echo "${base}:${VERSION}"
+    for alias in "${aliases[@]}"; do
+      echo "${base}:${alias}"
+    done
+  done < <(publish_bases)
+}
 
-  if [[ "${IS_STABLE}" == "true" ]]; then
-    tags+=("${distro_tag_base}:stable")
-  fi
+stamp_tags() {
+  local base
+  while read -r base; do
+    echo "${base}:${VERSION}.${STAMP}"
+  done < <(publish_bases)
+}
 
-  if [[ -n "${alias_tag_base}" ]]; then
-    tags+=("${alias_tag_base}:latest")
-    tags+=("${alias_tag_base}:${VERSION}")
-    if [[ "${IS_STABLE}" == "true" ]]; then
-      tags+=("${alias_tag_base}:stable")
-    fi
-  fi
+raw_index() {
+  docker buildx imagetools inspect --raw "$1" 2>/dev/null || true
+}
 
-  printf '%s\n' "${tags[@]}"
+digest_of() {
+  docker buildx imagetools inspect --format '{{json .Manifest.Digest}}' "$1"
 }
 
 if [[ "${MERGE}" == "1" ]]; then
-  merge_args=(docker buildx imagetools create)
-  while IFS= read -r t; do
-    merge_args+=(-t "$t")
-  done < <(compute_publish_tags)
-
+  sources=()
   IFS=',' read -ra platforms <<< "$(resolve_platforms "$PKGMGR_DISTRO")"
   for p in "${platforms[@]}"; do
-    merge_args+=("${DISTRO_TAG_BASE}:${VERSION}-${p#*/}")
+    sources+=("${DISTRO_TAG_BASE}:${VERSION}-${p#*/}")
   done
 
-  echo "[build] Running: ${merge_args[*]}"
-  "${merge_args[@]}"
-  docker buildx imagetools inspect "${DISTRO_TAG_BASE}:${VERSION}"
+  mapfile -t moving < <(moving_tags)
+  planned="$(docker buildx imagetools create --dry-run -t "${DISTRO_TAG_BASE}:${VERSION}" "${sources[@]}")"
+  tags=()
+  if [[ "$(raw_index "${DISTRO_TAG_BASE}:${VERSION}")" == "${planned}" ]]; then
+    for t in "${moving[@]}"; do
+      if [[ "$(raw_index "${t}")" != "${planned}" ]]; then
+        tags+=("${t}")
+      fi
+    done
+  else
+    mapfile -t stamps < <(stamp_tags)
+    tags=("${moving[@]}" "${stamps[@]}")
+  fi
+
+  if ((${#tags[@]} == 0)); then
+    echo "[build] ${PKGMGR_DISTRO} ${VERSION}: every tag already joins these platform images, nothing to push."
+    exit 0
+  fi
+
+  create_args=()
+  for t in "${tags[@]}"; do
+    create_args+=(-t "$t")
+  done
+
+  echo "[build] Running: docker buildx imagetools create ${create_args[*]} ${sources[*]}"
+  docker buildx imagetools create "${create_args[@]}" "${sources[@]}"
+
+  version_digest="$(digest_of "${DISTRO_TAG_BASE}:${VERSION}")"
+  for t in "${moving[@]}"; do
+    if [[ "$(digest_of "${t}")" != "${version_digest}" ]]; then
+      echo "[build] ❌ ${PKGMGR_DISTRO}: :${VERSION} and ${t} point at different images." >&2
+      echo "[build]    Whoever pinned ${t##*:} stopped receiving what ${VERSION} gets." >&2
+      exit 1
+    fi
+  done
+  echo "[build] ✅ ${PKGMGR_DISTRO}: every tag of ${VERSION} == ${version_digest}"
 elif [[ "${PUSH}" == "1" ]]; then
+  if [[ "${PUBLISH}" == "1" && -n "${PLATFORM}" ]]; then
+    probe="${REPO_PREFIX}-${PKGMGR_DISTRO}:probe"
+    docker buildx build --load --platform "${PLATFORM}" -t "${probe}" "${build_args[@]}" .
+
+    package_set="$(package_set_cmd "${PKGMGR_DISTRO}")"
+    built_set="$(docker run --rm --platform "${PLATFORM}" --entrypoint bash "${probe}" -lc "${package_set}" | sha256sum)"
+    published_set="$(docker run --rm --pull always --platform "${PLATFORM}" --entrypoint bash "${DISTRO_TAG_BASE}:${VERSION}" -lc "${package_set}" 2>/dev/null | sha256sum || true)"
+    if [[ "${built_set}" == "${published_set}" ]]; then
+      echo "[build] ${PKGMGR_DISTRO} ${PLATFORM} unchanged since the published ${VERSION}, nothing to push."
+      exit 0
+    fi
+  fi
+
   bx_args=(docker buildx build --push)
 
   if [[ "${PUBLISH}" == "1" && -n "${PLATFORM}" ]]; then
@@ -222,7 +283,10 @@ elif [[ "${PUSH}" == "1" ]]; then
   elif [[ "${PUBLISH}" == "1" ]]; then
     while IFS= read -r t; do
       bx_args+=(-t "$t")
-    done < <(compute_publish_tags)
+    done < <(moving_tags)
+    while IFS= read -r t; do
+      bx_args+=(-t "$t")
+    done < <(stamp_tags)
   else
     bx_args+=(-t "${IMAGE_TAG}")
   fi
