@@ -79,6 +79,7 @@ versioning features it can drive **end-to-end workflows**:
 | `pkgmgr branch cleanup [--apply]` | Removes merged branches that no worktree holds, locally and on the remotes |
 | `pkgmgr branch tree [--format json\|yaml] [--output FILE]` | Writes every managed repository's branches and worktrees with their cleanup state, without fetching |
 | `pkgmgr gc [--all] [--apply]` | Both cleanups in one pass, for the current repository or every managed one |
+| `pkgmgr gc --report [--all] [--root DIR] [--threshold-mb MB] [--docker] [--json]` | Read-only disk inventory: worktree sizes, changes a cleanup would keep, `--root` children, core dumps, docker usage, free space per filesystem |
 | `pkgmgr worktree orphans --stale-days N --top N` | Lists merged and abandoned branches and worktrees with a proposal each |
 
 A hook runs only when the `worktree_hooks` config pins its command under the

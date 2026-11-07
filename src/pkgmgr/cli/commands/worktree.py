@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
+import os
 import sys
 
 from pkgmgr.actions.branch.gc import main_repo_root
+from pkgmgr.actions.gc.report import disk_report, render_text
 from pkgmgr.actions.worktree.orphans import worktree_orphans
 from pkgmgr.actions.worktree.up import worktree_up
 from pkgmgr.cli.context import CLIContext
@@ -14,6 +17,8 @@ from .branch import (
     scan_options,
     scan_repo_roots,
 )
+
+MEBIBYTE = 1 << 20
 
 
 def handle_worktree(args, ctx: CLIContext) -> None:
@@ -56,4 +61,18 @@ def handle_worktree(args, ctx: CLIContext) -> None:
 
 
 def handle_gc(args, ctx: CLIContext) -> None:
-    run_cleanup(args, ctx, "all")
+    if not args.report:
+        run_cleanup(args, ctx, "all")
+    if args.apply:
+        print(
+            "--report only reads; it cannot be combined with --apply", file=sys.stderr
+        )
+        sys.exit(2)
+    report = disk_report(
+        [os.path.abspath(os.path.expanduser(root)) for root in args.root],
+        scan_repo_roots(args, ctx),
+        args.threshold_mb * MEBIBYTE,
+        args.docker,
+    )
+    print(json.dumps(report, indent=2) if args.json else render_text(report))
+    sys.exit(0)

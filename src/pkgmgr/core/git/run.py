@@ -58,6 +58,7 @@ def run(
     cwd: str = ".",
     preview: bool = False,
     scan: bool = False,
+    input_text: str | None = None,
 ) -> str:
     """
     Run a Git command and return its stdout as a stripped string.
@@ -69,6 +70,8 @@ def run(
         scan: read a repository an agent may have written: no fsmonitor, hook,
             pager, lazy fetch, replace object, system config or prompt, stdin
             closed, a timeout.
+        input_text: text fed to stdin, e.g. for `cat-file --batch-check`;
+            replaces the closed stdin of scan mode.
 
     Raises GitRunError (or a subclass) if execution fails or times out.
     """
@@ -79,11 +82,14 @@ def run(
         print(f"[PREVIEW] Would run in {cwd!r}: {cmd_str}")
         return ""
 
-    hardened = (
+    hardened: dict = (
         {"env": _scan_env(), "stdin": subprocess.DEVNULL, "timeout": SCAN_TIMEOUT}
         if scan
         else {}
     )
+    if input_text is not None:
+        hardened.pop("stdin", None)
+        hardened["input"] = input_text
     try:
         result = subprocess.run(
             cmd,

@@ -40,6 +40,21 @@ class TestGitRun(unittest.TestCase):
         self.assertTrue(kwargs["text"])
         self.assertTrue(kwargs["capture_output"])
 
+    def test_scan_input_text_replaces_closed_stdin(self) -> None:
+        completed = MagicMock()
+        completed.stdout = "abc\n"
+
+        with patch(
+            "pkgmgr.core.git.run.subprocess.run", return_value=completed
+        ) as mock_run:
+            out = run(["cat-file", "--batch-check"], scan=True, input_text="x\n")
+
+        self.assertEqual(out, "abc")
+        kwargs = mock_run.call_args.kwargs
+        self.assertEqual(kwargs["input"], "x\n")
+        self.assertNotIn("stdin", kwargs)
+        self.assertIn("timeout", kwargs)
+
     def test_failure_raises_giterror_with_details(self) -> None:
         # Build a CalledProcessError with stdout/stderr populated
         import subprocess as sp
