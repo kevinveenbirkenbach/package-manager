@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 import tempfile
 import unittest
 from types import SimpleNamespace
@@ -113,6 +112,13 @@ class TestRootResolved(unittest.TestCase):
         stats["/usr/bin"] = (0, 0o040757)
         self.assertIsNone(self._resolve(stats))
 
+    def test_sticky_group_writable_ancestor_like_the_nix_store_is_refused(
+        self,
+    ) -> None:
+        stats = self._tree()
+        stats["/usr"] = (0, 0o041775)
+        self.assertIsNone(self._resolve(stats))
+
     def test_stat_error_is_refused(self) -> None:
         stats = self._tree()
         del stats["/usr"]
@@ -131,24 +137,32 @@ class TestRootResolved(unittest.TestCase):
 
 
 class TestTrustedPath(unittest.TestCase):
+    def setUp(self) -> None:
+        trusted = [
+            entry
+            for entry in map(trust.root_resolved, os.defpath.split(os.pathsep))
+            if entry and os.path.isdir(entry)
+        ]
+        if not trusted:
+            self.skipTest("no os.defpath directory is root-controlled on this host")
+        self.system = trusted[0]
+
     def test_symlinked_entry_is_kept_only_resolved(self) -> None:
-        system = os.path.dirname(os.path.realpath(shutil.which("true")))
         with tempfile.TemporaryDirectory() as tmp:
             link = os.path.join(tmp, "bin")
-            os.symlink(system, link)
+            os.symlink(self.system, link)
             with patch.dict(os.environ, {"PATH": link}):
-                self.assertEqual(trust.trusted_path(), system)
+                self.assertEqual(trust.trusted_path(), self.system)
 
     def test_entry_keeps_the_resolution_it_was_checked_under(self) -> None:
-        system = os.path.dirname(os.path.realpath(shutil.which("true")))
         with tempfile.TemporaryDirectory() as tmp:
             link = os.path.join(tmp, "bin")
-            os.symlink(system, link)
+            os.symlink(self.system, link)
             with (
                 patch.dict(os.environ, {"PATH": link}),
-                patch.object(trust.os.path, "realpath", side_effect=[system, tmp]),
+                patch.object(trust.os.path, "realpath", side_effect=[self.system, tmp]),
             ):
-                self.assertEqual(trust.trusted_path(), system)
+                self.assertEqual(trust.trusted_path(), self.system)
 
     def test_no_root_controlled_entry_is_refused(self) -> None:
         with (
