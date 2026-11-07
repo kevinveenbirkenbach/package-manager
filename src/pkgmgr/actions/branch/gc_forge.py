@@ -79,7 +79,21 @@ def fetch_forge_facts(remote_urls: dict[str, str]) -> ForgeFacts:
     except CredentialError as exc:
         facts.unavailable = f"no GitHub token ({exc})"
         return facts
+    return facts_with_token(slugs, token)
 
+
+def facts_with_token(slugs: list[tuple[str, str]], token: str) -> ForgeFacts:
+    """
+    Fetch the pull-request and protection facts of GitHub repositories.
+
+    Args:
+        slugs: (owner, name) of each repository.
+        token: the GitHub token sent as bearer.
+
+    Returns:
+        The facts, or facts whose unavailable names the failing repository.
+    """
+    facts = ForgeFacts()
     http = HttpClient(timeout_s=30)
     headers = {
         "Authorization": f"Bearer {token}",

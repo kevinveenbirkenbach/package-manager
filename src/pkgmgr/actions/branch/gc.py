@@ -17,12 +17,25 @@ from pkgmgr.core.git.run import run
 
 from .gc_forge import ForgeFacts, fetch_forge_facts
 
+Snapshot = tuple[
+    dict[str, str],
+    dict[str, dict[str, str]],
+    dict[int, str],
+    dict[str, tuple[str | None, int | None, int | None, bool]],
+]
+
 # PROC_PID_INIT_INO: only the initial PID namespace sees every process of the host.
 INIT_PID_NAMESPACE = "pid:[4026531836]"
 CLEANUP_IMAGE = "alpine:3.20"
 COMPOSE_PROJECT = "com.docker.compose.project"
 COMPOSE_WORKING_DIR = "com.docker.compose.project.working_dir"
 LOCK_PID = re.compile(r"\bpid (\d+)")
+TRACK = re.compile(r"(ahead|behind) (\d+)")
+UNSAFE_LOCAL_CONFIG = re.compile(r"^(local|worktree)\t(filter\.\S+)")
+GITLINK = "160000"
+# ref and remote names come from repositories an agent may write: one named
+# like --output=<path> would otherwise make rev-list create that file
+END_OF_OPTIONS = "--end-of-options"
 ALWAYS_PROTECTED = ("main", "master")
 LABELS = {
     "merged-clean": "DELETE",
@@ -58,6 +71,17 @@ class Container:
 class Item:
     branch: str | None
     worktree: str | None = None
+    head: str | None = None
+    detached: bool = False
+    locked: str | None = None
+    worktree_state: str | None = None
+    staged: int | None = None
+    unstaged: int | None = None
+    untracked: int | None = None
+    upstream: str | None = None
+    ahead: int | None = None
+    behind: int | None = None
+    gone: bool = False
     local_sha: str | None = None
     remotes: dict[str, str] = field(default_factory=dict)
     compose_projects: list[str] = field(default_factory=list)
@@ -88,6 +112,7 @@ class Repo:
     remotes: list[str]
     protected: set[str]
     first_parent: set[str]
+    urls: dict[str, str]
     forge: ForgeFacts
     containers: list[Container] | None
     host_ns: bool
@@ -109,8 +134,12 @@ def main_repo_root(cwd: str) -> str:
     return os.path.dirname(_common_dir(cwd))
 
 
+def _git(args: list[str], cwd: str) -> str:
+    return run(args, cwd=cwd, scan=True)
+
+
 def _common_dir(cwd: str) -> str:
-    return run(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=cwd)
+    return _git(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd)
 
 
 def _docker(args: list[str]) -> str:
@@ -151,52 +180,71 @@ def _inside(path: str, root: str) -> bool:
 
 def _worktrees(repo_root: str) -> list[Worktree]:
     trees: list[Worktree] = []
-    for block in run(["worktree", "list", "--porcelain"], cwd=repo_root).split("\n\n"):
-        fields: dict[str, str] = {}
-        for line in block.splitlines():
-            key, _, value = line.partition(" ")
+    fields: dict[str, str] = {}
+    for part in _git(["worktree", "list", "--porcelain", "-z"], repo_root).split("\0"):
+        if part:
+            key, _, value = part.partition(" ")
             fields[key] = value
-        if "worktree" not in fields:
             continue
-        branch = fields.get("branch")
+        record, fields = fields, {}
+        if "worktree" not in record:
+            continue
+        branch = record.get("branch")
         trees.append(
             Worktree(
-                path=fields["worktree"],
-                head=fields.get("HEAD"),
+                path=record["worktree"],
+                head=record.get("HEAD"),
                 branch=branch.removeprefix("refs/heads/") if branch else None,
-                locked=fields.get("locked"),
-                prunable="prunable" in fields,
+                locked=record.get("locked"),
+                prunable="prunable" in record,
                 main=not trees,
             )
         )
     return trees
 
 
+def _tracking(
+    upstream: str, track: str
+) -> tuple[str | None, int | None, int | None, bool]:
+    if not upstream:
+        return None, None, None, False
+    if track == "gone":
+        return upstream, None, None, True
+    counts = dict(TRACK.findall(track))
+    return upstream, int(counts.get("ahead", 0)), int(counts.get("behind", 0)), False
+
+
 def _refs(
     repo_root: str, remotes: list[str]
-) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
-    out = run(
+) -> tuple[
+    dict[str, str],
+    dict[str, dict[str, str]],
+    dict[str, tuple[str | None, int | None, int | None, bool]],
+]:
+    out = _git(
         [
             "for-each-ref",
-            "--format=%(refname) %(objectname)",
+            "--format=%(refname)%00%(objectname)%00%(upstream:short)%00%(upstream:track,nobracket)",
             "refs/heads",
             "refs/remotes",
         ],
-        cwd=repo_root,
+        repo_root,
     )
     by_length = sorted(remotes, key=len, reverse=True)
     local: dict[str, str] = {}
     remote: dict[str, dict[str, str]] = {}
+    tracking: dict[str, tuple[str | None, int | None, int | None, bool]] = {}
     for line in out.splitlines():
-        ref, sha = line.split(" ")
+        ref, sha, upstream, track = line.split("\x00")
         if ref.startswith("refs/heads/"):
             local[ref.removeprefix("refs/heads/")] = sha
+            tracking[ref.removeprefix("refs/heads/")] = _tracking(upstream, track)
             continue
         rest = ref.removeprefix("refs/remotes/")
         owner = next((r for r in by_length if rest.startswith(r + "/")), None)
         if owner and rest[len(owner) + 1 :] != "HEAD":
             remote.setdefault(rest[len(owner) + 1 :], {})[owner] = sha
-    return local, remote
+    return local, remote, tracking
 
 
 def _process_cwds() -> dict[int, str]:
@@ -232,7 +280,7 @@ def _lock_skip(reason: str | None, host_ns: bool) -> str | None:
 
 def _is_ancestor(sha: str, ref: str, repo_root: str) -> bool:
     try:
-        run(["merge-base", "--is-ancestor", sha, ref], cwd=repo_root)
+        _git(["merge-base", "--is-ancestor", END_OF_OPTIONS, sha, ref], repo_root)
     except GitRunError as exc:
         if exc.returncode == 1:
             return False
@@ -261,15 +309,13 @@ def _merged_by(repo: Repo, sha: str) -> str | None:
 
 def _du_bytes(path: str) -> int | None:
     out = subprocess.run(
-        ["du", "-sk", path], check=False, capture_output=True, text=True
+        ["du", "-sk", "--", path], check=False, capture_output=True, text=True
     ).stdout.split()
     return int(out[0]) * 1024 if out and out[0].isdigit() else None
 
 
 def _age_hours(repo: Repo, shas: list[str], tree: Worktree | None) -> float:
-    stamps = [
-        int(run(["log", "-1", "--format=%ct", sha], cwd=repo.repo)) for sha in shas
-    ]
+    stamps = [int(_git(["log", "-1", "--format=%ct", sha], repo.repo)) for sha in shas]
     if tree and os.path.isfile(os.path.join(tree.path, ".git")):
         with open(os.path.join(tree.path, ".git"), encoding="utf-8") as fh:
             index = os.path.join(fh.read().strip().removeprefix("gitdir: "), "index")
@@ -316,19 +362,83 @@ def _skip(
     return None
 
 
+def _unsafe_config(path: str) -> list[str]:
+    try:
+        out = _git(["config", "--show-scope", "--get-regexp", r"^filter\."], path)
+    except GitRunError as exc:
+        if exc.returncode == 1:
+            return []
+        raise
+    return [m.group(2) for m in map(UNSAFE_LOCAL_CONFIG.match, out.splitlines()) if m]
+
+
+def _has_submodules(path: str) -> bool:
+    return any(
+        line.startswith(f"{GITLINK} ")
+        for line in _git(["ls-files", "--stage"], path).splitlines()
+    )
+
+
+def _status(path: str) -> tuple[int, int, int, int]:
+    lines = _git(
+        ["status", "--porcelain=v2", "--untracked-files=all"], path
+    ).splitlines()
+    codes = [line.split(" ", 2)[1] for line in lines if line[:1] in "12u"]
+    return (
+        len(lines),
+        sum(code[0] != "." for code in codes),
+        sum(code[1] != "." for code in codes),
+        sum(line.startswith("? ") for line in lines),
+    )
+
+
+def _read_worktree(item: Item, checkout: bool) -> tuple[int, str | None]:
+    if item.worktree is None:
+        return 0, None
+    if not checkout:
+        item.worktree_state = "missing"
+        return 0, None
+    try:
+        if _has_submodules(item.worktree):
+            item.worktree_state = "changed"
+            return -1, "status skipped: submodules, whose config the scan cannot vet"
+        unsafe = _unsafe_config(item.worktree)
+        if unsafe:
+            item.worktree_state = "changed"
+            return -1, f"status skipped: {', '.join(unsafe)} in the repository config"
+        dirty, item.staged, item.unstaged, item.untracked = _status(item.worktree)
+    except GitRunError as exc:
+        item.worktree_state = "changed"
+        return -1, f"status failed: {_describe(exc)}"
+    item.worktree_state = "changed" if dirty else "clean"
+    return dirty, None
+
+
 def _build(
     repo: Repo,
     branch: str | None,
     tree: Worktree | None,
-    snapshot: tuple[dict[str, str], dict[str, dict[str, str]], dict[int, str]],
+    snapshot: Snapshot,
 ) -> Item:
-    local, remote, cwds = snapshot
+    local, remote, cwds, tracking = snapshot
+    upstream, ahead, behind, gone = tracking.get(
+        branch or "", (None, None, None, False)
+    )
     item = Item(
         branch=branch,
         worktree=tree.path if tree else None,
+        head=tree.head if tree else None,
+        detached=tree is not None and branch is None,
+        locked=tree.locked if tree else None,
+        upstream=upstream,
+        ahead=ahead,
+        behind=behind,
+        gone=gone,
         local_sha=local.get(branch) if branch else None,
         remotes=dict(remote.get(branch, {})) if branch else {},
     )
+    checkout = tree is not None and not tree.prunable and os.path.isdir(tree.path)
+    dirty, unread = _read_worktree(item, checkout)
     if branch in repo.protected:
         item.state, item.reason = "protected", "default or protected branch"
         return item
@@ -341,37 +451,30 @@ def _build(
     shas = [item.local_sha, *item.remotes.values(), tree.head if tree else None]
     verdicts = {sha: _merged_by(repo, sha) for sha in dict.fromkeys(shas) if sha}
     unmerged = [sha for sha, verdict in verdicts.items() if verdict is None]
-    checkout = tree is not None and not tree.prunable and os.path.isdir(tree.path)
 
-    try:
-        dirty = (
-            len(
-                run(
-                    ["status", "--porcelain", "--untracked-files=all"], cwd=tree.path
-                ).splitlines()
-            )
-            if checkout and not tree.main
-            else 0
-        )
-    except GitRunError as exc:
-        item.state, item.reason = "dirty", f"status failed: {_describe(exc)}"
-        dirty = -1
-
-    if dirty > 0:
+    if unread:
+        item.state, item.reason = "dirty", unread
+    elif dirty > 0:
         item.state, item.reason = "dirty", f"dirty: {dirty} paths"
-    elif dirty == 0 and unmerged:
-        ahead = int(
-            run(
-                ["rev-list", "--count", f"{repo.default}..{unmerged[0]}"], cwd=repo.repo
+    elif unmerged:
+        own = int(
+            _git(
+                [
+                    "rev-list",
+                    "--count",
+                    END_OF_OPTIONS,
+                    f"{repo.default}..{unmerged[0]}",
+                ],
+                repo.repo,
             )
         )
         item.state = "unmerged"
         item.reason = (
-            f"unmerged: {ahead} commits not in {repo.default}"
-            if ahead
+            f"unmerged: {own} commits not in {repo.default}"
+            if own
             else "no own commits"
         )
-    elif dirty == 0:
+    else:
         item.state = "merged-clean"
         item.merged_by = next(
             (verdict for verdict in verdicts.values() if verdict != "ancestor"),
@@ -401,19 +504,15 @@ def _build(
     return item
 
 
-def _snapshot(
-    repo: Repo,
-) -> tuple[
-    list[Worktree], tuple[dict[str, str], dict[str, dict[str, str]], dict[int, str]]
-]:
-    local, remote = _refs(repo.repo, repo.remotes)
+def _snapshot(repo: Repo) -> tuple[list[Worktree], Snapshot]:
+    local, remote, tracking = _refs(repo.repo, repo.remotes)
     cwds = _process_cwds() if repo.host_ns else {}
-    return _worktrees(repo.repo), (local, remote, cwds)
+    return _worktrees(repo.repo), (local, remote, cwds, tracking)
 
 
 def _items(repo: Repo) -> list[Item]:
     trees, snapshot = _snapshot(repo)
-    local, remote, _ = snapshot
+    local, remote, _, _ = snapshot
     by_branch = {t.branch: t for t in trees if t.branch}
     names = sorted(set(local) | set(remote) | set(by_branch))
     items = [_build(repo, name, by_branch.get(name), snapshot) for name in names]
@@ -450,14 +549,23 @@ def _lines(
     names: set[str] = set()
     for ref in refs:
         try:
-            tip = run(
-                ["rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"], cwd=repo_root
+            tip = _git(
+                [
+                    "rev-parse",
+                    "--verify",
+                    "--quiet",
+                    END_OF_OPTIONS,
+                    f"{ref}^{{commit}}",
+                ],
+                repo_root,
             )
         except GitRunError:
             warnings.append(f"merged-into ref {ref} not found")
             continue
         first_parent = set(
-            run(["rev-list", "--first-parent", ref], cwd=repo_root).splitlines()
+            _git(
+                ["rev-list", "--first-parent", END_OF_OPTIONS, ref], repo_root
+            ).splitlines()
         )
         lines[ref] = (tip, first_parent)
         owner = next((r for r in remotes if ref.startswith(r + "/")), None)
@@ -473,6 +581,8 @@ def plan_repo(
     merged_into: list[str],
     sizes: bool,
     min_age: float | None,
+    fetch: bool = True,
+    forge_source: Callable[[dict[str, str]], ForgeFacts] | None = None,
 ) -> Repo:
     """
     Scan one repository and classify every branch and worktree.
@@ -484,41 +594,44 @@ def plan_repo(
         merged_into: integration lines (refs) that also count as merged; each is protected.
         sizes: measure each worktree's disk usage into size_bytes.
         min_age: skip items whose newest commit or worktree index is younger (hours).
+        fetch: fetch every remote first; the tree scan reads the known refs only.
+        forge_source: remote name -> URL to forge facts; fetch_forge_facts by default.
 
     Returns:
         The repository with its classified items.
     """
     warnings: list[str] = []
-    try:
-        # Auto-maintenance runs worktree-prune, which deletes the metadata of
-        # sandboxed worktrees whose gitdir stub is missing.
-        run(
-            ["fetch", "--all", "--prune", "--quiet", "--no-auto-maintenance"],
-            cwd=repo_root,
-        )
-    except GitRunError as exc:
-        warnings.append(f"fetch failed: {_describe(exc)}")
+    if fetch:
+        try:
+            # Auto-maintenance runs worktree-prune, which deletes the metadata of
+            # sandboxed worktrees whose gitdir stub is missing.
+            run(
+                ["fetch", "--all", "--prune", "--quiet", "--no-auto-maintenance"],
+                cwd=repo_root,
+            )
+        except GitRunError as exc:
+            warnings.append(f"fetch failed: {_describe(exc)}")
     if containers is None:
         warnings.append("docker unavailable: worktree items are skipped")
 
-    remotes = sorted(list_remotes(cwd=repo_root), key=lambda r: (r != "origin", r))
+    remotes = sorted(
+        list_remotes(cwd=repo_root, scan=True), key=lambda r: (r != "origin", r)
+    )
     heads: dict[str, str] = {}
     for remote in remotes:
         try:
-            heads[remote] = run(
-                ["symbolic-ref", "--short", f"refs/remotes/{remote}/HEAD"],
-                cwd=repo_root,
+            heads[remote] = _git(
+                ["symbolic-ref", "--short", f"refs/remotes/{remote}/HEAD"], repo_root
             )
         except GitRunError:
             continue
     default = next(iter(heads.values()), None) or resolve_base_branch(
-        "main", "master", cwd=repo_root
+        "main", "master", cwd=repo_root, scan=True
     )
     head_names = {ref[len(remote) + 1 :] for remote, ref in heads.items()}
 
-    forge = fetch_forge_facts(
-        {r: run(["remote", "get-url", r], cwd=repo_root) for r in remotes}
-    )
+    urls = {r: _git(["remote", "get-url", "--", r], repo_root) for r in remotes}
+    forge = (forge_source or fetch_forge_facts)(urls)
     if forge.unavailable:
         warnings.append(f"forge unavailable: {forge.unavailable}")
     lines, line_names = _lines(repo_root, merged_into, remotes, warnings)
@@ -535,8 +648,11 @@ def plan_repo(
             *line_names,
         },
         first_parent=set(
-            run(["rev-list", "--first-parent", default], cwd=repo_root).splitlines()
+            _git(
+                ["rev-list", "--first-parent", END_OF_OPTIONS, default], repo_root
+            ).splitlines()
         ),
+        urls=urls,
         forge=forge,
         containers=containers,
         host_ns=host_ns,
@@ -637,6 +753,7 @@ def execute(repo: Repo, item: Item) -> None:
                 [
                     "push",
                     f"--force-with-lease=refs/heads/{item.branch}:{sha}",
+                    "--",
                     remote,
                     f":refs/heads/{item.branch}",
                 ],

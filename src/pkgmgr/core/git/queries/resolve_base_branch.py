@@ -37,12 +37,13 @@ def resolve_base_branch(
     preferred: str = "main",
     fallback: str = "master",
     cwd: str = ".",
+    scan: bool = False,
 ) -> str:
     """
     Resolve the base branch to use.
 
     Try `preferred` first (default: main),
-    fall back to `fallback` (default: master).
+    fall back to `fallback` (default: master); scan=True runs git hardened.
 
     Raises GitBaseBranchNotFoundError if neither exists.
     Raises GitRunError for other git failures (e.g., not a git repository).
@@ -51,7 +52,7 @@ def resolve_base_branch(
 
     for candidate in (preferred, fallback):
         try:
-            run(["rev-parse", "--verify", candidate], cwd=cwd)
+            run(["rev-parse", "--verify", candidate], cwd=cwd, scan=scan)
             return candidate
         except GitRunError as exc:
             if _is_branch_missing_error(exc):

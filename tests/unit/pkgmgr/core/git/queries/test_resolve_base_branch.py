@@ -16,7 +16,9 @@ class TestResolveBaseBranch(unittest.TestCase):
         mock_run.return_value = "dummy"
         result = resolve_base_branch("main", "master", cwd=".")
         self.assertEqual(result, "main")
-        mock_run.assert_called_with(["rev-parse", "--verify", "main"], cwd=".")
+        mock_run.assert_called_with(
+            ["rev-parse", "--verify", "main"], cwd=".", scan=False
+        )
 
     @patch("pkgmgr.core.git.queries.resolve_base_branch.run")
     def test_resolves_fallback(self, mock_run):

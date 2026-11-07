@@ -115,6 +115,25 @@ def add_branch_subparsers(
         help="Print the plan as JSON",
     )
 
+    branch_tree = branch_subparsers.add_parser(
+        "tree",
+        help=(
+            "Print the branches and worktrees of every pkgmgr-managed repository "
+            "with their gc state, without fetching"
+        ),
+    )
+    branch_tree.add_argument(
+        "--format",
+        choices=("json", "yaml"),
+        default="json",
+        help="Output format (default: json)",
+    )
+    branch_tree.add_argument(
+        "--output",
+        metavar="FILE",
+        help="Write atomically to FILE instead of stdout",
+    )
+
     branch_purge = branch_subparsers.add_parser(
         "purge",
         help="Delete unmerged or dirty branches after a confirmation per item",

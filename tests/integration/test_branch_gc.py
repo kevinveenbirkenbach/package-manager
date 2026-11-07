@@ -331,6 +331,54 @@ class TestBranchGc(unittest.TestCase):
         self.assertTrue(item.result.startswith("skipped: changed since plan"))
         self.assertTrue(os.path.isdir(self.merged_wt))
 
+    def test_worktree_path_with_newlines_cannot_forge_a_record(self) -> None:
+        forged = os.path.join(self.root, "a\n\nworktree -evil")
+        git(self.repo, "worktree", "add", "-b", "forged", forged, "main")
+
+        paths = {tree.path: tree.branch for tree in gc._worktrees(self.repo)}
+
+        self.assertEqual(paths[forged], "forged")
+        self.assertNotIn("-evil", paths)
+
+    def test_ref_named_like_an_option_writes_no_file(self) -> None:
+        target = os.path.join(self.root, "pwn")
+        os.makedirs(target)
+        remote = f"--output={target}"
+        main = git(self.repo, "rev-parse", "main")
+        git(self.repo, "remote", "remove", "origin")
+        git(self.repo, "config", f"remote.{remote}.url", self.origin)
+        git(self.repo, "update-ref", f"refs/remotes/{remote}/main", main)
+        git(
+            self.repo,
+            "symbolic-ref",
+            f"refs/remotes/{remote}/HEAD",
+            f"refs/remotes/{remote}/main",
+        )
+
+        plan = self._plan(host_ns=True, cwds={})
+
+        self.assertEqual(plan.default, f"{remote}/main")
+        self.assertEqual(os.listdir(target), [])
+
+    def test_execute_deletes_branches_named_like_options(self) -> None:
+        sha = git(self.repo, "rev-parse", "merged")
+        other = os.path.join(self.root, "other.git")
+        git(self.root, "init", "--bare", other)
+        git(self.repo, "push", other, "merged:refs/heads/-evil")
+        git(self.repo, "config", "remote.-r.url", other)
+        git(self.repo, "update-ref", "refs/heads/-evil", sha)
+        git(self.repo, "update-ref", "refs/remotes/-r/-evil", sha)
+        plan = self._plan(host_ns=True, cwds={})
+        item = self._items(plan)["-evil"]
+        self.assertEqual(item.remotes, {"-r": sha})
+
+        with patch.object(gc, "_process_cwds", return_value={}):
+            gc.execute(plan, item)
+
+        self.assertEqual(item.result, "done")
+        self.assertEqual(git(self.repo, "for-each-ref", "refs/heads/-evil"), "")
+        self.assertEqual(git(other, "for-each-ref", "refs/heads/-evil"), "")
+
     def test_branch_gc_json_and_refusal(self) -> None:
         out = io.StringIO()
         with (
