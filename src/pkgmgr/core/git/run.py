@@ -22,6 +22,7 @@ SCAN_FLAGS = (
 SCAN_ENV = {
     "GIT_CONFIG_NOSYSTEM": "1",
     "GIT_NO_LAZY_FETCH": "1",
+    "GIT_NO_REPLACE_OBJECTS": "1",
     "GIT_OPTIONAL_LOCKS": "0",
     "GIT_TERMINAL_PROMPT": "0",
     "GIT_ASKPASS": "/bin/false",
@@ -63,7 +64,8 @@ def run(
         cwd: directory to run in.
         preview: print the command instead of running it.
         scan: read a repository an agent may have written: no fsmonitor, hook,
-            pager, lazy fetch, system config or prompt, stdin closed, a timeout.
+            pager, lazy fetch, replace object, system config or prompt, stdin
+            closed, a timeout.
 
     Raises GitRunError (or a subclass) if execution fails or times out.
     """

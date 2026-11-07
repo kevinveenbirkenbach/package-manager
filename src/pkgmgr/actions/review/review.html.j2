@@ -1,0 +1,347 @@
+{% set status_letters = {"added": "A", "deleted": "D", "modified": "M", "renamed": "R", "copied": "C", "untracked": "U"} %}
+{% set signs = {"add": "+", "del": "-", "ctx": "", "meta": ""} %}
+{% set style %}
+:root {
+  color-scheme: light dark;
+  --bg: #f6f8fa;
+  --panel: #ffffff;
+  --subtle: #f6f8fa;
+  --border: #d1d9e0;
+  --border-muted: #e1e6eb;
+  --text: #1f2328;
+  --muted: #59636e;
+  --accent: #0969da;
+  --accent-bg: #ddf4ff;
+  --add-fg: #1a7f37;
+  --add-bg: #dafbe1;
+  --add-line: #e6ffec;
+  --add-num: #ccffd8;
+  --del-fg: #cf222e;
+  --del-bg: #ffebe9;
+  --del-line: #ffebe9;
+  --del-num: #ffd7d5;
+  --hunk-bg: #ddf4ff;
+  --hunk-fg: #59636e;
+  --warn-fg: #9a6700;
+  --warn-bg: #fff8c5;
+  --shadow: 0 1px 2px rgba(31, 35, 40, 0.06);
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --panel: #151b23;
+    --subtle: #1b222c;
+    --border: #3d444d;
+    --border-muted: #2a313c;
+    --text: #e6edf3;
+    --muted: #9198a1;
+    --accent: #4493f8;
+    --accent-bg: rgba(56, 139, 253, 0.15);
+    --add-fg: #3fb950;
+    --add-bg: rgba(46, 160, 67, 0.2);
+    --add-line: rgba(46, 160, 67, 0.15);
+    --add-num: rgba(63, 185, 80, 0.3);
+    --del-fg: #f85149;
+    --del-bg: rgba(248, 81, 73, 0.2);
+    --del-line: rgba(248, 81, 73, 0.1);
+    --del-num: rgba(248, 81, 73, 0.3);
+    --hunk-bg: rgba(56, 139, 253, 0.1);
+    --hunk-fg: #9198a1;
+    --warn-fg: #d29922;
+    --warn-bg: rgba(187, 128, 9, 0.15);
+    --shadow: none;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-padding-top: 64px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+pre, code { font-family: var(--mono); }
+.muted { color: var(--muted); font-weight: 400; }
+.masthead { background: var(--panel); border-bottom: 1px solid var(--border); }
+.masthead-inner, .toolbar-inner, main { max-width: 1280px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+.masthead-inner { padding-top: 24px; padding-bottom: 20px; }
+.eyebrow { margin: 0 0 4px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+h1 { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; font-size: 22px; font-weight: 600; }
+.pill { padding: 2px 10px; border-radius: 999px; background: var(--accent-bg); color: var(--accent); font: 500 12px/20px var(--mono); }
+.facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 20px; margin: 16px 0 0; font-size: 13px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font-family: var(--mono); overflow-wrap: anywhere; }
+.warnings, .skipped { border: 1px solid var(--warn-fg); border-radius: 8px; background: var(--warn-bg); color: var(--warn-fg); font-size: 13px; overflow-wrap: anywhere; }
+.warnings { margin: 16px 0 0; padding: 10px 14px 10px 34px; }
+.skipped { margin: 0; padding: 14px 16px; border-style: dashed; }
+.totals { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.total { display: flex; flex-direction: column; gap: 2px; min-width: 160px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--subtle); color: var(--text); }
+.total:hover { border-color: var(--accent); text-decoration: none; }
+.total .label { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.total .files { font-size: 15px; font-weight: 600; }
+.stat { display: inline-flex; gap: 6px; font: 600 12px var(--mono); white-space: nowrap; }
+.stat .add { color: var(--add-fg); }
+.stat .del { color: var(--del-fg); }
+.toolbar { position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border); background: var(--panel); background: color-mix(in srgb, var(--panel) 86%, transparent); backdrop-filter: saturate(180%) blur(10px); box-shadow: var(--shadow); }
+.toolbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+.jumps { display: flex; flex-wrap: wrap; gap: 2px; }
+.jumps a { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; color: var(--text); font-weight: 500; }
+.jumps a:hover { background: var(--accent-bg); text-decoration: none; }
+.count { min-width: 20px; padding: 0 6px; border: 1px solid var(--border-muted); border-radius: 999px; background: var(--subtle); color: var(--muted); font-size: 12px; line-height: 18px; text-align: center; }
+.spacer { flex: 1; }
+input[type="search"] { width: 260px; max-width: 100%; padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font: 13px var(--mono); }
+input[type="search"]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+button { padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle); color: var(--text); font: 500 13px var(--sans); cursor: pointer; }
+button:hover { border-color: var(--muted); }
+main { padding-top: 24px; padding-bottom: 80px; }
+.group { margin-bottom: 36px; }
+h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin: 0 0 12px; font-size: 17px; font-weight: 600; }
+.note { margin: 0 0 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); overflow: hidden; }
+.note figcaption { padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--subtle); font: 600 13px var(--mono); }
+.note pre, .commit-body { margin: 0; padding: 12px 14px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+details.file, details.commit { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); overflow: hidden; }
+summary { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: ""; flex: none; width: 6px; height: 6px; margin: 0 4px 0 2px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform 0.12s ease; }
+details[open] > summary::before { transform: rotate(45deg); }
+details.file > summary { background: var(--subtle); font: 13px var(--mono); }
+details.file[open] > summary, details.commit[open] > summary { border-bottom: 1px solid var(--border); }
+summary:hover { background: var(--accent-bg); }
+.badge { flex: none; width: 20px; height: 20px; border-radius: 5px; font: 700 11px/20px var(--sans); text-align: center; }
+.badge.added, .badge.untracked { background: var(--add-bg); color: var(--add-fg); }
+.badge.deleted { background: var(--del-bg); color: var(--del-fg); }
+.badge.modified { background: var(--accent-bg); color: var(--accent); }
+.badge.renamed, .badge.copied { background: var(--warn-bg); color: var(--warn-fg); }
+.path { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.path .old, .path .arrow { color: var(--muted); font-weight: 400; }
+.tag { flex: none; padding: 0 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font: 500 11px/18px var(--sans); }
+.open { flex: none; font: 500 12px var(--sans); }
+.placeholder, .empty { margin: 0; padding: 14px 16px; color: var(--muted); font-style: italic; }
+.empty { border: 1px dashed var(--border); border-radius: 8px; }
+table.diff { width: 100%; border-collapse: collapse; font: 12.5px/20px var(--mono); tab-size: 4; }
+.diff td { height: 20px; padding: 0; vertical-align: top; }
+td.num { width: 1%; min-width: 50px; padding: 0 10px; color: var(--muted); text-align: right; white-space: nowrap; user-select: none; }
+td.num a { color: inherit; }
+td.num a:hover { color: var(--accent); }
+td.sign { width: 20px; padding-left: 10px; color: var(--muted); user-select: none; }
+td.code { padding-right: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+tr.add td { background: var(--add-line); }
+tr.add td.num { background: var(--add-num); }
+tr.add td.sign { color: var(--add-fg); }
+tr.del td { background: var(--del-line); }
+tr.del td.num { background: var(--del-num); }
+tr.del td.sign { color: var(--del-fg); }
+tr.hunk td { padding-top: 4px; padding-bottom: 4px; background: var(--hunk-bg); color: var(--hunk-fg); }
+tr.meta td.code { color: var(--muted); font-style: italic; }
+tr.more td { padding: 8px 16px; border-top: 1px dashed var(--border); background: var(--subtle); color: var(--muted); font: italic 12px var(--sans); text-align: center; }
+details.commit > summary { padding: 10px 14px; }
+.sha { flex: none; padding: 1px 8px; border: 1px solid var(--border-muted); border-radius: 6px; background: var(--subtle); font-size: 12px; }
+.subject { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.commit-meta { padding: 10px 14px 0; color: var(--muted); font-size: 13px; }
+.commit-files { padding: 12px 14px 2px; }
+@media (max-width: 720px) {
+  .masthead-inner, .toolbar-inner, main { padding-left: 14px; padding-right: 14px; }
+  input[type="search"] { width: 100%; }
+  .spacer { display: none; }
+}
+{% endset %}
+{% set script %}
+(function () {
+  "use strict";
+  var files = Array.prototype.slice.call(document.querySelectorAll("details.file"));
+  var filter = document.getElementById("filter");
+  var counter = document.getElementById("filter-count");
+  function setOpen(open) {
+    document.querySelectorAll("details").forEach(function (item) {
+      item.open = open;
+    });
+  }
+  function applyFilter() {
+    var query = filter.value.trim().toLowerCase();
+    var shown = 0;
+    files.forEach(function (item) {
+      var match = query === "" || item.dataset.path.toLowerCase().indexOf(query) !== -1;
+      item.hidden = !match;
+      shown += match ? 1 : 0;
+    });
+    counter.textContent = query === "" ? "" : shown + " of " + files.length + " files";
+  }
+  document.getElementById("expand-all").addEventListener("click", function () {
+    setOpen(true);
+  });
+  document.getElementById("collapse-all").addEventListener("click", function () {
+    setOpen(false);
+  });
+  filter.addEventListener("input", applyFilter);
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "/" && document.activeElement !== filter) {
+      event.preventDefault();
+      filter.focus();
+    } else if (event.key === "Escape" && document.activeElement === filter) {
+      filter.value = "";
+      applyFilter();
+      filter.blur();
+    }
+  });
+  applyFilter();
+})();
+{% endset %}
+{% macro stat(added, removed) %}<span class="stat"><span class="add">+{{ added }}</span><span class="del">&minus;{{ removed }}</span></span>{% endmacro %}
+{% macro plural(count, word) %}{{ count }} {{ word }}{{ "" if count == 1 else "s" }}{% endmacro %}
+{% macro file_block(file, open) %}
+<details class="file" id="{{ file.anchor }}" data-path="{{ file.search }}"{% if open %} open{% endif %}>
+<summary>
+<span class="badge {{ file.diff.status }}" title="{{ file.diff.status }}">{{ status_letters[file.diff.status] }}</span>
+<span class="path">{% if file.diff.moved %}<span class="old">{{ file.diff.old_path }}</span><span class="arrow"> &rarr; </span>{% endif %}{{ file.diff.path }}</span>
+{% if file.diff.mode_change %}
+<span class="tag">mode {{ file.diff.mode_change }}</span>
+{% endif %}
+{% if file.diff.binary %}
+<span class="tag">binary</span>
+{% endif %}
+{{ stat(file.diff.added, file.diff.removed) }}
+{% if file.link %}
+<a class="open" href="{{ file.link }}" title="Open in VS Code">Open &#8599;</a>
+{% endif %}
+</summary>
+{% if file.detail %}
+<p class="placeholder">{{ file.detail }}</p>
+{% elif not file.hunks %}
+<p class="placeholder">No content changes.</p>
+{% else %}
+<table class="diff">
+{% for hunk in file.hunks %}
+<tbody>
+<tr class="hunk"><td class="num" colspan="2"></td><td class="code" colspan="2">{{ hunk.header }}</td></tr>
+{% for line in hunk.lines %}
+<tr class="{{ line.kind }}"><td class="num">{{ "" if line.old is none else line.old }}</td><td class="num">{% if line.new is not none and file.link_base %}<a href="{{ file.link_base }}:{{ line.new }}">{{ line.new }}</a>{% elif line.new is not none %}{{ line.new }}{% endif %}</td><td class="sign">{{ signs[line.kind] }}</td><td class="code">{{ line.text }}</td></tr>
+{% endfor %}
+</tbody>
+{% endfor %}
+{% if file.hidden %}
+<tbody><tr class="more"><td colspan="4">&hellip; {{ plural(file.hidden, "more line") }} not shown</td></tr></tbody>
+{% endif %}
+</table>
+{% endif %}
+</details>
+{% endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src '{{ style|csp_hash }}'; script-src '{{ script|csp_hash }}'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Review: {{ review.name }}{% if review.branch %} ({{ review.branch }}){% endif %}</title>
+<style>{{ style }}</style>
+</head>
+<body>
+<header class="masthead">
+<div class="masthead-inner">
+<p class="eyebrow">Working copy review</p>
+<h1>{{ review.name }} <span class="pill">{{ review.branch or "detached HEAD" }}</span></h1>
+<dl class="facts">
+<dt>Top level</dt><dd>{{ review.top_level }}</dd>
+<dt>Branch</dt><dd>{{ review.branch or "(detached HEAD)" }}</dd>
+<dt>HEAD</dt><dd>{{ review.head or "(no commits yet)" }}</dd>
+<dt>Index tree</dt><dd>{{ review.index_tree }}</dd>
+{% if review.base is not none %}
+<dt>Base</dt><dd>{{ review.base }} @ {{ review.base_short }}</dd>
+{% endif %}
+</dl>
+{% if review.warnings %}
+<ul class="warnings">
+{% for warning in review.warnings %}
+<li>{{ warning }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+<div class="totals">
+{% for section in review.sections %}
+<a class="total" href="#{{ section.key }}"><span class="label">{{ section.title }}</span><span class="files">{{ plural(section.files|length, "file") }}</span>{{ stat(section.added, section.removed) }}</a>
+{% endfor %}
+{% if review.base is not none %}
+<a class="total" href="#commits"><span class="label">Commits</span><span class="files">{{ plural(review.commits|length, "commit") }} &middot; {{ plural(review.commit_files, "file") }}</span>{{ stat(review.commit_added, review.commit_removed) }}</a>
+{% endif %}
+</div>
+</div>
+</header>
+<nav class="toolbar">
+<div class="toolbar-inner">
+<div class="jumps">
+{% if review.notes %}
+<a href="#notes">Notes <span class="count">{{ review.notes|length }}</span></a>
+{% endif %}
+{% for section in review.sections %}
+<a href="#{{ section.key }}">{{ section.title }} <span class="count">{{ section.files|length }}</span></a>
+{% endfor %}
+{% if review.base is not none %}
+<a href="#commits">Commits <span class="count">{{ review.commits|length }}</span></a>
+{% endif %}
+</div>
+<div class="spacer"></div>
+<input id="filter" type="search" placeholder="Filter files by path  ( / )" autocomplete="off" spellcheck="false" aria-label="Filter files by path">
+<span id="filter-count" class="muted"></span>
+<button type="button" id="expand-all">Expand all</button>
+<button type="button" id="collapse-all">Collapse all</button>
+</div>
+</nav>
+<main>
+{% if review.notes %}
+<section class="group" id="notes">
+<h2>Notes</h2>
+{% for note in review.notes %}
+<figure class="note">
+<figcaption>{{ note.title }}</figcaption>
+<pre>
+{{ note.text }}</pre>
+</figure>
+{% endfor %}
+</section>
+{% endif %}
+{% for section in review.sections %}
+<section class="group" id="{{ section.key }}" data-files="{{ section.files|length }}" data-added="{{ section.added }}" data-removed="{{ section.removed }}">
+<h2>{{ section.title }} <span class="muted">{{ plural(section.files|length, "file") }}</span>{{ stat(section.added, section.removed) }}</h2>
+{% if section.skipped %}
+<p class="skipped">{{ section.skipped }}</p>
+{% else %}
+{% for file in section.files %}
+{{ file_block(file, true) }}
+{% else %}
+<p class="empty">No changes.</p>
+{% endfor %}
+{% endif %}
+</section>
+{% endfor %}
+{% if review.base is not none %}
+<section class="group" id="commits" data-commits="{{ review.commits|length }}" data-files="{{ review.commit_files }}" data-added="{{ review.commit_added }}" data-removed="{{ review.commit_removed }}">
+<h2>Commits <span class="muted">{{ review.base }}..HEAD &middot; {{ plural(review.commits|length, "commit") }}</span>{{ stat(review.commit_added, review.commit_removed) }}</h2>
+{% for commit in review.commits %}
+<details class="commit" id="{{ commit.anchor }}" open>
+<summary>
+<code class="sha">{{ commit.short }}</code>
+<span class="subject">{{ commit.subject }}</span>
+{{ stat(commit.added, commit.removed) }}
+</summary>
+<div class="commit-meta">{{ commit.author }}</div>
+{% if commit.body %}
+<pre class="commit-body">
+{{ commit.body }}</pre>
+{% endif %}
+<div class="commit-files">
+{% for file in commit.files %}
+{{ file_block(file, false) }}
+{% else %}
+<p class="placeholder">No file changes.</p>
+{% endfor %}
+</div>
+</details>
+{% else %}
+<p class="empty">No commits between {{ review.base }} and HEAD.</p>
+{% endfor %}
+</section>
+{% endif %}
+</main>
+<script>{{ script }}</script>
+</body>
+</html>

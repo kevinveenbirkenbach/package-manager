@@ -15,6 +15,7 @@ from pkgmgr.cli.commands import (
     handle_publish,
     handle_release,
     handle_repos_command,
+    handle_review,
     handle_tools_command,
     handle_version,
 )
@@ -67,6 +68,10 @@ def dispatch_command(args, ctx: CLIContext) -> None:
 
     if args.command == "code-scanning":
         handle_code_scanning(args, ctx)
+        return
+
+    if args.command == "review":
+        handle_review(args, ctx)
         return
 
     commands_with_selection = {

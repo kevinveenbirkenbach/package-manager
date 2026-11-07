@@ -8,6 +8,7 @@ from .mirror import handle_mirror_command
 from .publish import handle_publish
 from .release import handle_release
 from .repos import handle_repos_command
+from .review import handle_review
 from .tools import handle_tools_command
 from .version import handle_version
 
@@ -22,6 +23,7 @@ __all__ = [
     "handle_publish",
     "handle_release",
     "handle_repos_command",
+    "handle_review",
     "handle_tools_command",
     "handle_version",
 ]

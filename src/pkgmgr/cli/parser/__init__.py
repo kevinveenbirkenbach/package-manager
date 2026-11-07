@@ -17,6 +17,7 @@ from .mirror_cmd import add_mirror_subparsers
 from .navigation_cmd import add_navigation_subparsers
 from .publish_cmd import add_publish_subparser
 from .release_cmd import add_release_subparser
+from .review_cmd import add_review_subparser
 from .version_cmd import add_version_subparser
 
 
@@ -58,6 +59,7 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     add_navigation_subparsers(subparsers)
 
     add_branch_subparsers(subparsers)
+    add_review_subparser(subparsers)
     add_release_subparser(subparsers)
     add_publish_subparser(subparsers)
 
