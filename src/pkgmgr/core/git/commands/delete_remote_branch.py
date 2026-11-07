@@ -10,7 +10,7 @@ class GitDeleteRemoteBranchError(GitCommandError):
 
 def delete_remote_branch(remote: str, branch: str, cwd: str = ".") -> None:
     try:
-        run(["push", remote, "--delete", branch], cwd=cwd)
+        run(["push", "--delete", "--", remote, branch], cwd=cwd)
     except GitRunError as exc:
         raise GitDeleteRemoteBranchError(
             f"Failed to delete remote branch {branch!r} on {remote!r}.",

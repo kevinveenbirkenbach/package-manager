@@ -448,6 +448,16 @@ class TestWorktreeUp(WorktreeFixture, unittest.TestCase):
         self.assertFalse(os.path.exists(parsed))
         self.assertFalse(os.path.exists(ran))
 
+    def test_checkout_runs_no_config_hook(self) -> None:
+        marker = os.path.join(self.root, "hooked")
+        git(self.repo, "config", "hook.probe.command", f"touch {marker}")
+        git(self.repo, "config", "hook.probe.event", "post-checkout")
+
+        code, _ = self._up("feature/h", None)
+
+        self.assertEqual(code, 0)
+        self.assertFalse(os.path.exists(marker))
+
     def test_origin_url_cannot_escape_the_worktrees_dir(self) -> None:
         git(self.repo, "remote", "set-url", "origin", "https://host/../../escape")
 

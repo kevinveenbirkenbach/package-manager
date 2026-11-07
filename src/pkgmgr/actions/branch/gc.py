@@ -10,15 +10,15 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 
 from pkgmgr.actions.worktree.hooks import FINI_HOOK, hook_command, run_hook
-from pkgmgr.core.git.commands import delete_local_branch
 from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.queries import (
     FILTER_CONFIG,
+    UNSAFE_CONFIG,
     list_remotes,
     local_config,
     resolve_base_branch,
 )
-from pkgmgr.core.git.run import END_OF_OPTIONS, run
+from pkgmgr.core.git.run import END_OF_OPTIONS, SCAN_FLAGS, run
 
 from .gc_forge import ForgeFacts, fetch_forge_facts
 from .nofollow import canonical, remove_tree
@@ -135,6 +135,7 @@ class Repo:
     hooks: dict[str, list[str]]
     warnings: list[str] = field(default_factory=list)
     items: list[Item] = field(default_factory=list)
+    unsafe: list[str] = field(default_factory=list)
 
 
 def host_pid_namespace() -> bool:
@@ -434,10 +435,29 @@ def _skip(
         return "worktree checkout missing"
     if repo.containers is None:
         return "docker unavailable"
+    shared = sorted(
+        {
+            c.project
+            for c in repo.containers
+            if c.project in item.compose_projects
+            and not _inside(c.working_dir, tree.path)
+        }
+    )
+    if shared:
+        return (
+            f"compose project {', '.join(shared)} also has containers "
+            "outside the worktree"
+        )
     lock = _lock_skip(tree.locked, repo.host_ns)
     if lock:
         return lock
     return _busy(cwds, tree.path)
+
+
+def _remote_refusal(unsafe: list[str], item: Item) -> str | None:
+    if unsafe and any(a.startswith("remote-branch:") for a in item.actions):
+        return f"repository config sets {', '.join(unsafe)}"
+    return None
 
 
 def _busy(cwds: dict[int, str], path: str) -> str | None:
@@ -608,6 +628,8 @@ def _build(
     ):
         item.skip = f"younger than {repo.min_age:g} h"
     item.actions = _actions(repo, item, tree, checkout, dirty, registrations)
+    if repo.unsafe:
+        item.actions = [a for a in item.actions if not a.startswith("remote-branch:")]
     return item
 
 
@@ -774,12 +796,26 @@ def plan_repo(
     if scope not in SCOPES:
         raise ValueError(f"unknown scope {scope!r}")
     warnings: list[str] = []
-    if fetch:
+    unsafe = local_config(repo_root, UNSAFE_CONFIG)
+    if unsafe:
+        warnings.append(
+            f"fetch and remote branch deletes skipped: the repository config sets "
+            f"{', '.join(unsafe)}"
+        )
+    if fetch and not unsafe:
         try:
             # Auto-maintenance runs worktree-prune, which deletes the metadata of
             # sandboxed worktrees whose gitdir stub is missing.
             run(
-                ["fetch", "--all", "--prune", "--quiet", "--no-auto-maintenance"],
+                [
+                    *SCAN_FLAGS,
+                    "fetch",
+                    "--all",
+                    "--prune",
+                    "--quiet",
+                    "--no-auto-maintenance",
+                    "--no-recurse-submodules",
+                ],
                 cwd=repo_root,
             )
         except GitRunError as exc:
@@ -836,6 +872,7 @@ def plan_repo(
         activity=activity,
         hooks=_pins(hooks, repo_root, warnings),
         warnings=warnings,
+        unsafe=unsafe,
     )
     repo.items = _items(repo)
     return repo
@@ -953,6 +990,10 @@ def execute(repo: Repo, item: Item) -> None:
     if _fingerprint(fresh) != _fingerprint(item):
         item.result = f"skipped: changed since plan ({fresh.skip or fresh.reason})"
         return
+    refusal = _remote_refusal(local_config(repo.repo, UNSAFE_CONFIG), item)
+    if refusal:
+        item.result = f"skipped: {refusal}"
+        return
 
     notes: list[str] = []
     removes_tree = "worktree" in item.actions
@@ -976,12 +1017,13 @@ def execute(repo: Repo, item: Item) -> None:
         if removes_tree:
             _remove_worktree(repo.repo, item.worktree)
         if "local-branch" in item.actions:
-            delete_local_branch(item.branch, cwd=repo.repo, force=True)
+            _git(["branch", "-D", "--", item.branch], repo.repo)
         for remote, sha in item.remotes.items():
             if f"remote-branch:{remote}" not in item.actions:
                 continue
             run(
                 [
+                    *SCAN_FLAGS,
                     "push",
                     f"--force-with-lease=refs/heads/{item.branch}:{sha}",
                     "--",

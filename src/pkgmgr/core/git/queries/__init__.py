@@ -20,7 +20,7 @@ from .get_tags_at_ref import GitTagsAtRefQueryError, get_tags_at_ref
 from .get_upstream_ref import get_upstream_ref
 from .list_remotes import list_remotes
 from .list_tags import list_tags
-from .local_config import FILTER_CONFIG, local_config
+from .local_config import FILTER_CONFIG, UNSAFE_CONFIG, local_config
 from .probe_remote_reachable import (
     probe_remote_reachable,
     probe_remote_reachable_detail,
@@ -29,6 +29,7 @@ from .resolve_base_branch import GitBaseBranchNotFoundError, resolve_base_branch
 
 __all__ = [
     "FILTER_CONFIG",
+    "UNSAFE_CONFIG",
     "GitBaseBranchNotFoundError",
     "GitChangelogQueryError",
     "GitLatestSigningKeyQueryError",

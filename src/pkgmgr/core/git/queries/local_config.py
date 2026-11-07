@@ -4,6 +4,14 @@ from ..errors import GitRunError
 from ..run import run
 
 FILTER_CONFIG = r"^filter\."
+UNSAFE_CONFIG = (
+    r"^(core\.(sshcommand|gitproxy|askpass|fsmonitor|alternaterefscommand)$"
+    r"|credential\.(.+\.)?helper$|gpg\.(.+\.)?program$|gpg\.ssh\.defaultkeycommand$"
+    r"|protocol\.|hook\.|gc\.recentobjectshook$"
+    r"|http\.(.+\.)?(proxy|sslverify|sslcainfo|sslcapath|cookiefile|savecookies)$"
+    r"|remote\..+\.(receivepack|uploadpack|vcs|proxy)$"
+    r"|url\..+\.(insteadof|pushinsteadof)$)"
+)
 LOCAL_SCOPES = ("local", "worktree")
 
 

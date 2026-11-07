@@ -10,6 +10,8 @@ from pkgmgr.actions.repository._parallel import (
     run_on_repos,
 )
 from pkgmgr.core.git import GitRunError, run
+from pkgmgr.core.git.queries import UNSAFE_CONFIG, local_config
+from pkgmgr.core.git.run import SCAN_FLAGS
 
 Repository = dict[str, Any]
 
@@ -28,7 +30,28 @@ def _try_git(repo_dir: str, *args: str) -> str | None:
         return None
 
 
+def refuse_unsafe_config(repo_dir: str) -> None:
+    """
+    Args:
+      repo_dir: checkout about to be signed or pushed.
+
+    Raises:
+      PushRefusedError: the repository's own config, which an agent may have
+        written, sets a key that makes git run a program or reroute the push.
+        Filter drivers stay allowed on purpose: git-lfs and git-crypt need
+        them locally, so a clean filter can still run in the amend's index
+        refresh, as it did before.
+    """
+    unsafe = local_config(repo_dir, UNSAFE_CONFIG)
+    if unsafe:
+        raise PushRefusedError(
+            f"{repo_dir}: the repository config sets {', '.join(unsafe)}, which can "
+            "run a program or reroute the push; unset it or move it to the global config"
+        )
+
+
 def _push_target(repo_dir: str) -> tuple[str, str]:
+    refuse_unsafe_config(repo_dir)
     branch = run(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_dir)
     if branch == "HEAD":
         raise PushRefusedError(f"{repo_dir}: detached HEAD, nothing to push")
@@ -69,7 +92,11 @@ def sign_unpushed(repo_dir: str, *, preview: bool = False) -> None:
       preview: print the fetch and the amend instead of running them.
     """
     branch, remote = _push_target(repo_dir)
-    run(["fetch", "--quiet", remote], cwd=repo_dir, preview=preview)
+    run(
+        ["fetch", "--quiet", "--no-recurse-submodules", "--", remote],
+        cwd=repo_dir,
+        preview=preview,
+    )
     base, signatures = _unpushed_signatures(repo_dir, remote, branch)
     head = run(["rev-parse", "HEAD"], cwd=repo_dir)
     older = sum(1 for sha, s in signatures.items() if sha != head and s != "G")
@@ -80,11 +107,23 @@ def sign_unpushed(repo_dir: str, *, preview: bool = False) -> None:
         )
     if signatures.get(head, "G") == "G":
         return
-    if run(["status", "--porcelain", "--untracked-files=no"], cwd=repo_dir):
-        raise PushRefusedError(f"{repo_dir}: uncommitted changes, cannot sign HEAD")
+    if run(
+        [
+            *SCAN_FLAGS,
+            "diff",
+            "--cached",
+            "--name-only",
+            "--no-ext-diff",
+            "--ignore-submodules=none",
+            "HEAD",
+        ],
+        cwd=repo_dir,
+    ):
+        raise PushRefusedError(f"{repo_dir}: staged changes, cannot sign HEAD")
 
     cmd = [
         "git",
+        *SCAN_FLAGS,
         "commit",
         "--amend",
         "--no-edit",
@@ -113,12 +152,23 @@ def _lease(
     if tracking is not None:
         sha = _try_git(repo_dir, "rev-parse", "--verify", "--quiet", tracking) or ""
     else:
-        listed = run(["ls-remote", url, branch_ref], cwd=repo_dir).splitlines()
+        listed = run(["ls-remote", "--", url, branch_ref], cwd=repo_dir).splitlines()
         sha = next(
             (ln.split()[0] for ln in listed if ln.split()[1:] == [branch_ref]), ""
         )
         if sha and not preview:
-            run(["fetch", "--quiet", "--no-tags", url, branch_ref], cwd=repo_dir)
+            run(
+                [
+                    "fetch",
+                    "--quiet",
+                    "--no-tags",
+                    "--no-recurse-submodules",
+                    "--",
+                    url,
+                    branch_ref,
+                ],
+                cwd=repo_dir,
+            )
     if not sha or preview:
         return sha
     lost: set[str] | None = None
@@ -173,9 +223,9 @@ def push_branch(
                 f"{repo_dir}: HEAD {head[:10]} is unsigned; run `pkgmgr push` to sign it"
             )
 
-    fetch_url = run(["remote", "get-url", remote], cwd=repo_dir)
+    fetch_url = run(["remote", "get-url", "--", remote], cwd=repo_dir)
     push_urls = run(
-        ["remote", "get-url", "--push", "--all", remote], cwd=repo_dir
+        ["remote", "get-url", "--push", "--all", "--", remote], cwd=repo_dir
     ).splitlines()
     branch_ref = f"refs/heads/{branch}"
     tracking = f"refs/remotes/{remote}/{branch}"
@@ -205,8 +255,10 @@ def push_branch(
                 [
                     "push",
                     "--follow-tags",
+                    "--no-recurse-submodules",
                     f"--force-with-lease={branch_ref}:{expect}",
                     *extra_args,
+                    "--",
                     url,
                     branch_ref,
                     *refs,

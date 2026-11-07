@@ -4,7 +4,11 @@ import os
 import sys
 
 from pkgmgr.actions.branch import close_branch
-from pkgmgr.actions.repository.push import push_branch, sign_unpushed
+from pkgmgr.actions.repository.push import (
+    push_branch,
+    refuse_unsafe_config,
+    sign_unpushed,
+)
 from pkgmgr.core.git import GitRunError
 from pkgmgr.core.git.commands import add, commit, tag_annotated
 from pkgmgr.core.git.queries import get_current_branch
@@ -47,6 +51,7 @@ def _release_impl(
         branch = "main"
     print(f"Releasing on branch: {branch}")
 
+    refuse_unsafe_config(".")
     # Pull BEFORE making any modifications
     ensure_clean_and_synced(preview=preview)
 

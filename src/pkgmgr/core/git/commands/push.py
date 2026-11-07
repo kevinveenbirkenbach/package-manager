@@ -20,11 +20,9 @@ def push(
     Push a ref to a remote, optionally forced.
 
     Equivalent to:
-      git push <remote> <ref> [--force]
+      git push [--force] -- <remote> <ref>
     """
-    args = ["push", remote, ref]
-    if force:
-        args.append("--force")
+    args = ["push", *(["--force"] if force else []), "--", remote, ref]
 
     try:
         run(args, cwd=cwd, preview=preview)

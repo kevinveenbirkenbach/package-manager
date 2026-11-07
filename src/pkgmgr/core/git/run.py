@@ -6,10 +6,26 @@ import subprocess
 from .errors import GitNotRepositoryError, GitRunError
 
 SCAN_FLAGS = (
+    "--no-pager",
     "-c",
     "core.fsmonitor=false",
     "-c",
     "core.hooksPath=/dev/null",
+    # hook.<name>.command hooks from the config ignore core.hooksPath
+    "-c",
+    "hook.reference-transaction.enabled=false",
+    "-c",
+    "hook.prepare-commit-msg.enabled=false",
+    "-c",
+    "hook.post-commit.enabled=false",
+    "-c",
+    "hook.post-rewrite.enabled=false",
+    "-c",
+    "hook.post-index-change.enabled=false",
+    "-c",
+    "hook.pre-push.enabled=false",
+    "-c",
+    "hook.post-checkout.enabled=false",
     "-c",
     "core.pager=cat",
     "-c",

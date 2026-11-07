@@ -109,6 +109,7 @@ class GcFixture:
         scope: str = "all",
         activity: bool = False,
         hooks: dict | None = None,
+        containers: list[gc.Container] | None = None,
     ) -> gc.Repo:
         with (
             patch.object(gc, "fetch_forge_facts", return_value=self.forge),
@@ -116,7 +117,7 @@ class GcFixture:
         ):
             return gc.plan_repo(
                 self.repo,
-                [],
+                containers or [],
                 host_ns,
                 merged_into=merged_into or [],
                 sizes=sizes,
@@ -387,6 +388,97 @@ class TestBranchGc(GcFixture, unittest.TestCase):
         self.assertEqual(item.result, "done")
         self.assertEqual(git(self.repo, "for-each-ref", "refs/heads/-evil"), "")
         self.assertEqual(git(other, "for-each-ref", "refs/heads/-evil"), "")
+
+    def _fetches(self) -> int:
+        with patch.object(gc, "run", wraps=gc.run) as spy:
+            self.plan = self._plan(host_ns=True, cwds={})
+        return sum("fetch" in call.args[0] for call in spy.call_args_list)
+
+    def test_unsafe_repository_config_skips_fetch_and_remote_deletes(self) -> None:
+        self.assertEqual(self._fetches(), 1)
+        git(self.repo, "config", "core.sshCommand", "false")
+
+        self.assertEqual(self._fetches(), 0)
+        plan = self.plan
+        item = self._items(plan)["merged"]
+
+        self.assertIn(
+            "fetch and remote branch deletes skipped: the repository config sets "
+            "core.sshcommand",
+            plan.warnings,
+        )
+        self.assertIsNone(item.skip)
+        self.assertEqual(item.actions, ["worktree", "local-branch"])
+
+        with patch.object(gc, "_process_cwds", return_value={}):
+            gc.execute(plan, item)
+
+        self.assertEqual(item.result, "done")
+        self.assertFalse(os.path.exists(self.merged_wt))
+        self.assertEqual(git(self.origin, "branch", "--list", "merged"), "merged")
+
+    def test_config_set_after_plan_stops_execute(self) -> None:
+        plan = self._plan(host_ns=True, cwds={})
+        item = self._items(plan)["merged"]
+        git(self.repo, "config", "credential.helper", "false")
+
+        with patch.object(gc, "_process_cwds", return_value={}):
+            gc.execute(plan, item)
+
+        self.assertEqual(
+            item.result, "skipped: repository config sets credential.helper"
+        )
+        self.assertTrue(os.path.isdir(self.merged_wt))
+        self.assertEqual(git(self.origin, "branch", "--list", "merged"), "merged")
+
+    def test_compose_project_with_containers_elsewhere_is_skipped(self) -> None:
+        inside = gc.Container("proj", os.path.join(self.merged_wt, "app"), "img")
+        elsewhere = gc.Container("proj", os.path.join(self.root, "other"), "img")
+
+        alone = self._items(self._plan(host_ns=True, cwds={}, containers=[inside]))
+        shared = self._items(
+            self._plan(host_ns=True, cwds={}, containers=[inside, elsewhere])
+        )
+
+        self.assertIsNone(alone["merged"].skip)
+        self.assertIn("compose-down:proj", alone["merged"].actions)
+        self.assertEqual(
+            shared["merged"].skip,
+            "compose project proj also has containers outside the worktree",
+        )
+        self.assertFalse(shared["merged"].eligible)
+
+    def test_execute_runs_no_repository_hook(self) -> None:
+        marker = os.path.join(self.root, "hooked")
+        hook = os.path.join(self.repo, ".git", "hooks", "reference-transaction")
+        with open(hook, "w") as fh:
+            fh.write(f"#!/bin/sh\ntouch {marker}\n")
+        os.chmod(hook, 0o755)
+        plan = self._plan(host_ns=True, cwds={})
+        item = self._items(plan)["merged"]
+
+        with patch.object(gc, "_process_cwds", return_value={}):
+            gc.execute(plan, item)
+
+        self.assertEqual(item.result, "done")
+        self.assertEqual(git(self.origin, "branch", "--list", "merged"), "")
+        self.assertFalse(os.path.exists(marker))
+
+    def test_local_branch_delete_runs_no_config_hook(self) -> None:
+        marker = os.path.join(self.root, "hooked")
+        git(self.repo, "branch", "local-only", "merged")
+        git(self.repo, "config", "hook.probe.command", f"touch {marker}")
+        git(self.repo, "config", "hook.probe.event", "reference-transaction")
+        plan = self._plan(host_ns=True, cwds={})
+        item = self._items(plan)["local-only"]
+        self.assertEqual(item.actions, ["local-branch"])
+
+        with patch.object(gc, "_process_cwds", return_value={}):
+            gc.execute(plan, item)
+
+        self.assertEqual(item.result, "done")
+        self.assertEqual(git(self.repo, "branch", "--list", "local-only"), "")
+        self.assertFalse(os.path.exists(marker))
 
     def test_cleanup_json_and_refusal(self) -> None:
         out = io.StringIO()

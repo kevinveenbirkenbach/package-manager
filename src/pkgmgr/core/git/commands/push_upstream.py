@@ -19,10 +19,10 @@ def push_upstream(
     Push a branch and set upstream tracking.
 
     Equivalent to:
-      git push -u <remote> <branch>
+      git push -u -- <remote> <branch>
     """
     try:
-        run(["push", "-u", remote, branch], cwd=cwd, preview=preview)
+        run(["push", "-u", "--", remote, branch], cwd=cwd, preview=preview)
     except GitRunError as exc:
         raise GitPushUpstreamError(
             f"Failed to push branch {branch!r} to {remote!r} with upstream tracking.",

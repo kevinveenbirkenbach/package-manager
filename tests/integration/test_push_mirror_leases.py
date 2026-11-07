@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from pkgmgr.actions.release.retry import retry_release
+from pkgmgr.actions.release.workflow import _release_impl
 from pkgmgr.actions.repository.push import (
     PushRefusedError,
     push_branch,
@@ -239,6 +240,154 @@ class TestPushMirrorLeases(unittest.TestCase):
         self.assertEqual(git(self.repo, "log", "-1", "--format=%G?", head), "G")
         self.assertNotIn("WARN", out)
         self.assertEqual(self._tip(self.canonical, "refs/heads/feature"), head)
+
+    def test_repository_config_that_runs_a_program_is_refused(self) -> None:
+        self._commit("feature")
+        for key in (
+            "core.sshCommand",
+            "core.gitProxy",
+            "core.askPass",
+            "core.fsmonitor",
+            "core.alternateRefsCommand",
+            "credential.helper",
+            "credential.https://example.org.helper",
+            "gpg.program",
+            "gpg.ssh.program",
+            "gpg.ssh.defaultKeyCommand",
+            "protocol.ext.allow",
+            "hook.probe.command",
+            "gc.recentObjectsHook",
+            "http.proxy",
+            "http.sslVerify",
+            "http.sslCAInfo",
+            "http.sslCAPath",
+            "http.cookieFile",
+            "http.saveCookies",
+            "remote.origin.receivepack",
+            "remote.origin.uploadpack",
+            "remote.origin.vcs",
+            "remote.origin.proxy",
+            "url.x.insteadOf",
+            "url.x.pushInsteadOf",
+        ):
+            for push in (self._push, lambda: push_branch(self.repo, [], sign=False)):
+                with self.subTest(key=key, push=push):
+                    git(self.repo, "config", key, "false")
+
+                    with self.assertRaises(PushRefusedError) as cm:
+                        push()
+
+                    git(self.repo, "config", "--unset", key)
+                    self.assertIn(key.lower(), str(cm.exception))
+                    self.assertEqual(self._tip(self.canonical), self.init)
+                    self.assertEqual(self._tip(self.mirror), self.init)
+
+    def test_ordinary_repository_config_is_pushed(self) -> None:
+        for key, value in (
+            ("core.hooksPath", ".husky/_"),
+            ("filter.lfs.process", "git-lfs filter-process"),
+            ("gpg.format", "ssh"),
+            ("credential.useHttpPath", "true"),
+            ("include.path", "../shared.gitconfig"),
+        ):
+            git(self.repo, "config", key, value)
+        self._commit("feature")
+
+        self._push()
+
+        self._assert_shipped_signed()
+
+    def test_staged_gitlink_is_not_folded_into_the_signed_head(self) -> None:
+        self._commit("feature")
+        head = git(self.repo, "rev-parse", "HEAD")
+        git(self.repo, "config", "diff.ignoreSubmodules", "all")
+        git(self.repo, "update-index", "--add", "--cacheinfo", f"160000,{head},sub")
+
+        with self.assertRaises(PushRefusedError) as cm:
+            self._push()
+
+        self.assertIn("staged changes", str(cm.exception))
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD"), head)
+
+    def test_unstaged_edit_stays_out_of_the_signed_head(self) -> None:
+        self._commit("feature")
+        Path(self.repo, "feature.txt").write_text("unstaged")
+
+        self._push()
+
+        self._assert_shipped_signed()
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "M feature.txt")
+
+    def test_signing_amend_runs_no_repository_hook(self) -> None:
+        marker = Path(self.root, "hooked")
+        hook = Path(self.repo, ".git", "hooks", "post-commit")
+        hook.write_text(f"#!/bin/sh\ntouch {marker}\n")
+        hook.chmod(0o755)
+        self._commit("feature")
+        marker.unlink()
+
+        self._push()
+
+        self._assert_shipped_signed()
+        self.assertFalse(marker.exists())
+
+    def test_signing_amend_runs_no_config_hook(self) -> None:
+        marker = Path(self.root, "hooked")
+        git(self.repo, "config", "hook.probe.command", f"touch {marker}")
+        git(self.repo, "config", "hook.probe.event", "post-commit")
+        self._commit("feature")
+        hooks_fire = marker.exists()
+        marker.unlink(missing_ok=True)
+
+        try:
+            self._push()
+        except PushRefusedError:
+            pass
+
+        self.assertFalse(marker.exists(), f"config hooks fire on commit: {hooks_fire}")
+
+    def test_mirror_lease_runs_no_textconv(self) -> None:
+        marker = Path(self.root, "textconv")
+        Path(self.repo, ".gitattributes").write_text("* diff=probe\n")
+        git(self.repo, "add", ".gitattributes")
+        git(self.repo, "commit", "-q", "-S", "-m", "attributes")
+        git(self.repo, "push", "-q", self.mirror, "main")
+        git(self.repo, "config", "diff.probe.textconv", f"touch {marker};cat")
+        self._commit("feature")
+        git(self.repo, "diff", "HEAD~1", "HEAD")
+        self.assertTrue(marker.exists())
+        marker.unlink()
+
+        self._push()
+
+        self._assert_shipped_signed()
+        self.assertFalse(marker.exists())
+
+    def test_remote_named_like_an_option_is_pushed(self) -> None:
+        git(self.repo, "config", "remote.-r.url", self.canonical)
+        git(self.repo, "config", "remote.-r.fetch", "+refs/heads/*:refs/remotes/-r/*")
+        git(self.repo, "config", "branch.main.pushRemote", "-r")
+        git(self.repo, "fetch", "-q", "--", "-r")
+        self._commit("feature")
+
+        self._push()
+
+        self.assertEqual(self._tip(self.canonical), git(self.repo, "rev-parse", "HEAD"))
+
+    def test_release_refuses_unsafe_config_before_any_change(self) -> None:
+        head = git(self.repo, "rev-parse", "HEAD")
+        git(self.repo, "config", "core.sshCommand", "false")
+        cwd = os.getcwd()
+        os.chdir(self.repo)
+        self.addCleanup(os.chdir, cwd)
+
+        with redirect_stdout(io.StringIO()), self.assertRaises(PushRefusedError):
+            _release_impl(
+                pyproject_path=os.path.join(self.repo, "pyproject.toml"), force=True
+            )
+
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD"), head)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
 
     def test_release_retry_refuses_unsigned_range(self) -> None:
         self._commit("release")
