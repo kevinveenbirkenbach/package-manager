@@ -10,6 +10,7 @@ from .changelog_cmd import add_changelog_subparser
 from .code_scanning_cmd import add_code_scanning_subparser
 from .common import SortedSubParsersAction
 from .config_cmd import add_config_subparsers
+from .gc_cmd import add_gc_subparser
 from .install_update import add_install_update_subparsers
 from .list_cmd import add_list_subparser
 from .make_cmd import add_make_subparsers
@@ -18,6 +19,7 @@ from .navigation_cmd import add_navigation_subparsers
 from .publish_cmd import add_publish_subparser
 from .release_cmd import add_release_subparser
 from .version_cmd import add_version_subparser
+from .worktree_cmd import add_worktree_subparsers
 
 
 def create_parser(description_text: str) -> argparse.ArgumentParser:
@@ -58,6 +60,8 @@ def create_parser(description_text: str) -> argparse.ArgumentParser:
     add_navigation_subparsers(subparsers)
 
     add_branch_subparsers(subparsers)
+    add_worktree_subparsers(subparsers)
+    add_gc_subparser(subparsers)
     add_release_subparser(subparsers)
     add_publish_subparser(subparsers)
 

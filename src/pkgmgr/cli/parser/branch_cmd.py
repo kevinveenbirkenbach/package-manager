@@ -97,29 +97,29 @@ def add_branch_subparsers(
         help="Skip confirmation prompt and drop the branch directly",
     )
 
-    branch_gc = branch_subparsers.add_parser(
-        "gc",
+    branch_cleanup = branch_subparsers.add_parser(
+        "cleanup",
         help=(
-            "Remove merged and clean branches with their worktrees and compose "
-            "stacks (dry-run unless --apply)"
+            "Remove merged branches that no worktree holds, locally and on the "
+            "remotes (dry-run unless --apply)"
         ),
     )
-    branch_gc.add_argument(
-        "--apply",
-        action="store_true",
-        help="Execute the plan instead of only printing it",
+    add_apply_options(branch_cleanup)
+
+    branch_purge = branch_subparsers.add_parser(
+        "purge",
+        help="Delete unmerged or dirty branches after a confirmation per item",
     )
-    branch_gc.add_argument(
-        "--json",
-        action="store_true",
-        help="Print the plan as JSON",
-    )
+
+    for sub in (branch_cleanup, branch_purge):
+        add_scan_options(sub)
+        add_min_age_option(sub)
 
     branch_tree = branch_subparsers.add_parser(
         "tree",
         help=(
             "Print the branches and worktrees of every pkgmgr-managed repository "
-            "with their gc state, without fetching"
+            "with their cleanup state, without fetching"
         ),
     )
     branch_tree.add_argument(
@@ -134,50 +134,62 @@ def add_branch_subparsers(
         help="Write atomically to FILE instead of stdout",
     )
 
-    branch_purge = branch_subparsers.add_parser(
-        "purge",
-        help="Delete unmerged or dirty branches after a confirmation per item",
+
+def add_apply_options(sub: argparse.ArgumentParser) -> None:
+    sub.add_argument(
+        "--apply",
+        action="store_true",
+        help="Execute the plan instead of only printing it",
+    )
+    sub.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the plan as JSON",
     )
 
-    for sub in (branch_gc, branch_purge):
-        sub.add_argument(
-            "--all",
-            action="store_true",
-            help="Scan every pkgmgr-managed repository instead of the current one",
-        )
-        sub.add_argument(
-            "--branch",
-            action="append",
-            default=[],
-            metavar="NAME",
-            help="Only this branch (or worktree path); repeatable",
-        )
-        sub.add_argument(
-            "--exclude",
-            action="append",
-            default=[],
-            metavar="NAME",
-            help="Skip this branch (or worktree path); repeatable",
-        )
-        sub.add_argument(
-            "--merged-into",
-            action="append",
-            default=[],
-            metavar="REF",
-            help=(
-                "Also count an item as merged when its commits are in REF (an "
-                "integration line); REF is protected and a checkout at its tip "
-                "counts as fresh; repeatable"
-            ),
-        )
-        sub.add_argument(
-            "--sizes",
-            action="store_true",
-            help="Measure each worktree's disk usage (du) into the plan",
-        )
-        sub.add_argument(
-            "--min-age",
-            type=float,
-            metavar="HOURS",
-            help="Skip items whose newest commit or worktree index is younger",
-        )
+
+def add_scan_options(sub: argparse.ArgumentParser) -> None:
+    sub.add_argument(
+        "--all",
+        action="store_true",
+        help="Scan every pkgmgr-managed repository instead of the current one",
+    )
+    sub.add_argument(
+        "--branch",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Only this branch (or worktree path); repeatable",
+    )
+    sub.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Skip this branch (or worktree path); repeatable",
+    )
+    sub.add_argument(
+        "--merged-into",
+        action="append",
+        default=[],
+        metavar="REF",
+        help=(
+            "Also count an item as merged when its commits are in REF (an "
+            "integration line); REF is protected and a checkout at its tip "
+            "counts as fresh; repeatable"
+        ),
+    )
+    sub.add_argument(
+        "--sizes",
+        action="store_true",
+        help="Measure each worktree's disk usage (du) into the plan",
+    )
+
+
+def add_min_age_option(sub: argparse.ArgumentParser) -> None:
+    sub.add_argument(
+        "--min-age",
+        type=float,
+        metavar="HOURS",
+        help="Skip items whose newest commit, worktree index or changed file is younger",
+    )

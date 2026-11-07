@@ -208,8 +208,9 @@ class TestBranchTree(unittest.TestCase):
             patch.object(gc, "fetch_forge_facts", return_value=ForgeFacts()),
             redirect_stdout(out),
         ):
-            gc.branch_gc(
+            gc.cleanup(
                 [self.repo],
+                scope="all",
                 apply=False,
                 as_json=True,
                 include=[],
@@ -217,6 +218,7 @@ class TestBranchTree(unittest.TestCase):
                 merged_into=[],
                 sizes=False,
                 min_age=None,
+                hooks={},
             )
         planned = {
             (item["branch"], item["worktree"]): (

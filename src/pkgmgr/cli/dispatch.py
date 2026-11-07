@@ -10,6 +10,7 @@ from pkgmgr.cli.commands import (
     handle_changelog,
     handle_code_scanning,
     handle_config,
+    handle_gc,
     handle_make,
     handle_mirror_command,
     handle_publish,
@@ -17,6 +18,7 @@ from pkgmgr.cli.commands import (
     handle_repos_command,
     handle_tools_command,
     handle_version,
+    handle_worktree,
 )
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.cli.proxy import maybe_handle_proxy
@@ -161,6 +163,14 @@ def dispatch_command(args, ctx: CLIContext) -> None:
 
     if args.command == "branch":
         handle_branch(args, ctx)
+        return
+
+    if args.command == "worktree":
+        handle_worktree(args, ctx)
+        return
+
+    if args.command == "gc":
+        handle_gc(args, ctx)
         return
 
     if args.command == "mirror":

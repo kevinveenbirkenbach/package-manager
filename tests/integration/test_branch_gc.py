@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from pkgmgr.actions.branch import gc
@@ -42,7 +43,7 @@ def docker_available() -> bool:
     return True
 
 
-class TestBranchGc(unittest.TestCase):
+class GcFixture:
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         self.root = os.path.realpath(self._tmp.name)
@@ -105,6 +106,9 @@ class TestBranchGc(unittest.TestCase):
         merged_into: list[str] | None = None,
         sizes: bool = False,
         min_age: float | None = None,
+        scope: str = "all",
+        activity: bool = False,
+        hooks: dict | None = None,
     ) -> gc.Repo:
         with (
             patch.object(gc, "fetch_forge_facts", return_value=self.forge),
@@ -117,6 +121,9 @@ class TestBranchGc(unittest.TestCase):
                 merged_into=merged_into or [],
                 sizes=sizes,
                 min_age=min_age,
+                scope=scope,
+                activity=activity,
+                hooks=hooks or {},
             )
 
     def _integration_line(self) -> str:
@@ -136,6 +143,8 @@ class TestBranchGc(unittest.TestCase):
     def _items(self, plan: gc.Repo) -> dict[str, gc.Item]:
         return {item.branch: item for item in plan.items if item.branch}
 
+
+class TestBranchGc(GcFixture, unittest.TestCase):
     def test_classifies_every_branch(self) -> None:
         items = self._items(self._plan(host_ns=True, cwds={}))
 
@@ -379,7 +388,7 @@ class TestBranchGc(unittest.TestCase):
         self.assertEqual(git(self.repo, "for-each-ref", "refs/heads/-evil"), "")
         self.assertEqual(git(other, "for-each-ref", "refs/heads/-evil"), "")
 
-    def test_branch_gc_json_and_refusal(self) -> None:
+    def test_cleanup_json_and_refusal(self) -> None:
         out = io.StringIO()
         with (
             patch.object(gc, "host_pid_namespace", return_value=True),
@@ -388,8 +397,9 @@ class TestBranchGc(unittest.TestCase):
             patch.object(gc, "_process_cwds", return_value={}),
             redirect_stdout(out),
         ):
-            code = gc.branch_gc(
+            code = gc.cleanup(
                 [self.repo],
+                scope="all",
                 apply=False,
                 as_json=True,
                 include=["merged"],
@@ -397,6 +407,7 @@ class TestBranchGc(unittest.TestCase):
                 merged_into=["origin/main"],
                 sizes=True,
                 min_age=None,
+                hooks={},
             )
         data = json.loads(out.getvalue())
 
@@ -408,8 +419,9 @@ class TestBranchGc(unittest.TestCase):
         self.assertGreater(items[0]["size_bytes"], 0)
         with patch.object(gc, "host_pid_namespace", return_value=False):
             self.assertEqual(
-                gc.branch_gc(
+                gc.cleanup(
                     [self.repo],
+                    scope="all",
                     apply=True,
                     as_json=False,
                     include=[],
@@ -417,15 +429,16 @@ class TestBranchGc(unittest.TestCase):
                     merged_into=[],
                     sizes=False,
                     min_age=None,
+                    hooks={},
                 ),
                 2,
             )
 
-    def test_cli_forwards_gc_flags(self) -> None:
+    def test_cli_forwards_cleanup_flags(self) -> None:
         args = create_parser("test").parse_args(
             [
                 "branch",
-                "gc",
+                "cleanup",
                 "--apply",
                 "--json",
                 "--branch",
@@ -443,16 +456,31 @@ class TestBranchGc(unittest.TestCase):
                 "24",
             ]
         )
+        pins = {"worktree-fini": ["true"]}
+        managed = {
+            "provider": "host",
+            "account": "o",
+            "repository": "r",
+            "directory": self.repo,
+        }
+        ctx = SimpleNamespace(
+            config_merged={
+                "worktree_hooks": {"host/o/r": pins},
+                "repositories": [managed],
+            }
+        )
         with (
             patch("pkgmgr.cli.commands.branch.main_repo_root", return_value=self.repo),
-            patch("pkgmgr.cli.commands.branch.branch_gc", return_value=1) as run_gc,
+            patch("pkgmgr.cli.commands.branch.cleanup", return_value=1) as run_gc,
+            patch("pkgmgr.cli.commands.branch.refresh_tree") as refresh,
             self.assertRaises(SystemExit) as exit_ctx,
         ):
-            handle_branch(args, ctx=None)
+            handle_branch(args, ctx=ctx)
 
         self.assertEqual(exit_ctx.exception.code, 1)
         run_gc.assert_called_once_with(
             [self.repo],
+            scope="branch",
             apply=True,
             as_json=True,
             include=["a", "b"],
@@ -460,7 +488,9 @@ class TestBranchGc(unittest.TestCase):
             merged_into=["origin/line", "fork/line"],
             sizes=True,
             min_age=24.0,
+            hooks={os.path.realpath(self.repo): pins},
         )
+        refresh.assert_called_once_with([self.repo])
 
 
 if __name__ == "__main__":

@@ -4,6 +4,13 @@ directories:
   repositories: ~/Repositories/
   workspaces:   ~/Workspaces/
   binaries:     ~/.local/bin/
+  worktrees:    ~/.local/share/worktrees/
+# worktree_hooks: <provider>/<account>/<repository> of an entry under
+# repositories -> worktree-init / worktree-fini -> argv, with {path} and {slot}
+# replaced; it runs only for that entry's directory, never selected by origin's
+# URL, and without an entry no hook runs, whatever the repository's Makefile
+# defines
+worktree_hooks: {}
 repositories:
 - account: kevinveenbirkenbach
   description: A configurable Python package manager that automates repository tasks—including cloning, installation, updates, and status reporting—based on a YAML configuration file for streamlined software management which gives you access to the Kevin Veen-Birkenbach Code Universe.

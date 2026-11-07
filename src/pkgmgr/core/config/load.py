@@ -144,6 +144,7 @@ def _load_layer_dir(
       {
         "directories": {...},
         "repositories": [...],
+        <other key>: dicts deep-merged, other values from the last file,
       }
     """
     defaults: dict[str, Any] = {"directories": {}, "repositories": []}
@@ -165,21 +166,16 @@ def _load_layer_dir(
 
     for path in yaml_files:
         data = _load_yaml_file(path)
-        category_name = path.stem
-
-        dirs = data.get("directories")
-        if isinstance(dirs, dict):
-            defaults.setdefault("directories", {})
-            _deep_merge(defaults["directories"], dirs)
-
-        repos = data.get("repositories")
+        repos = data.pop("repositories", None)
         if isinstance(repos, list):
-            defaults.setdefault("repositories", [])
             _merge_repo_lists(
                 defaults["repositories"],
                 repos,
-                category_name=category_name,
+                category_name=path.stem,
             )
+        if not isinstance(data.get("directories", {}), dict):
+            del data["directories"]
+        _deep_merge(defaults, data)
 
     return defaults
 
@@ -229,7 +225,8 @@ def load_config(user_config_path: str) -> dict[str, Any]:
     Steps:
       1. Determine ~/.config/pkgmgr/ (or dir of user_config_path).
       2. Load all *.yml/*.yaml in that dir (except the user config file) as defaults.
-      3. If nothing found, fall back to package defaults.
+      3. If nothing found, fall back to package defaults. Package keys other
+         than directories and repositories always lie under the layers.
       4. Load the user config file (if present).
       5. Merge:
          - directories: deep-merge (defaults <- user)
@@ -247,13 +244,14 @@ def load_config(user_config_path: str) -> dict[str, Any]:
 
     # 1+2) Defaults from user directory
     defaults = _load_layer_dir(config_dir, skip_filename=user_cfg_name)
+    package = _load_defaults_from_package_or_project()
 
     # 3) Fallback to package defaults
     if not defaults["directories"] and not defaults["repositories"]:
-        defaults = _load_defaults_from_package_or_project()
-
-    defaults.setdefault("directories", {})
-    defaults.setdefault("repositories", [])
+        defaults["directories"] = package["directories"]
+        defaults["repositories"] = package["repositories"]
+    del package["directories"], package["repositories"]
+    defaults = _deep_merge(package, defaults)
 
     # 4) User config
     user_cfg: dict[str, Any] = {}

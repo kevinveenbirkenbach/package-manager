@@ -70,6 +70,43 @@ versioning features it can drive **end-to-end workflows**:
 
 ---
 
+### Worktrees and garbage collection
+
+| Command | Does |
+| --- | --- |
+| `pkgmgr worktree up <branch> [--base REF] [--path DIR]` | Checks the branch out under `<directories.worktrees>/<host>/<owner>/<repo>/<branch>` or at `--path`, assigns a free slot and runs the pinned `worktree-init` hook |
+| `pkgmgr worktree cleanup [--apply]` | Removes clean worktrees whose commits are merged or pushed: pinned `worktree-fini` hook, compose stack, checkout; the branch stays |
+| `pkgmgr branch cleanup [--apply]` | Removes merged branches that no worktree holds, locally and on the remotes |
+| `pkgmgr branch tree [--format json\|yaml] [--output FILE]` | Writes every managed repository's branches and worktrees with their cleanup state, without fetching |
+| `pkgmgr gc [--all] [--apply]` | Both cleanups in one pass, for the current repository or every managed one |
+| `pkgmgr worktree orphans --stale-days N --top N` | Lists merged and abandoned branches and worktrees with a proposal each |
+
+A hook runs only when the `worktree_hooks` config pins its command under the
+`<provider>/<account>/<repository>` of a repository managed in the pkgmgr
+config, and only for that repository's directory; origin's URL, which the
+repository's own config sets, never selects a pin. `{path}` and `{slot}` are
+replaced; a
+`worktree-init` or `worktree-fini` target in the repository's Makefile is
+reported, never run, because an agent may have written it. The pinned program
+must be an absolute path or a root-owned command on a `PATH` entry that root
+owns and no group or other user can write, up to `/`, so a binary planted in a
+user-writable directory such as a virtualenv never runs. A bare name runs as
+the resolved file that was checked. Inside a user namespace other than the
+initial one, root means the overflow uid, under which the real root's files
+show there, as do those of every other unmapped owner. Outside such a
+namespace a directory on a nosuid mount, where udisks2 and FUSE put user
+mounts, never counts as root's. The hook runs with
+stdin closed, only those `PATH` entries and a 30 minute timeout. Removal walks to
+the worktree without following a symbolic link and skips a worktree path that
+is not its own realpath. A pinned command that reads repository files, such as `make` or a
+script in the repository, trusts the worktree's content, tracked or ignored.
+
+Every cleanup is a dry run until `--apply`, and `--json` prints the plan for
+other tools. The [agent skills](https://github.com/kevinveenbirkenbach/skills)
+wrap these commands; see [AGENTS.md](AGENTS.md) for the split.
+
+---
+
 ## Architecture & Setup Map 🗺️
 
 The following diagram gives a full overview of:
