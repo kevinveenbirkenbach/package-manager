@@ -90,7 +90,9 @@ replaced; a
 reported, never run, because an agent may have written it. The pinned program
 must be an absolute path or a root-owned command on a `PATH` entry that root
 owns and no group or other user can write, up to `/`, so a binary planted in a
-user-writable directory such as a virtualenv never runs. A bare name runs as
+user-writable directory such as a virtualenv never runs. The Nix store never
+counts: it is group-writable, and any user can have the daemon build
+root-owned content there, so pin an absolute path on Nix. A bare name runs as
 the resolved file that was checked. Inside a user namespace other than the
 initial one, root means the overflow uid, under which the real root's files
 show there, as do those of every other unmapped owner. Outside such a
