@@ -203,6 +203,43 @@ class TestPushMirrorLeases(unittest.TestCase):
         self.assertEqual(self._tip(self.mirror), unsigned)
         self.assertEqual(git(self.repo, "log", "-1", "--format=%G?"), "N")
 
+    def test_only_head_is_signed_and_older_unsigned_commits_stay(self) -> None:
+        older = self._commit("older")
+        self._commit("head")
+
+        out = self._push()
+
+        head = git(self.repo, "rev-parse", "HEAD")
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD^"), older)
+        self.assertEqual(git(self.repo, "log", "-1", "--format=%G?", head), "G")
+        self.assertEqual(git(self.repo, "log", "-1", "--format=%G?", older), "N")
+        self.assertIn("WARN 1 older unsigned commit(s)", out)
+        self.assertEqual(self._tip(self.canonical), head)
+        self.assertEqual(self._tip(self.mirror), head)
+
+    def test_pushed_remote_branch_is_the_base_without_upstream(self) -> None:
+        git(self.repo, "checkout", "-q", "-b", "feature")
+        with patch.dict(os.environ, {"GIT_COMMITTER_DATE": "2001-01-01T00:00:00+0000"}):
+            pushed = self._commit("pushed", None, "-S")
+        git(self.repo, "push", "-q", "origin", "feature")
+        git(self.repo, "fetch", "-q", "origin")
+        self._commit("new")
+        upstream = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "@{u}"],
+            cwd=self.repo,
+            check=False,
+            capture_output=True,
+        )
+        self.assertNotEqual(upstream.returncode, 0)
+
+        out = self._push()
+
+        head = git(self.repo, "rev-parse", "HEAD")
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD^"), pushed)
+        self.assertEqual(git(self.repo, "log", "-1", "--format=%G?", head), "G")
+        self.assertNotIn("WARN", out)
+        self.assertEqual(self._tip(self.canonical, "refs/heads/feature"), head)
+
     def test_release_retry_refuses_unsigned_range(self) -> None:
         self._commit("release")
         git(self.repo, "tag", "-a", "v1.0.0", "-m", "v1.0.0")

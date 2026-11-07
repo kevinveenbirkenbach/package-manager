@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import subprocess
 import threading
 from typing import Any
@@ -42,51 +41,65 @@ def _push_target(repo_dir: str) -> tuple[str, str]:
     return branch, remote
 
 
-def _unpushed_signatures(repo_dir: str, remote: str) -> tuple[str, list[str]]:
-    for ref in ("@{u}", f"{remote}/main", f"{remote}/master"):
+def _unpushed_signatures(
+    repo_dir: str, remote: str, branch: str
+) -> tuple[str, dict[str, str]]:
+    for ref in (
+        f"refs/remotes/{remote}/{branch}",
+        "@{u}",
+        f"refs/remotes/{remote}/main",
+        f"refs/remotes/{remote}/master",
+    ):
         base = _try_git(repo_dir, "merge-base", "HEAD", ref)
         if base:
-            return base, run(
-                ["log", "--format=%G?", f"{base}..HEAD"], cwd=repo_dir
-            ).split()
+            lines = run(
+                ["log", "--format=%H %G?", f"{base}..HEAD"], cwd=repo_dir
+            ).splitlines()
+            return base, dict(line.split() for line in lines)
     raise PushRefusedError(
-        f"{repo_dir}: no upstream and no {remote}/main or {remote}/master to sign against"
+        f"{repo_dir}: no {remote}/{branch}, no upstream and no {remote}/main or "
+        f"{remote}/master to sign against"
     )
 
 
 def sign_unpushed(repo_dir: str, *, preview: bool = False) -> None:
     """
-    GPG-sign every unpushed commit that is not signed yet, like git-sign-push.
-
     Args:
       repo_dir: checkout whose current branch is signed.
-      preview: print the fetch and rebase instead of running them.
+      preview: print the fetch and the amend instead of running them.
     """
-    _branch, remote = _push_target(repo_dir)
+    branch, remote = _push_target(repo_dir)
     run(["fetch", "--quiet", remote], cwd=repo_dir, preview=preview)
-    base, signatures = _unpushed_signatures(repo_dir, remote)
-    unsigned = sum(1 for s in signatures if s != "G")
-    if not unsigned:
+    base, signatures = _unpushed_signatures(repo_dir, remote, branch)
+    head = run(["rev-parse", "HEAD"], cwd=repo_dir)
+    older = sum(1 for sha, s in signatures.items() if sha != head and s != "G")
+    if older:
+        print(
+            f"[push] WARN {older} older unsigned commit(s) in {base[:10]}..HEAD~ of "
+            f"{repo_dir} stay unsigned: signing them would rewrite history"
+        )
+    if signatures.get(head, "G") == "G":
         return
     if run(["status", "--porcelain", "--untracked-files=no"], cwd=repo_dir):
-        raise PushRefusedError(f"{repo_dir}: uncommitted changes, cannot re-sign")
+        raise PushRefusedError(f"{repo_dir}: uncommitted changes, cannot sign HEAD")
 
-    cmd = ["git", "rebase", "--rebase-merges", "--force-rebase", "-S", base]
-    print(f"[push] Signing {unsigned} of {len(signatures)} commit(s) in {repo_dir}")
+    cmd = [
+        "git",
+        "commit",
+        "--amend",
+        "--no-edit",
+        "--no-verify",
+        "--allow-empty",
+        "-S",
+    ]
+    print(f"[push] Signing HEAD {head[:10]} in {repo_dir}")
     if preview:
         print(f"[PREVIEW] Would run in {repo_dir!r}: {' '.join(cmd)}")
         return
     with _SIGN_LOCK:
-        result = subprocess.run(
-            cmd,
-            cwd=repo_dir,
-            env={**os.environ, "GIT_SEQUENCE_EDITOR": ":"},
-            check=False,
-        )
+        result = subprocess.run(cmd, cwd=repo_dir, check=False)
     if result.returncode != 0:
-        raise PushRefusedError(
-            f"{repo_dir}: re-sign rebase failed; resolve or `git rebase --abort`"
-        )
+        raise PushRefusedError(f"{repo_dir}: signing HEAD {head[:10]} failed")
 
 
 def _lease(
@@ -145,22 +158,21 @@ def push_branch(
     Args:
       repo_dir: checkout whose current branch is pushed.
       extra_args: flags appended to every `git push`.
-      sign: refuse unsigned commits in the push range; False pushes them as they are.
+      sign: refuse an unpushed, unsigned HEAD; False pushes it as it is.
       refs: extra refs (e.g. a release tag) pushed to every URL.
       rewrite: replace commits of the old canonical tip; the fetch URL skips
         the cherry check, mirrors only refuse commits the old tip never had.
       preview: print the pushes instead of running them.
     """
     branch, remote = _push_target(repo_dir)
+    head = run(["rev-parse", "HEAD"], cwd=repo_dir)
     if sign:
-        _base, signatures = _unpushed_signatures(repo_dir, remote)
-        if not preview and any(s != "G" for s in signatures):
+        _base, signatures = _unpushed_signatures(repo_dir, remote, branch)
+        if not preview and signatures.get(head, "G") != "G":
             raise PushRefusedError(
-                f"{repo_dir}: {sum(s != 'G' for s in signatures)} unsigned commit(s) "
-                "in the push range; run `pkgmgr push` to sign them"
+                f"{repo_dir}: HEAD {head[:10]} is unsigned; run `pkgmgr push` to sign it"
             )
 
-    head = run(["rev-parse", "HEAD"], cwd=repo_dir)
     fetch_url = run(["remote", "get-url", remote], cwd=repo_dir)
     push_urls = run(
         ["remote", "get-url", "--push", "--all", remote], cwd=repo_dir
