@@ -74,7 +74,10 @@ versioning features it can drive **end-to-end workflows**:
 
 | Command | Does |
 | --- | --- |
-| `pkgmgr worktree up <branch> [--base REF] [--path DIR]` | Checks the branch out under `<directories.worktrees>/<host>/<owner>/<repo>/<branch>` or at `--path`, assigns a free slot and runs the pinned `worktree-init` hook |
+| `pkgmgr worktree up <branch> [--base REF] [--path DIR] [--pull REF ...] [--push BRANCH ...]` | Checks the branch out under `<directories.worktrees>/<host>/<owner>/<repo>/<branch>` or at `--path`, assigns a free slot, records the merge flow and runs the pinned `worktree-init` hook |
+| `pkgmgr worktree flow [PATH] [--json]` | Shows the merge flow of the worktree at `PATH` (default: `.`) |
+| `pkgmgr worktree flow set [PATH] (--pull REF ... \| --no-pull) (--push BRANCH ... \| --no-push) [--json]` | Replaces both lists of the merge flow |
+| `pkgmgr worktree flow clear [PATH] [--json]` | Removes the merge flow |
 | `pkgmgr worktree cleanup [--apply]` | Removes clean worktrees whose commits are merged or pushed: pinned `worktree-fini` hook, compose stack, checkout; the branch stays |
 | `pkgmgr branch cleanup [--apply]` | Removes merged branches that no worktree holds, locally and on the remotes |
 | `pkgmgr branch tree [--format json\|yaml] [--output FILE]` | Writes every managed repository's branches and worktrees with their cleanup state, without fetching |
@@ -107,6 +110,46 @@ script in the repository, trusts the worktree's content, tracked or ignored.
 Every cleanup is a dry run until `--apply`, and `--json` prints the plan for
 other tools. The [agent skills](https://github.com/kevinveenbirkenbach/skills)
 wrap these commands; see [AGENTS.md](AGENTS.md) for the split.
+
+#### Merge flow
+
+Every worktree can carry a merge flow that scripts and skills read: `pull`
+lists the refs merged into the branch, in order, before a gate, deploy or
+merge; `push` lists the branches the branch is merged into, in order, when it
+is finished, each then pushed by the operator. It lives in
+`pkgmgr/flow.yml` inside the worktree's own git directory (`.git` of the main
+worktree, `<common>/worktrees/<id>` of a linked one), so it is never committed
+and goes with the worktree:
+
+```yaml
+version: 1
+branch: feature/x
+pull:
+  - origin/main
+  - store-i18n
+push:
+  - feature/iam-profile-rbac
+  - production
+```
+
+`branch` is the branch the flow was set on; another current branch shows as a
+warning. `worktree up` records `--pull` and `--push`; without them pull is
+the base the worktree came from and push that base's local branch
+(`origin/main` gives `main`). `flow set` needs each list or
+its `--no-pull`/`--no-push`, and writes atomically into a `pkgmgr/` of mode
+0700. Every entry must pass `git check-ref-format --branch` and must not start
+with `-`; a remote-tracking name such as `origin/main` passes. An invalid name
+exits 2 and writes nothing. A flow file that is a symbolic link, no regular
+file, larger than 64 KiB or malformed reads as `invalid`, with empty lists and
+a warning, and is never followed.
+
+`flow --json` prints `worktree` and `git_dir` (absolute paths), `branch` (the
+current branch, `null` when detached), `flow_branch` (the file's `branch`),
+`pull`, `push`, `source` (`file`, `none` or `invalid`) and `warnings`; it
+exits 0 also without a flow, 2 when `PATH` is not a git worktree. In
+`pkgmgr branch tree` every item carries `flow`: `{"pull", "push", "source"}`,
+or `null` without a worktree or a flow; flow warnings join the repository's
+`warnings`.
 
 ---
 

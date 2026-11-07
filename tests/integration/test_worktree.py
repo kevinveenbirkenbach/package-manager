@@ -314,6 +314,8 @@ class TestWorktreeUp(WorktreeFixture, unittest.TestCase):
                 path=path,
                 hooks=hooks or {},
                 as_json=True,
+                pull=None,
+                push=None,
             )
         return code, json.loads(out.getvalue()) if code != 2 else {}
 
@@ -729,6 +731,8 @@ class TestWorktreeCli(unittest.TestCase):
             path="/srv/wt/x",
             hooks={os.path.realpath("/srv/host/o/r"): pins},
             as_json=True,
+            pull=None,
+            push=None,
         )
         refresh.assert_called_once()
 

@@ -24,6 +24,21 @@ def next_slot(used: set[int]) -> int:
     return slot
 
 
+def new_worktree_meta(path: str) -> str:
+    """
+    Args:
+        path: a worktree this process just added, whose `.git` file names
+            its metadata.
+
+    Returns:
+        The worktree's own git directory, `<common>/worktrees/<id>`.
+    """
+    with open(os.path.join(path, ".git"), encoding="utf-8") as fh:
+        return os.path.normpath(
+            os.path.join(path, fh.read().strip().removeprefix("gitdir: "))
+        )
+
+
 def write_slot(path: str, slot: int) -> None:
     """
     Record a slot in the metadata of a worktree this process just added.
@@ -32,9 +47,7 @@ def write_slot(path: str, slot: int) -> None:
         path: the new worktree, whose `.git` file names its metadata.
         slot: the slot to record.
     """
-    with open(os.path.join(path, ".git"), encoding="utf-8") as fh:
-        meta = os.path.normpath(
-            os.path.join(path, fh.read().strip().removeprefix("gitdir: "))
-        )
-    with open(os.path.join(meta, SLOT_FILE), "w", encoding="utf-8") as fh:
+    with open(
+        os.path.join(new_worktree_meta(path), SLOT_FILE), "w", encoding="utf-8"
+    ) as fh:
         fh.write(f"{slot}\n")

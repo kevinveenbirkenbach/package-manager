@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 import yaml
 
+from pkgmgr.actions.worktree import flow
 from pkgmgr.core.credentials.store_keys import build_keyring_key
 from pkgmgr.core.git.errors import GitBaseError
 
@@ -193,6 +194,27 @@ def _missing(root: str, known: bool, scanned_at: str) -> dict:
     }
 
 
+def _git_dir(
+    root: str, registrations: gc.Registrations, worktree: str | None
+) -> str | None:
+    if worktree is None:
+        return None
+    if worktree == root:
+        return os.path.dirname(registrations[0])
+    return gc._linked_meta(registrations, worktree)
+
+
+def _flow(git_dir: str | None, item: dict, warnings: list[str]) -> dict | None:
+    found = flow.read_flow(git_dir) if git_dir else None
+    if found is None or found.source == "none":
+        return None
+    warnings += [
+        f"flow of {item['worktree']}: {warning}"
+        for warning in found.warnings + flow.mismatch(found, item["branch"])
+    ]
+    return {"pull": found.pull, "push": found.push, "source": found.source}
+
+
 def _scan(
     root: str,
     known: bool,
@@ -227,16 +249,21 @@ def _scan(
             fetch=False,
             forge_source=source,
         )
+        registrations = gc._registrations(root)
     except GitBaseError as exc:
         entry["warnings"] = [f"scan failed: {str(exc).strip().splitlines()[0]}"]
         return entry
     owner = next((r for r in repo.remotes if repo.default.startswith(f"{r}/")), None)
+    items = [asdict(item) for item in repo.items]
+    for item in items:
+        git_dir = _git_dir(root, registrations, item["worktree"])
+        item["flow"] = _flow(git_dir, item, repo.warnings)
     entry.update(
         remote=repo.urls[repo.remotes[0]] if repo.remotes else None,
         default=repo.default.removeprefix(f"{owner}/") if owner else repo.default,
         forge=sources[0],
         warnings=repo.warnings,
-        items=[asdict(item) for item in repo.items],
+        items=items,
     )
     return entry
 

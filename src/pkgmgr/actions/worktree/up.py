@@ -9,8 +9,9 @@ from pkgmgr.core.git.errors import GitRunError
 from pkgmgr.core.git.queries import FILTER_CONFIG, local_config
 from pkgmgr.core.git.run import END_OF_OPTIONS, run
 
+from .flow import NONE_LISTED, FlowError, check_name, check_names, write_flow
 from .hooks import INIT_HOOK, defined_in, hook_command, run_hook
-from .slots import next_slot, used_slots, write_slot
+from .slots import new_worktree_meta, next_slot, used_slots, write_slot
 
 PORT_PREFIX = re.compile(r"^\d+/")
 HOST_AND_PATH = re.compile(r"([^:/]+)[:/](.*)")
@@ -81,6 +82,51 @@ def _default_base(repo: str) -> str:
         return "origin/main" if _ref_exists(repo, "origin/main") else "origin/master"
 
 
+def _local_branch(repo: str, ref: str) -> str:
+    try:
+        remotes = run(["remote"], cwd=repo, scan=True).split()
+    except GitRunError:
+        return ref
+    owner = next((r for r in remotes if ref.startswith(f"{r}/")), None)
+    return ref.removeprefix(f"{owner}/") if owner else ref
+
+
+def _invalid_flow(pull: list[str] | None, push: list[str] | None) -> str | None:
+    try:
+        for kind, names in (("pull", pull), ("push", push)):
+            if names is not None:
+                check_names(kind, names)
+    except FlowError as exc:
+        return str(exc)
+    return None
+
+
+def _record_flow(
+    root: str,
+    path: str,
+    branch: str,
+    lists: tuple[list[str] | None, list[str] | None],
+    base: str | None,
+    warnings: list[str],
+) -> dict[str, list[str]] | None:
+    pull, push = lists
+    if pull is None or push is None:
+        default = base or _default_base(root)
+        try:
+            check_name("base", default)
+        except FlowError as exc:
+            warnings.append(f"flow not set: {exc}")
+            return None
+        pull = [default] if pull is None else pull
+        push = [_local_branch(root, default)] if push is None else push
+    try:
+        write_flow(new_worktree_meta(path), branch, pull, push)
+    except OSError as exc:
+        warnings.append(f"flow not written: {exc}")
+        return None
+    return {"pull": pull, "push": push}
+
+
 def worktree_up(
     repo_dir: str,
     branch: str,
@@ -90,6 +136,8 @@ def worktree_up(
     path: str | None,
     hooks: dict[str, dict[str, list[str]]],
     as_json: bool,
+    pull: list[str] | None,
+    push: list[str] | None,
 ) -> int:
     """
     Check a branch out into its own worktree under the standard path.
@@ -106,6 +154,10 @@ def worktree_up(
             CLI; the worktree-init hook runs only when the repository root is
             pinned there, never from the Makefile or by origin's URL.
         as_json: print the result as JSON instead of text.
+        pull: refs merged into the branch before a gate, deploy or merge, in
+            order, for the worktree's flow; None takes the base.
+        push: branches the branch is merged into when finished, in order;
+            None takes the base.
 
     Returns:
         0 when the worktree is ready, 1 when the worktree-init hook failed
@@ -126,6 +178,10 @@ def worktree_up(
             "on the checkout",
             file=sys.stderr,
         )
+        return 2
+    invalid = _invalid_flow(pull, push)
+    if invalid:
+        print(f"Refusing: {invalid}", file=sys.stderr)
         return 2
 
     location = worktree_location(url)
@@ -192,6 +248,7 @@ def worktree_up(
         return 2
 
     write_slot(path, slot)
+    flow = _record_flow(root, path, branch, (pull, push), start or base, warnings)
 
     hook = "none"
     code = 0
@@ -214,6 +271,7 @@ def worktree_up(
         "origin": origin,
         "slot": slot,
         "hook": hook,
+        "flow": flow,
         "warnings": warnings,
     }
     if as_json:
@@ -223,4 +281,6 @@ def worktree_up(
             print(f"WARN     {warning}")
         for key in ("path", "branch", "origin", "slot", "hook"):
             print(f"{key:<8} {result[key]}")
+        for key, names in (flow or {}).items():
+            print(f"{key:<8} {', '.join(names) or NONE_LISTED}")
     return code
