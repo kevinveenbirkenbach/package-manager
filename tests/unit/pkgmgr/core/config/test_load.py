@@ -18,6 +18,8 @@ from pkgmgr.core.config.load import (
     load_config,
 )
 
+LAYER_REPO = {"provider": "p", "account": "a", "repository": "r"}
+
 
 class DeepMergeTests(unittest.TestCase):
     def test_deep_merge_overrides_scalars_and_merges_dicts(self):
@@ -265,6 +267,43 @@ class LoadConfigIntegrationUnitTests(unittest.TestCase):
             self.assertEqual(merged["directories"]["x"], 1)
             self.assertIn("repositories", merged)
             self.assertIsInstance(merged["repositories"], list)
+
+
+class PackageDefaultKeysTests(unittest.TestCase):
+    def _load(self, files: dict[str, dict]) -> dict:
+        with tempfile.TemporaryDirectory() as td:
+            for name, data in files.items():
+                (Path(td) / name).write_text(yaml.safe_dump(data), encoding="utf-8")
+            return load_config(str(Path(td) / "config.yaml"))
+
+    def test_empty_user_dir_gets_worktree_hooks(self):
+        self.assertEqual(self._load({})["worktree_hooks"], {})
+
+    def test_layer_with_only_repositories_keeps_worktree_hooks(self):
+        merged = self._load({"defaults.yaml": {"repositories": [LAYER_REPO]}})
+
+        self.assertEqual(merged["worktree_hooks"], {})
+        self.assertEqual(merged["repositories"][0]["repository"], "r")
+
+    def test_layers_deep_merge_other_keys(self):
+        merged = self._load(
+            {
+                "a.yaml": {
+                    "repositories": [LAYER_REPO],
+                    "worktree_hooks": {"h/o/a": {"worktree-init": ["a"]}},
+                },
+                "b.yaml": {"worktree_hooks": {"h/o/b": {"worktree-init": ["b"]}}},
+            }
+        )
+
+        self.assertEqual(set(merged["worktree_hooks"]), {"h/o/a", "h/o/b"})
+
+    def test_user_config_sets_worktree_hooks(self):
+        hooks = {"h/o/r": {"worktree-fini": ["/bin/true"]}}
+
+        merged = self._load({"config.yaml": {"worktree_hooks": hooks}})
+
+        self.assertEqual(merged["worktree_hooks"], hooks)
 
 
 if __name__ == "__main__":

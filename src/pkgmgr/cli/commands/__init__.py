@@ -11,6 +11,7 @@ from .repos import handle_repos_command
 from .review import handle_review
 from .tools import handle_tools_command
 from .version import handle_version
+from .worktree import handle_gc, handle_worktree
 
 __all__ = [
     "handle_archive",
@@ -18,6 +19,7 @@ __all__ = [
     "handle_changelog",
     "handle_code_scanning",
     "handle_config",
+    "handle_gc",
     "handle_make",
     "handle_mirror_command",
     "handle_publish",
@@ -26,4 +28,5 @@ __all__ = [
     "handle_review",
     "handle_tools_command",
     "handle_version",
+    "handle_worktree",
 ]

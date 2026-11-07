@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import subprocess
 
-from pkgmgr.actions.branch.gc import END_OF_OPTIONS
 from pkgmgr.core.git.errors import GitBaseError
-from pkgmgr.core.git.run import SCAN_FLAGS, SCAN_TIMEOUT, _scan_env, run
+from pkgmgr.core.git.run import END_OF_OPTIONS, SCAN_FLAGS, SCAN_TIMEOUT, _scan_env, run
 
 from .model import ReviewError
 

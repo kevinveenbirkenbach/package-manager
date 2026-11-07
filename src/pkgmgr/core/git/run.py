@@ -37,6 +37,9 @@ SCAN_UNSET = (
     "PAGER",
 )
 SCAN_TIMEOUT = 60
+# ref and remote names come from repositories an agent may write: one named
+# like --output=<path> would otherwise make rev-list create that file
+END_OF_OPTIONS = "--end-of-options"
 
 
 def _is_not_repo_error(stderr: str) -> bool:

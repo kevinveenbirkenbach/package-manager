@@ -3,25 +3,33 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 
+from pkgmgr.actions.worktree.hooks import FINI_HOOK, hook_command, run_hook
 from pkgmgr.core.git.commands import delete_local_branch
 from pkgmgr.core.git.errors import GitRunError
-from pkgmgr.core.git.queries import list_remotes, resolve_base_branch
-from pkgmgr.core.git.run import run
+from pkgmgr.core.git.queries import (
+    FILTER_CONFIG,
+    list_remotes,
+    local_config,
+    resolve_base_branch,
+)
+from pkgmgr.core.git.run import END_OF_OPTIONS, run
 
 from .gc_forge import ForgeFacts, fetch_forge_facts
+from .nofollow import canonical, remove_tree
 
+Registrations = tuple[str, dict[str, list[str]]]
 Snapshot = tuple[
     dict[str, str],
     dict[str, dict[str, str]],
     dict[int, str],
     dict[str, tuple[str | None, int | None, int | None, bool]],
+    Registrations,
 ]
 
 # PROC_PID_INIT_INO: only the initial PID namespace sees every process of the host.
@@ -31,11 +39,8 @@ COMPOSE_PROJECT = "com.docker.compose.project"
 COMPOSE_WORKING_DIR = "com.docker.compose.project.working_dir"
 LOCK_PID = re.compile(r"\bpid (\d+)")
 TRACK = re.compile(r"(ahead|behind) (\d+)")
-UNSAFE_LOCAL_CONFIG = re.compile(r"^(local|worktree)\t(filter\.\S+)")
 GITLINK = "160000"
-# ref and remote names come from repositories an agent may write: one named
-# like --output=<path> would otherwise make rev-list create that file
-END_OF_OPTIONS = "--end-of-options"
+STATUS_PATH_FIELD = {"1": 8, "2": 9, "u": 10, "?": 1}
 ALWAYS_PROTECTED = ("main", "master")
 LABELS = {
     "merged-clean": "DELETE",
@@ -48,6 +53,8 @@ REFUSAL = (
     "Refusing: not in the host PID namespace (e.g. a sandbox), so running "
     "processes and worktree locks cannot be verified. Run it on the host."
 )
+SCOPES = ("worktree", "branch", "all", "purge")
+NOT_LINKED = "not a linked worktree of this repository"
 
 
 @dataclass
@@ -87,8 +94,12 @@ class Item:
     compose_projects: list[str] = field(default_factory=list)
     images: list[str] = field(default_factory=list)
     state: str = ""
+    merged: bool = False
+    dirty: int = 0
     merged_by: str | None = None
     merged_into: str | None = None
+    unpushed: int | None = None
+    last_activity: int | None = None
     size_bytes: int | None = None
     skip: str | None = None
     actions: list[str] = field(default_factory=list)
@@ -97,7 +108,7 @@ class Item:
 
     @property
     def eligible(self) -> bool:
-        return self.state == "merged-clean" and self.skip is None and bool(self.actions)
+        return self.skip is None and bool(self.actions)
 
     def matches(self, name: str) -> bool:
         return name == self.branch or (
@@ -119,6 +130,9 @@ class Repo:
     lines: dict[str, tuple[str, set[str]]]
     sizes: bool
     min_age: float | None
+    scope: str
+    activity: bool
+    hooks: dict[str, list[str]]
     warnings: list[str] = field(default_factory=list)
     items: list[Item] = field(default_factory=list)
 
@@ -176,6 +190,54 @@ def list_compose_containers() -> list[Container] | None:
 
 def _inside(path: str, root: str) -> bool:
     return path == root or path.startswith(root.rstrip("/") + "/")
+
+
+def _registrations(repo_root: str) -> Registrations:
+    base = os.path.join(_common_dir(repo_root), "worktrees")
+    claims: dict[str, list[str]] = {}
+    for entry in sorted(os.listdir(base)) if os.path.isdir(base) else []:
+        entry_dir = os.path.join(base, entry)
+        target = _pointer(os.path.join(entry_dir, "gitdir"), entry_dir)
+        if target:
+            claims.setdefault(target, []).append(entry)
+    return base, claims
+
+
+def _linked_meta(registrations: Registrations, path: str) -> str | None:
+    """
+    Resolve a worktree's metadata directory through its `.git` file.
+
+    Args:
+        registrations: `<common>/worktrees` and, per gitdir target, the
+            registrations naming it, from _registrations.
+        path: worktree path as `git worktree list` derives it from the
+            writable `<common>/worktrees/<id>/gitdir`, so possibly forged.
+
+    Returns:
+        `<common>/worktrees/<id>` when path, the registration and
+        `<common>/worktrees` are canonical, path's `.git` resolves to that
+        registration and it is the only registration whose gitdir names
+        `<path>/.git`, else None.
+    """
+    base, claims = registrations
+    if not (canonical(path) and canonical(base)):
+        return None
+    git_file = os.path.join(path, ".git")
+    meta = _pointer(git_file, path)
+    if meta is None or os.path.dirname(meta) != base or not canonical(meta):
+        return None
+    return meta if claims.get(git_file) == [os.path.basename(meta)] else None
+
+
+def _pointer(file: str, relative_to: str) -> str | None:
+    if not os.path.isfile(file):
+        return None
+    try:
+        with open(file, encoding="utf-8") as fh:
+            target = fh.read().strip().removeprefix("gitdir: ")
+    except (OSError, ValueError):
+        return None
+    return os.path.normpath(os.path.join(relative_to, target))
 
 
 def _worktrees(repo_root: str) -> list[Worktree]:
@@ -304,7 +366,19 @@ def _merged_by(repo: Repo, sha: str) -> str | None:
     if number:
         return f"pr#{number}"
     line = _in_line(repo, sha)
-    return f"line:{line}" if line else None
+    if line:
+        return f"line:{line}"
+    return "patch" if _patch_merged(repo, sha) else None
+
+
+def _patch_merged(repo: Repo, sha: str) -> bool:
+    cherry = _git(["cherry", END_OF_OPTIONS, repo.default, sha], repo.repo).splitlines()
+    if not cherry or any(not line.startswith("- ") for line in cherry):
+        return False
+    outside = set(
+        _git(["rev-list", END_OF_OPTIONS, f"{repo.default}..{sha}"], repo.repo).split()
+    )
+    return outside == {line[2:] for line in cherry}
 
 
 def _du_bytes(path: str) -> int | None:
@@ -314,17 +388,24 @@ def _du_bytes(path: str) -> int | None:
     return int(out[0]) * 1024 if out and out[0].isdigit() else None
 
 
-def _age_hours(repo: Repo, shas: list[str], tree: Worktree | None) -> float:
+def _last_activity(
+    repo: Repo, shas: list[str], tree: Worktree | None, changed: list[str]
+) -> int:
     stamps = [int(_git(["log", "-1", "--format=%ct", sha], repo.repo)) for sha in shas]
     if tree and os.path.isfile(os.path.join(tree.path, ".git")):
         with open(os.path.join(tree.path, ".git"), encoding="utf-8") as fh:
             index = os.path.join(fh.read().strip().removeprefix("gitdir: "), "index")
         if os.path.isfile(index):
             stamps.append(int(os.path.getmtime(index)))
-    return (time.time() - max(stamps)) / 3600
+        for path in changed:
+            try:
+                stamps.append(int(os.lstat(os.path.join(tree.path, path)).st_mtime))
+            except OSError:
+                continue
+    return max(stamps)
 
 
-def _human(size: int) -> str:
+def human_size(size: int) -> str:
     value = float(size)
     for unit in ("K", "M", "G"):
         value /= 1024
@@ -356,20 +437,12 @@ def _skip(
     lock = _lock_skip(tree.locked, repo.host_ns)
     if lock:
         return lock
-    busy = sorted(pid for pid, cwd in cwds.items() if _inside(cwd, tree.path))
-    if busy:
-        return f"process: pid {busy[0]} ({_comm(busy[0])})"
-    return None
+    return _busy(cwds, tree.path)
 
 
-def _unsafe_config(path: str) -> list[str]:
-    try:
-        out = _git(["config", "--show-scope", "--get-regexp", r"^filter\."], path)
-    except GitRunError as exc:
-        if exc.returncode == 1:
-            return []
-        raise
-    return [m.group(2) for m in map(UNSAFE_LOCAL_CONFIG.match, out.splitlines()) if m]
+def _busy(cwds: dict[int, str], path: str) -> str | None:
+    busy = sorted(pid for pid, cwd in cwds.items() if _inside(cwd, path))
+    return f"process: pid {busy[0]} ({_comm(busy[0])})" if busy else None
 
 
 def _has_submodules(path: str) -> bool:
@@ -379,39 +452,59 @@ def _has_submodules(path: str) -> bool:
     )
 
 
-def _status(path: str) -> tuple[int, int, int, int]:
-    lines = _git(
-        ["status", "--porcelain=v2", "--untracked-files=all"], path
-    ).splitlines()
-    codes = [line.split(" ", 2)[1] for line in lines if line[:1] in "12u"]
+def _status(path: str) -> tuple[list[str], int, int, int]:
+    records: list[str] = []
+    paths: list[str] = []
+    fields = iter(
+        _git(["status", "--porcelain=v2", "-z", "--untracked-files=all"], path).split(
+            "\0"
+        )
+    )
+    for record in fields:
+        kind = record[:1]
+        if kind not in STATUS_PATH_FIELD:
+            continue
+        records.append(record)
+        paths.append(record.split(" ", STATUS_PATH_FIELD[kind])[-1])
+        if kind == "2":
+            next(fields, None)
+    codes = [record.split(" ", 2)[1] for record in records if record[:1] in "12u"]
     return (
-        len(lines),
+        paths,
         sum(code[0] != "." for code in codes),
         sum(code[1] != "." for code in codes),
-        sum(line.startswith("? ") for line in lines),
+        sum(record.startswith("? ") for record in records),
     )
 
 
-def _read_worktree(item: Item, checkout: bool) -> tuple[int, str | None]:
+def _read_worktree(item: Item, checkout: bool) -> tuple[int, str | None, list[str]]:
     if item.worktree is None:
-        return 0, None
+        return 0, None, []
     if not checkout:
         item.worktree_state = "missing"
-        return 0, None
+        return 0, None, []
     try:
         if _has_submodules(item.worktree):
             item.worktree_state = "changed"
-            return -1, "status skipped: submodules, whose config the scan cannot vet"
-        unsafe = _unsafe_config(item.worktree)
+            return (
+                -1,
+                "status skipped: submodules, whose config the scan cannot vet",
+                [],
+            )
+        unsafe = local_config(item.worktree, FILTER_CONFIG)
         if unsafe:
             item.worktree_state = "changed"
-            return -1, f"status skipped: {', '.join(unsafe)} in the repository config"
-        dirty, item.staged, item.unstaged, item.untracked = _status(item.worktree)
+            return (
+                -1,
+                f"status skipped: {', '.join(unsafe)} in the repository config",
+                [],
+            )
+        paths, item.staged, item.unstaged, item.untracked = _status(item.worktree)
     except GitRunError as exc:
         item.worktree_state = "changed"
-        return -1, f"status failed: {_describe(exc)}"
-    item.worktree_state = "changed" if dirty else "clean"
-    return dirty, None
+        return -1, f"status failed: {_describe(exc)}", []
+    item.worktree_state = "changed" if paths else "clean"
+    return len(paths), None, paths
 
 
 def _build(
@@ -420,7 +513,7 @@ def _build(
     tree: Worktree | None,
     snapshot: Snapshot,
 ) -> Item:
-    local, remote, cwds, tracking = snapshot
+    local, remote, cwds, tracking, registrations = snapshot
     upstream, ahead, behind, gone = tracking.get(
         branch or "", (None, None, None, False)
     )
@@ -438,7 +531,8 @@ def _build(
         remotes=dict(remote.get(branch, {})) if branch else {},
     )
     checkout = tree is not None and not tree.prunable and os.path.isdir(tree.path)
-    dirty, unread = _read_worktree(item, checkout)
+    dirty, unread, changed = _read_worktree(item, checkout)
+    item.dirty = max(dirty, 0)
     if branch in repo.protected:
         item.state, item.reason = "protected", "default or protected branch"
         return item
@@ -451,6 +545,18 @@ def _build(
     shas = [item.local_sha, *item.remotes.values(), tree.head if tree else None]
     verdicts = {sha: _merged_by(repo, sha) for sha in dict.fromkeys(shas) if sha}
     unmerged = [sha for sha, verdict in verdicts.items() if verdict is None]
+    item.merged = bool(verdicts) and not unmerged
+
+    head = tree.head if checkout else item.local_sha
+    if unmerged and head:
+        tips = {sha for shas in remote.values() for sha in shas.values()}
+        item.unpushed = (
+            0
+            if head in tips
+            else int(
+                _git(["rev-list", "--count", head, "--not", "--remotes"], repo.repo)
+            )
+        )
 
     if unread:
         item.state, item.reason = "dirty", unread
@@ -489,32 +595,89 @@ def _build(
 
     if repo.sizes and checkout and not tree.main:
         item.size_bytes = _du_bytes(tree.path)
+    if verdicts and (repo.activity or repo.min_age is not None):
+        item.last_activity = _last_activity(
+            repo, list(verdicts), tree if checkout else None, changed
+        )
     item.skip = _skip(repo, item, tree, checkout, cwds)
-    if item.skip is None and repo.min_age is not None and verdicts:
-        age = _age_hours(repo, list(verdicts), tree if checkout else None)
-        if age < repo.min_age:
-            item.skip = f"younger than {repo.min_age:g} h"
-    for project in item.compose_projects:
-        item.actions += [f"compose-down:{project}", f"images:{project}"]
-    if tree:
-        item.actions.append("worktree")
-    if item.local_sha:
-        item.actions.append("local-branch")
-    item.actions += [f"remote-branch:{name}" for name in item.remotes]
+    if (
+        item.skip is None
+        and repo.min_age is not None
+        and item.last_activity
+        and (time.time() - item.last_activity) / 3600 < repo.min_age
+    ):
+        item.skip = f"younger than {repo.min_age:g} h"
+    item.actions = _actions(repo, item, tree, checkout, dirty, registrations)
     return item
+
+
+def _actions(
+    repo: Repo,
+    item: Item,
+    tree: Worktree | None,
+    checkout: bool,
+    dirty: int,
+    registrations: Registrations,
+) -> list[str]:
+    tree_part: list[str] = []
+    if tree:
+        if (
+            checkout
+            and not tree.main
+            and _linked_meta(registrations, tree.path) is None
+        ):
+            item.skip = NOT_LINKED
+            return []
+        if checkout and FINI_HOOK in repo.hooks:
+            tree_part.append(f"hook:{FINI_HOOK}")
+        for project in item.compose_projects:
+            tree_part += [f"compose-down:{project}", f"images:{project}"]
+        tree_part.append("worktree")
+    branch_part = ["local-branch"] if item.local_sha else []
+    branch_part += [f"remote-branch:{name}" for name in item.remotes]
+
+    if repo.scope == "purge":
+        return tree_part + branch_part
+    tree_ok = (
+        tree is not None
+        and not tree.main
+        and dirty == 0
+        and (item.merged or item.unpushed == 0)
+    )
+    branch_ok = item.state == "merged-clean"
+    if repo.scope == "worktree":
+        return tree_part if tree_ok else []
+    if repo.scope == "branch":
+        if branch_ok and tree is not None and item.skip is None:
+            item.skip = f"checked out in worktree {tree.path}"
+        return branch_part if branch_ok and tree is None else []
+    actions = tree_part if tree_ok else []
+    if branch_ok and (tree is None or tree_ok):
+        actions += branch_part
+    return actions
 
 
 def _snapshot(repo: Repo) -> tuple[list[Worktree], Snapshot]:
     local, remote, tracking = _refs(repo.repo, repo.remotes)
     cwds = _process_cwds() if repo.host_ns else {}
-    return _worktrees(repo.repo), (local, remote, cwds, tracking)
+    return _worktrees(repo.repo), (
+        local,
+        remote,
+        cwds,
+        tracking,
+        _registrations(repo.repo),
+    )
 
 
 def _items(repo: Repo) -> list[Item]:
     trees, snapshot = _snapshot(repo)
-    local, remote, _, _ = snapshot
+    local, remote, *_ = snapshot
     by_branch = {t.branch: t for t in trees if t.branch}
-    names = sorted(set(local) | set(remote) | set(by_branch))
+    names = (
+        sorted(by_branch)
+        if repo.scope == "worktree"
+        else sorted(set(local) | set(remote) | set(by_branch))
+    )
     items = [_build(repo, name, by_branch.get(name), snapshot) for name in names]
     items += [
         _build(repo, None, tree, snapshot)
@@ -581,6 +744,9 @@ def plan_repo(
     merged_into: list[str],
     sizes: bool,
     min_age: float | None,
+    scope: str,
+    activity: bool,
+    hooks: dict[str, dict[str, list[str]]],
     fetch: bool = True,
     forge_source: Callable[[dict[str, str]], ForgeFacts] | None = None,
 ) -> Repo:
@@ -593,13 +759,20 @@ def plan_repo(
         host_ns: whether this process runs in the host PID namespace.
         merged_into: integration lines (refs) that also count as merged; each is protected.
         sizes: measure each worktree's disk usage into size_bytes.
-        min_age: skip items whose newest commit or worktree index is younger (hours).
+        min_age: skip items whose newest commit, worktree index or changed file is younger (hours).
+        scope: one of SCOPES; decides which actions an item gets.
+        activity: record last_activity on every item, not only under min_age.
+        hooks: realpath of a managed repository's root -> hook name -> argv,
+            as the CLI binds `worktree_hooks`; only repo_root's entry is used,
+            and only while repo_root's git directory is its own.
         fetch: fetch every remote first; the tree scan reads the known refs only.
         forge_source: remote name -> URL to forge facts; fetch_forge_facts by default.
 
     Returns:
         The repository with its classified items.
     """
+    if scope not in SCOPES:
+        raise ValueError(f"unknown scope {scope!r}")
     warnings: list[str] = []
     if fetch:
         try:
@@ -659,10 +832,27 @@ def plan_repo(
         lines=lines,
         sizes=sizes,
         min_age=min_age,
+        scope=scope,
+        activity=activity,
+        hooks=_pins(hooks, repo_root, warnings),
         warnings=warnings,
     )
     repo.items = _items(repo)
     return repo
+
+
+def _pins(
+    hooks: dict[str, dict[str, list[str]]], repo_root: str, warnings: list[str]
+) -> dict[str, list[str]]:
+    root = os.path.realpath(repo_root)
+    pinned = hooks.get(root, {})
+    if not pinned:
+        return {}
+    owner = os.path.realpath(os.path.dirname(_common_dir(repo_root)))
+    if owner != root:
+        warnings.append(f"pinned hooks skipped: its git directory belongs to {owner}")
+        return {}
+    return pinned
 
 
 def _foreign_owned(path: str) -> bool:
@@ -677,12 +867,9 @@ def _foreign_owned(path: str) -> bool:
 
 
 def _remove_worktree(repo_root: str, path: str) -> None:
-    with open(os.path.join(path, ".git"), encoding="utf-8") as fh:
-        meta = os.path.normpath(
-            os.path.join(path, fh.read().strip().removeprefix("gitdir: "))
-        )
-    if os.path.dirname(meta) != os.path.join(_common_dir(repo_root), "worktrees"):
-        raise RuntimeError(f"unexpected worktree metadata path {meta}")
+    meta = _linked_meta(_registrations(repo_root), path)
+    if meta is None:
+        raise RuntimeError(f"{path}: {NOT_LINKED}")
 
     if _foreign_owned(path):
         parent, name = os.path.split(path.rstrip("/"))
@@ -699,10 +886,10 @@ def _remove_worktree(repo_root: str, path: str) -> None:
             ]
         )
     else:
-        shutil.rmtree(path)
+        remove_tree(path)
     if os.path.lexists(path):
         raise RuntimeError(f"worktree {path} still exists; metadata {meta} kept")
-    shutil.rmtree(meta)
+    remove_tree(meta)
 
 
 def _rebuild(repo: Repo, item: Item) -> Item:
@@ -726,7 +913,39 @@ def _fingerprint(item: Item) -> tuple:
         item.remotes,
         item.worktree,
         item.compose_projects,
+        item.actions,
     )
+
+
+def _run_fini_hook(repo: Repo, path: str) -> None:
+    run_hook(
+        FINI_HOOK,
+        hook_command(FINI_HOOK, repo.hooks[FINI_HOOK], path, None),
+        path,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+
+def _sha(cwd: str, ref: str) -> str | None:
+    try:
+        return _git(["rev-parse", "--verify", "--quiet", END_OF_OPTIONS, ref], cwd)
+    except GitRunError:
+        return None
+
+
+def _changed_by_hook(repo: Repo, item: Item) -> str | None:
+    path = item.worktree
+    dirty, unread, _ = _read_worktree(Item(branch=None, worktree=path), True)
+    if unread or dirty:
+        return unread or f"dirty: {dirty} paths"
+    if _sha(path, "HEAD") != item.head:
+        return "HEAD moved"
+    if item.branch and _sha(repo.repo, f"refs/heads/{item.branch}") != item.local_sha:
+        return f"branch {item.branch} moved"
+    return _busy(_process_cwds(), path) if repo.host_ns else None
 
 
 def execute(repo: Repo, item: Item) -> None:
@@ -736,19 +955,31 @@ def execute(repo: Repo, item: Item) -> None:
         return
 
     notes: list[str] = []
+    removes_tree = "worktree" in item.actions
+    if removes_tree and _linked_meta(_registrations(repo.repo), item.worktree) is None:
+        item.result = f"skipped: {NOT_LINKED}"
+        return
     try:
-        for project in item.compose_projects:
+        if f"hook:{FINI_HOOK}" in item.actions:
+            _run_fini_hook(repo, item.worktree)
+            changed = _changed_by_hook(repo, item)
+            if changed:
+                item.result = f"skipped: changed during {FINI_HOOK} ({changed})"
+                return
+        for project in item.compose_projects if removes_tree else []:
             _docker(["compose", "-p", project, "down", "-v", "--remove-orphans"])
-        for image in item.images:
+        for image in item.images if removes_tree else []:
             try:
                 _docker(["image", "rm", image])
             except subprocess.CalledProcessError:
                 notes.append(f"image kept: {image}")
-        if item.worktree:
+        if removes_tree:
             _remove_worktree(repo.repo, item.worktree)
-        if item.local_sha:
+        if "local-branch" in item.actions:
             delete_local_branch(item.branch, cwd=repo.repo, force=True)
         for remote, sha in item.remotes.items():
+            if f"remote-branch:{remote}" not in item.actions:
+                continue
             run(
                 [
                     "push",
@@ -765,15 +996,23 @@ def execute(repo: Repo, item: Item) -> None:
     item.result = "; ".join(["done", *notes])
 
 
+def _label(item: Item) -> str:
+    if item.skip and (item.actions or item.state == "merged-clean"):
+        return "SKIP"
+    if item.actions:
+        return "REMOVE" if item.state in ("unmerged", "dirty") else "DELETE"
+    return "KEEP" if item.state == "merged-clean" else LABELS[item.state]
+
+
 def _line(item: Item) -> str:
-    label = "SKIP" if item.state == "merged-clean" and item.skip else LABELS[item.state]
+    label = _label(item)
     parts = [item.reason]
     if item.skip and item.state != "protected":
         parts.append(item.skip)
     if item.worktree and item.state != "stale":
         parts.append(f"worktree {item.worktree}")
     if item.size_bytes is not None:
-        parts.append(f"size {_human(item.size_bytes)}")
+        parts.append(f"size {human_size(item.size_bytes)}")
     if item.compose_projects:
         parts.append("stack " + ", ".join(item.compose_projects))
     if item.remotes:
@@ -819,7 +1058,7 @@ def _render(
         )
 
 
-def _prepare(
+def prepare(
     repo_roots: list[str],
     include: list[str],
     exclude: list[str],
@@ -858,9 +1097,10 @@ def _finish(repos: list[Repo]) -> int:
     return 1 if any(result.startswith("failed") for result in results) else 0
 
 
-def branch_gc(
+def cleanup(
     repo_roots: list[str],
     *,
+    scope: str,
     apply: bool,
     as_json: bool,
     include: list[str],
@@ -868,12 +1108,17 @@ def branch_gc(
     merged_into: list[str],
     sizes: bool,
     min_age: float | None,
+    hooks: dict[str, dict[str, list[str]]],
 ) -> int:
     """
-    Plan, and with apply=True execute, the cleanup of merged and clean branches.
+    Plan, and with apply=True execute, a cleanup of worktrees, branches or both.
 
     Args:
         repo_roots: main worktree roots of the repositories to scan.
+        scope: `worktree` removes clean worktrees whose commits are merged or
+            pushed (hook, stack, checkout; the branch stays); `branch` removes
+            merged branches without a worktree, local and remote; `all` does
+            both in one pass.
         apply: execute the plan instead of only printing it.
         as_json: print the plan as JSON instead of text lines.
         include: only items whose branch or worktree path matches one of these.
@@ -881,15 +1126,26 @@ def branch_gc(
         merged_into: integration lines (refs) that also count as merged.
         sizes: measure each worktree's disk usage into the plan.
         min_age: skip items younger than this many hours.
+        hooks: pinned hooks by managed repository root realpath, from the
+            CLI; a worktree-fini hook runs only for a root pinned there.
 
     Returns:
         0 on success, 1 when an applied item failed, 2 when refused.
     """
+    if scope not in ("worktree", "branch", "all"):
+        raise ValueError(f"unknown cleanup scope {scope!r}")
     if apply and not host_pid_namespace():
         print(REFUSAL, file=sys.stderr)
         return 2
-    options = {"merged_into": merged_into, "sizes": sizes, "min_age": min_age}
-    prepared = _prepare(repo_roots, include, exclude, options)
+    options = {
+        "merged_into": merged_into,
+        "sizes": sizes,
+        "min_age": min_age,
+        "scope": scope,
+        "activity": False,
+        "hooks": hooks,
+    }
+    prepared = prepare(repo_roots, include, exclude, options)
     if prepared is None:
         return 2
     repos, host_ns, chosen = prepared
@@ -900,7 +1156,7 @@ def branch_gc(
                 if item.eligible and chosen(item):
                     execute(repo, item)
                     print(
-                        f"[gc] {item.branch or item.worktree}: {item.result}",
+                        f"[{scope}] {item.branch or item.worktree}: {item.result}",
                         file=sys.stderr,
                     )
     _render(repos, host_ns, chosen, as_json)
@@ -915,6 +1171,7 @@ def branch_purge(
     merged_into: list[str],
     sizes: bool,
     min_age: float | None,
+    hooks: dict[str, dict[str, list[str]]],
 ) -> int:
     """
     Delete unmerged or dirty items after a y/N confirmation per item.
@@ -926,6 +1183,8 @@ def branch_purge(
         merged_into: integration lines (refs) that also count as merged.
         sizes: measure each worktree's disk usage into the prompt line.
         min_age: skip items younger than this many hours.
+        hooks: pinned hooks by managed repository root realpath, from the
+            CLI; a worktree-fini hook runs only for a root pinned there.
 
     Returns:
         0 on success, 1 when a confirmed item failed, 2 when refused.
@@ -933,8 +1192,15 @@ def branch_purge(
     if not host_pid_namespace():
         print(REFUSAL, file=sys.stderr)
         return 2
-    options = {"merged_into": merged_into, "sizes": sizes, "min_age": min_age}
-    prepared = _prepare(repo_roots, include, exclude, options)
+    options = {
+        "merged_into": merged_into,
+        "sizes": sizes,
+        "min_age": min_age,
+        "scope": "purge",
+        "activity": False,
+        "hooks": hooks,
+    }
+    prepared = prepare(repo_roots, include, exclude, options)
     if prepared is None:
         return 2
     repos, _, chosen = prepared

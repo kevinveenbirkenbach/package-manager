@@ -221,6 +221,9 @@ def _scan(
             merged_into=[],
             sizes=False,
             min_age=None,
+            scope="all",
+            activity=True,
+            hooks={},
             fetch=False,
             forge_source=source,
         )

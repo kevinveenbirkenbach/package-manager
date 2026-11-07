@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import os
 
-from pkgmgr.actions.branch.gc import GITLINK, _unsafe_config
+from pkgmgr.actions.branch.gc import GITLINK
 from pkgmgr.core.git.errors import GitBaseError, GitRunError
+from pkgmgr.core.git.queries import FILTER_CONFIG, local_config
 from pkgmgr.core.git.run import run
 
 from .model import FileView, ReviewError
@@ -90,7 +91,7 @@ def _submodule_configs(top: str, prefix: str) -> list[str]:
         ):
             continue
         try:
-            keys = _unsafe_config(full)
+            keys = local_config(full, FILTER_CONFIG)
             nested = _submodule_configs(top, relative)
         except (GitBaseError, ReviewError):
             reasons.append(
@@ -107,6 +108,6 @@ def _submodule_configs(top: str, prefix: str) -> list[str]:
 
 
 def unsafe_configs(top: str) -> list[str]:
-    keys = _unsafe_config(top)
+    keys = local_config(top, FILTER_CONFIG)
     own = [f"the repository config defines {', '.join(keys)}, {RUNS}"] if keys else []
     return own + _submodule_configs(os.path.realpath(top), "")

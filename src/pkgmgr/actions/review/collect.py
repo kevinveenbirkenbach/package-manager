@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from pkgmgr.actions.branch.gc import END_OF_OPTIONS
+from pkgmgr.core.git.run import END_OF_OPTIONS
 
 from .checks import attribute_binary, hidden_entries, unsafe_configs
 from .diff import parse_patch
