@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.3.0
+Version:        2.4.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,32 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Sat Nov 07 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.4.0-1
+- Added:
+
+- - Worktree: *worktree up* and *down* give each branch its own slot
+- - Worktree: *worktree flow* keeps pull sources and push targets per worktree
+- - Worktree: *up --pull* and *--push* record the flow; default is the base
+- - Branch: *branch tree* writes a hardened meta-tree of all repositories
+- - Branch: the tree carries each worktree's merge flow
+- - GC: *gc --report* prints a read-only disk inventory
+- - Review: a branch review renders as a local HTML page
+- - Publish: releases rebuild nightly; stable follows the tested build
+
+- Changed:
+
+- - Push: signs only an unsigned HEAD instead of re-signing the whole range
+
+- Fixed:
+
+- - Push, release, gc: refuse a repository config that would run a program
+- - Git: hooks named in the config no longer run in hardened git calls
+- - Tests: the trusted PATH fixture comes from os.defpath, not the host
+
+- Upgrade notes:
+
+- - Push: move repo-local sshCommand, credential helpers, hooks to global config
+
 * Sun Nov 01 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.3.0-1
 - Added:
 
