@@ -6,15 +6,17 @@ import os
 import subprocess
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from pkgmgr.actions.branch import gc
+from pkgmgr.actions.branch import gc, gc_forge
 from pkgmgr.actions.branch.gc_forge import ForgeFacts
 from pkgmgr.cli.commands.branch import handle_branch
 from pkgmgr.cli.parser import create_parser
+from pkgmgr.core.credentials.types import NoCredentialsError
 
+GITHUB_URL = "https://github.com/example/demo.git"
 GIT_ENV = {
     **os.environ,
     "GIT_AUTHOR_NAME": "t",
@@ -240,6 +242,80 @@ class TestBranchGc(GcFixture, unittest.TestCase):
 
         self.assertEqual(items["merged"].skip, "forge unavailable")
         self.assertIsNone(items["squashed"].merged_by)
+
+    def _github_without_token(self) -> None:
+        git(self.repo, "branch", "local-done", "merged")
+        git(self.repo, "checkout", "-b", "local-wip", "main")
+        self._commit("local-wip")
+        git(self.repo, "checkout", "main")
+        git(self.repo, "branch", "--track", "tracked", "origin/merged")
+        git(self.repo, "push", "origin", "merged:refs/heads/remote-done")
+        git(self.repo, "remote", "set-url", "origin", GITHUB_URL)
+
+    def _cleanup_without_token(self, apply: bool) -> tuple[int, dict]:
+        out = io.StringIO()
+        with (
+            patch.dict(os.environ, {"GIT_ALLOW_PROTOCOL": "file"}),
+            patch.object(gc, "host_pid_namespace", return_value=True),
+            patch.object(gc, "list_compose_containers", return_value=[]),
+            patch.object(gc, "_process_cwds", return_value={}),
+            patch.object(gc_forge, "TokenResolver") as resolver,
+            patch.object(gc_forge, "HttpClient") as http,
+            redirect_stdout(out),
+            redirect_stderr(io.StringIO()),
+        ):
+            resolver.return_value.get_token.side_effect = NoCredentialsError("none")
+            code = gc.cleanup(
+                [self.repo],
+                scope="branch",
+                apply=apply,
+                as_json=True,
+                include=[],
+                exclude=[],
+                merged_into=[],
+                sizes=False,
+                min_age=None,
+                hooks={},
+            )
+        resolver.return_value.get_token.assert_called_once()
+        http.assert_not_called()
+        return code, json.loads(out.getvalue())["repos"][0]
+
+    def test_local_only_merged_branch_needs_no_forge(self) -> None:
+        self._github_without_token()
+        code, plan = self._cleanup_without_token(apply=False)
+        items = {i["branch"]: i for i in plan["items"] if i["branch"]}
+
+        self.assertEqual(code, 0)
+        self.assertIn("forge unavailable: no GitHub token (none)", plan["warnings"])
+        self.assertIsNone(items["local-done"]["skip"])
+        self.assertEqual(items["local-done"]["merged_by"], "ancestor")
+        self.assertEqual(items["local-done"]["actions"], ["local-branch"])
+        self.assertEqual(items["remote-done"]["state"], "merged-clean")
+        self.assertEqual(items["tracked"]["state"], "merged-clean")
+        self.assertEqual(items["local-wip"]["state"], "unmerged")
+        for name in ("merged", "remote-done", "tracked", "local-wip", "squashed"):
+            with self.subTest(branch=name):
+                self.assertEqual(items[name]["skip"], "forge unavailable")
+
+    def test_apply_without_token_deletes_only_the_local_only_merged_branch(
+        self,
+    ) -> None:
+        self._github_without_token()
+        before = set(git(self.repo, "for-each-ref", "--format=%(refname)").split())
+        code, plan = self._cleanup_without_token(apply=True)
+        after = set(git(self.repo, "for-each-ref", "--format=%(refname)").split())
+
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            [(i["branch"], i["result"]) for i in plan["items"] if i["result"]],
+            [("local-done", "done")],
+        )
+        self.assertEqual(before - after, {"refs/heads/local-done"})
+        self.assertEqual(after - before, set())
+        self.assertEqual(
+            git(self.origin, "branch", "--list", "remote-done"), "remote-done"
+        )
 
     def test_stale_metadata_is_listed_not_pruned(self) -> None:
         stub = os.path.join(self.repo, ".git", "worktrees", "stub")

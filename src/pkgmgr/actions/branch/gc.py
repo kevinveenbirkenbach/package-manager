@@ -415,6 +415,26 @@ def human_size(size: int) -> str:
     return f"{value / 1024:.1f}T"
 
 
+def _needs_forge(item: Item, tree: Worktree | None) -> bool:
+    """
+    Whether deciding the item needs the forge's PR and protection facts.
+
+    Args:
+        item: the classified item.
+        tree: the worktree holding its branch, or None.
+
+    Returns:
+        False only for a branch that no worktree holds, without upstream and
+        remote branch, merged into the default by ancestry; True otherwise.
+    """
+    return not (
+        tree is None
+        and item.merged_by == "ancestor"
+        and item.upstream is None
+        and not item.remotes
+    )
+
+
 def _skip(
     repo: Repo,
     item: Item,
@@ -425,7 +445,7 @@ def _skip(
     number = repo.forge.open_heads.get(item.branch) if item.branch else None
     if number:
         return f"open-pr #{number}"
-    if repo.forge.unavailable:
+    if repo.forge.unavailable and _needs_forge(item, tree):
         return "forge unavailable"
     if tree is None:
         return None
