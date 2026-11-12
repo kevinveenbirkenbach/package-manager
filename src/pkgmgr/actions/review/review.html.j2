@@ -1,5 +1,9 @@
 {% set status_letters = {"added": "A", "deleted": "D", "modified": "M", "renamed": "R", "copied": "C", "untracked": "U"} %}
 {% set signs = {"add": "+", "del": "-", "ctx": "", "meta": ""} %}
+{% set icon_paths = {
+  "arrows-expand": "M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8M7.646.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 1.707V5.5a.5.5 0 0 1-1 0V1.707L6.354 2.854a.5.5 0 1 1-.708-.708zM8 10a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 14.293V10.5A.5.5 0 0 1 8 10",
+  "arrows-collapse": "M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8m7-8a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 1 1 .708-.708L7.5 4.293V.5A.5.5 0 0 1 8 0m-.5 11.707-1.146 1.147a.5.5 0 0 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 11.707V15.5a.5.5 0 0 1-1 0z",
+} %}
 {% set style %}
 :root {
   color-scheme: light dark;
@@ -93,6 +97,7 @@ input[type="search"] { width: 260px; max-width: 100%; padding: 5px 10px; border:
 input[type="search"]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 button { padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle); color: var(--text); font: 500 13px var(--sans); cursor: pointer; }
 button:hover { border-color: var(--muted); }
+button.icon { display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px; }
 main { padding-top: 24px; padding-bottom: 80px; }
 .group { margin-bottom: 36px; }
 h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; margin: 0 0 12px; font-size: 17px; font-weight: 600; }
@@ -187,6 +192,7 @@ details.commit > summary { padding: 10px 14px; }
 })();
 {% endset %}
 {% macro stat(added, removed) %}<span class="stat"><span class="add">+{{ added }}</span><span class="del">&minus;{{ removed }}</span></span>{% endmacro %}
+{% macro icon(name) %}<svg class="bi bi-{{ name }}" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="{{ icon_paths[name] }}"/></svg>{% endmacro %}
 {% macro plural(count, word) %}{{ count }} {{ word }}{{ "" if count == 1 else "s" }}{% endmacro %}
 {% macro file_block(file, open) %}
 <details class="file" id="{{ file.anchor }}" data-path="{{ file.search }}"{% if open %} open{% endif %}>
@@ -282,8 +288,8 @@ details.commit > summary { padding: 10px 14px; }
 <div class="spacer"></div>
 <input id="filter" type="search" placeholder="Filter files by path  ( / )" autocomplete="off" spellcheck="false" aria-label="Filter files by path">
 <span id="filter-count" class="muted"></span>
-<button type="button" id="expand-all">Expand all</button>
-<button type="button" id="collapse-all">Collapse all</button>
+<button type="button" id="expand-all" class="icon" title="Expand all" aria-label="Expand all">{{ icon("arrows-expand") }}</button>
+<button type="button" id="collapse-all" class="icon" title="Collapse all" aria-label="Collapse all">{{ icon("arrows-collapse") }}</button>
 </div>
 </nav>
 <main>

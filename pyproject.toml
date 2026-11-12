@@ -52,4 +52,4 @@ include = ["pkgmgr*"]
 
 [tool.setuptools.package-data]
 "pkgmgr.config" = ["*.yml", "*.yaml"]
-"pkgmgr.actions.review" = ["*.j2"]
+"pkgmgr.actions.review" = ["*.j2", "*.LICENSE"]
