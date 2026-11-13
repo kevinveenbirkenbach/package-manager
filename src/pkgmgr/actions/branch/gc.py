@@ -8,9 +8,10 @@ import sys
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
+from graphlib import CycleError, TopologicalSorter
 
 from pkgmgr.actions.worktree.hooks import FINI_HOOK, hook_command, run_hook
-from pkgmgr.core.git.errors import GitRunError
+from pkgmgr.core.git.errors import GitBaseError, GitRunError
 from pkgmgr.core.git.queries import (
     FILTER_CONFIG,
     UNSAFE_CONFIG,
@@ -18,7 +19,13 @@ from pkgmgr.core.git.queries import (
     local_config,
     resolve_base_branch,
 )
-from pkgmgr.core.git.run import END_OF_OPTIONS, SCAN_FLAGS, run
+from pkgmgr.core.git.run import (
+    CONFIG_VIEWS,
+    END_OF_OPTIONS,
+    SCAN_FLAGS,
+    run,
+    strict_env,
+)
 
 from .gc_forge import ForgeFacts, fetch_forge_facts
 from .nofollow import canonical, remove_tree
@@ -53,8 +60,24 @@ REFUSAL = (
     "Refusing: not in the host PID namespace (e.g. a sandbox), so running "
     "processes and worktree locks cannot be verified. Run it on the host."
 )
-SCOPES = ("worktree", "branch", "all", "purge")
+SCOPES = ("worktree", "branch", "all", "purge", "local")
 NOT_LINKED = "not a linked worktree of this repository"
+NO_REMOTE_DEFAULT = (
+    "refused: no remote-tracking default (origin, else the only remote: "
+    "refs/remotes/<remote>/HEAD, main or master, resolving inside "
+    "refs/remotes/<remote>/), so --local cannot tell which branches are merged"
+)
+NOT_UTF8 = "refused: git output (ref, remote or path names) is not UTF-8"
+DEFAULT_NAMES = ("HEAD", "main", "master")
+HELD_FILES = (
+    ("rebase-merge/head-name", "rebase in progress"),
+    ("rebase-merge/update-refs", "rebase in progress"),
+    ("rebase-apply/head-name", "rebase in progress"),
+    ("BISECT_START", "bisect in progress"),
+)
+DELETE_MERGED_KEY = r"^branch\..*\.deletemerged$"
+SHARED_STORES = ("refs", "packed-refs", "reftable", "logs", "logs/refs")
+WALKED_STORES = ("refs", "reftable", "logs/refs")
 
 
 @dataclass
@@ -136,6 +159,10 @@ class Repo:
     warnings: list[str] = field(default_factory=list)
     items: list[Item] = field(default_factory=list)
     unsafe: list[str] = field(default_factory=list)
+    refused: str | None = None
+    common: str = ""
+    opted_out: set[str] = field(default_factory=set)
+    upstreams: set[tuple[str, str]] = field(default_factory=set)
 
 
 def host_pid_namespace() -> bool:
@@ -149,8 +176,91 @@ def main_repo_root(cwd: str) -> str:
     return os.path.dirname(_common_dir(cwd))
 
 
+def local_repo_root(cwd: str) -> str:
+    """
+    Resolve the main worktree of the repository cwd belongs to, for scope
+    `local`.
+
+    Args:
+        cwd: a directory inside a checkout, also of a submodule or a
+            repository with a separate git dir.
+
+    Returns:
+        `git rev-parse --show-toplevel` when cwd is in the main worktree,
+        else the first `git worktree list` entry; either way of cwd's own
+        repository.
+
+    Raises:
+        GitBaseError: when that root's git common dir is not cwd's, when
+            cwd's git dir is not its repository's own (see _own_git_dir),
+            when either is no repository, or when git output is not UTF-8.
+    """
+    try:
+        with strict_env():
+            common, git_dir = _own_git_dir(cwd)
+            in_main = git_dir == common
+            root = (in_main and _toplevel(cwd)) or _worktrees(cwd)[0].path
+            root_common = os.path.realpath(_common_dir(root))
+    except UnicodeDecodeError as exc:
+        raise GitBaseError(f"{NOT_UTF8} for {cwd!r}") from exc
+    except OSError as exc:
+        raise GitBaseError(f"{cwd}: {exc}") from exc
+    if root_common != common:
+        raise GitBaseError(
+            f"{cwd}: main worktree {root} belongs to another repository than {common}"
+        )
+    return root
+
+
+def _own_git_dir(cwd: str) -> tuple[str, str]:
+    """
+    Resolve cwd's git common dir and git dir, refusing a foreign git dir.
+
+    Args:
+        cwd: a directory inside a checkout or a git dir.
+
+    Returns:
+        The realpaths of `git rev-parse --git-common-dir` and
+        `--absolute-git-dir`.
+
+    Raises:
+        GitBaseError: when the git dir is neither the common dir nor directly
+            under `<common>/worktrees/`.
+    """
+    common = os.path.realpath(_common_dir(cwd))
+    git_dir = os.path.realpath(_git(["rev-parse", "--absolute-git-dir"], cwd))
+    if git_dir != common and os.path.dirname(git_dir) != os.path.join(
+        common, "worktrees"
+    ):
+        raise GitBaseError(
+            f"{cwd}: git dir {git_dir} is neither {common} nor directly under "
+            f"{common}/worktrees"
+        )
+    return common, git_dir
+
+
+def _toplevel(cwd: str) -> str:
+    """
+    Read the work tree root of cwd's checkout.
+
+    Args:
+        cwd: a directory inside a checkout.
+
+    Returns:
+        `git rev-parse --show-toplevel`, or "" in a bare repository.
+    """
+    try:
+        return _git(["rev-parse", "--show-toplevel"], cwd)
+    except GitRunError:
+        return ""
+
+
 def _git(args: list[str], cwd: str) -> str:
     return run(args, cwd=cwd, scan=True)
+
+
+def _config_read(args: list[str], cwd: str, view: str) -> str:
+    return run(args, cwd=cwd, scan=True, config_view=view)
 
 
 def _common_dir(cwd: str) -> str:
@@ -415,6 +525,26 @@ def human_size(size: int) -> str:
     return f"{value / 1024:.1f}T"
 
 
+def _needs_forge(item: Item, tree: Worktree | None) -> bool:
+    """
+    Whether deciding the item needs the forge's PR and protection facts.
+
+    Args:
+        item: the classified item.
+        tree: the worktree holding its branch, or None.
+
+    Returns:
+        False only for a branch that no worktree holds, without upstream and
+        remote branch, merged into the default by ancestry; True otherwise.
+    """
+    return not (
+        tree is None
+        and item.merged_by == "ancestor"
+        and item.upstream is None
+        and not item.remotes
+    )
+
+
 def _skip(
     repo: Repo,
     item: Item,
@@ -425,12 +555,14 @@ def _skip(
     number = repo.forge.open_heads.get(item.branch) if item.branch else None
     if number:
         return f"open-pr #{number}"
-    if repo.forge.unavailable:
+    if repo.forge.unavailable and _needs_forge(item, tree):
         return "forge unavailable"
     if tree is None:
         return None
     if tree.main:
         return "checked out in main worktree"
+    if repo.scope == "local":
+        return f"checked out in worktree {tree.path}"
     if not checkout:
         return "worktree checkout missing"
     if repo.containers is None:
@@ -641,6 +773,8 @@ def _actions(
     dirty: int,
     registrations: Registrations,
 ) -> list[str]:
+    if repo.scope == "local":
+        return _local_actions(repo, item, tree)
     tree_part: list[str] = []
     if tree:
         if (
@@ -679,6 +813,38 @@ def _actions(
     return actions
 
 
+def _local_actions(repo: Repo, item: Item, tree: Worktree | None) -> list[str]:
+    """
+    Settle the actions of an item planned with scope `local`.
+
+    Args:
+        repo: the planned repository; its default and merged-into lines are
+            the refs the branch tip must be an ancestor of.
+        item: the classified item; a merged-clean one whose tip is an
+            ancestor of none of them gets that as its skip.
+        tree: the worktree holding its branch, or None.
+
+    Returns:
+        `local-branch` for a merged-clean local branch that no worktree,
+        worktree registration, rebase, bisect or symbolic ref holds and whose
+        tip is an ancestor of the default or a merged-into line, else
+        nothing; never a worktree, stack or remote action.
+    """
+    if item.state != "merged-clean" or not item.local_sha or tree is not None:
+        return []
+    held = _held_branches(repo.repo).get(item.branch)
+    if held:
+        item.skip = item.skip or held
+        return []
+    targets = [repo.default, *repo.lines]
+    if any(_is_ancestor(item.local_sha, ref, repo.repo) for ref in targets):
+        return ["local-branch"]
+    item.skip = item.skip or (
+        f"merged by {item.merged_by}, tip is no ancestor of {', '.join(targets)}"
+    )
+    return []
+
+
 def _snapshot(repo: Repo) -> tuple[list[Worktree], Snapshot]:
     local, remote, tracking = _refs(repo.repo, repo.remotes)
     cwds = _process_cwds() if repo.host_ns else {}
@@ -695,12 +861,15 @@ def _items(repo: Repo) -> list[Item]:
     trees, snapshot = _snapshot(repo)
     local, remote, *_ = snapshot
     by_branch = {t.branch: t for t in trees if t.branch}
-    names = (
-        sorted(by_branch)
-        if repo.scope == "worktree"
-        else sorted(set(local) | set(remote) | set(by_branch))
-    )
-    items = [_build(repo, name, by_branch.get(name), snapshot) for name in names]
+    names = {
+        "worktree": set(by_branch),
+        "local": set(local) | set(by_branch),
+    }.get(repo.scope, set(local) | set(remote) | set(by_branch))
+    items = [
+        _build(repo, name, by_branch.get(name), snapshot) for name in sorted(names)
+    ]
+    if repo.scope == "local":
+        return items
     items += [
         _build(repo, None, tree, snapshot)
         for tree in trees
@@ -725,6 +894,188 @@ def _stale(repo_root: str) -> list[Item]:
             reason = f"checkout {os.path.dirname(target)} missing, not pruned"
         items.append(Item(branch=None, worktree=meta, state="stale", reason=reason))
     return items
+
+
+def _default_remote(remotes: list[str]) -> str | None:
+    """
+    Pick the one remote whose default scope `local` may measure against.
+
+    Args:
+        remotes: the configured remote names.
+
+    Returns:
+        origin when configured, else the only remote, else None.
+    """
+    if "origin" in remotes:
+        return "origin"
+    return remotes[0] if len(remotes) == 1 else None
+
+
+def _symbolic(repo_root: str, prefix: str, git_dir: str = "") -> dict[str, str]:
+    """
+    List the resolvable refs under a prefix with their symref targets.
+
+    Args:
+        repo_root: main worktree root of the repository.
+        prefix: a ref prefix such as `refs/heads` or `refs/remotes/origin`.
+        git_dir: the git common dir (shared refs plus the main worktree's own)
+            or a `worktrees/<id>` dir whose refs to list, or "" for the refs
+            as repo_root's worktree sees them.
+
+    Returns:
+        Full ref name -> the ref it points to, or "" for a plain ref.
+    """
+    args = ["for-each-ref", "--format=%(refname)%00%(symref)", prefix]
+    out = _git([f"--git-dir={git_dir}", *args] if git_dir else args, repo_root)
+    return dict(line.split("\x00", 1) for line in out.splitlines())
+
+
+def _resolve_within(refs: dict[str, str], ref: str) -> str | None:
+    """
+    Follow a ref's symref chain without leaving a set of refs.
+
+    Args:
+        refs: refs under one prefix, as _symbolic lists them.
+        ref: the full ref name to resolve.
+
+    Returns:
+        The plain ref the chain ends at, or None when a step leaves refs,
+        loops or ref is missing.
+    """
+    seen: set[str] = set()
+    while ref in refs and ref not in seen:
+        seen.add(ref)
+        if not refs[ref]:
+            return ref
+        ref = refs[ref]
+    return None
+
+
+def _remote_default(repo_root: str, remotes: list[str]) -> str | None:
+    """
+    Pick the remote-tracking ref that scope `local` measures merges against.
+
+    Args:
+        repo_root: main worktree root of the repository.
+        remotes: the configured remote names.
+
+    Returns:
+        For the remote _default_remote picks, the plain ref its HEAD, else
+        main, else master resolves to while every step stays inside
+        `refs/remotes/<remote>/`; else None.
+    """
+    remote = _default_remote(remotes)
+    if remote is None:
+        return None
+    refs = _symbolic(repo_root, f"refs/remotes/{remote}")
+    for name in DEFAULT_NAMES:
+        target = _resolve_within(refs, f"refs/remotes/{remote}/{name}")
+        if target:
+            return target
+    return None
+
+
+def _worktree_heads(repo_root: str, git_dirs: list[str]) -> dict[str, str]:
+    """
+    Read the branch every worktree's HEAD names, on any ref backend.
+
+    Args:
+        repo_root: main worktree root of the repository.
+        git_dirs: the git common dir first, then each `worktrees/<id>`.
+
+    Returns:
+        Branch name -> skip reason, from `git --git-dir=<dir> symbolic-ref
+        HEAD` for each of them, whatever its id.
+
+    Raises:
+        GitBaseError: when a HEAD is neither readable nor detached.
+    """
+    heads: dict[str, str] = {}
+    for git_dir in git_dirs:
+        try:
+            target = _git(
+                [f"--git-dir={git_dir}", "symbolic-ref", "--quiet", "HEAD"], repo_root
+            )
+        except GitRunError as exc:
+            if exc.returncode == 1:
+                continue
+            raise
+        if target.startswith("refs/heads/"):
+            heads.setdefault(
+                target.removeprefix("refs/heads/"), f"checked out in {git_dir}"
+            )
+    return heads
+
+
+def _git_dirs(repo_root: str) -> list[str]:
+    """
+    List the git dirs of every worktree of the repository.
+
+    Args:
+        repo_root: main worktree root of the repository.
+
+    Returns:
+        The git common dir, then each entry of `<common>/worktrees/`, whatever
+        its id and whether `git worktree list` shows it.
+    """
+    common = _common_dir(repo_root)
+    base = os.path.join(common, "worktrees")
+    entries = sorted(os.listdir(base)) if os.path.isdir(base) else []
+    return [common, *(os.path.join(base, entry) for entry in entries)]
+
+
+def _held_branches(repo_root: str) -> dict[str, str]:
+    """
+    Find the local branches that something besides a listed worktree holds.
+
+    Args:
+        repo_root: main worktree root of the repository.
+
+    Returns:
+        Branch name -> skip reason: a symbolic branch, the branch any symbolic
+        ref under `refs/` (also a tag or remote-tracking one) or under the
+        main worktree's or any registration's `refs/worktree/` names, the HEAD
+        of the main repository and of every `worktrees/<id>` registration,
+        also one `git worktree list` omits, each rebase-merge and rebase-apply
+        head-name, an interactive rebase's update-refs and BISECT_START; all
+        read through the git common dir, whichever worktree repo_root is.
+
+    Raises:
+        GitBaseError: when git cannot read a registration, symref or HEAD.
+        OSError: when a state file exists but cannot be read.
+        ValueError: when a state file is not UTF-8.
+    """
+    git_dirs = _git_dirs(repo_root)
+    held: dict[str, str] = {}
+    symrefs = _symbolic(repo_root, "refs", git_dirs[0])
+    for git_dir in git_dirs[1:]:
+        for ref, target in _symbolic(repo_root, "refs/worktree", git_dir).items():
+            symrefs[f"worktrees/{os.path.basename(git_dir)}/{ref}"] = target
+    for ref, target in symrefs.items():
+        if target and ref.startswith("refs/heads/"):
+            held.setdefault(
+                ref.removeprefix("refs/heads/"), f"symbolic ref to {target}"
+            )
+        if target.startswith("refs/heads/"):
+            held.setdefault(
+                target.removeprefix("refs/heads/"), f"target of symbolic ref {ref}"
+            )
+    for branch, reason in _worktree_heads(repo_root, git_dirs).items():
+        held.setdefault(branch, reason)
+    for git_dir in git_dirs:
+        for name, operation in HELD_FILES:
+            try:
+                with open(os.path.join(git_dir, name), encoding="utf-8") as fh:
+                    lines = fh.read().splitlines()
+            except FileNotFoundError:
+                continue
+            for line in lines:
+                ref = line.strip().removeprefix("ref: ")
+                if ref.startswith("refs/heads/") or name == "BISECT_START":
+                    held.setdefault(
+                        ref.removeprefix("refs/heads/"), f"{operation} in {git_dir}"
+                    )
+    return held
 
 
 def _lines(
@@ -756,6 +1107,116 @@ def _lines(
         owner = next((r for r in remotes if ref.startswith(r + "/")), None)
         names.add(ref[len(owner) + 1 :] if owner else ref)
     return lines, names
+
+
+def _branch_names(repo_root: str, ref: str, remotes: list[str]) -> set[str]:
+    """
+    Name the branch a merged-into ref is, whatever form it was given in.
+
+    Args:
+        repo_root: main worktree root of the repository.
+        ref: the ref as given, e.g. `refs/heads/x`, `x` or `origin/x`.
+        remotes: the configured remote names.
+
+    Returns:
+        `x` for a ref that resolves to `refs/heads/x` or
+        `refs/remotes/<remote>/x`, else nothing.
+    """
+    out = _git(["rev-parse", "--symbolic-full-name", END_OF_OPTIONS, ref], repo_root)
+    full = out.splitlines()[-1] if out else ""
+    prefixes = ["refs/heads/", *(f"refs/remotes/{r}/" for r in remotes)]
+    return {full.removeprefix(p) for p in prefixes if full.startswith(p)}
+
+
+def _raise(exc: OSError) -> None:
+    raise exc
+
+
+def _shared_refs(repo_root: str) -> str:
+    """
+    Detect a ref store that other checkouts share through a symlink.
+
+    Args:
+        repo_root: main worktree root of the repository.
+
+    Returns:
+        The refusal reason when `refs`, `packed-refs`, `reftable`, `logs` or
+        `logs/refs` in the git common dir is a symlink (git-new-workdir), or
+        any entry below `refs/`, `reftable/` or `logs/refs/` is, else "".
+
+    Raises:
+        OSError: when a directory below them cannot be listed.
+    """
+    common = _common_dir(repo_root)
+    shared = [
+        name for name in SHARED_STORES if os.path.islink(os.path.join(common, name))
+    ]
+    stores = [] if shared else [os.path.join(common, s) for s in WALKED_STORES]
+    for store in filter(os.path.isdir, stores):
+        for parent, dirs, files in os.walk(store, onerror=_raise):
+            shared += [
+                os.path.relpath(os.path.join(parent, name), common)
+                for name in sorted(dirs + files)
+                if os.path.islink(os.path.join(parent, name))
+            ]
+    if not shared:
+        return ""
+    return (
+        f"refused: {', '.join(shared)} in {common} is a symlink, so checkouts "
+        "sharing these refs hold branches git cannot list"
+    )
+
+
+def _refused(
+    repo_root: str,
+    containers: list[Container] | None,
+    host_ns: bool,
+    reason: str,
+    warnings: list[str],
+    *,
+    scope: str,
+    sizes: bool,
+    min_age: float | None,
+    activity: bool,
+    **_options: object,
+) -> Repo:
+    """
+    Build a repository that scope `local` refuses: no items, nothing deleted.
+
+    Args:
+        repo_root: main worktree root of the repository.
+        containers: as plan_repo takes them.
+        host_ns: as plan_repo takes it.
+        reason: why the repository is refused; also appended to warnings.
+        warnings: warnings gathered so far.
+        scope: the planned scope.
+        sizes: as plan_repo takes it.
+        min_age: as plan_repo takes it.
+        activity: as plan_repo takes it.
+        _options: the other plan_repo options, unused.
+
+    Returns:
+        The refused repository.
+    """
+    return Repo(
+        repo=repo_root,
+        default="",
+        remotes=[],
+        protected=set(),
+        first_parent=set(),
+        urls={},
+        forge=ForgeFacts(),
+        containers=containers,
+        host_ns=host_ns,
+        lines={},
+        sizes=sizes,
+        min_age=min_age,
+        scope=scope,
+        activity=activity,
+        hooks={},
+        warnings=[*warnings, reason],
+        refused=reason,
+    )
 
 
 def plan_repo(
@@ -795,6 +1256,8 @@ def plan_repo(
     """
     if scope not in SCOPES:
         raise ValueError(f"unknown scope {scope!r}")
+    if scope == "local":
+        _own_git_dir(repo_root)
     warnings: list[str] = []
     unsafe = local_config(repo_root, UNSAFE_CONFIG)
     if unsafe:
@@ -834,9 +1297,25 @@ def plan_repo(
             )
         except GitRunError:
             continue
-    default = next(iter(heads.values()), None) or resolve_base_branch(
-        "main", "master", cwd=repo_root, scan=True
-    )
+    if scope == "local":
+        default = _remote_default(repo_root, remotes)
+        reason = _shared_refs(repo_root) or (NO_REMOTE_DEFAULT if not default else "")
+        if reason:
+            return _refused(
+                repo_root,
+                containers,
+                host_ns,
+                reason,
+                warnings,
+                scope=scope,
+                sizes=sizes,
+                min_age=min_age,
+                activity=activity,
+            )
+    else:
+        default = next(iter(heads.values()), None) or resolve_base_branch(
+            "main", "master", cwd=repo_root, scan=True
+        )
     head_names = {ref[len(remote) + 1 :] for remote, ref in heads.items()}
 
     urls = {r: _git(["remote", "get-url", "--", r], repo_root) for r in remotes}
@@ -844,6 +1323,10 @@ def plan_repo(
     if forge.unavailable:
         warnings.append(f"forge unavailable: {forge.unavailable}")
     lines, line_names = _lines(repo_root, merged_into, remotes, warnings)
+    if scope == "local":
+        line_names |= {
+            name for ref in lines for name in _branch_names(repo_root, ref, remotes)
+        }
 
     repo = Repo(
         repo=repo_root,
@@ -875,7 +1358,138 @@ def plan_repo(
         unsafe=unsafe,
     )
     repo.items = _items(repo)
+    if scope == "local":
+        repo.opted_out = _opted_out(repo_root)
+        repo.upstreams = _local_upstreams(repo_root)
     return repo
+
+
+def _opted_out(repo_root: str) -> set[str]:
+    """
+    Find the branches whose `branch.<name>.deleteMerged` is false.
+
+    Args:
+        repo_root: main worktree root of the repository.
+
+    Returns:
+        Each branch that `git --git-dir=<dir> config` sets false in, for each
+        of _git_dirs (so also config.worktree and includeIf onbranch) in each
+        of CONFIG_VIEWS, so the union of what the caller's config variables
+        and the default system and global config give.
+
+    Raises:
+        GitBaseError: when git cannot read one of these configs.
+    """
+    names: set[str] = set()
+    for git_dir in _git_dirs(repo_root):
+        for view in CONFIG_VIEWS:
+            try:
+                out = _config_read(
+                    [
+                        f"--git-dir={git_dir}",
+                        "config",
+                        "--null",
+                        "--type=bool",
+                        "--get-regexp",
+                        DELETE_MERGED_KEY,
+                    ],
+                    repo_root,
+                    view,
+                )
+            except GitRunError as exc:
+                if exc.returncode == 1:
+                    continue
+                raise
+            for record in out.split("\0"):
+                key, _, value = record.partition("\n")
+                if value == "false":
+                    names.add(key.removeprefix("branch.").removesuffix(".deletemerged"))
+    return names
+
+
+def _local_upstreams(repo_root: str) -> set[tuple[str, str]]:
+    """
+    Read each local branch's upstream as git resolves it in any worktree.
+
+    Args:
+        repo_root: main worktree root of the repository.
+
+    Returns:
+        (branch, upstream branch) for each `%(upstream)` under `refs/heads/`
+        that `git --git-dir=<dir> for-each-ref` gives for any of _git_dirs in
+        any of CONFIG_VIEWS.
+    """
+    pairs: set[tuple[str, str]] = set()
+    for git_dir in _git_dirs(repo_root):
+        for view in CONFIG_VIEWS:
+            out = _config_read(
+                [
+                    f"--git-dir={git_dir}",
+                    "for-each-ref",
+                    "--format=%(refname)%00%(upstream)",
+                    "refs/heads",
+                ],
+                repo_root,
+                view,
+            )
+            for line in out.splitlines():
+                ref, _, upstream = line.partition("\0")
+                if upstream.startswith("refs/heads/"):
+                    pairs.add(
+                        (
+                            ref.removeprefix("refs/heads/"),
+                            upstream.removeprefix("refs/heads/"),
+                        )
+                    )
+    return pairs
+
+
+def _keep_by_config(repo: Repo, chosen: Callable[[Item], bool]) -> None:
+    """
+    Keep, as `git branch --delete-merged` does, each branch whose
+    `branch.<name>.deleteMerged` is false and each local upstream of a branch
+    that stays, also of one kept so or one the filters leave out.
+
+    Args:
+        repo: a repository planned with scope `local`; each kept item that
+            would be deleted loses its actions and gets the reason as its skip.
+        chosen: the --branch and --exclude filter; only an eligible chosen
+            item is deleted, every other branch stays.
+    """
+    pending = {
+        item.branch: item for item in repo.items if item.eligible and chosen(item)
+    }
+    for name, reason in _config_keeps(
+        repo.opted_out, repo.upstreams, set(pending)
+    ).items():
+        item = pending[name]
+        item.actions = []
+        item.skip = item.skip or reason
+
+
+def _config_keeps(
+    opted_out: set[str], upstreams: set[tuple[str, str]], pending: set[str]
+) -> dict[str, str]:
+    """
+    Args:
+        opted_out: branches whose `branch.<name>.deleteMerged` is false.
+        upstreams: (branch, local upstream branch) pairs.
+        pending: the branches that would be deleted; every other stays.
+
+    Returns:
+        Pending branch -> keep reason, for each one opted out or the local
+        upstream of a branch that stays, also of one kept so.
+    """
+    reasons = {name: f"kept: branch.{name}.deleteMerged is false" for name in opted_out}
+    leaving = set(pending)
+    while True:
+        for child, parent in sorted(upstreams):
+            if child not in leaving:
+                reasons.setdefault(parent, f"kept: local upstream of {child}")
+        kept = reasons.keys() & leaving
+        if not kept:
+            return {name: reasons[name] for name in pending - leaving}
+        leaving -= kept
 
 
 def _pins(
@@ -983,6 +1597,32 @@ def _changed_by_hook(repo: Repo, item: Item) -> str | None:
     if item.branch and _sha(repo.repo, f"refs/heads/{item.branch}") != item.local_sha:
         return f"branch {item.branch} moved"
     return _busy(_process_cwds(), path) if repo.host_ns else None
+
+
+def _drop_branch_config(repo_root: str, branch: str) -> str | None:
+    """
+    Remove a deleted branch's `branch.<name>` section, as `branch -D` does,
+    from the config file in the repository's own git common dir.
+
+    Args:
+        repo_root: main worktree root of the repository.
+        branch: the deleted branch; a missing section is no error.
+
+    Returns:
+        None, or a note why the section was kept, e.g. a locked config.
+    """
+    config = os.path.join(_common_dir(repo_root), "config")
+    try:
+        _git(
+            ["config", "--file", config, "--remove-section", f"branch.{branch}"],
+            repo_root,
+        )
+    except GitRunError as exc:
+        stderr = (exc.stderr or "").strip()
+        if "no such section" in stderr.lower():
+            return None
+        return f"config branch.{branch} kept: {(stderr or str(exc)).splitlines()[0]}"
+    return None
 
 
 def execute(repo: Repo, item: Item) -> None:
@@ -1100,6 +1740,153 @@ def _render(
         )
 
 
+def _plan(
+    root: str, containers: list[Container] | None, host_ns: bool, options: dict
+) -> Repo:
+    """
+    Plan one repository; under scope `local` refuse, instead of raising, one
+    that git or the filesystem fails on or whose git output is not UTF-8.
+
+    Args:
+        root: main worktree root of the repository.
+        containers: as plan_repo takes them.
+        host_ns: as plan_repo takes it.
+        options: the plan_repo keyword options.
+
+    Returns:
+        The planned repository, under scope `local` with its realpath git
+        common dir, or the refused one.
+    """
+    if options["scope"] != "local":
+        return plan_repo(root, containers, host_ns, **options)
+    try:
+        repo = plan_repo(root, containers, host_ns, **options)
+        repo.common = os.path.realpath(_common_dir(root))
+        return repo
+    except UnicodeDecodeError:
+        reason = NOT_UTF8
+    except (GitBaseError, OSError, ValueError) as exc:
+        reason = f"refused: {_describe(exc)}"
+    return _refused(root, containers, host_ns, reason, [], **options)
+
+
+def _gone(repo: Repo) -> str:
+    """
+    Check that a repository planned with scope `local` is still the one
+    planned and that its targets still resolve.
+
+    Args:
+        repo: the planned repository.
+
+    Returns:
+        Why its remaining items must be skipped, else "".
+    """
+    try:
+        if os.path.realpath(_common_dir(repo.repo)) != repo.common:
+            return f"repository {repo.repo} is no longer the planned one"
+        gone = [
+            ref
+            for ref in (repo.default, *repo.lines)
+            if _sha(repo.repo, f"{ref}^{{commit}}") is None
+        ]
+    except (GitBaseError, OSError, ValueError) as exc:
+        return f"repository {repo.repo} unreadable: {_describe(exc)}"
+    return f"target {', '.join(gone)} is gone" if gone else ""
+
+
+def _delete_order(repo: Repo, items: list[Item]) -> list[Item]:
+    """
+    Args:
+        repo: a repository planned with scope `local`.
+        items: its eligible chosen items, in plan order.
+
+    Returns:
+        The items with each branch before its local upstream, as the plan
+        read them; plan order on an upstream cycle, whose members the
+        re-check of _delete_local then keeps.
+    """
+    by_name = {item.branch: item for item in items}
+    graph: dict[str, set[str]] = {name: set() for name in by_name}
+    for child, parent in sorted(repo.upstreams):
+        if child != parent and child in by_name and parent in by_name:
+            graph[parent].add(child)
+    try:
+        return [by_name[name] for name in TopologicalSorter(graph).static_order()]
+    except CycleError:
+        return items
+
+
+def _delete_local(repo: Repo, item: Item) -> None:
+    """
+    Args:
+        repo: a repository planned with scope `local`.
+        item: an eligible item, deleted after every planned branch whose
+            local upstream it is; it ends done, or skipped when its holds,
+            then its `deleteMerged` and the upstreams of every branch still
+            present, re-read right before the delete, keep it.
+
+    Raises:
+        GitBaseError: when git cannot re-read the repository or the sha moved.
+        OSError: when a state file cannot be read.
+        ValueError: when a state file is not UTF-8.
+    """
+    fresh = _rebuild(repo, item)
+    if _fingerprint(fresh) != _fingerprint(item):
+        item.result = f"skipped: changed since plan ({fresh.skip or fresh.reason})"
+        return
+    kept = _config_keeps(
+        _opted_out(repo.repo), _local_upstreams(repo.repo), {item.branch}
+    ).get(item.branch)
+    if kept:
+        item.result = f"skipped: changed since plan ({kept})"
+        return
+    _git(
+        ["update-ref", "--no-deref", "-d", f"refs/heads/{item.branch}", item.local_sha],
+        repo.repo,
+    )
+    note = _drop_branch_config(repo.repo, item.branch)
+    item.result = "; ".join(["done", *([note] if note else [])])
+
+
+def _apply(repo: Repo, item: Item) -> None:
+    """
+    Execute one planned item; under scope `local` without raising.
+
+    Args:
+        repo: the planned repository.
+        item: an eligible item; under scope `local` it ends with a done,
+            failed or skipped result, skipped as _gone tells.
+    """
+    if repo.scope != "local":
+        execute(repo, item)
+        return
+    gone = _gone(repo)
+    if gone:
+        item.result = f"skipped: {gone}"
+        return
+    try:
+        _delete_local(repo, item)
+    except (RuntimeError, OSError, ValueError) as exc:
+        item.result = f"failed: {_describe(exc)}"
+
+
+def _exit_code(repos: list[Repo], apply: bool) -> int:
+    """
+    Settle the exit code of a cleanup run.
+
+    Args:
+        repos: the planned and, with apply, executed repositories.
+        apply: whether the plan was executed.
+
+    Returns:
+        1 when an applied item failed, else 2 when a repository was
+        refused, else 0.
+    """
+    if apply and _finish(repos):
+        return 1
+    return 2 if any(repo.refused for repo in repos) else 0
+
+
 def prepare(
     repo_roots: list[str],
     include: list[str],
@@ -1107,8 +1894,8 @@ def prepare(
     options: dict,
 ) -> tuple[list[Repo], bool, Callable[[Item], bool]] | None:
     host_ns = host_pid_namespace()
-    containers = list_compose_containers()
-    repos = [plan_repo(root, containers, host_ns, **options) for root in repo_roots]
+    containers = [] if options["scope"] == "local" else list_compose_containers()
+    repos = [_plan(root, containers, host_ns, options) for root in repo_roots]
     unknown = [
         name
         for name in include
@@ -1123,13 +1910,16 @@ def prepare(
             item.matches(n) for n in exclude
         )
 
+    for repo in repos:
+        if repo.scope == "local":
+            _keep_by_config(repo, chosen)
     return repos, host_ns, chosen
 
 
 def _finish(repos: list[Repo]) -> int:
     results = [item.result for repo in repos for item in repo.items if item.result]
     if any(result.startswith("done") for result in results) and any(
-        repo.containers is not None for repo in repos
+        repo.containers is not None and repo.scope != "local" for repo in repos
     ):
         for args in (["image", "prune", "-f"], ["builder", "prune", "-f"]):
             try:
@@ -1160,7 +1950,16 @@ def cleanup(
         scope: `worktree` removes clean worktrees whose commits are merged or
             pushed (hook, stack, checkout; the branch stays); `branch` removes
             merged branches without a worktree, local and remote; `all` does
-            both in one pass.
+            both in one pass; `local` deletes, with `update-ref -d` against
+            the planned sha, each local branch that no worktree, rebase or
+            bisect holds, that _keep_by_config does not keep, both re-checked
+            right before its delete, which follows the deletes of the
+            branches it is the local upstream of, and whose tip is an
+            ancestor of the
+            remote-tracking
+            default or a merged_into line, refuses a repository without such
+            a default, and reads no forge token, runs no fetch, push, docker,
+            hook or prune.
         apply: execute the plan instead of only printing it.
         as_json: print the plan as JSON instead of text lines.
         include: only items whose branch or worktree path matches one of these.
@@ -1172,9 +1971,10 @@ def cleanup(
             CLI; a worktree-fini hook runs only for a root pinned there.
 
     Returns:
-        0 on success, 1 when an applied item failed, 2 when refused.
+        As _exit_code settles it: 1 when an applied item failed, else 2 when
+        refused (also a repository scope `local` refused), else 0.
     """
-    if scope not in ("worktree", "branch", "all"):
+    if scope not in ("worktree", "branch", "all", "local"):
         raise ValueError(f"unknown cleanup scope {scope!r}")
     if apply and not host_pid_namespace():
         print(REFUSAL, file=sys.stderr)
@@ -1186,7 +1986,76 @@ def cleanup(
         "scope": scope,
         "activity": False,
         "hooks": hooks,
+        "fetch": scope != "local",
+        "forge_source": (lambda _urls: ForgeFacts()) if scope == "local" else None,
     }
+    if scope != "local":
+        return _run(repo_roots, options, include, exclude, apply, as_json)
+    with strict_env():
+        bad = _bad_lines(repo_roots, merged_into)
+        if bad:
+            print(f"Refusing: {bad}", file=sys.stderr)
+            return 2
+        return _run(repo_roots, options, include, exclude, apply, as_json)
+
+
+def _bad_lines(repo_roots: list[str], merged_into: list[str]) -> str:
+    """
+    Check that every merged-into ref of scope `local` names one branch.
+
+    Args:
+        repo_roots: main worktree roots of the repositories to scan; one git
+            cannot read is left to the planning, which refuses it.
+        merged_into: the refs as given.
+
+    Returns:
+        Why a ref is refused, when in some repository it is unknown or
+        `rev-parse --symbolic-full-name` does not name exactly one ref under
+        `refs/heads/` or `refs/remotes/`, else "".
+    """
+    for root in repo_roots:
+        for ref in merged_into:
+            try:
+                out = _git(
+                    ["rev-parse", "--symbolic-full-name", END_OF_OPTIONS, ref], root
+                )
+            except GitRunError:
+                return f"--merged-into {ref} names no ref in {root}"
+            except (GitBaseError, OSError, ValueError):
+                break
+            names = [line for line in out.splitlines() if line != END_OF_OPTIONS]
+            if len(names) != 1 or not names[0].startswith(
+                ("refs/heads/", "refs/remotes/")
+            ):
+                return (
+                    f"--merged-into {ref} is not exactly one branch or "
+                    f"remote-tracking ref in {root}"
+                )
+    return ""
+
+
+def _run(
+    repo_roots: list[str],
+    options: dict,
+    include: list[str],
+    exclude: list[str],
+    apply: bool,
+    as_json: bool,
+) -> int:
+    """
+    Plan, print and with apply execute a cleanup, as cleanup describes it.
+
+    Args:
+        repo_roots: main worktree roots of the repositories to scan.
+        options: the plan_repo keyword options.
+        include: as cleanup takes it.
+        exclude: as cleanup takes it.
+        apply: as cleanup takes it.
+        as_json: as cleanup takes it.
+
+    Returns:
+        2 for an unknown include, else as _exit_code settles it.
+    """
     prepared = prepare(repo_roots, include, exclude, options)
     if prepared is None:
         return 2
@@ -1194,15 +2063,16 @@ def cleanup(
 
     if apply:
         for repo in repos:
-            for item in repo.items:
-                if item.eligible and chosen(item):
-                    execute(repo, item)
-                    print(
-                        f"[{scope}] {item.branch or item.worktree}: {item.result}",
-                        file=sys.stderr,
-                    )
+            todo = [item for item in repo.items if item.eligible and chosen(item)]
+            for item in _delete_order(repo, todo) if repo.scope == "local" else todo:
+                _apply(repo, item)
+                print(
+                    f"[{options['scope']}] {item.branch or item.worktree}: "
+                    f"{item.result}",
+                    file=sys.stderr,
+                )
     _render(repos, host_ns, chosen, as_json)
-    return _finish(repos) if apply else 0
+    return _exit_code(repos, apply)
 
 
 def branch_purge(
