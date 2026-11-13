@@ -17,8 +17,7 @@ from pkgmgr.cli.parser import create_parser
 from pkgmgr.core.credentials.types import NoCredentialsError
 
 GITHUB_URL = "https://github.com/example/demo.git"
-GIT_ENV = {
-    **os.environ,
+AUTHOR = {
     "GIT_AUTHOR_NAME": "t",
     "GIT_AUTHOR_EMAIL": "t@example.org",
     "GIT_COMMITTER_NAME": "t",
@@ -30,7 +29,7 @@ def git(cwd: str, *args: str) -> str:
     return subprocess.run(
         ["git", "-c", "commit.gpgsign=false", *args],
         cwd=cwd,
-        env=GIT_ENV,
+        env={**os.environ, **AUTHOR},
         check=True,
         capture_output=True,
         text=True,
@@ -48,7 +47,16 @@ def docker_available() -> bool:
 class GcFixture:
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
         self.root = os.path.realpath(self._tmp.name)
+        self.addCleanup(os.chdir, os.getcwd())
+        os.chdir(self.root)
+        home = os.path.join(self.root, "home")
+        os.makedirs(home)
+        scratch = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        patcher = patch.dict(os.environ, {**scratch, "HOME": home}, clear=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.origin = os.path.join(self.root, "origin.git")
         self.repo = os.path.join(self.root, "repo")
         git(self.root, "init", "--bare", "-b", "main", self.origin)
@@ -82,9 +90,6 @@ class GcFixture:
         self.forge = ForgeFacts(
             merged_heads={self.squashed_sha: 7}, open_heads={"wip": 3}
         )
-
-    def tearDown(self) -> None:
-        self._tmp.cleanup()
 
     def _commit(self, name: str) -> None:
         with open(os.path.join(self.repo, f"{name}.txt"), "w") as fh:

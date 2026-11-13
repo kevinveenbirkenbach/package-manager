@@ -8,6 +8,7 @@ import sys
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
+from graphlib import CycleError, TopologicalSorter
 
 from pkgmgr.actions.worktree.hooks import FINI_HOOK, hook_command, run_hook
 from pkgmgr.core.git.errors import GitBaseError, GitRunError
@@ -1455,23 +1456,40 @@ def _keep_by_config(repo: Repo, chosen: Callable[[Item], bool]) -> None:
         chosen: the --branch and --exclude filter; only an eligible chosen
             item is deleted, every other branch stays.
     """
-    reasons = {
-        name: f"kept: branch.{name}.deleteMerged is false" for name in repo.opted_out
-    }
     pending = {
         item.branch: item for item in repo.items if item.eligible and chosen(item)
     }
+    for name, reason in _config_keeps(
+        repo.opted_out, repo.upstreams, set(pending)
+    ).items():
+        item = pending[name]
+        item.actions = []
+        item.skip = item.skip or reason
+
+
+def _config_keeps(
+    opted_out: set[str], upstreams: set[tuple[str, str]], pending: set[str]
+) -> dict[str, str]:
+    """
+    Args:
+        opted_out: branches whose `branch.<name>.deleteMerged` is false.
+        upstreams: (branch, local upstream branch) pairs.
+        pending: the branches that would be deleted; every other stays.
+
+    Returns:
+        Pending branch -> keep reason, for each one opted out or the local
+        upstream of a branch that stays, also of one kept so.
+    """
+    reasons = {name: f"kept: branch.{name}.deleteMerged is false" for name in opted_out}
+    leaving = set(pending)
     while True:
-        for child, parent in sorted(repo.upstreams):
-            if child not in pending:
+        for child, parent in sorted(upstreams):
+            if child not in leaving:
                 reasons.setdefault(parent, f"kept: local upstream of {child}")
-        kept = reasons.keys() & pending.keys()
+        kept = reasons.keys() & leaving
         if not kept:
-            return
-        for name in kept:
-            item = pending.pop(name)
-            item.actions = []
-            item.skip = item.skip or reasons[name]
+            return {name: reasons[name] for name in pending - leaving}
+        leaving -= kept
 
 
 def _pins(
@@ -1638,20 +1656,7 @@ def execute(repo: Repo, item: Item) -> None:
                 notes.append(f"image kept: {image}")
         if removes_tree:
             _remove_worktree(repo.repo, item.worktree)
-        if "local-branch" in item.actions and repo.scope == "local":
-            _git(
-                [
-                    "update-ref",
-                    "--no-deref",
-                    "-d",
-                    f"refs/heads/{item.branch}",
-                    item.local_sha,
-                ],
-                repo.repo,
-            )
-            note = _drop_branch_config(repo.repo, item.branch)
-            notes += [note] if note else []
-        elif "local-branch" in item.actions:
+        if "local-branch" in item.actions:
             _git(["branch", "-D", "--", item.branch], repo.repo)
         for remote, sha in item.remotes.items():
             if f"remote-branch:{remote}" not in item.actions:
@@ -1789,6 +1794,60 @@ def _gone(repo: Repo) -> str:
     return f"target {', '.join(gone)} is gone" if gone else ""
 
 
+def _delete_order(repo: Repo, items: list[Item]) -> list[Item]:
+    """
+    Args:
+        repo: a repository planned with scope `local`.
+        items: its eligible chosen items, in plan order.
+
+    Returns:
+        The items with each branch before its local upstream, as the plan
+        read them; plan order on an upstream cycle, whose members the
+        re-check of _delete_local then keeps.
+    """
+    by_name = {item.branch: item for item in items}
+    graph: dict[str, set[str]] = {name: set() for name in by_name}
+    for child, parent in sorted(repo.upstreams):
+        if child != parent and child in by_name and parent in by_name:
+            graph[parent].add(child)
+    try:
+        return [by_name[name] for name in TopologicalSorter(graph).static_order()]
+    except CycleError:
+        return items
+
+
+def _delete_local(repo: Repo, item: Item) -> None:
+    """
+    Args:
+        repo: a repository planned with scope `local`.
+        item: an eligible item, deleted after every planned branch whose
+            local upstream it is; it ends done, or skipped when its holds,
+            then its `deleteMerged` and the upstreams of every branch still
+            present, re-read right before the delete, keep it.
+
+    Raises:
+        GitBaseError: when git cannot re-read the repository or the sha moved.
+        OSError: when a state file cannot be read.
+        ValueError: when a state file is not UTF-8.
+    """
+    fresh = _rebuild(repo, item)
+    if _fingerprint(fresh) != _fingerprint(item):
+        item.result = f"skipped: changed since plan ({fresh.skip or fresh.reason})"
+        return
+    kept = _config_keeps(
+        _opted_out(repo.repo), _local_upstreams(repo.repo), {item.branch}
+    ).get(item.branch)
+    if kept:
+        item.result = f"skipped: changed since plan ({kept})"
+        return
+    _git(
+        ["update-ref", "--no-deref", "-d", f"refs/heads/{item.branch}", item.local_sha],
+        repo.repo,
+    )
+    note = _drop_branch_config(repo.repo, item.branch)
+    item.result = "; ".join(["done", *([note] if note else [])])
+
+
 def _apply(repo: Repo, item: Item) -> None:
     """
     Execute one planned item; under scope `local` without raising.
@@ -1806,7 +1865,7 @@ def _apply(repo: Repo, item: Item) -> None:
         item.result = f"skipped: {gone}"
         return
     try:
-        execute(repo, item)
+        _delete_local(repo, item)
     except (RuntimeError, OSError, ValueError) as exc:
         item.result = f"failed: {_describe(exc)}"
 
@@ -1893,8 +1952,11 @@ def cleanup(
             merged branches without a worktree, local and remote; `all` does
             both in one pass; `local` deletes, with `update-ref -d` against
             the planned sha, each local branch that no worktree, rebase or
-            bisect holds, that _keep_by_config does not keep and whose tip
-            is an ancestor of the remote-tracking
+            bisect holds, that _keep_by_config does not keep, both re-checked
+            right before its delete, which follows the deletes of the
+            branches it is the local upstream of, and whose tip is an
+            ancestor of the
+            remote-tracking
             default or a merged_into line, refuses a repository without such
             a default, and reads no forge token, runs no fetch, push, docker,
             hook or prune.
@@ -2001,14 +2063,14 @@ def _run(
 
     if apply:
         for repo in repos:
-            for item in repo.items:
-                if item.eligible and chosen(item):
-                    _apply(repo, item)
-                    print(
-                        f"[{options['scope']}] {item.branch or item.worktree}: "
-                        f"{item.result}",
-                        file=sys.stderr,
-                    )
+            todo = [item for item in repo.items if item.eligible and chosen(item)]
+            for item in _delete_order(repo, todo) if repo.scope == "local" else todo:
+                _apply(repo, item)
+                print(
+                    f"[{options['scope']}] {item.branch or item.worktree}: "
+                    f"{item.result}",
+                    file=sys.stderr,
+                )
     _render(repos, host_ns, chosen, as_json)
     return _exit_code(repos, apply)
 

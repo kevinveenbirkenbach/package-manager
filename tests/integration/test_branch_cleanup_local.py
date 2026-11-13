@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -74,6 +74,14 @@ class TestBranchCleanupLocal(unittest.TestCase):
         self.root = os.path.realpath(self._tmp.name)
         self.addCleanup(os.chdir, os.getcwd())
         os.chdir(self.root)
+        self.home = os.path.join(self.root, "home")
+        os.makedirs(self.home)
+        for patcher in (
+            patch.dict(os.environ, {"HOME": self.home}),
+            patch("pkgmgr.core.git.run._passwd_home", return_value=self.home),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
         self.origin = os.path.join(self.root, "origin.git")
         self.repo = os.path.join(self.root, "repo")
         git(self.root, "init", "--bare", "-b", "main", self.origin)
@@ -1686,6 +1694,228 @@ class TestBranchCleanupLocal(unittest.TestCase):
 
         self.assertEqual(self._results(run), {"done": "done", "local-done": "done"})
         self.assertFalse(os.path.exists(marker))
+
+    def test_config_keep_made_after_the_plan_skips_the_delete(self) -> None:
+        real = gc._rebuild
+
+        def late_keep(repo: gc.Repo, item: gc.Item) -> gc.Item:
+            fresh = real(repo, item)
+            if item.branch == "done":
+                git(self.repo, "branch", "kid", "wip")
+                git(self.repo, "config", "branch.kid.remote", ".")
+                git(self.repo, "config", "branch.kid.merge", "refs/heads/done")
+            if item.branch == "local-done":
+                git(self.repo, "config", "branch.local-done.deleteMerged", "false")
+            return fresh
+
+        with patch.object(gc, "_rebuild", side_effect=late_keep):
+            run = self._cleanup("local", apply=True)
+
+        self.assertEqual(run.code, 0)
+        self.assertEqual(
+            self._results(run),
+            {
+                "done": "skipped: changed since plan (kept: local upstream of kid)",
+                "local-done": (
+                    "skipped: changed since plan "
+                    "(kept: branch.local-done.deleteMerged is false)"
+                ),
+            },
+        )
+        heads = self._refs(self.repo, "refs/heads")
+        self.assertIn("refs/heads/done", heads)
+        self.assertIn("refs/heads/local-done", heads)
+        self.assertEqual(
+            self._branch_config("done"), ["branch.done.remote", "branch.done.merge"]
+        )
+
+    def _family(self) -> None:
+        self._set_head()
+        git(self.repo, "branch", "a-base", "done")
+        git(self.repo, "branch", "z-kid", "done")
+        git(self.repo, "config", "branch.z-kid.remote", ".")
+        git(self.repo, "config", "branch.z-kid.merge", "refs/heads/a-base")
+
+    def _apply_after(self, change: Callable[[], None]) -> SimpleNamespace:
+        """
+        Args:
+            change: run once after the plan, before the first re-check of
+                `--local --apply --branch a-base --branch z-kid`.
+
+        Returns:
+            As _cleanup returns it.
+        """
+        real = gc._rebuild
+        changes = [change]
+
+        def late(repo: gc.Repo, item: gc.Item) -> gc.Item:
+            if changes:
+                changes.pop()()
+            return real(repo, item)
+
+        with patch.object(gc, "_rebuild", side_effect=late):
+            return self._cleanup("local", apply=True, include=("a-base", "z-kid"))
+
+    def assertFamilyKept(self, run: SimpleNamespace) -> None:
+        heads = self._refs(self.repo, "refs/heads")
+        self.assertIn("refs/heads/a-base", heads)
+        self.assertIn("refs/heads/z-kid", heads)
+        self.assertFalse((run.items["a-base"]["result"] or "").startswith("done"))
+        self.assertEqual(
+            git(self.repo, "config", "--get", "branch.z-kid.merge"), "refs/heads/a-base"
+        )
+
+    def test_kid_held_before_the_plan_keeps_its_base(self) -> None:
+        self._family()
+        git(self.repo, "worktree", "add", os.path.join(self.root, "wt-kid"), "z-kid")
+
+        run = self._cleanup("local", apply=True, include=("a-base", "z-kid"))
+
+        self.assertEqual(run.items["a-base"]["skip"], "kept: local upstream of z-kid")
+        self.assertFamilyKept(run)
+
+    def test_kid_held_after_the_plan_keeps_its_base(self) -> None:
+        self._family()
+        kid = os.path.join(self.root, "wt-kid")
+
+        run = self._apply_after(lambda: git(self.repo, "worktree", "add", kid, "z-kid"))
+
+        self.assertEqual(run.code, 0)
+        self.assertTrue(run.items["z-kid"]["result"].startswith("skipped: changed"))
+        self.assertEqual(
+            run.items["a-base"]["result"],
+            "skipped: changed since plan (kept: local upstream of z-kid)",
+        )
+        self.assertFamilyKept(run)
+
+    def test_kid_moved_after_the_plan_keeps_its_base(self) -> None:
+        self._family()
+
+        def move() -> None:
+            tree = os.path.join(self.root, "wt-tmp")
+            git(self.repo, "worktree", "add", "--detach", tree, "z-kid")
+            with open(os.path.join(tree, "kid.txt"), "w", encoding="utf-8") as fh:
+                fh.write("kid")
+            git(tree, "add", "kid.txt")
+            git(tree, "commit", "-m", "kid")
+            moved = git(tree, "rev-parse", "HEAD")
+            git(self.repo, "update-ref", "refs/heads/z-kid", moved)
+            git(self.repo, "worktree", "remove", "--force", tree)
+
+        run = self._apply_after(move)
+
+        self.assertTrue(run.items["z-kid"]["result"].startswith("skipped: changed"))
+        self.assertFamilyKept(run)
+
+    def test_unchanged_kid_is_deleted_before_its_base(self) -> None:
+        self._family()
+
+        run = self._cleanup("local", apply=True, include=("a-base", "z-kid"))
+
+        self.assertEqual(run.code, 0)
+        self.assertEqual(self._results(run), {"a-base": "done", "z-kid": "done"})
+        deleted = [
+            c.args[0][3]
+            for c in run.guard.git.call_args_list
+            if c.args[0][:3] == ["update-ref", "--no-deref", "-d"]
+        ]
+        self.assertEqual(deleted, ["refs/heads/z-kid", "refs/heads/a-base"])
+
+    def test_local_upstream_cycle_is_kept_on_apply(self) -> None:
+        self._set_head()
+        for name in ("c1", "c2"):
+            git(self.repo, "branch", name, "done")
+        for name, upstream in (("c1", "c2"), ("c2", "c1")):
+            git(self.repo, "config", f"branch.{name}.remote", ".")
+            git(self.repo, "config", f"branch.{name}.merge", f"refs/heads/{upstream}")
+
+        run = self._cleanup("local", apply=True, include=("c1", "c2"))
+
+        self.assertEqual(
+            self._results(run),
+            {
+                name: f"skipped: changed since plan (kept: local upstream of {other})"
+                for name, other in (("c1", "c2"), ("c2", "c1"))
+            },
+        )
+        heads = self._refs(self.repo, "refs/heads")
+        self.assertIn("refs/heads/c1", heads)
+        self.assertIn("refs/heads/c2", heads)
+
+    def _hub_call(self, *branches: str) -> SimpleNamespace:
+        """
+        Args:
+            branches: the --branch values of `branch cleanup --local --apply
+                --json`, run in the fixture repository under _guarded with a
+                compose stack listed in the held worktree.
+
+        Returns:
+            The exit code, stdout, stderr, the _guarded spies and the
+            container listing and docker mocks, as attributes code, out,
+            err, guard, compose and docker.
+        """
+        argv = ["branch", "cleanup", "--local", "--apply", "--json"]
+        args = create_parser("test").parse_args(
+            [*argv, *(f"--branch={name}" for name in branches)]
+        )
+        ctx = SimpleNamespace(config_merged={"worktree_hooks": {}, "repositories": []})
+        stack = [gc.Container("proj", os.path.join(self.held, "app"), "img")]
+        os.chdir(self.repo)
+        out, err = io.StringIO(), io.StringIO()
+        with (
+            self._guarded() as guard,
+            patch.object(gc, "list_compose_containers", return_value=stack) as ps,
+            patch.object(gc, "_docker", side_effect=AssertionError) as docker,
+            redirect_stdout(out),
+            redirect_stderr(err),
+            self.assertRaises(SystemExit) as stop,
+        ):
+            handle_branch(args, ctx=ctx)
+        return SimpleNamespace(
+            code=stop.exception.code,
+            out=out.getvalue(),
+            err=err.getvalue(),
+            guard=guard,
+            compose=ps,
+            docker=docker,
+        )
+
+    def test_hub_call_deletes_only_a_merged_branch_no_worktree_holds(self) -> None:
+        self._set_head()
+        heads = self._refs(self.repo, "refs/heads")
+        tracking = self._refs(self.repo, "refs/remotes")
+        origin = self._refs(self.origin, "refs")
+        trees = git(self.repo, "worktree", "list", "--porcelain")
+
+        refused = self._hub_call("remote-done")
+        run = self._hub_call("held-done", "wip", "local-done")
+
+        self.assertEqual(refused.code, 2)
+        self.assertEqual(refused.out, "")
+        self.assertIn("Unknown --branch: remote-done", refused.err)
+        self.assertEqual(run.code, 0)
+        items = {i["branch"]: i for i in json.loads(run.out)["repos"][0]["items"]}
+        self.assertEqual(set(items), {"held-done", "wip", "local-done"})
+        held = items["held-done"]
+        self.assertEqual(held["skip"], f"checked out in worktree {self.held}")
+        self.assertEqual(held["worktree"], self.held)
+        self.assertEqual(held["compose_projects"], [])
+        self.assertEqual(items["wip"]["state"], "unmerged")
+        for name in ("held-done", "wip"):
+            with self.subTest(keeps=name):
+                self.assertEqual(items[name]["actions"], [])
+                self.assertIsNone(items[name]["result"])
+        self.assertEqual(items["local-done"]["result"], "done")
+        after = self._refs(self.repo, "refs/heads")
+        self.assertEqual(set(heads) - set(after), {"refs/heads/local-done"})
+        self.assertEqual(self._refs(self.repo, "refs/remotes"), tracking)
+        self.assertEqual(self._refs(self.origin, "refs"), origin)
+        self.assertEqual(git(self.repo, "worktree", "list", "--porcelain"), trees)
+        self.assertTrue(os.path.isfile(os.path.join(self.held, "done.txt")))
+        for call in (refused, run):
+            call.compose.assert_not_called()
+            call.docker.assert_not_called()
+            self.assertLocalOnly(call.guard)
 
     def test_branch_scope_still_needs_the_forge_for_a_remote_copy(self) -> None:
         run = self._cleanup("branch", apply=False)
