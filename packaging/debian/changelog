@@ -1,3 +1,16 @@
+package-manager (2.5.0-1) unstable; urgency=medium
+
+  Added:
+
+  - Branch: *cleanup --local* deletes merged branches only where git would
+  - Review: expand and collapse are icon buttons with labels
+
+  Fixed:
+
+  - GC: merged local-only branches are removed without a forge token
+
+ -- Kevin Veen-Birkenbach <kevin@veen.world>  Fri, 13 Nov 2026 22:53:12 +0000
+
 package-manager (2.4.0-1) unstable; urgency=medium
 
   Added:

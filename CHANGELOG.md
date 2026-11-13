@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.5.0] - 2026-11-13
+
+Added:
+
+- Branch: *cleanup --local* deletes merged branches only where git would
+- Review: expand and collapse are icon buttons with labels
+
+Fixed:
+
+- GC: merged local-only branches are removed without a forge token
+
 ## [2.4.0] - 2026-11-07
 
 Added:

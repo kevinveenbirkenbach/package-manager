@@ -1,5 +1,5 @@
 Name:           package-manager
-Version:        2.4.0
+Version:        2.5.0
 Release:        1%{?dist}
 Summary:        Wrapper that runs Kevin's package-manager via Nix flake
 
@@ -74,6 +74,16 @@ echo ">>> package-manager removed. Nix itself was not removed."
 /usr/lib/package-manager/
 
 %changelog
+* Fri Nov 13 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.5.0-1
+- Added:
+
+- - Branch: *cleanup --local* deletes merged branches only where git would
+- - Review: expand and collapse are icon buttons with labels
+
+- Fixed:
+
+- - GC: merged local-only branches are removed without a forge token
+
 * Sat Nov 07 2026 Kevin Veen-Birkenbach <kevin@veen.world> - 2.4.0-1
 - Added:
 
