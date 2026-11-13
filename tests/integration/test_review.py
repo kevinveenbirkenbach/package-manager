@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import subprocess
 import tempfile
 import unittest
@@ -159,6 +160,27 @@ class TestReview(unittest.TestCase):
         self.assertIn("big 10</td>", html)
         self.assertNotIn("big 11</td>", html)
         self.assertIn("20 more lines not shown", html)
+
+    def test_toolbar_buttons_are_labelled_icons(self) -> None:
+        html = self._render("page.html", None, [])
+
+        for key, label in (("expand", "Expand all"), ("collapse", "Collapse all")):
+            with self.subTest(button=key):
+                button = re.search(
+                    rf'<button type="button" id="{key}-all"([^>]*)>(.*?)</button>',
+                    html,
+                    re.DOTALL,
+                )
+                self.assertIsNotNone(button)
+                attrs, inner = button.groups()
+                self.assertIn(f'title="{label}"', attrs)
+                self.assertIn(f'aria-label="{label}"', attrs)
+                self.assertRegex(
+                    inner, rf'^<svg class="bi bi-arrows-{key}"[^>]* aria-hidden="true"'
+                )
+                self.assertEqual(re.sub(r"<[^>]+>", "", inner).strip(), "")
+        self.assertNotIn("<link", html)
+        self.assertNotIn("<img", html)
 
     def test_errors_exit_two(self) -> None:
         plain = os.path.join(self.root, "plain")
