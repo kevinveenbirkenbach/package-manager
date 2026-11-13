@@ -105,6 +105,41 @@ def add_branch_subparsers(
         ),
     )
     add_apply_options(branch_cleanup)
+    branch_cleanup.add_argument(
+        "--local",
+        action="store_true",
+        help=(
+            "Delete only local branches whose tip is an ancestor of origin's "
+            "remote-tracking default (else the only remote's) or a --merged-into "
+            "REF, against the planned sha; refuse a repository without such a "
+            "default, one git fails on, one whose holds cannot be read, one "
+            "whose git dir is neither its common dir nor directly under "
+            "<common>/worktrees/ and one with a symlink in or below refs, "
+            "packed-refs, reftable or logs/refs, and still print the plan; skip "
+            "a symbolic branch, a branch any symbolic ref of any worktree names, "
+            "a branch a worktree, worktree registration, rebase or bisect holds, "
+            "a --merged-into target, a branch with branch.<name>.deleteMerged "
+            "false in any worktree's or the system config and the local "
+            "upstream of a branch that stays, also of one --branch or --exclude "
+            "leaves out; "
+            "run git without inherited GIT_* variables but "
+            "GIT_CEILING_DIRECTORIES; the keep config reads run once with the "
+            "caller's GIT_CONFIG_* variables and once with the default system "
+            "and passwd-home config, and either read's keep counts; read no "
+            "forge token; "
+            "never fetch, push, delete a remote branch, run docker or hooks, or "
+            "refresh the branch tree file; exit 1 when an item failed, else 2 "
+            "when a repository was refused, else 0; exit 2 without a plan when, "
+            "without --all, the current directory is in no git repository, its "
+            "git dir is neither its common dir nor directly under "
+            "<common>/worktrees/, its main worktree belongs to another "
+            "repository or its path or git output is not UTF-8, on --apply "
+            "outside the host PID namespace, on a --merged-into REF that is not "
+            "exactly one branch or remote-tracking ref (X~0, X^0, X@{0}, a sha), "
+            "and on a --branch "
+            "that matches nothing; meant for working clones"
+        ),
+    )
 
     branch_purge = branch_subparsers.add_parser(
         "purge",

@@ -11,7 +11,7 @@ from pkgmgr.actions.branch import (
     open_branch,
     tree,
 )
-from pkgmgr.actions.branch.gc import main_repo_root
+from pkgmgr.actions.branch.gc import local_repo_root, main_repo_root
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.core.git.errors import GitBaseError
 from pkgmgr.core.repository.dir import get_repo_dir
@@ -60,14 +60,23 @@ def refresh_tree(roots: list[str]) -> None:
             print(f"WARN tree file not rewritten for {root}: {exc}", file=sys.stderr)
 
 
-def scan_repo_roots(args, ctx: CLIContext) -> list[str]:
+def scan_repo_roots(args, ctx: CLIContext, local: bool = False) -> list[str]:
     """
     Resolve the repositories a scan covers: the current one, or every
     pkgmgr-managed one with --all. Exits with 2 outside a repository.
+
+    Args:
+        args: parsed arguments; `all` selects every managed repository.
+        ctx: CLI context.
+        local: resolve the current repository as scope `local` does, also in
+            a submodule or with a separate git dir, refusing a mismatch.
+
+    Returns:
+        The main worktree roots to scan.
     """
     if not args.all:
         try:
-            return [main_repo_root(".")]
+            return [(local_repo_root if local else main_repo_root)(".")]
         except GitBaseError as exc:
             print(f"Not inside a git repository: {exc}", file=sys.stderr)
             sys.exit(2)
@@ -84,7 +93,7 @@ def scan_options(args) -> dict:
 
 
 def run_cleanup(args, ctx: CLIContext, scope: str) -> None:
-    roots = scan_repo_roots(args, ctx)
+    roots = scan_repo_roots(args, ctx, local=scope == "local")
     code = cleanup(
         roots,
         scope=scope,
@@ -94,7 +103,7 @@ def run_cleanup(args, ctx: CLIContext, scope: str) -> None:
         hooks=pinned_hooks(ctx),
         **scan_options(args),
     )
-    if args.apply:
+    if args.apply and scope != "local":
         refresh_tree(roots)
     sys.exit(code)
 
@@ -107,8 +116,9 @@ def handle_branch(args, ctx: CLIContext) -> None:
       - pkgmgr branch open    [<name>] [--base <branch>]
       - pkgmgr branch close   [<name>] [--base <branch>] [--force|-f]
       - pkgmgr branch drop    [<name>] [--base <branch>] [--force|-f]
-      - pkgmgr branch cleanup [--apply] [--json] [--all] [--branch N]... [--exclude N]...
-                              [--merged-into REF]... [--sizes] [--min-age HOURS]
+      - pkgmgr branch cleanup [--apply] [--json] [--local] [--all] [--branch N]...
+                              [--exclude N]... [--merged-into REF]... [--sizes]
+                              [--min-age HOURS]
       - pkgmgr branch purge   [--all] [--branch N]... [--exclude N]...
                               [--merged-into REF]... [--sizes] [--min-age HOURS]
       - pkgmgr branch tree    [--format json|yaml] [--output FILE]
@@ -124,7 +134,7 @@ def handle_branch(args, ctx: CLIContext) -> None:
         )
 
     if args.subcommand == "cleanup":
-        run_cleanup(args, ctx, "branch")
+        run_cleanup(args, ctx, "local" if args.local else "branch")
 
     if args.subcommand == "purge":
         roots = scan_repo_roots(args, ctx)
