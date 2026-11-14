@@ -8,6 +8,7 @@ import sys
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
+from functools import cache
 from graphlib import CycleError, TopologicalSorter
 
 from pkgmgr.actions.worktree.hooks import FINI_HOOK, hook_command, run_hook
@@ -37,6 +38,7 @@ Snapshot = tuple[
     dict[int, str],
     dict[str, tuple[str | None, int | None, int | None, bool]],
     Registrations,
+    Callable[[], dict[str, str]],
 ]
 
 # PROC_PID_INIT_INO: only the initial PID namespace sees every process of the host.
@@ -665,7 +667,7 @@ def _build(
     tree: Worktree | None,
     snapshot: Snapshot,
 ) -> Item:
-    local, remote, cwds, tracking, registrations = snapshot
+    local, remote, cwds, tracking, registrations, held = snapshot
     upstream, ahead, behind, gone = tracking.get(
         branch or "", (None, None, None, False)
     )
@@ -759,7 +761,7 @@ def _build(
         and (time.time() - item.last_activity) / 3600 < repo.min_age
     ):
         item.skip = f"younger than {repo.min_age:g} h"
-    item.actions = _actions(repo, item, tree, checkout, dirty, registrations)
+    item.actions = _actions(repo, item, tree, checkout, dirty, registrations, held)
     if repo.unsafe:
         item.actions = [a for a in item.actions if not a.startswith("remote-branch:")]
     return item
@@ -772,9 +774,10 @@ def _actions(
     checkout: bool,
     dirty: int,
     registrations: Registrations,
+    held: Callable[[], dict[str, str]],
 ) -> list[str]:
     if repo.scope == "local":
-        return _local_actions(repo, item, tree)
+        return _local_actions(repo, item, tree, held)
     tree_part: list[str] = []
     if tree:
         if (
@@ -813,7 +816,12 @@ def _actions(
     return actions
 
 
-def _local_actions(repo: Repo, item: Item, tree: Worktree | None) -> list[str]:
+def _local_actions(
+    repo: Repo,
+    item: Item,
+    tree: Worktree | None,
+    held: Callable[[], dict[str, str]],
+) -> list[str]:
     """
     Settle the actions of an item planned with scope `local`.
 
@@ -823,6 +831,8 @@ def _local_actions(repo: Repo, item: Item, tree: Worktree | None) -> list[str]:
         item: the classified item; a merged-clean one whose tip is an
             ancestor of none of them gets that as its skip.
         tree: the worktree holding its branch, or None.
+        held: the snapshot's _held_branches of the repository, read on the
+            first call and reused for every later item of that snapshot.
 
     Returns:
         `local-branch` for a merged-clean local branch that no worktree,
@@ -832,9 +842,9 @@ def _local_actions(repo: Repo, item: Item, tree: Worktree | None) -> list[str]:
     """
     if item.state != "merged-clean" or not item.local_sha or tree is not None:
         return []
-    held = _held_branches(repo.repo).get(item.branch)
-    if held:
-        item.skip = item.skip or held
+    hold = held().get(item.branch)
+    if hold:
+        item.skip = item.skip or hold
         return []
     targets = [repo.default, *repo.lines]
     if any(_is_ancestor(item.local_sha, ref, repo.repo) for ref in targets):
@@ -854,6 +864,7 @@ def _snapshot(repo: Repo) -> tuple[list[Worktree], Snapshot]:
         cwds,
         tracking,
         _registrations(repo.repo),
+        cache(lambda: _held_branches(repo.repo)),
     )
 
 
