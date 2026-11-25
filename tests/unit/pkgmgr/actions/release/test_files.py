@@ -140,6 +140,75 @@ class TestUpdatePyprojectVersion(unittest.TestCase):
 
         self.assertEqual(content, original)
 
+    def write_dynamic_attr_project(self, tmpdir: str, module: str) -> str:
+        with open(os.path.join(tmpdir, "pyproject.toml"), "w", encoding="utf-8") as f:
+            f.write(
+                textwrap.dedent(
+                    """
+                    [project]
+                    name = "quality"
+                    dynamic = ["version"]
+
+                    [tool.setuptools]
+                    package-dir = {"" = "src"}
+
+                    [tool.setuptools.dynamic]
+                    version = {attr = "quality.__version__"}
+                    """
+                ).lstrip()
+            )
+        os.makedirs(os.path.join(tmpdir, "src", "quality"))
+        path = os.path.join(tmpdir, "src", "quality", "__init__.py")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(module)
+        return path
+
+    def test_a_dynamic_attr_version_is_bumped_in_its_module_and_read_back(self) -> None:
+        from pkgmgr.core.version.source import read_pyproject_version
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            module = self.write_dynamic_attr_project(
+                tmpdir, '"""Quality."""\n\n__version__ = "0.1.0"\n'
+            )
+            with open(os.path.join(tmpdir, "pyproject.toml"), encoding="utf-8") as f:
+                before = f.read()
+            self.assertEqual(read_pyproject_version(tmpdir), "0.1.0")
+
+            update_pyproject_version(
+                os.path.join(tmpdir, "pyproject.toml"), "0.2.0", preview=False
+            )
+
+            with open(module, encoding="utf-8") as f:
+                self.assertEqual(f.read(), '"""Quality."""\n\n__version__ = "0.2.0"\n')
+            with open(os.path.join(tmpdir, "pyproject.toml"), encoding="utf-8") as f:
+                self.assertEqual(f.read(), before)
+            self.assertEqual(read_pyproject_version(tmpdir), "0.2.0")
+
+    def test_a_dynamic_attr_version_preview_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            module = self.write_dynamic_attr_project(tmpdir, "__version__ = '0.1.0'\n")
+
+            update_pyproject_version(
+                os.path.join(tmpdir, "pyproject.toml"), "0.2.0", preview=True
+            )
+
+            with open(module, encoding="utf-8") as f:
+                self.assertEqual(f.read(), "__version__ = '0.1.0'\n")
+
+    def test_a_dynamic_attr_module_without_the_literal_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.write_dynamic_attr_project(
+                tmpdir,
+                "from importlib.metadata import version\n__version__ = version('quality')\n",
+            )
+
+            with self.assertRaises(RuntimeError) as cm:
+                update_pyproject_version(
+                    os.path.join(tmpdir, "pyproject.toml"), "0.2.0", preview=False
+                )
+
+        self.assertIn("Missing __version__ literal", str(cm.exception))
+
     def test_update_pyproject_version_missing_file_is_skipped(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = os.path.join(tmpdir, "pyproject.toml")
