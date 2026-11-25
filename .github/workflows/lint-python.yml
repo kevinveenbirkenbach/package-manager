@@ -8,19 +8,7 @@ permissions:
 
 jobs:
   lint-python:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-
-      - name: Install ruff
-        run: pip install ruff
-
-      - name: Run ruff
-        run: |
-          ruff check src tests
+    uses: infinito-nexus/quality/.github/workflows/tool.yml@ed91a38fa19c2734d2cf07a0ade77bbb63f3096f
+    with:
+      tool: ruff
+      args: check src tests
