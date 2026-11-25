@@ -76,4 +76,4 @@ jobs:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     permissions:
       contents: read
-    uses: infinito-nexus/quality/.github/workflows/quality.yml@ed91a38fa19c2734d2cf07a0ade77bbb63f3096f
+    uses: infinito-nexus/quality/.github/workflows/quality.yml@003eed66dd51592c3312a7c21ae429abead54d6f # v0.2.0
