@@ -71,3 +71,9 @@ jobs:
       contents: read
       security-events: write
     uses: ./.github/workflows/lint-docker.yml
+
+  quality:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    uses: infinito-nexus/quality/.github/workflows/quality.yml@ed91a38fa19c2734d2cf07a0ade77bbb63f3096f
