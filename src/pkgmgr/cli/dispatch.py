@@ -23,6 +23,7 @@ from pkgmgr.cli.commands import (
 )
 from pkgmgr.cli.context import CLIContext
 from pkgmgr.cli.proxy import maybe_handle_proxy
+from pkgmgr.core.git import GitRunError, run
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.selected import get_selected_repos
 
@@ -58,6 +59,14 @@ def _select_repo_for_current_directory(ctx: CLIContext) -> list[dict[str, Any]]:
 
     matches.sort(key=lambda x: len(x[0]), reverse=True)
     return [matches[0][1]]
+
+
+def _at_cwd_checkout(selected: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    try:
+        toplevel = run(["rev-parse", "--show-toplevel"])
+    except GitRunError:
+        return selected
+    return [{**repo, "directory": toplevel} for repo in selected]
 
 
 def dispatch_command(args, ctx: CLIContext) -> None:
@@ -143,6 +152,8 @@ def dispatch_command(args, ctx: CLIContext) -> None:
         return
 
     if args.command == "release":
+        if not _has_explicit_selection(args):
+            selected = _at_cwd_checkout(selected)
         handle_release(args, ctx, selected)
         return
 
