@@ -136,6 +136,25 @@ def _maybe_filter_ignored(args, repos: list[Repository]) -> list[Repository]:
     return filter_ignored(repos)
 
 
+def has_explicit_selection(args) -> bool:
+    """
+    Args:
+      args: parsed CLI arguments.
+
+    Returns:
+      True when --all, an identifier, --category, --tag or --string picks
+      the repositories instead of the current directory.
+
+    """
+    return bool(
+        getattr(args, "all", False)
+        or getattr(args, "identifiers", [])
+        or getattr(args, "category", [])
+        or getattr(args, "tag", [])
+        or getattr(args, "string", "")
+    )
+
+
 def get_selected_repos(args, all_repositories: list[Repository]) -> list[Repository]:
     """
     Compute the list of repositories selected by CLI arguments.

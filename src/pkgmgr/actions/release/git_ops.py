@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pkgmgr.core.git import run
 from pkgmgr.core.git.commands import (
     fetch,
     pull_ff_only,
@@ -14,7 +15,18 @@ def ensure_clean_and_synced(*, preview: bool = False) -> None:
     Always run a pull BEFORE modifying anything.
     Uses --ff-only to avoid creating merge commits automatically.
     If no upstream is configured, we skip.
+
+    Raises:
+      RuntimeError: a tracked file is modified; the release commit uses
+        ``commit -a`` and would ship it.
     """
+    dirty = run(["status", "--porcelain", "--untracked-files=no"])
+    if dirty:
+        raise RuntimeError(
+            "Tracked changes in the release checkout; commit or park them "
+            f"first, the release commit would include them:\n{dirty}"
+        )
+
     upstream = get_upstream_ref()
     if not upstream:
         print("[INFO] No upstream configured for current branch. Skipping pull.")

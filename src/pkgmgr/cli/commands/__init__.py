@@ -6,7 +6,7 @@ from .config import handle_config
 from .make import handle_make
 from .mirror import handle_mirror_command
 from .publish import handle_publish
-from .release import handle_release
+from .release import handle_release, release_at_cwd
 from .repos import handle_repos_command
 from .review import handle_review
 from .tools import handle_tools_command
@@ -29,4 +29,5 @@ __all__ = [
     "handle_tools_command",
     "handle_version",
     "handle_worktree",
+    "release_at_cwd",
 ]
