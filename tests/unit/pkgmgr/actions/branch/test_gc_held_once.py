@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -19,8 +20,10 @@ AUTHOR = {
 }
 MERGED = 12
 REGISTRATIONS = 40
+GIT = shutil.which("git")
 
 
+@unittest.skipUnless(GIT, "git builds the repository under test")
 class TestHeldBranchesReadOnce(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()
@@ -39,7 +42,7 @@ class TestHeldBranchesReadOnce(unittest.TestCase):
 
     def git(self, *args: str) -> str:
         return subprocess.run(
-            ["git", "-c", "commit.gpgsign=false", *args],
+            [GIT, "-c", "commit.gpgsign=false", *args],
             cwd=self.repo,
             env={**os.environ, **AUTHOR},
             check=True,
@@ -54,10 +57,8 @@ class TestHeldBranchesReadOnce(unittest.TestCase):
 
     def _shape(self) -> None:
         origin = os.path.join(self.root, "origin.git")
-        subprocess.run(
-            ["git", "init", "-q", "--bare", "-b", "main", origin], check=True
-        )
-        subprocess.run(["git", "init", "-q", "-b", "main", self.repo], check=True)
+        subprocess.run([GIT, "init", "-q", "--bare", "-b", "main", origin], check=True)
+        subprocess.run([GIT, "init", "-q", "-b", "main", self.repo], check=True)
         self.git("remote", "add", "origin", origin)
         self._write(os.path.join(self.repo, "c1"), "c1")
         self.git("add", "c1")
@@ -91,7 +92,7 @@ class TestHeldBranchesReadOnce(unittest.TestCase):
         )
         self._write(os.path.join(self.repo, ".git", "BISECT_START"), "merged-004\n")
 
-    def _run(self, *, cached: bool = True, apply: bool = False) -> tuple[dict, int]:
+    def _run(self, *, cached: bool, apply: bool) -> tuple[dict, int]:
         out = io.StringIO()
         with ExitStack() as stack:
             held = stack.enter_context(
@@ -126,8 +127,8 @@ class TestHeldBranchesReadOnce(unittest.TestCase):
         return {i["branch"]: i for i in plan["repos"][0]["items"]}
 
     def test_one_read_gives_the_plan_of_one_read_per_branch(self) -> None:
-        per_branch, old_reads = self._run(cached=False)
-        once, new_reads = self._run()
+        per_branch, old_reads = self._run(cached=False, apply=False)
+        once, new_reads = self._run(cached=True, apply=False)
 
         self.assertEqual(once, per_branch)
         self.assertEqual(new_reads, 1)
@@ -143,18 +144,18 @@ class TestHeldBranchesReadOnce(unittest.TestCase):
         self.assertEqual(deletable, [f"merged-{i:03d}" for i in free])
 
     def test_branch_held_after_the_plan_is_not_deleted(self) -> None:
-        real = gc._rebuild
-        changes = [
-            lambda: self.git("symbolic-ref", "refs/tags/pin", "refs/heads/merged-005")
-        ]
+        rebuilt: list[str] = []
+        rebuild = gc._rebuild
 
-        def late(repo: gc.Repo, item: gc.Item) -> gc.Item:
-            if changes:
-                changes.pop()()
-            return real(repo, item)
+        def pin_before_first_recheck(*args: object) -> object:
+            if not rebuilt:
+                rebuilt.append(
+                    self.git("symbolic-ref", "refs/tags/pin", "refs/heads/merged-005")
+                )
+            return rebuild(*args)
 
-        with patch.object(gc, "_rebuild", side_effect=late):
-            plan, reads = self._run(apply=True)
+        with patch.object(gc, "_rebuild", side_effect=pin_before_first_recheck):
+            plan, reads = self._run(cached=True, apply=True)
 
         items = self._items(plan)
         self.assertGreater(reads, 1)

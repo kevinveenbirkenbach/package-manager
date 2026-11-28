@@ -13,7 +13,7 @@ from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from pkgmgr.actions.branch import gc, gc_forge, gc_refs, tree
+from pkgmgr.actions.branch import gc, gc_forge, held, tree
 from pkgmgr.cli.commands.branch import handle_branch, scan_repo_roots
 from pkgmgr.cli.parser import create_parser
 from pkgmgr.core.credentials.types import NoCredentialsError
@@ -1647,7 +1647,7 @@ class TestBranchCleanupLocal(unittest.TestCase):
 
     def test_failed_head_read_refuses_the_repository(self) -> None:
         heads = self._refs(self.repo, "refs/heads")
-        real = gc_refs._git
+        real = held._git
 
         def timed_out(args: list[str], cwd: str) -> str:
             if args[1:] == ["symbolic-ref", "--quiet", "HEAD"]:
@@ -1656,7 +1656,7 @@ class TestBranchCleanupLocal(unittest.TestCase):
                 raise err
             return real(args, cwd)
 
-        with patch.object(gc_refs, "_git", side_effect=timed_out):
+        with patch.object(held, "_git", side_effect=timed_out):
             run = self._cleanup("local", apply=True)
 
         self.assertEqual(run.code, 2)

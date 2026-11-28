@@ -21,8 +21,7 @@ def _common_dir(cwd: str) -> str:
 
 
 def _symbolic(repo_root: str, prefix: str, git_dir: str = "") -> dict[str, str]:
-    """
-    List the resolvable refs under a prefix with their symref targets.
+    """List the resolvable refs under a prefix with their symref targets.
 
     Args:
         repo_root: main worktree root of the repository.
@@ -33,6 +32,7 @@ def _symbolic(repo_root: str, prefix: str, git_dir: str = "") -> dict[str, str]:
 
     Returns:
         Full ref name -> the ref it points to, or "" for a plain ref.
+
     """
     args = ["for-each-ref", "--format=%(refname)%00%(symref)", prefix]
     out = _git([f"--git-dir={git_dir}", *args] if git_dir else args, repo_root)
@@ -40,8 +40,7 @@ def _symbolic(repo_root: str, prefix: str, git_dir: str = "") -> dict[str, str]:
 
 
 def _worktree_heads(repo_root: str, git_dirs: list[str]) -> dict[str, str]:
-    """
-    Read the branch every worktree's HEAD names, on any ref backend.
+    """Read the branch every worktree's HEAD names, on any ref backend.
 
     Args:
         repo_root: main worktree root of the repository.
@@ -53,6 +52,7 @@ def _worktree_heads(repo_root: str, git_dirs: list[str]) -> dict[str, str]:
 
     Raises:
         GitBaseError: when a HEAD is neither readable nor detached.
+
     """
     heads: dict[str, str] = {}
     for git_dir in git_dirs:
@@ -72,8 +72,7 @@ def _worktree_heads(repo_root: str, git_dirs: list[str]) -> dict[str, str]:
 
 
 def _git_dirs(repo_root: str) -> list[str]:
-    """
-    List the git dirs of every worktree of the repository.
+    """List the git dirs of every worktree of the repository.
 
     Args:
         repo_root: main worktree root of the repository.
@@ -81,6 +80,7 @@ def _git_dirs(repo_root: str) -> list[str]:
     Returns:
         The git common dir, then each entry of `<common>/worktrees/`, whatever
         its id and whether `git worktree list` shows it.
+
     """
     common = _common_dir(repo_root)
     base = os.path.join(common, "worktrees")
@@ -89,8 +89,7 @@ def _git_dirs(repo_root: str) -> list[str]:
 
 
 def _held_branches(repo_root: str) -> dict[str, str]:
-    """
-    Find the local branches that something besides a listed worktree holds.
+    """Find the local branches that something besides a listed worktree holds.
 
     Args:
         repo_root: main worktree root of the repository.
@@ -108,9 +107,19 @@ def _held_branches(repo_root: str) -> dict[str, str]:
         GitBaseError: when git cannot read a registration, symref or HEAD.
         OSError: when a state file exists but cannot be read.
         ValueError: when a state file is not UTF-8.
+
     """
     git_dirs = _git_dirs(repo_root)
     held: dict[str, str] = {}
+    _symref_holds(repo_root, git_dirs, held)
+    for branch, reason in _worktree_heads(repo_root, git_dirs).items():
+        held.setdefault(branch, reason)
+    for git_dir in git_dirs:
+        _state_file_holds(git_dir, held)
+    return held
+
+
+def _symref_holds(repo_root: str, git_dirs: list[str], held: dict[str, str]) -> None:
     symrefs = _symbolic(repo_root, "refs", git_dirs[0])
     for git_dir in git_dirs[1:]:
         for ref, target in _symbolic(repo_root, "refs/worktree", git_dir).items():
@@ -124,19 +133,18 @@ def _held_branches(repo_root: str) -> dict[str, str]:
             held.setdefault(
                 target.removeprefix("refs/heads/"), f"target of symbolic ref {ref}"
             )
-    for branch, reason in _worktree_heads(repo_root, git_dirs).items():
-        held.setdefault(branch, reason)
-    for git_dir in git_dirs:
-        for name, operation in HELD_FILES:
-            try:
-                with open(os.path.join(git_dir, name), encoding="utf-8") as fh:
-                    lines = fh.read().splitlines()
-            except FileNotFoundError:
-                continue
-            for line in lines:
-                ref = line.strip().removeprefix("ref: ")
-                if ref.startswith("refs/heads/") or name == "BISECT_START":
-                    held.setdefault(
-                        ref.removeprefix("refs/heads/"), f"{operation} in {git_dir}"
-                    )
-    return held
+
+
+def _state_file_holds(git_dir: str, held: dict[str, str]) -> None:
+    for name, operation in HELD_FILES:
+        try:
+            with open(os.path.join(git_dir, name), encoding="utf-8") as fh:
+                lines = fh.read().splitlines()
+        except FileNotFoundError:
+            continue
+        for line in lines:
+            ref = line.strip().removeprefix("ref: ")
+            if ref.startswith("refs/heads/") or name == "BISECT_START":
+                held.setdefault(
+                    ref.removeprefix("refs/heads/"), f"{operation} in {git_dir}"
+                )

@@ -29,7 +29,7 @@ from pkgmgr.core.git.run import (
 )
 
 from .gc_forge import ForgeFacts, fetch_forge_facts
-from .gc_refs import _common_dir, _git_dirs, _held_branches, _symbolic
+from .held import _common_dir, _git_dirs, _held_branches, _symbolic
 from .nofollow import canonical, remove_tree
 
 Registrations = tuple[str, dict[str, list[str]]]
@@ -658,7 +658,7 @@ def _build(
     tree: Worktree | None,
     snapshot: Snapshot,
 ) -> Item:
-    local, remote, cwds, tracking, registrations, held = snapshot
+    local, remote, cwds, tracking = snapshot[:4]
     upstream, ahead, behind, gone = tracking.get(
         branch or "", (None, None, None, False)
     )
@@ -752,11 +752,7 @@ def _build(
         and (time.time() - item.last_activity) / 3600 < repo.min_age
     ):
         item.skip = f"younger than {repo.min_age:g} h"
-    item.actions = (
-        _local_actions(repo, item, tree, held)
-        if repo.scope == "local"
-        else _actions(repo, item, tree, checkout, dirty, registrations)
-    )
+    item.actions = _actions(repo, item, tree, checkout, dirty, snapshot)
     if repo.unsafe:
         item.actions = [a for a in item.actions if not a.startswith("remote-branch:")]
     return item
@@ -768,8 +764,11 @@ def _actions(
     tree: Worktree | None,
     checkout: bool,
     dirty: int,
-    registrations: Registrations,
+    snapshot: Snapshot,
 ) -> list[str]:
+    if repo.scope == "local":
+        return _local_actions(repo, item, tree, snapshot[5])
+    registrations = snapshot[4]
     tree_part: list[str] = []
     if tree:
         if (
@@ -814,8 +813,7 @@ def _local_actions(
     tree: Worktree | None,
     held: Callable[[], dict[str, str]],
 ) -> list[str]:
-    """
-    Settle the actions of an item planned with scope `local`.
+    """Settle the actions of an item planned with scope `local`.
 
     Args:
         repo: the planned repository; its default and merged-into lines are
@@ -831,6 +829,7 @@ def _local_actions(
         worktree registration, rebase, bisect or symbolic ref holds and whose
         tip is an ancestor of the default or a merged-into line, else
         nothing; never a worktree, stack or remote action.
+
     """
     if item.state != "merged-clean" or not item.local_sha or tree is not None:
         return []
@@ -838,6 +837,10 @@ def _local_actions(
     if hold:
         item.skip = item.skip or hold
         return []
+    return _ancestor_action(repo, item)
+
+
+def _ancestor_action(repo: Repo, item: Item) -> list[str]:
     targets = [repo.default, *repo.lines]
     if any(_is_ancestor(item.local_sha, ref, repo.repo) for ref in targets):
         return ["local-branch"]
