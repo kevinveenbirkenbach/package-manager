@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import glob
 import os
-import shutil
 import subprocess
+import sys
+import tempfile
 
 from pkgmgr.actions.mirror.io import read_mirrors_file
 from pkgmgr.actions.mirror.types import Repository
@@ -12,20 +12,62 @@ from pkgmgr.core.version.semver import SemVer
 
 from .git_tags import head_semver_tags
 from .pypi_url import parse_pypi_project_url
+from .types import PyPITarget
+
+UPLOAD_URLS = {
+    "pypi.org": "https://upload.pypi.org/legacy/",
+    "test.pypi.org": "https://test.pypi.org/legacy/",
+}
 
 
-def _require_tool(module: str) -> None:
+def _child_env(repo_dir: str) -> dict[str, str]:
+    """
+    Args:
+        repo_dir: absolute path of the repository being published.
+
+    Returns:
+        The environment for build and twine without pkgmgr's own variables,
+        so no PKGMGR_* token reaches a build backend or an upload, and
+        without PYTHONPATH entries inside repo_dir, so no repository file
+        shadows build or twine.
+    """
+    env = {k: v for k, v in os.environ.items() if not k.startswith("PKGMGR_")}
+    if "PYTHONPATH" in env:
+        root = os.path.realpath(repo_dir)
+        kept = [
+            entry
+            for entry in env["PYTHONPATH"].split(os.pathsep)
+            if entry and os.path.commonpath([root, os.path.realpath(entry)]) != root
+        ]
+        if kept:
+            env["PYTHONPATH"] = os.pathsep.join(kept)
+        else:
+            del env["PYTHONPATH"]
+    return env
+
+
+def _require_tool(module: str, cwd: str, env: dict[str, str]) -> None:
+    """
+    Args:
+        module: the Python module run with -m.
+        cwd: an empty private directory, so no file of the repository
+            shadows the module on sys.path.
+        env: the child environment from _child_env.
+    """
     try:
         subprocess.run(
-            ["python", "-m", module, "--help"],
+            [sys.executable, "-m", module, "--help"],
+            cwd=cwd,
+            env=env,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=True,
         )
     except Exception as exc:
         raise RuntimeError(
-            f"Required Python module '{module}' is not available. "
-            f"Install it via: pip install {module}"
+            f"Required Python module '{module}' is not available to "
+            f"{sys.executable}. Install it via: "
+            f"{sys.executable} -m pip install {module}"
         ) from exc
 
 
@@ -66,22 +108,38 @@ def publish(
         print("[PREVIEW] Would build and upload to PyPI.")
         return
 
-    _require_tool("build")
-    _require_tool("twine")
+    with tempfile.TemporaryDirectory() as out:
+        _upload(target, os.path.abspath(repo_dir), out, interactive, allow_prompt)
 
-    dist_dir = os.path.join(repo_dir, "dist")
-    if os.path.isdir(dist_dir):
-        shutil.rmtree(dist_dir, ignore_errors=True)
+    print("[INFO] Publish completed.")
+
+
+def _upload(
+    target: PyPITarget, repo_dir: str, out: str, interactive: bool, allow_prompt: bool
+) -> None:
+    """
+    Args:
+        target: the PyPI target parsed from the mirror URL.
+        repo_dir: absolute path of the repository to build.
+        out: an empty private directory that receives the artifacts and is
+            the working directory of every child process.
+        interactive: allow interactive token resolution.
+        allow_prompt: allow prompting for the token.
+    """
+    env = _child_env(repo_dir)
+    _require_tool("build", out, env)
+    _require_tool("twine", out, env)
 
     subprocess.run(
-        ["python", "-m", "build"],
-        cwd=repo_dir,
+        [sys.executable, "-m", "build", "--outdir", out, repo_dir],
+        cwd=out,
+        env=env,
         check=True,
     )
 
-    artifacts = sorted(glob.glob(os.path.join(dist_dir, "*")))
+    artifacts = sorted(os.path.join(out, name) for name in os.listdir(out))
     if not artifacts:
-        raise RuntimeError("No build artifacts found in dist/.")
+        raise RuntimeError("No build artifacts found.")
 
     resolver = TokenResolver()
 
@@ -98,15 +156,18 @@ def publish(
         ),
     ).token
 
-    env = dict(os.environ)
-    env["TWINE_USERNAME"] = "__token__"
-    env["TWINE_PASSWORD"] = token
-
     subprocess.run(
-        ["python", "-m", "twine", "upload", *artifacts],
-        cwd=repo_dir,
-        env=env,
+        [
+            sys.executable,
+            "-m",
+            "twine",
+            "upload",
+            "--non-interactive",
+            "--repository-url",
+            UPLOAD_URLS[target.host],
+            *artifacts,
+        ],
+        cwd=out,
+        env={**env, "TWINE_USERNAME": "__token__", "TWINE_PASSWORD": token},
         check=True,
     )
-
-    print("[INFO] Publish completed.")

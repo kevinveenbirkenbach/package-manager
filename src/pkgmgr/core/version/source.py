@@ -9,11 +9,59 @@ import yaml
 from pkgmgr.core.repository.paths import resolve_repo_paths
 
 
+def version_literal(name: str) -> re.Pattern[str]:
+    """
+    Args:
+        name: the module attribute holding the version, e.g. __version__.
+
+    Returns:
+        A pattern whose groups are the assignment up to the opening quote, the
+        version and the closing quote of `name = "X.Y.Z"`.
+    """
+    return re.compile(rf"""(?m)^(\s*{re.escape(name)}\s*=\s*["'])([^"']+)(["'])""")
+
+
+def dynamic_version_source(pyproject_path: str, data: dict) -> tuple[str, str] | None:
+    """
+    Args:
+        pyproject_path: the pyproject.toml file.
+        data: its parsed content.
+
+    Returns:
+        (module file, attribute name) that setuptools reads the version from
+        when [project].dynamic lists version and [tool.setuptools.dynamic]
+        sets version = {attr = "pkg.module.NAME"}, with
+        [tool.setuptools].package-dir applied; None otherwise.
+    """
+    project = data.get("project") or {}
+    if "version" not in project.get("dynamic", []):
+        return None
+    setuptools = (data.get("tool") or {}).get("setuptools") or {}
+    attr = ((setuptools.get("dynamic") or {}).get("version") or {}).get("attr")
+    if not isinstance(attr, str) or "." not in attr:
+        return None
+    module, _, name = attr.rpartition(".")
+    parts = module.split(".")
+    dirs = setuptools.get("package-dir") or {}
+    if parts[0] in dirs:
+        base = os.path.join(dirs[parts[0]], *parts[1:])
+    else:
+        base = os.path.join(dirs.get("", ""), *parts)
+    root = os.path.dirname(os.path.abspath(pyproject_path))
+    for candidate in (f"{base}.py", os.path.join(base, "__init__.py")):
+        path = os.path.join(root, candidate)
+        if os.path.isfile(path):
+            return path, name
+    return None
+
+
 def read_pyproject_version(repo_dir: str) -> str | None:
     """
     Read the version from pyproject.toml in repo_dir, if present.
 
-    Expects a PEP 621-style [project] table with a 'version' field.
+    Expects a PEP 621-style [project] table with a 'version' field, or a
+    dynamic version that setuptools reads from a module attribute
+    (dynamic_version_source()).
     """
     paths = resolve_repo_paths(repo_dir)
     path = paths.pyproject_toml
@@ -30,7 +78,14 @@ def read_pyproject_version(repo_dir: str) -> str | None:
             data = tomllib.load(f)
         project = data.get("project") or {}
         version = project.get("version")
-        return str(version).strip() if version else None
+        if version:
+            return str(version).strip()
+        source = dynamic_version_source(path, data)
+        if source is None:
+            return None
+        with open(source[0], encoding="utf-8") as f:
+            match = version_literal(source[1]).search(f.read())
+        return match.group(2).strip() if match else None
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
         return None
 
