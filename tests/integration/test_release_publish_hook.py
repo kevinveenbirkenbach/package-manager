@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -12,6 +13,8 @@ from unittest.mock import patch
 
 from pkgmgr.actions.release.git_ops import ensure_clean_and_synced
 from pkgmgr.cli.context import CLIContext
+
+GIT = shutil.which("git")
 
 
 class TestIntegrationReleasePublishHook(unittest.TestCase):
@@ -73,9 +76,10 @@ class TestIntegrationReleasePublishHook(unittest.TestCase):
             m_publish.assert_not_called()
 
 
+@unittest.skipUnless(GIT, "git builds the clones under test")
 class TestReleaseCwdCheckout(unittest.TestCase):
     def _sh(self, cwd: str, *argv: str) -> None:
-        subprocess.run(["git", *argv], cwd=cwd, check=True, capture_output=True)
+        subprocess.run([GIT, *argv], cwd=cwd, check=True, capture_output=True)
 
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()

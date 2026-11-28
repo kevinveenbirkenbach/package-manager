@@ -144,6 +144,7 @@ def has_explicit_selection(args) -> bool:
     Returns:
       True when --all, an identifier, --category, --tag or --string picks
       the repositories instead of the current directory.
+
     """
     return bool(
         getattr(args, "all", False)

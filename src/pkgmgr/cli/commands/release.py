@@ -25,6 +25,7 @@ def _at_cwd_checkout(args, selected: list[Repository]) -> list[Repository]:
       selected unchanged after an explicit selection or outside git; else each
       repository pointed at the current directory's git toplevel, so a release
       from a nested clone never commits in the configured main checkout.
+
     """
     if has_explicit_selection(args):
         return selected
@@ -42,6 +43,7 @@ def release_at_cwd(args, ctx: CLIContext, selected: list[Repository]) -> None:
       ctx: the CLI context.
       selected: the repositories dispatch picked; without an explicit
         selection each is released in the current directory's checkout.
+
     """
     handle_release(args, ctx, _at_cwd_checkout(args, selected))
 
