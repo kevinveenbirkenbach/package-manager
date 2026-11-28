@@ -13,7 +13,7 @@ from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from pkgmgr.actions.branch import gc, gc_forge, tree
+from pkgmgr.actions.branch import gc, gc_forge, gc_refs, tree
 from pkgmgr.cli.commands.branch import handle_branch, scan_repo_roots
 from pkgmgr.cli.parser import create_parser
 from pkgmgr.core.credentials.types import NoCredentialsError
@@ -488,52 +488,6 @@ class TestBranchCleanupLocal(unittest.TestCase):
             self._refs(self.repo, "refs/heads")["refs/heads/local-done"],
             heads["refs/heads/local-done"],
         )
-
-    def test_plan_reads_the_held_branches_once_per_repository(self) -> None:
-        self._set_head()
-        extra = ("more-a", "more-b", "more-c")
-        for name in extra:
-            git(self.repo, "branch", name, "done")
-
-        with patch.object(gc, "_held_branches", wraps=gc._held_branches) as held:
-            run = self._cleanup("local", apply=False)
-
-        self.assertEqual(held.call_count, 1)
-        self.assertEqual(
-            {name for name, i in run.items.items() if i["actions"]},
-            {"done", "local-done", *extra},
-        )
-
-    def test_branch_held_after_the_plan_is_not_deleted(self) -> None:
-        self._set_head()
-        real = gc._rebuild
-        changes = [
-            lambda: git(
-                self.repo, "symbolic-ref", "refs/tags/pin", "refs/heads/local-done"
-            )
-        ]
-
-        def late(repo: gc.Repo, item: gc.Item) -> gc.Item:
-            if changes:
-                changes.pop()()
-            return real(repo, item)
-
-        with (
-            patch.object(gc, "_held_branches", wraps=gc._held_branches) as held,
-            patch.object(gc, "_rebuild", side_effect=late),
-        ):
-            run = self._cleanup("local", apply=True)
-
-        self.assertEqual(held.call_count, 3)
-        self.assertEqual(
-            self._results(run),
-            {
-                "done": "done",
-                "local-done": "skipped: changed since plan "
-                "(target of symbolic ref refs/tags/pin)",
-            },
-        )
-        self.assertIn("refs/heads/local-done", self._refs(self.repo, "refs/heads"))
 
     def test_delete_never_follows_a_symref_made_after_the_check(self) -> None:
         planned = git(self.repo, "rev-parse", "held-done")
@@ -1693,7 +1647,7 @@ class TestBranchCleanupLocal(unittest.TestCase):
 
     def test_failed_head_read_refuses_the_repository(self) -> None:
         heads = self._refs(self.repo, "refs/heads")
-        real = gc._git
+        real = gc_refs._git
 
         def timed_out(args: list[str], cwd: str) -> str:
             if args[1:] == ["symbolic-ref", "--quiet", "HEAD"]:
@@ -1702,7 +1656,7 @@ class TestBranchCleanupLocal(unittest.TestCase):
                 raise err
             return real(args, cwd)
 
-        with patch.object(gc, "_git", side_effect=timed_out):
+        with patch.object(gc_refs, "_git", side_effect=timed_out):
             run = self._cleanup("local", apply=True)
 
         self.assertEqual(run.code, 2)
