@@ -7,10 +7,43 @@ from typing import Any
 from pkgmgr.actions.publish import publish as run_publish
 from pkgmgr.actions.release import release as run_release
 from pkgmgr.cli.context import CLIContext
+from pkgmgr.core.git import GitRunError, run
 from pkgmgr.core.repository.dir import get_repo_dir
 from pkgmgr.core.repository.identifier import get_repo_identifier
+from pkgmgr.core.repository.selected import has_explicit_selection
 
 Repository = dict[str, Any]
+
+
+def _at_cwd_checkout(args, selected: list[Repository]) -> list[Repository]:
+    """
+    Args:
+      args: parsed CLI arguments.
+      selected: the repositories dispatch picked.
+
+    Returns:
+      selected unchanged after an explicit selection or outside git; else each
+      repository pointed at the current directory's git toplevel, so a release
+      from a nested clone never commits in the configured main checkout.
+    """
+    if has_explicit_selection(args):
+        return selected
+    try:
+        toplevel = run(["rev-parse", "--show-toplevel"])
+    except GitRunError:
+        return selected
+    return [{**repo, "directory": toplevel} for repo in selected]
+
+
+def release_at_cwd(args, ctx: CLIContext, selected: list[Repository]) -> None:
+    """
+    Args:
+      args: parsed CLI arguments.
+      ctx: the CLI context.
+      selected: the repositories dispatch picked; without an explicit
+        selection each is released in the current directory's checkout.
+    """
+    handle_release(args, ctx, _at_cwd_checkout(args, selected))
 
 
 def handle_release(
